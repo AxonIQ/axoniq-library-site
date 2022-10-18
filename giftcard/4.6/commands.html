@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Introduction :: Axon Library</title>
+    <title>Commands :: Axon Library</title>
     <meta name="generator" content="Antora 3.1.1">
     <link rel="stylesheet" href="../../_/css/site.css">
     <script>var uiRootPath = '../../_'</script>
@@ -39,7 +39,7 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">Tutorials</a>
           <div class="navbar-dropdown">
-                <a class="navbar-item" href="../4.6/index.html">Axon Framework - from design to deployment</a>
+                <a class="navbar-item" href="index.html">Axon Framework - from design to deployment</a>
                 <a class="navbar-item" href="../../as_admin/index.html">Axon Server Administration</a>
                 <a class="navbar-item" href="../../af_customization/4.6/index.html">Customizing Axon Framework</a>
           </div>
@@ -57,7 +57,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="af_design2deployment" data-version="4.5">
+<div class="nav-container" data-component="giftcard" data-version="4.6">
   <aside class="nav">
     <div class="panels">
 <div class="nav-panel-menu is-active" data-panel="menu">
@@ -65,12 +65,6 @@
     <h3 class="title"><a href="index.html">Axon Framework - from design to deployment</a></h3>
 
     <ul class="versions">
-      <li class="version">
-        <a href="../4.6/index.html">4.6</a>
-      </li>
-      <li class="version is-current">
-        <a href="index.html">4.5</a>
-      </li>
     </ul>
 
 <ul class="nav-list">
@@ -79,7 +73,7 @@
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="design.html">Design</a>
   </li>
-  <li class="nav-item" data-depth="1">
+  <li class="nav-item is-current-page" data-depth="1">
     <a class="nav-link" href="commands.html">Commands</a>
   </li>
   <li class="nav-item" data-depth="1">
@@ -112,26 +106,71 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="index.html">Axon Framework - from design to deployment</a></li>
-    <li><a href="index.html">Introduction</a></li>
+    <li><a href="commands.html">Commands</a></li>
   </ul>
 </nav>
-<div class="page-versions">
-  <button class="version-menu-toggle" title="Show other versions of page">4.5</button>
-  <div class="version-menu">
-    <a class="version" href="../4.6/index.html">4.6</a>
-    <a class="version is-current" href="index.html">4.5</a>
-  </div>
-</div>
-  <div class="edit-this-page"><a href="https://github.com/AxonIQ/docs-site/edit/main/external_repos/axon_framework/v4.5/docs/design2deployment/modules/ROOT/pages/index.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/AxonIQ/docs-site/edit/main/external_repos/giftcard-demo/docs/modules/ROOT/pages/commands.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Introduction</h1>
+<h1 class="page">Commands</h1>
+<div id="preamble">
+<div class="sectionbody">
 <div class="paragraph">
-<p>Building a new application can be a daunting task. This section of the documentation will help you with the various phases of development, walking you through the capabilities of Axon Framework and providing tips and tricks along the way. At the end, you will have an application "in production" and will have made changes after the initial release as well.</p>
+<p>TODO</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_command_definition"><a class="anchor" href="#_command_definition"></a>Command Definition</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">data class IssueCardCommand(@TargetAggregateIdentifier val id: String, val amount: Int)
+data class RedeemCardCommand(@TargetAggregateIdentifier val id: String, val amount: Int)
+data class CancelCardCommand(@TargetAggregateIdentifier val id: String)</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_command_handlers"><a class="anchor" href="#_command_handlers"></a>Command handlers</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_issue_card"><a class="anchor" href="#_issue_card"></a>Issue Card</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    @CommandHandler
+    public GiftCard(IssueCardCommand command) {
+        if (command.getAmount() &lt;= 0) {
+            throw new IllegalArgumentException("amount &lt;= 0");
+        }
+        apply(new CardIssuedEvent(command.getId(), command.getAmount()));
+    }</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_redeem_card"><a class="anchor" href="#_redeem_card"></a>Redeem Card</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    @CommandHandler
+    public void handle(RedeemCardCommand command) {
+        if (command.getAmount() &lt;= 0) {
+            throw new IllegalArgumentException("amount &lt;= 0");
+        }
+        if (command.getAmount() &gt; remainingValue) {
+            throw new IllegalStateException("amount &gt; remaining value");
+        }
+        apply(new CardRedeemedEvent(giftCardId, command.getAmount()));
+    }</code></pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 </article>
   </div>
