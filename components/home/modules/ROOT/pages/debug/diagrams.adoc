@@ -1,0 +1,85 @@
+= Experimenting with diagrams
+
+== graphviz
+
+[graphviz]
+....
+digraph foo {
+  node [style=rounded]
+  node1 [shape=box]
+  node2 [fillcolor=yellow, style="rounded,filled", shape=diamond]
+  node3 [shape=record, label="{ a | b | c }"]
+
+  node1 -> node2 -> node3
+}
+....
+
+== plantuml
+
+[plantuml]
+....
+actor "User" as u
+queue Bus as b
+participant "Interceptor" as d1
+participant "Interceptor" as d2
+
+queue Bus as b2
+participant "Interceptor" as h1
+participant "Interceptor" as h2
+
+entity Handler as hnd
+
+
+u -> b: Send message
+== Dispatch phase ==
+b -> d1: Intercept message
+b <- d2: Modified message
+b -> d2: Intercept message
+b <- d1: Modified message
+b -> b2: Dispatch modified message
+
+== Handling phase ==
+b2 -> h1: Handle message
+h1 -> h2: Handle message
+h2 -> hnd: Handle message
+h2 <- hnd: Message result
+h1 <- h2: Message result
+b <- h1: Message result
+u <- b: Message result
+....
+
+== mermaid
+
+[mermaid,abcd-flowchart,svg]
+....
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+....
+
+== structurizr
+
+[structurizr]
+....
+workspace {
+
+    model {
+        user = person "User"
+        softwareSystem = softwareSystem "Software System"
+
+        user -> softwareSystem "Uses"
+    }
+
+    views {
+        systemContext softwareSystem {
+            include *
+            autolayout
+        }
+
+        theme default
+    }
+
+}
+....
