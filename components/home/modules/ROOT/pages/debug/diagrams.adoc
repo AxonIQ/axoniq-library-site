@@ -4,13 +4,61 @@
 
 [graphviz]
 ....
-digraph foo {
-  node [style=rounded]
-  node1 [shape=box]
-  node2 [fillcolor=yellow, style="rounded,filled", shape=diamond]
-  node3 [shape=record, label="{ a | b | c }"]
+digraph axon_framework_overview {
+    layout="dot"
+    rankdir="LR"
 
-  node1 -> node2 -> node3
+    node [style=rounded, colorscheme=oranges9]
+
+    subgraph cluster_command_side {
+        label="Command side";
+        graph[style=dotted];
+
+        "Command Handling Component" [shape=box, style="filled", fillcolor=5]
+        "Command model repository" [shape=cylinder, style="filled", fillcolor=2]
+        "Command Handling Component" -> "Command model repository" [name="persistCommandModel", label="persist"]
+
+        // hack to align the UI
+        c1 -> "Command Handling Component" [style="invis"]
+    }
+
+    subgraph cluster_query_side {
+        label="Query side";
+        graph[style=dotted];
+
+        "Event Handling Component" [shape=box, style="filled", fillcolor=5]
+        "Query Handling Component" [shape=box, style="filled", fillcolor=5]
+        "Query model repository" [shape=cylinder, style="filled", fillcolor=2]
+
+        "Event Handling Component" -> "Query model repository" [name="persistQueryModel", label="persist", weight=2]
+        "Query Handling Component" -> "Query model repository" [name="read", label="read"]
+
+        // hack to align the UI
+        "Event Handling Component" -> c2 [style="invis"]
+    }
+
+
+    Client [shape=component, color=9, weight=1]
+    CommandBus [shape=assembly, label=""]
+    EventBus [shape=assembly, label=""]
+    QueryBus [shape=assembly, label=""]
+
+    "Command Handling Component" -> EventBus [name="event", label="event"]
+    EventBus -> "Event Handling Component" [name="event", label="event"]
+
+
+    Client -> CommandBus -> "Command Handling Component" [name="command", label="command"]
+    Client -> QueryBus -> "Query Handling Component" [name="query", label="query"]
+    Client -> EventBus [name="event", label="event"]
+
+
+    // hack to align the UI
+    {
+        rank=same
+        c1 [style="invis"]
+        c2 [style="invis"]
+    }
+
 }
 ....
 
@@ -57,6 +105,48 @@ graph TD;
     A-->C;
     B-->D;
     C-->D;
+....
+
+== blockdiag
+
+[blockdiag]
+....
+blockdiag admin {
+    client[shape = actor]
+    "Command Handling Component" [shape=roundedbox]
+    "Repository" [shape=flowchart.database]
+    event[shape = mail];
+    "Event Handling Component" [shape=roundedbox]
+    "Query Handling Component" [shape=roundedbox]
+    "Storage" [shape=flowchart.database]
+
+    client -> "Command Handling Component"
+    client -> "Query Handling Component"
+
+    "Command Handling Component" -> "Repository"
+    "Command Handling Component" -> "event"
+
+    event -> "Event Handling Component"
+    "Event Handling Component" -> "Storage"
+    "Query Handling Component" -> "Storage"
+
+   group command_side{
+      label = "command side";
+       "Command Handling Component";
+       "Repository";
+   }
+
+   group query_side {
+      label = "query side";
+      color = "#77FF77";
+
+    "Event Handling Component" [shape=roundedbox]
+    "Query Handling Component" [shape=roundedbox]
+    "Storage" [shape=flowchart.database]
+
+   }
+
+}
 ....
 
 == structurizr
