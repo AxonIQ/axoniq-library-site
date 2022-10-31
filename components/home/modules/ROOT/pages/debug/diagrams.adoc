@@ -4,7 +4,7 @@
 
 [graphviz]
 ....
-digraph axon_framework_overview {
+digraph foo {
     layout="dot"
     rankdir="LR"
 
@@ -16,7 +16,7 @@ digraph axon_framework_overview {
 
         "Command Handling Component" [shape=box, style="filled", fillcolor=5]
         "Command model repository" [shape=cylinder, style="filled", fillcolor=2]
-        "Command Handling Component" -> "Command model repository" [name="persistCommandModel", label="persist"]
+        "Command Handling Component" -> "Command model repository" [name="persistCommandModel", label="persist", dir=both]
 
         // hack to align the UI
         c1 -> "Command Handling Component" [style="invis"]
@@ -30,27 +30,34 @@ digraph axon_framework_overview {
         "Query Handling Component" [shape=box, style="filled", fillcolor=5]
         "Query model repository" [shape=cylinder, style="filled", fillcolor=2]
 
-        "Event Handling Component" -> "Query model repository" [name="persistQueryModel", label="persist", weight=2]
-        "Query Handling Component" -> "Query model repository" [name="read", label="read"]
+        "Event Handling Component" -> "Query model repository" [name="persistQueryModel", label="persist"]
+        "Query Handling Component" -> "Query model repository" [name="read", label="read", dir=both]
 
         // hack to align the UI
         "Event Handling Component" -> c2 [style="invis"]
     }
 
+    subgraph cluster_messaging {
 
-    Client [shape=component, color=9, weight=1]
-    CommandBus [shape=assembly, label=""]
-    EventBus [shape=assembly, label=""]
-    QueryBus [shape=assembly, label=""]
+        label="Message buses";
+        graph[style=dotted];
+
+        CommandBus [shape=assembly, label=""]
+        EventBus [shape=assembly, label=""]
+        QueryBus [shape=assembly, label=""]
+
+
+    }
+
+    Client [shape=component, color=9, weight=1, height=2]
 
     "Command Handling Component" -> EventBus [name="event", label="event"]
     EventBus -> "Event Handling Component" [name="event", label="event"]
 
 
-    Client -> CommandBus -> "Command Handling Component" [name="command", label="command"]
-    Client -> QueryBus -> "Query Handling Component" [name="query", label="query"]
+    Client -> CommandBus -> "Command Handling Component" [name="command", label="command", dir=both]
+    Client -> QueryBus -> "Query Handling Component" [name="query", xlabel="query", dir=both]
     Client -> EventBus [name="event", label="event"]
-
 
     // hack to align the UI
     {
