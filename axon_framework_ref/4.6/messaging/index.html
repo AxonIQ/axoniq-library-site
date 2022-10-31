@@ -77,13 +77,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="../index.html">Introduction</a>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../page.html">Another 4.6 page</a>
-  </li>
-</ul>
+    <a class="nav-link" href="../overview.html">High-level overview</a>
   </li>
 </ul>
   </li>
@@ -94,10 +88,49 @@
     <a class="nav-link" href="index.html">Messaging</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="message.html">What is a message</a>
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="messages/messages.html">Messages</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="messages/command_messages.html">Command Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="messages/query_messages.html">Query Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="messages/event_messages.html">Event Messages</a>
+  </li>
+</ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="correlation.html">Message Correlation</a>
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="routing/routing.html">Message Routing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="routing/command_routing.html">Command Routing</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="routing/query_routing.html">Query Routing</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="routing/event_routing.html">Event Routing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="advanced_messaging/index.html">Advanced Messaging</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="advanced_messaging/correlation.html">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <span class="nav-text">Serialization</span>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <span class="nav-text">Interception</span>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -110,10 +143,26 @@
     <a class="nav-link" href="../modeling/index.html">Modeling</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../modeling/aggregate.html">What is an aggregate</a>
+    <a class="nav-link" href="../modeling/aggregate.html">Aggregate</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../modeling/saga.html">What is a saga</a>
+    <a class="nav-link" href="../modeling/saga.html">Saga</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../eventsourcing/index.html">Event Sourcing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <span class="nav-text">Event Store</span>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <span class="nav-text">Snapshots</span>
   </li>
 </ul>
   </li>
@@ -150,8 +199,114 @@
 </aside>
 <article class="doc">
 <h1 class="page">Messaging</h1>
+<div id="preamble">
+<div class="sectionbody">
 <div class="paragraph">
-<p>This module contains all necessary components and building blocks to support command, event and query messaging.</p>
+<p>This module contains all necessary components and building blocks to provide scalable, robust and hassle-free messaging between components.</p>
+</div>
+<div id="axon-arch-diagram" class="imageblock kroki">
+<div class="content">
+<img src="_images/diag-df9020aa52d5be199ca8c700469bbb274e4b6ed2.svg" alt="Messaging in the high-level application architecture">
+</div>
+<div class="title">Figure 1. Messaging in the high-level application architecture</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_requirements"><a class="anchor" href="#_requirements"></a>Requirements</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All communications between distinct components is done via messaging. This approach ensures location transparency. That means one component does not need to know where another component is located. As a result developers and operators can scale and distribute these components as necessary.</p>
+</div>
+<div class="paragraph">
+<p>Messaging is a straightforward concept. A producer creates a payload and packages it in a message. It then sends the message to some message bus which delivers it to a consumer. The consumer unpacks the message, extracts the payload and does something with it.</p>
+</div>
+<div class="paragraph">
+<p>Implementing this concept though is far from simple and straightforward. A robust solution need to consider multiple functional and non-functional requirements. Such as</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>message types and their respective routing patterns</p>
+</li>
+<li>
+<p>message buses</p>
+</li>
+<li>
+<p>metadata</p>
+</li>
+<li>
+<p>correlation</p>
+</li>
+<li>
+<p>serialization</p>
+</li>
+<li>
+<p>error handling</p>
+</li>
+<li>
+<p>transactions</p>
+</li>
+<li>
+<p>&#8230;&#8203;</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_implementation"><a class="anchor" href="#_implementation"></a>Implementation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><mark>TODO</mark></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="messages/messages.html" class="xref page">Messages</a></p>
+</li>
+<li>
+<p><a href="routing/routing.html" class="xref page">Message Routing</a></p>
+</li>
+<li>
+<p><a href="advanced_messaging/index.html" class="xref page">Advanced Messaging</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reference"><a class="anchor" href="#_reference"></a>Reference</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><mark>TODO</mark></p>
+</div>
+<details>
+<summary class="title">Related resources</summary>
+<div class="content">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<tbody>
+<tr>
+<th class="tableblock halign-left valign-top"><p class="tableblock">Maven artifact</p></th>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://search.maven.org/search?q=g:org.axonframework%20and%20a:axon-messaging" class="bare">https://search.maven.org/search?q=g:org.axonframework%20and%20a:axon-messaging</a></p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top"><p class="tableblock">Javadoc</p></th>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://apidocs.axoniq.io/latest/org/axonframework/messaging/package-summary.html" class="bare">https://apidocs.axoniq.io/latest/org/axonframework/messaging/package-summary.html</a></p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top"><p class="tableblock">Source code</p></th>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://github.com/AxonFramework/AxonFramework/tree/master/messaging" class="bare">https://github.com/AxonFramework/AxonFramework/tree/master/messaging</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</div>
 </div>
 </article>
   </div>
