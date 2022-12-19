@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Event Sourcing :: 📚 AxonIQ Library</title>
+    <link rel="prev" href="ddd-cqrs-concepts.html">
+    <link rel="next" href="event-driven-microservices.html">
+    <meta name="generator" content="Antora 3.1.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="../../..">📚 AxonIQ Library</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Explanations</a>
+          <div class="navbar-dropdown">
+                <a class="navbar-item" href="../../../concepts/index.html">Software Development Concepts</a>
+                <a class="navbar-item" href="../../../understanding-axon/index.html">Understanding Axon</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">References</a>
+          <div class="navbar-dropdown">
+                <a class="navbar-item" href="../../../axon_framework_ref/4.6/index.html">Axon Framework</a>
+                <a class="navbar-item" href="../README.html">Axon Legacy Reference Guide</a>
+                <a class="navbar-item" href="../../../axon_server_ref/4.6/index.html">Axon Server</a>
+                <a class="navbar-item" href="../../../axoniq_cloud_ref/latest/index.html">AxonIQ Cloud</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Tutorials</a>
+          <div class="navbar-dropdown">
+                <a class="navbar-item" href="../../../giftcard/4.6/index.html">Axon Framework - from design to deployment</a>
+                <a class="navbar-item" href="../../../as_admin/index.html">Axon Server Administration</a>
+                <a class="navbar-item" href="../../../af_customization/4.6/index.html">Customizing Axon Framework</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">How-to guides</a>
+          <div class="navbar-dropdown">
+                <a class="navbar-item" href="../../../ac_howtos/latest/index.html">AxonIQ Cloud Console How-to Guides</a>
+          </div>
+        </div>
+        <a class="navbar-item" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item" href="https://discuss.axoniq.io" target="_blank">Discuss</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="lagacy_ref_gute" data-version="4.6">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../README.html">Axon Legacy Reference Guide</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../README.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="README.html">Architecture Overview</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="ddd-cqrs-concepts.html">DDD &amp; CQRS Concepts</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="event-sourcing.html">Event Sourcing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="event-driven-microservices.html">Event-Driven Microservices</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../axon-server-introduction.html">Axon Server</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/README.html">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-axon-framework/README.html">Axon Framework</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/rn-axon-framework/rn-af-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/rn-axon-framework/rn-af-minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-axon-server/README.html">Axon Server</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/rn-axon-server/rn-as-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/rn-axon-server/rn-asse-minor-releases.html">Minor Releases Standard Edition</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/rn-axon-server/rn-as-minor-releases.html">Minor Releases Enterprise Edition</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/README.html">Axon Framework Extensions</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-amqp/README.html">AMQP</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-amqp/rn-amqp-major-releases.html">Major Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-cdi/README.html">CDI</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-cdi/rn-cdi-major-releases.html">Major Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-jgroups/README.html">JGroups</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-jgroups/rn-jgroups-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-jgroups/rn-jgroups-minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-kafka/README.html">Kafka</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-kafka/rn-kafka-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-kafka/rn-kafka-minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-kotlin/README.html">Kotlin</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-kotlin/rn-kotlin-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-kotlin/rn-kotlin-experimental-releases.html">Experimental Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-mongo/README.html">Mongo</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-mongo/rn-mongo-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-mongo/rn-mongo-minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-multi-tenancy/README.html">Multi-Tenancy</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-multi-tenancy/rn-multi-tenancy-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-multi-tenancy/rn-multi-tenancy-minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-reactor/README.html">Reactor</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-reactor/rn-reactor-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-reactor/rn-reactor-minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-spring-native/README.html">Spring-Native Cloud</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-spring-native/rn-spring-native-experimental-releases.html">Experimental Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-springcloud/README.html">Spring Cloud</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-springcloud/rn-springcloud-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-springcloud/rn-springcloud-minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-tracing/README.html">Tracing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-tracing/rn-tracing-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../release-notes/rn-extensions/rn-tracing/rn-tracing-minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting Started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../getting-started/quick-start.html">Quick Start</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../axon-framework/introduction.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/messaging-concepts/README.html">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/messaging-concepts/anatomy-message.html">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/messaging-concepts/message-correlation.html">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/messaging-concepts/message-intercepting.html">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/messaging-concepts/supported-parameters-annotated-handlers.html">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/messaging-concepts/exception-handling.html">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/messaging-concepts/unit-of-work.html">Unit of Work</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/README.html">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/modeling/README.html">Modeling</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/modeling/aggregate.html">Aggregate</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/modeling/multi-entity-aggregates.html">Multi-Entity Aggregates</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/modeling/state-stored-aggregates.html">State Stored Aggregates</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/modeling/aggregate-creation-from-another-aggregate.html">Aggregate Creation from another Aggregate</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/modeling/aggregate-polymorphism.html">Aggregate Polymorphism</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/modeling/conflict-resolution.html">Conflict Resolution</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/command-dispatchers.html">Command Dispatchers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/command-handlers.html">Command Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/infrastructure.html">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/axon-framework-commands/configuration.html">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/events/README.html">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/events/event-dispatchers.html">Event Dispatchers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/events/event-handlers.html">Event Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/events/event-processors/README.html">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework/events/event-processors/subscribing.html">Subscribing Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework/events/event-processors/streaming.html">Streaming Event Processors</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/events/event-bus-and-event-store.html">Event Bus &amp; Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/events/event-versioning.html">Event Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/queries/README.html">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/queries/query-processing.html">Query Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/queries/query-dispatchers.html">Query Dispatchers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/queries/query-handlers.html">Query Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/queries/implementations.html">Implementations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/queries/configuration.html">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/sagas/README.html">Sagas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/sagas/implementation.html">Implementation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/sagas/associations.html">Associations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/sagas/infrastructure.html">Infrastructure</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/deadlines/README.html">Deadlines</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/deadlines/deadline-managers.html">Deadline Managers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/deadlines/event-schedulers.html">Event Schedulers</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/testing/README.html">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/testing/commands-events.html">Commands / Events</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/testing/sagas-1.html">Sagas</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../axon-framework/serialization.html">Serialization</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/tuning/README.html">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/tuning/event-snapshots.html">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/tuning/event-processing.html">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/tuning/command-processing.html">Command Processing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework/monitoring/README.html">Monitoring and Metrics</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/monitoring/tracing.html">Distributed Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/monitoring/metrics.html">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/monitoring/health.html">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/monitoring/processors.html">Event Tracker Status</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework/monitoring/message-tracking.html">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../axon-framework/spring-boot-integration.html">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../axon-framework/modules.html">Modules</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Server</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../axon-server/introduction.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/installation/README.html">Installation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/installation/local-installation/README.html">Local Installation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/installation/local-installation/axon-server-se.html">Axon Server SE</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/installation/local-installation/axon-server-ee.html">Axon Server EE</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/installation/docker-k8s/README.html">Docker / K8s</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/installation/docker-k8s/axon-server-se.html">Axon Server SE</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/installation/docker-k8s/axon-server-ee.html">Axon Server EE</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/administration/README.html">Administration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/administration/admin-configuration/README.html">Configuration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/administration/admin-configuration/configuration.html">System Properties</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/administration/admin-configuration/command-line-interface.html">Command Line Interface</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/administration/admin-configuration/rest-api.html">REST API</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/administration/admin-configuration/grpc-api.html">GRPC API</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/administration/monitoring/README.html">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/administration/monitoring/actuator-endpoints.html">Actuator Endpoints</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/administration/monitoring/grpc-metrics.html">gRPC Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/administration/monitoring/heartbeat-monitoring.html">Heartbeat Monitoring</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/administration/clustering.html">Clusters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/administration/replication-groups.html">Replication Groups</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/administration/multi-context.html">Multi-Context</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/administration/tagging.html">Tagging</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/administration/backup-and-messaging-only-nodes.html">Backup and Messaging-only Nodes</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/administration/backups.html">Backups</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/administration/recovery.html">Recovery</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/administration/plugins.html">Plugins</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/administration/logging/README.html">Logging</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-server/administration/logging/logging-format.html">Logging Format</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/administration/error-codes.html">Error Codes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/security/README.html">Security</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/security/ssl.html">SSL</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/security/access-control.html">Access Control</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/security/access-control-se.html">Access Control - Standard Edition</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/security/access-control-ee.html">Access Control - Enterprise Edition</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/security/access-control-clients.html">Access Control - Client Applications</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/security/access-control-cli.html">Access Control - CLI</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/security/access-control-api.html">Access Control - API</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/security/access-control-ldap.html">Access Control - LDAP</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/security/access-control-oauth2.html">Access Control - OAuth 2.0</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/performance/README.html">Performance</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/performance/tuning-event-processing.html">Event Segments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/performance/flow-control.html">Flow Control</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-server/migration/README.html">Migration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/migration/standard-to-enterprise-edition.html">Standard to Enterprise Edition</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-server/migration/non-axon-server-to-axon-server.html">Non-Axon Server to Axon Server</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Extensions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../extensions/spring-amqp.html">Spring AMQP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../extensions/jgroups.html">JGroups</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../extensions/kafka.html">Kafka</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../extensions/kotlin.html">Kotlin</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../extensions/mongo.html">Mongo</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../extensions/reactor/reactor.html">Reactor</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../extensions/reactor/reactive-gateways/reactive-gateways.html">Reactor Gateways</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../extensions/spring-cloud.html">Spring Cloud</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../extensions/tracing.html">Tracing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Appendices</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <span class="nav-text"><a href="/lagacy_ref_gute/4.6/appendices/rdbms-tuning.html" class="xref page">A.
+RDBMS Tuning</a></span>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><a href="/lagacy_ref_gute/4.6/appendices/message-handler-tuning/README.html" class="xref page">B.
+Message Handler Tuning</a></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../appendices/message-handler-tuning/parameter-resolvers.html">Parameter Resolvers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../appendices/message-handler-tuning/handler-enhancers.html">Handler Enhancers</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <span class="nav-text"><a href="/lagacy_ref_gute/4.6/appendices/meta-annotations.html" class="xref page">C.
+Meta Annotations</a></span>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <span class="nav-text"><a href="/lagacy_ref_gute/4.6/appendices/identifier-generation.html" class="xref page">D.
+Identifier Generation</a></span>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <span class="nav-text"><a href="#./appendices/query-reference.md.adoc" class="xref unresolved">E.
+Axon Server Query Language</a></span>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../home/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../README.html">Axon Legacy Reference Guide</a></li>
+    <li><a href="README.html">Architecture Overview</a></li>
+    <li><a href="event-sourcing.html">Event Sourcing</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/azzazzel/axoniq-reference-guide/edit/kramdoc/modules/ROOT/pages/architecture-overview/event-sourcing.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Event Sourcing</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In a traditional way of storing an application&#8217;s state, we capture the current state and store it in some relational or <a href="https://en.wikipedia.org/wiki/NoSQL">NoSQL</a> database.
+While this approach is really straightforward, it does not provide a way of deducing how we got to that current state.
+Of course, one may argue that we can have a separate model for keeping the history of actions that lead to the current state, but besides the additional complexity, these two models could easily go different paths and start being inconsistent</p>
+</div>
+<div class="paragraph">
+<p>Event Sourcing is a way of storing an application&#8217;s state through the history of events that have happened in the past.
+The current state is reconstructed based on the full history of events, where each event represents a change or fact in our application.
+Events give us a single source of truth about what happened in our application.
+It is especially beneficial in applications that need to provide a full audit log to external reviewers.
+The current state is called <em>Materialized state</em> in some resources (see <em>Figure 1</em>).</p>
+</div>
+<div class="imageblock unresolved">
+<div class="content">
+<img src="../.gitbook/assets/materialized-state.jpeg" alt="Events as the source to construct state">
+</div>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s see on an example how Event Sourcing differs from Traditional Storage (see Figure 2).
+In Traditional Storage system we only know that we have ordered a pizza and a cola.
+In Event Sourcing, we see that a user selected a pizza, selected a cola, selected an ice cream and deselected an ice cream.
+Information about selection/deselection of an ice cream is not present in Traditional Storage.
+With Event Sourcing we can reason about why a user deselected an ice cream, was the price too high, or some other reason.
+The point is that we didn&#8217;t lose that information and we can benefit from it in various ways.
+Later on we can see that a user confirmed the order.</p>
+</div>
+<div class="imageblock unresolved">
+<div class="content">
+<img src="../.gitbook/assets/tradvseventsourcing.png" alt="Traditional Storage v/s Event Sourcing">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_event_store"><a class="anchor" href="#_event_store"></a>Event Store</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Event Sourcing require an Event Store to store events.
+Since events are not to be modified (an event is a fact that something happened and facts cannot be modified), an Event Store should be optimized for appends.
+Event ordering plays a really important role in event-sourced systems - as many times as we are reconstructing our materialized state, we want to arrive at the same result.</p>
+</div>
+<div class="paragraph">
+<p><a href="../axon-server-introduction.html" class="xref page">Axon Server</a>is the default choice within Axon and it offers an <em>*enterprise grade*</em> <em>*purpose-built event store*</em> which is highly optimized for storing/retrieving events.
+The Server is available as a Standard Edition or an Enterprise Edition.</p>
+</div>
+<div class="paragraph">
+<p>Alternatively, the Axon Framework provides support for an RDBMS or a NoSQL database as an Event Store.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_event_sourcing_and_cqrs"><a class="anchor" href="#_event_sourcing_and_cqrs"></a>Event Sourcing and CQRS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Event Sourcing is a natural fit with <a href="https://axoniq.io/resources/cqrs">CQRS</a>.
+Typically, the command model in a CQRS based architecture is not stored, other than by its sequence of events.
+The query model is continuously updated to contain a certain representation of the current state, based on these same events.</p>
+</div>
+<div class="paragraph">
+<p>Instead of reconstructing the entire command model state, which would be a lengthy process, we separate the model in aggregates;
+parts of the model that need to be strongly consistent.
+This separation in aggregates makes models easier to reason about, more adaptable to change, and more importantly, it makes applications more scalable.</p>
+</div>
+<div class="imageblock unresolved">
+<div class="content">
+<img src="../.gitbook/assets/cqrs.jpg" alt="CQRS Concept">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_benefits"><a class="anchor" href="#_benefits"></a>Benefits</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A summary of the benefits of Event Sourcing are listed below</p>
+</div>
+<div class="paragraph">
+<p><em>Naturalized Audit Trail</em></p>
+</div>
+<div class="paragraph">
+<p>In order to comply with certain regulations, it is required from a software system to provide a full audit log.
+Event-sourced systems give us exactly that, full audit log and we don&#8217;t have to provide any additional information to the reviewer.
+One additional report that is built up from the event stream and we&#8217;re ready to go.</p>
+</div>
+<div class="paragraph">
+<p><em>Analytics</em></p>
+</div>
+<div class="paragraph">
+<p>The full history of interactions with our application is stored in the Event Store.
+We could apply various machine learning algorithms to extract information from these interactions that matter to our business.</p>
+</div>
+<div class="paragraph">
+<p><em>Design Flexibility</em></p>
+</div>
+<div class="paragraph">
+<p>Agile approach to building software systems requires that we should be able to adapt to any change coming along the way.
+Ability to replay the event stream from the beginning of time with new business logic means that we don&#8217;t have to worry about decisions we make (apart from which events are important to be stored), we can always fix the behaviour later.
+Introducing new views to our event stream means adding a new component with event listeners to the solution.</p>
+</div>
+<div class="paragraph">
+<p><em>Temporal Reports</em></p>
+</div>
+<div class="paragraph">
+<p>We all know how difficult it is to investigate an incident that happened in production.
+It requires a lot of logs digging and reasoning about the state that the system was at that point in time.
+Event sourcing gives us a way to replay events to a certain point in time and debug the application in a state in which the incident occurred.
+We don&#8217;t have to worry about whether we put the correct log level or whether we logged all necessary paths to figure the incident out.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_conclusion"><a class="anchor" href="#_conclusion"></a>Conclusion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In software systems where our business can benefit from the history of events that had happened Event Sourcing comes as a natural solution.
+One of the key benefits of Event Sourcing is evolvability of software systems - when we discover a new reporting component that needs to be added, we can just write it up, replay historic events to it and have it running.
+This is highly beneficial in blue-green deployments when zero downtime is enforced.</p>
+</div>
+<div class="paragraph">
+<p>Integration with external systems can be done using events.
+In such scenarios, events are our API and external system must understand them.
+Of course, we might not publish all events to the integration event hub, only ones that are <em>publicly important</em>.</p>
+</div>
+<div class="paragraph">
+<p><em>* If we are applying CQRS (Command Query Responsibility Segregation) practices, we could rebuild our command model and query model as well</em></p>
+</div>
+<div class="paragraph">
+<p><a href="../axon-server-introduction.html" class="xref page">Axon Server</a> provides an easy way to start up and scale event-sourced Java applications.</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="ddd-cqrs-concepts.html">DDD &amp; CQRS Concepts</a></span>
+  <span class="next"><a href="event-driven-microservices.html">Event-Driven Microservices</a></span>
+</nav>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://developer.axoniq.io/axon-framework/overview">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://developer.axoniq.io/axon-server/overview">Axon Server Standard</a></li>
+          <li><a class="ext" target="_blank" href="https://developer.axoniq.io/axon-server-enterprise/overview">Axon Server Enterprise</a></li>
+          <li><a class="ext" target="_blank" href="https://developer.axoniq.io/axoniq-cloud/overview">AxonIQ Cloud</a></li>
+          <li><a class="ext" target="_blank" href="https://developer.axoniq.io/axon-data-protection/overview">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/"> Client Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://developer.axoniq.io/">AxonIQ Developer Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+          <li><a class="ext" target="_blank" href="https://start.axoniq.io/">AxonIQ Initializr</a></li>
+          <li><a class="ext" target="_blank" href="https://console.cloud.axoniq.io">AxonIQ Cloud</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
