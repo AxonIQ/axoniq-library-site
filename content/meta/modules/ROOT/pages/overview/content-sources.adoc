@@ -1,0 +1,94 @@
+= Content Sources
+
+Content sources are the locations where the site builder finds the content to include in the website. Please refer to https://docs.antora.org/antora/latest/organize-content-files/[Antora's documentation] for more information.
+
+== AxonIQ Library convention
+
+Before adding new ones or making any changes to existing content sources, please take time to understand the convention you need to comply with.
+
+=== Generic content sources
+
+The https://github.com/AxonIQ/axoniq-library-site[documentation website repository] contains content sources for all the generic topics. Every folder under the `content` folder is a content source as specified by the following configuration in `playbook.yaml` and `playbook-dev.yaml` files.
+
+[source, yaml]
+----
+  - url: .
+    start_paths: content/*
+----
+
+=== Project-specific content sources
+
+Each project manages its own set of content sources. By convention, the location for those is the `docs` folder in the root of the three. The exception is the `docs/_playbook` folder which contains the playbooks to build the project's documentation independently of AxonIQ Library.
+
+For every such project, there is a respective entry in the playbooks. The example below shows the record for Axon Framework in `playbook-dev.yaml`.
+
+[source, yaml]
+----
+  - url: .
+    start_paths: ['localLinks/AxonFramework/docs/*', '!localLinks/AxonFramework/docs/_playbook']
+----
+
+The project's content sources must follow the tree structure, rules, and conventions. The following listing shows how a project applies to those.
+
+[listing]
+----
+📒 Project
+  📒 ...
+  📂 docs <.>
+    📁 _playbook <.>
+      📄 playbook.yaml
+    📂 source-one <.>
+      📄 antora.yml <.>
+      📂 modules <.>
+        📂 ROOT <.>
+          📁 pages <.>
+            📄 ...
+            📄 ...
+          📁 ...
+        📂 ...<.>
+    📁 ... <.>
+  📒 ...
+----
+<.> The `docs` folder on the top level containing all content sources
+<.> An optional `_playbook` folder for project-specific playbooks
+<.> The `source-one` folder contains the first content source
+<.> The `antora.yml` file contains the configuration for the first content source
+<.> The `modules` folder contains all modules for the content source
+<.> The required `ROOT` module for the content source
+<.> The `pages` folder contains the content files
+<.> More modules following the same folder structure as in the `ROOT` folder
+<.> More content sources following the same folder structure as in the `source-one` folder
+
+== Adding a content source
+
+How one adds a new content source depends on the source's location and the existing configuration.
+
+=== Adding a generic content source
+
+As generic content sources are already configured in the website project, adding a new one is a matter of creating a new folder under the `content` folder. Follow the folder structure from any existing content source, configure the `antora.yml` accordingly, and add content to the `pages` folder in the desired modules.
+
+=== Adding a project content source
+
+If AxonIQ Library's playbook already contains an entry for the project, the rule is identical to the one for generic content sources. Create a new folder in the project's `docs` folder, recreate the expected folder structure, configure the `antora.yml` file accordingly, and start adding content.
+
+==== Configuring new project
+
+If the project is not yet in AxonIQ Library's playbook, you must add it. You must edit both `playbook.yaml` and `playbook-dev.yaml` files and add the respective entries specifying the project's Git repository location.
+
+For `playbook-dev.yaml`, you must add something like the following.
+
+[source, yaml]
+----
+  - url: .
+    start_paths: ['localLinks/ProjectName/docs/*', '!localLinks/ProjectName/docs/_playbook']
+----
+
+Then create a symlink from `localLinks/ProjectName` to the folder with your local clone of that repository.
+
+For `playbook.yaml`, you must add something like the following.
+
+[source, yaml]
+----
+  - url: https://github.com/ORG-NAME/REPO-NAME.git
+    start_paths: ['docs/*', '!docs/playbook']
+----

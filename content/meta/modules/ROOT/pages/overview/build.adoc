@@ -1,0 +1,105 @@
+= Build AxonIQ Library
+
+Below are the steps to aggregate all content from all sources and produce the final static website for AxonIQ Library.
+
+== Install required tools
+
+ * Install Antora by following the https://docs.antora.org/antora/latest/install/install-antora/[instructions relevant to your system].
+ * Install Vale by following the https://vale.sh/docs/vale-cli/installation/[instructions relevant to your system].
+
+
+== Get the website source code
+
+Start by cloning the https://github.com/AxonIQ/axoniq-library-site[documentation website repository] using your favorite Git client. A command line, as the one below, works too.
+
+[source,console]
+----
+$ git clone git@github.com:AxonIQ/axoniq-library-site.git
+----
+
+You can give the local folder whatever name you wish but this document refers to it as `axoniq-library-site`. The code in this project is responsible for generating the AxonIQ Library website. What content the site generator includes and where it gets it from depends on the https://docs.antora.org/antora/latest/playbook/[playbook] file used. In the codebase, there are two playbooks:
+
+ * `playbook.yaml` - this is the production build playbook
+ * `playbook-dev.yaml` - this is the playbook configured for building a local development version of the site
+
+IMPORTANT: You should not need to change any of those files. In the rare cases when you may need to, *change both accordingly* to ensure identical results in both environments.
+
+[.no-prose-lint]
+== Install Vale packages
+
+The prose linter uses rules from third parties distributed via https://vale.sh/hub/[Vale's Package Hub]. To install those packages, run the following command in the `axoniq-library-site` folder.
+
+[source,console]
+----
+$ vale sync
+----
+
+== Build with production configuration
+
+You may want to build AxonIQ Library locally with the production configuration to ensure you have the all tooling in place and properly configured. To do so, go to the `axoniq-library-site` folder and run the following command.
+
+[source,console]
+----
+$ npx antora playbook.yaml
+----
+
+The above uses the `playbook.yaml`, where the locations of the content sources are remote Git repositories. Therefore the build may take a while as the site generator needs to fetch all remote repositories containing content sources.
+
+== Build with local development configuration
+
+In the `playbook-dev.yaml`, the locations of the content sources are the local Git clones of the respective projects. Thus users need to configure the correct locations for their local machines. The configuration relies on symlinks in a dedicated folder named `localLinks`. This way, `playbook-dev.yaml` doesn't need to change per user.
+
+
+=== Configure content sources
+
+When you first clone the repository, the `axoniq-library-site/localLinks` folder should be empty. You need to create the respective symlinks to the local Git clones of the projects containing content sources. It is best to explain with an example. Consider the following fragment from `playbook-dev.yaml`.
+
+[source, yaml]
+----
+  - url: .
+    start_paths: ['localLinks/AxonFramework/docs/*', '!localLinks/AxonFramework/docs/playbook']
+----
+
+The site builder thus expects all folders located under `axoniq-library-site/localLinks/AxonFramework/docs` except `axoniq-library-site/localLinks/AxonFramework/docs/playbook` are content sources.
+
+Let's assume your local Git clone of Axon Framework is in the `~/work/axon-framework/` folder. Thus the actual path to the content sources on your machine is `~/work/axon-framework/docs`. To satisfy the site builder's expectations, you must create a symlink `axoniq-library-site/localLinks/AxonFramework` that points to `~/work/axon-framework/`. On Linux and Mac OS you can do so with the following command.
+
+[source,console]
+----
+$ cd axoniq-library-site/localLinks
+$ ln -s ~/work/axon-framework/ AxonFramework
+----
+
+==== Mixing content sources
+
+It is possible that you don't have local clones of all repositories containing content sources. If you don't want to clone more projects than you work on, you can create a custom playbook and mix the sources configuration. The process is simple
+
+ * make a copy of `playbook-dev.yaml`. For this document let's assume the new name is `my-playbook.yaml`
+ * add `my-playbook.yaml` to `.gitignore`
+ * create the symlinks for the repositories you have local clones
+ * edit the `sources` section of `my-playbook.yaml` and replace each entry for which you don't have a local clone with the equivalent from the `playbook.yaml` file
+
+The following fragment shows a mixed configuration.
+
+[source, yaml]
+----
+  - url: .
+    start_paths: ['localLinks/AxonFramework/docs/*', '!localLinks/AxonFramework/docs/playbook']
+  - url: https://github.com/AxonIQ/giftcard-demo.git
+    start_paths: ['docs/*', '!docs/playbook']
+----
+
+In this playbook, Axon Framework's content sources come from a local clone, while the `giftcard-demo` project's content sources come from a remote repository
+
+CAUTION: When you use a custom playbook outside version control, you will have to monitor `playbook-dev.yaml` and manually apply any changes to your custom playbook.
+
+=== Build
+
+To build AxonIQ Library locally with the development configuration, go to the `axoniq-library-site` folder and run Antora with the desired playbook.
+
+[source,console]
+----
+$ npx antora playbook-dev.yaml
+----
+
+The above uses the `playbook-dev.yaml`. You can of course, use `my-playbook.yaml` or any other instead.
