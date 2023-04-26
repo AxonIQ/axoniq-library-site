@@ -45,6 +45,32 @@ $ npx antora playbook.yaml
 
 The above uses the `playbook.yaml`, where the locations of the content sources are remote Git repositories. Therefore the build may take a while as the site generator needs to fetch all remote repositories containing content sources.
 
+=== Access to private repositories
+
+Some of the content sources are private repositories that needs authentication. If you are not an AxonIQ employee or trusted collaborator you likely don't have access to those. In such case you can still build a bigger part of the AxonIQ Library locally by making a copy of `playbook.yaml` and removing all the private content sources.
+
+If you are a member of the https://github.com/AxonIQ[AxonIQ Organization on GitHub], you need to grant the build tool access to private repositories. To do so, you need to create a Personal Access Token (PAT).
+
+ - log in to GitHub
+ - go to menu:Settings[Developer settings > Personal access tokens > https://github.com/settings/tokens?type=beta[Fine-grained personal access tokens]]  page and create a new PAT
+ - in `Resource owner` select `AxonIQ`
+ - in `Repository access` select `All repositories`
+ - in `Repository permissions` select *read-only* access to `Contents` and `Metadata`
+ - save the PAT and wait for AxonIQ Organizations admins to approve it
+
+Then you need to configure Git to use the PAT. Create or edit the `~/.git-credentials` file and add the following line
+
+[source]
+----
+https://<USER_NAME>:<ACCEESS_TOKEN>@github.com
+----
+
+Replace `<USER_NAME>` with your user name and `<ACCEESS_TOKEN>` with the full PAT you created __(starting with `github_pat_`)__.
+With that in place you should be able to fetch content from private repositories and build the AxonIQ Library locally from the production playbook.
+
+TIP: For alternative ways to configure access to content sources check Antora's https://docs.antora.org/antora/latest/playbook/private-repository-auth/[Private Repository Authentication] page
+
+
 == Build with local development configuration
 
 In the `playbook-dev.yaml`, the locations of the content sources are the local Git clones of the respective projects. Thus users need to configure the correct locations for their local machines. The configuration relies on symlinks in a dedicated folder named `localLinks`. This way, `playbook-dev.yaml` doesn't need to change per user.
