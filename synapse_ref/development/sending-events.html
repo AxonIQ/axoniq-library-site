@@ -191,43 +191,40 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Synapse provides three ways to send events to Axon Server:</p>
+<p>Any application that can not connect directly to Axon Server can still send events to it through Axon Synapse&#8217;s HTTP APIs. This document explains the three ways to do so.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>an endpoint <code>/v1/context/[contextName]/events/[eventName]</code> (raw endpoint), where the content of the HTTP request is the payload of the event. All the other optional properties can be provided through HTTP headers.</p>
-</li>
-<li>
-<p>an endpoint <code>/v1/context/[contextName]/events</code> (message endpoint), where the content of the HTTP request is a JSON message containing all the information for one event.</p>
-</li>
-<li>
-<p>an endpoint <code>/v1/context/[contextName]/events</code> (list-of-messages endpoint), where the content of the HTTP request is a list of JSON messages each element containing all the information for one event.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>The difference between the second and third form is in the content type provided. For the message endpoint this is <code>`
-application/json</code>,
-for the list of messages it is <code>application/vnd.axoniq.event.list+json</code>.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You can only pass <code>metaData</code> using the <code>http-message</code> or <code>http-list-of-messages</code> endpoints. The <code>http-raw</code> endpoint doesn&#8217;t provide a way to do so.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_raw_endpoint"><a class="anchor" href="#_raw_endpoint"></a>Raw endpoint</h2>
+<h2 id="_the_http_raw_endpoint"><a class="anchor" href="#_the_http_raw_endpoint"></a>The <code>http-raw</code> endpoint</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The raw endpoint has the following required headers:</p>
+<p>The <code>http-raw</code> endpoint URL path follows the`/v1/context/[contextName]/events/[eventName]` pattern. The content of the HTTP request is the serialized event. The sender may provide additional information through HTTP headers.</p>
+</div>
+<div class="paragraph">
+<p>There is one required header:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Content-Type: the serialization type for the context</p>
+<p><code>Content-Type</code>: the serialization type for the context</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>It has the following optional headers:</p>
+<p>The following headers are optional:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -246,11 +243,11 @@ for the list of messages it is <code>application/vnd.axoniq.event.list+json</cod
 </ul>
 </div>
 <div class="paragraph">
-<p>A sample event:</p>
+<p>The code below represents a sample request to the <code>http-raw</code> endpoint sending a <code>local.application.client.Event</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-http hljs" data-lang="http">POST http://synapse:8080/v1/contexts/default/queries/local.application.client.Event
+<pre class="highlightjs highlight"><code class="language-http hljs" data-lang="http">POST http://synapse:8080/v1/contexts/default/events/local.application.client.Event
 Content-Type: application/json
 AxonIQ-AggregateId: 901aa5ce-b281-4788-97f2-2be7f236dde6
 AxonIQ-AggregateType: Aggregate
@@ -264,16 +261,18 @@ AxonIQ-DateTime: 2022-09-22T21:37:00.000+00:00
 </div>
 </div>
 <div class="paragraph">
-<p>This sends the JSON body as an event to Axon Server. It will be stored in the event store in the <code>default</code> context as this is specified in the URL of the request.</p>
+<p>When Axon Synapse processes this HTTP request, it publishes an event to the Axon Server on behalf of the client application. Axon Server stores the event in the <code>default</code> context of the event store as specified in the request&#8217;s URL.</p>
+</div>
+<div class="paragraph">
+<p>For more details about the <code>http-raw</code> endpoint, please refer to the <a href="openapi/synapse.html#tag/events/operation/publishEvent" class="xref page">Publish Event API docs</a>.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_message_endpoint"><a class="anchor" href="#_message_endpoint"></a>Message endpoint</h2>
+<h2 id="_the_http_message_endpoint"><a class="anchor" href="#_the_http_message_endpoint"></a>The <code>http-message</code> endpoint</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The message endpoint expects a JSON message with all the information for the event.
-The same request as above now in <code>message</code> form:</p>
+<p>The <code>http-message</code> endpoint URL path follows the`/v1/context/[contextName]/events` pattern. The content of the HTTP request is a JSON message containing all the information for a single event. Below is the above request in <code>http-message</code> form.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -294,35 +293,18 @@ Content-Type: application/json
 </div>
 </div>
 <div class="paragraph">
-<p>The message contains more optional fields:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>aggregateId</code></p>
-</li>
-<li>
-<p><code>aggregateType</code></p>
-</li>
-<li>
-<p><code>sequenceNumber</code></p>
-</li>
-<li>
-<p><code>dateTime</code></p>
-</li>
-<li>
-<p><code>metaData</code></p>
-</li>
-</ul>
+<p>The JSON payload may contain additional optional fields such as <code>metaData</code>. Again when Axon Synapse receives such an HTTP request, it publishes an event to Axon Server on behalf of the client application, which stores it in the <code>default</code> context.</p>
 </div>
 <div class="paragraph">
-<p><em>list of messages endpoint</em></p>
+<p>For more details about the <code>http-message</code> endpoint, please refer to the <a href="openapi/synapse.html#tag/events/operation/publishEventMessage" class="xref page">Publish Event Message API docs</a> <em>(select <code>application/json</code> request body schema)</em>.</p>
 </div>
-<div class="paragraph">
-<p>This is similar to the normal <em>messages</em> endpoint, except that it expects a slightly different input message. The input message contains an <em>items</em> element which is a list of events.</p>
 </div>
+</div>
+<div class="sect1">
+<h2 id="_the_http_list_of_messages_endpoint"><a class="anchor" href="#_the_http_list_of_messages_endpoint"></a>The <code>http-list-of-messages</code> endpoint</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>A same request in <em>list of messages</em> form:</p>
+<p>This is technically the same endpoint as <code>http-message</code> one above. It uses the same URL path pattern of <code>/v1/context/[contextName]/events</code>. The difference is in the content type. While for the <code>http-message</code>, it&#8217;s <code>application/json</code>, and for the <code>http-list-of-messages</code>, it&#8217;s <code>application/vnd.axoniq.event.list+json</code>. This content type indicates the JSON payload is a list <em>(named <code>items</code>)</em> of events instead of a single event. Below is a sample request in <code>http-list-of-messages</code> form.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -358,7 +340,10 @@ Content-Type: application/vnd.axoniq.event.list+json
 </div>
 </div>
 <div class="paragraph">
-<p>You can only pass metaData using the <code>message</code> or <code>list of messages</code> endpoint, it is not supported for <code>raw</code> endpoints.</p>
+<p>When Axon Synapse receives such an HTTP request, it publishes the event to Axon Server on behalf of the client application.</p>
+</div>
+<div class="paragraph">
+<p>For more details about the <code>http-list-of-messages</code> endpoint, please refer to the <a href="openapi/synapse.html#tag/events/operation/publishEventMessage" class="xref page">Publish Event Message API docs</a> <em>(select <code>application/vnd.axoniq.event.list+json</code> request body schema)</em>.</p>
 </div>
 </div>
 </div>

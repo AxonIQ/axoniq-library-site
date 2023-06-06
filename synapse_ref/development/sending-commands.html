@@ -191,55 +191,66 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Synapse provides two ways to send a command to a command handler:</p>
+<p>Any application that can not connect directly to Axon Server can still send commands through Axon Synapse&#8217;s HTTP APIs. This document explains the two ways to do so.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>an endpoint <code>/v1/context/[contextName]/commands/[commandName]</code> (raw endpoint), where the content of the HTTP request is the payload of the command. All the other optional properties can be provided through HTTP headers.</p>
-</li>
-<li>
-<p>an endpoint <code>/v1/context/[contextName]/commands</code> (message endpoint), where the content of the HTTP request is a JSON message containing all the information for the command.</p>
-</li>
-</ul>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Axon Server routes commands based on a routing key in the request. If multiple handlers exist for the same command, Axon Server sends requests with the same routing key to the same handler. Command handlers often rely on the routing consistency provided by routing keys to cache data between requests.
+</td>
+</tr>
+</table>
 </div>
-<div class="paragraph">
-<p>Axon Server routes commands based on a routing key in the request. If there are multiple handlers for the same command, Axon Server sends requests with the same routing key to the same handler. This can be used in the command handlers to do caching.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You can only pass <code>metaData</code> using the <code>http-message</code> endpoint. The <code>http-raw</code> endpoint doesn&#8217;t provide a way to do so.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_raw_endpoint"><a class="anchor" href="#_raw_endpoint"></a>Raw endpoint</h2>
+<h2 id="_the_http_raw_endpoint"><a class="anchor" href="#_the_http_raw_endpoint"></a>The <code>http-raw</code> endpoint</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The raw endpoint has the following required headers:</p>
+<p>The <code>http-raw</code> endpoint URL path follows the`/v1/context/[contextName]/commands/[commandName]` pattern. The content of the HTTP request is the serialized command. The sender may provide additional information through HTTP headers.</p>
+</div>
+<div class="paragraph">
+<p>There is one required header:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Content-Type: the serialization type for the context</p>
+<p><code>Content-Type</code>: the serialization type for the context</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>It has the following optional headers:</p>
+<p>The following headers are optional:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>AxonIQ-PayloadType: defines the type of the payload, if this is not set, Synapse will use the command name as the
-payload type</p>
+<p><code>AxonIQ-PayloadType</code>: defines the type of the payload <em>(if missing, the command name as the payload type)</em></p>
 </li>
 <li>
-<p>AxonIQ-Priority: priority of the request, default 0, higher value means higher priority</p>
+<p><code>AxonIQ-Priority</code>: priority of the request <em>(default is 0, a higher value means higher priority)</em></p>
 </li>
 <li>
-<p>AxonIQ-RoutingKey: the key used for routing, if not specified Synapse will add a generated routing key to the request</p>
+<p><code>AxonIQ-RoutingKey</code>: the key used for routing (auto-generated if missing)
+The code below represents a sample request to the <code>http-raw</code> endpoint sending an <code>io.axoniq.demo.giftcard.api.IssueCardCommand</code>.</p>
 </li>
 </ul>
-</div>
-<div class="paragraph">
-<p>A sample command:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -253,8 +264,10 @@ Content-Type: application/xml
 </div>
 </div>
 <div class="paragraph">
-<p>This sends the XML body as a command to a handler for the <code>io.axoniq.demo.giftcard.api.IssueCardCommand</code> in the `
-default` context.</p>
+<p>When Axon Synapse processes this HTTP request, it sends the command to Axon Server on behalf of the client application. Axon Server then delegates the command to a command handler registered in the <code>default</code> context.</p>
+</div>
+<div class="paragraph">
+<p>For more details about the <code>http-raw</code> endpoint, please refer to the <a href="openapi/synapse.html#tag/commands/operation/sendCommand" class="xref page">Send Command API docs</a>.</p>
 </div>
 </div>
 </div>
@@ -262,8 +275,7 @@ default` context.</p>
 <h2 id="_message_endpoint"><a class="anchor" href="#_message_endpoint"></a>Message endpoint</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The message endpoint expects a JSON message with all the information for the command.
-The same request as above now in <code>message</code> form:</p>
+<p>The <code>http-message</code> endpoint URL path follows the`/v1/context/[contextName]/commands` pattern. The content of the HTTP request is a JSON message containing all the information for a single command. Below is the above request in <code>http-message</code> form.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -277,29 +289,17 @@ Content-Type: application/json
 </div>
 </div>
 <div class="paragraph">
-<p>The message contains more optional fields:</p>
+<p>The message may contain additional optional fields like <code>payloadType</code>, <code>routingKey</code>, <code>priority</code>, and <code>metaData</code>.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>payloadType</code></p>
-</li>
-<li>
-<p><code>routingKey</code></p>
-</li>
-<li>
-<p><code>priority</code></p>
-</li>
-<li>
-<p><code>metaData</code>, a JSON object with fields with string values</p>
-</li>
-</ul>
-</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
 <div class="paragraph">
-<p>You can only pass metaData using the <code>message</code> endpoint, it is not supported for <code>raw</code> endpoints.</p>
-</div>
-<div class="paragraph">
-<p>If the handler expects a JSON serialized payload the request would be:</p>
+<p>The serialization format of the query object must match the serialization the query handler expects. Even though the HTTP payload is JSON, if the query handler expects XML, the payload must be XML. If the handler expects a JSON serialized payload, the request would be:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -314,6 +314,13 @@ Content-Type: application/json
   "name": "io.axoniq.demo.giftcard.api.IssueCardCommand"
 }</code></pre>
 </div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>For more details about the <code>http-raw</code> endpoint, please refer to the <a href="openapi/synapse.html#tag/commands/operation/sendCommandMessage" class="xref page">Send Command Message API docs</a>.</p>
 </div>
 </div>
 </div>

@@ -191,60 +191,70 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Synapse provides two ways to send a query to a query handler:</p>
+<p>Any application that can not connect directly to Axon Server can still send queries to it through Axon Synapse&#8217;s HTTP APIs. This document explains the two ways to do so.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>an endpoint <code>/v1/context/[contextName]/queries/[queryName]</code> (raw endpoint), where the content of the HTTP request is the
-payload of the query. All the other optional properties can be provided through HTTP headers.</p>
-</li>
-<li>
-<p>an endpoint <code>/v1/context/[contextName]/queries</code> (message endpoint), where the content of the HTTP request is a JSON
-message containing all the information for the query.</p>
-</li>
-</ul>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Axon Synapse only supports request-response queries. It&#8217;s unable to take care of scatter-gather and subscription queries at this
+moment.
+</td>
+</tr>
+</table>
 </div>
-<div class="paragraph">
-<p>Synapse only supports request-response queries, scatter-gather and subscription queries are not supported at this
-moment.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You can only pass <code>metaData</code> using the <code>http-message</code> endpoint. The <code>http-raw</code> endpoint doesn&#8217;t provide a way to do so.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_raw_endpoint"><a class="anchor" href="#_raw_endpoint"></a>Raw endpoint</h2>
+<h2 id="_the_http_raw_endpoint"><a class="anchor" href="#_the_http_raw_endpoint"></a>The <code>http-raw</code> endpoint</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The raw endpoint has the following required headers:</p>
+<p>The <code>http-raw</code> endpoint URL path follows the`/v1/context/[contextName]/queries/[queryName]` pattern. The content of the HTTP request is the serialized query. The sender may provide additional information through HTTP headers.</p>
+</div>
+<div class="paragraph">
+<p>There is one required header:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Content-Type: the serialization type for the context</p>
+<p><code>Content-Type</code>: the serialization type for the context</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>It has the following optional headers:</p>
+<p>The following headers are optional:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>AxonIQ-PayloadType: defines the type of the payload, if this is not set, Synapse will use the command name as the
-payload type</p>
+<p><code>AxonIQ-PayloadType</code>: defines the type of the payload <em>(if missing, the command name is the payload type)</em></p>
 </li>
 <li>
-<p>AxonIQ-ResponseType: the expected response type. This is required when the handler is implemented in an Axon Framework
-application</p>
+<p><code>AxonIQ-ResponseType</code>: the expected response type (required when the handler uses Axon Framework)</p>
 </li>
 <li>
-<p>AxonIQ-ResponseCount: use MULTIPLE to indicate that the query handler can return multiple instances of the response
+<p><code>AxonIQ-ResponseCount</code>: use MULTIPLE to indicate that the query handler can return multiple instances of the response
 type</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>A sample query:</p>
+<p>The code below represents a sample request to the <code>http-raw</code> endpoint sending an <code>io.axoniq.demo.giftcard.api.FetchCardSummariesQuery</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -260,18 +270,18 @@ AxonIQ-ResponseCount: MULTIPLE
 </div>
 </div>
 <div class="paragraph">
-<p>This sends the XML body as a query to a handler for the <code>io.axoniq.demo.giftcard.api.FetchCardSummariesQuery</code> in the `
-default` context.
-It expects a list of zero or more <code>io.axoniq.demo.giftcard.api.CardSummary</code> elements.</p>
+<p>When Axon Synapse processes this HTTP request, it sends the query to Axon Server on behalf of the client application. Axon Server then delegates the query to a query handler registered in the <code>default</code> context. When the handler responds with a zero or more <code>io.axoniq.demo.giftcard.api.CardSummary</code> objects, Axon Synapse serializes the payload and sends it back in the response payload of the HTTP request.</p>
+</div>
+<div class="paragraph">
+<p>For more details about the <code>http-raw</code> endpoint, please refer to the <a href="openapi/synapse.html#tag/queries/operation/query" class="xref page">Send Query API docs</a>.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_message_endpoint"><a class="anchor" href="#_message_endpoint"></a>Message endpoint</h2>
+<h2 id="_the_http_message_endpoint"><a class="anchor" href="#_the_http_message_endpoint"></a>The <code>http-message</code> endpoint</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The message endpoint expects a JSON message with all the information for the command.
-The same request as above now in <code>message</code> form:</p>
+<p>The <code>http-message</code> endpoint URL path follows the`/v1/context/[contextName]/queries` pattern. The content of the HTTP request is a JSON message containing all the information for a single query. Below is the above request in <code>http-message</code> form.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -286,23 +296,17 @@ Content-Type: application/json
 </div>
 </div>
 <div class="paragraph">
-<p>The message contains more optional fields:</p>
+<p>The message may contain additional optional fields like <code>payloadType</code> and <code>metaData</code>. You can use the <code>payloadType</code> field to specify the payload type in cases where the query name doesn&#8217;t equal the payload type for the query message.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>payloadType</code></p>
-</li>
-<li>
-<p><code>metaData</code>, a JSON object with fields with string values</p>
-</li>
-</ul>
-</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
 <div class="paragraph">
-<p>You can only pass metaData using the <code>message</code> endpoint, it is not supported for <code>raw</code> endpoints. The <code>payloadType</code> field can be used to specify the type of the payload in cases where the query name is not equal to the payload type for the query message.</p>
-</div>
-<div class="paragraph">
-<p>If the handler expects a JSON serialized payload the request would be:</p>
+<p>The serialization format of the query object must match the serialization the query handler expects. Even though the HTTP payload is JSON, if the query handler expects XML, the payload must be to XML. If the handler expects a JSON serialized payload, the request would be:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -318,6 +322,13 @@ Content-Type: application/json
   "responseType": "io.axoniq.demo.giftcard.api.CardSummary"
 }</code></pre>
 </div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>For more details about the <code>http-raw</code> endpoint, please refer to the <a href="openapi/synapse.html#tag/queries/operation/queryMessage" class="xref page">Send Query Message API docs</a>.</p>
 </div>
 </div>
 </div>

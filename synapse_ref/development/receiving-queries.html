@@ -191,29 +191,20 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>A query handler can be any service that can be invoked using a URL. Synapse can send queries in two ways:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>query payload as HTTP body (raw), other information may be passed in headers</p>
-</li>
-<li>
-<p>query as a JSON message (message), the JSON message includes additional information which would be passed as headers
-in the raw form.</p>
-</li>
-</ul>
+<p>Any service available at an accessible URL can be a query handler. Synapse can send events to such services via HTTP requests. The service must be able to handle requests containing queries and respond to them.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_raw_endpoint"><a class="anchor" href="#_raw_endpoint"></a>Raw endpoint</h2>
+<h2 id="_endpoint_types"><a class="anchor" href="#_endpoint_types"></a>Endpoint types</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>This type of query handler endpoint gets the query payload as the body of the message.</p>
+<p>Axon Synapse can send HTTP requests containing queries in two different ways. Each endpoint that registers as a query handler must support one of them.</p>
 </div>
+<div class="sect2">
+<h3 id="_http_raw"><a class="anchor" href="#_http_raw"></a><code>http-raw</code></h3>
 <div class="paragraph">
-<p>It gets the following HTTP headers:</p>
+<p>Axon Synapse serializes a single query directly into the HTTP request&#8217;s body when interacting with <code>http-raw</code> endpoints. It provides all other relevant information in the HTTP headers of the request:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -231,52 +222,78 @@ in the raw form.</p>
 </li>
 </ul>
 </div>
+<div class="paragraph">
+<p>Please refer to the <a href="openapi/client-raw.html#operation/handleQuery" class="xref page">API documentation</a> for detailed information about the HTTP request structure.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_http_message"><a class="anchor" href="#_http_message"></a><code>http-message</code></h3>
+<div class="paragraph">
+<p>When interacting with <code>http-message</code> endpoints, Axon Synapse generates a JSON message containing the serialized query and all related information. It then sends that JSON message in the HTTP request&#8217;s body.</p>
+</div>
+<div class="paragraph">
+<p>Please refer to the <a href="openapi/client-message.html#operation/handleQueryMessage" class="xref page">API documentation</a> for detailed information about the HTTP request structure.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_method_endpoint"><a class="anchor" href="#_method_endpoint"></a>Method endpoint</h2>
+<h2 id="_registering_query_handlers"><a class="anchor" href="#_registering_query_handlers"></a>Registering query handlers</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>message</code> endpoint gets the query payload wrapped in a JSON object that also contains the
-fields that are sent as headers in the <code>raw</code> endpoint. Additionally, the JSON may contain metadata passed with the
-query.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_handler_definition"><a class="anchor" href="#_handler_definition"></a>Handler definition</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>To make a query handler available in Axon Server it needs to be registered in Synapse. This can be done through the
-Synapse user interface, or through the REST interface.</p>
+<p>Query handlers must explicitly register in Axon Synapse to receive queries from Axon Server. There are two ways to register a query handler -
+using Synapse&#8217;s Web interface or through the Synapse HTTP API.</p>
 </div>
 <div class="paragraph">
-<p>The registration contains the following fields:</p>
+<p>In both cases, Axon Synapse needs the following information:</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Query names, a list of names for the commands that this handler can handle</p>
-</li>
-<li>
-<p>Client ID, unique id for the handler application instance</p>
-</li>
-<li>
-<p>Component name, logical name for the handler application</p>
-</li>
-<li>
-<p>HTTP Endpoint, the URL of the handler</p>
-</li>
-<li>
-<p>Endpoint Type, specifies whether the handler expects a raw or message request type</p>
-</li>
-<li>
-<p>Endpoint Options, any key/value pairs that will be included in requests to the handler as HTTP headers</p>
-</li>
-</ul>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Query names</dt>
+<dd>
+<p>a list of names for the commands that this handler can handle</p>
+</dd>
+<dt class="hdlist1">Client ID</dt>
+<dd>
+<p>unique id for the handler application instance</p>
+</dd>
+<dt class="hdlist1">Component name</dt>
+<dd>
+<p>a logical name for the handler application</p>
+</dd>
+<dt class="hdlist1">HTTP Endpoint</dt>
+<dd>
+<p>the URL of the handler</p>
+</dd>
+<dt class="hdlist1">Endpoint Type</dt>
+<dd>
+<p>specifies whether the handler expects a raw or message request type</p>
+</dd>
+<dt class="hdlist1">Endpoint Options</dt>
+<dd>
+<p>any key/value pairs that Axon Synapse should include in requests to the handler (as HTTP headers)</p>
+</dd>
+</dl>
+</div>
+<div class="sect2">
+<h3 id="_registering_a_query_handler_via_axon_synapse_ui"><a class="anchor" href="#_registering_a_query_handler_via_axon_synapse_ui"></a>Registering a query handler via Axon Synapse UI</h3>
+<div class="paragraph">
+<p>To register a query handler via Axon Synapse UI, go to <span class="menuseq"><b class="menu">Query Handlers</b>&#160;<i class="fa fa-angle-right caret"></i> <b class="menuitem">Register new query handler</b></span> and fill in the form:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/register_query_handler.png" alt="&quot;Screenshot of the Axon Synapse UI for registering a new query handler">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_registering_a_query_handler_via_axon_synapse_api"><a class="anchor" href="#_registering_a_query_handler_via_axon_synapse_api"></a>Registering a query handler via Axon Synapse API</h3>
+<div class="paragraph">
+<p>To register a query handler via Axon Synapse API, send a JSON request to the respective endpoint.
+You can find detailed information about the endpoint in the <a href="openapi/synapse.html#tag/query-handlers/operation/registerQueryHandler" class="xref page">API documentation</a>.</p>
 </div>
 <div class="paragraph">
-<p>A sample JSON request to register a handler:</p>
+<p>Below is a sample JSON request to register a handler:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -301,8 +318,6 @@ Content-Type: application/json
 }</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>For the operations to update, delete and retrieve handlers, check the <a href="http://synapse:8080/swagger-ui.html" class="bare">http://synapse:8080/swagger-ui.html</a> endpoint.</p>
 </div>
 </div>
 </div>
