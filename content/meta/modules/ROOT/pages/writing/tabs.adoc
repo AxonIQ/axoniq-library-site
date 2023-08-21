@@ -1,0 +1,133 @@
+= Using Tabs
+
+When you need to provide several alternatives of the same content _(say for different languages, settings, environments, etc.)_ you can use tabs.
+
+== General syntax
+
+You can construct tabs from a description list (dlist) enclosed in an example block annotated with the tabs style.
+
+[source, adoc]
+.An example of tabs
+----
+[tabs]
+====
+Tab A:: Contents of Tab A.
+
+Tab B::
++
+Contents of Tab B.
+
+Tab C::
++
+--
+Contents of Tab C.
+
+Contains more than one block.
+--
+====
+----
+
+The platform renders the above code as shown below.
+
+[tabs]
+====
+Tab A:: Contents of Tab A.
+
+Tab B::
++
+Contents of Tab B.
+
+Tab C::
++
+--
+Contents of Tab C.
+
+Contains more than one block.
+--
+====
+
+== Tabs containing source code
+
+You can add of course source code in tabs.
+
+[source, adoc]
+.An example of tabs
+--
+[tabs]
+====
+Configuration API::
++
+---
+[source, java]
+----
+Configurer configurer = DefaultConfigurer.defaultConfiguration()
+       .configureAggregate(GiftCard.class);
+}
+----
+---
+
+Spring Boot AutoConfiguration::
++
+---
+Use the `@Aggregate` annotation (from `org.axonframework.spring.stereotype` package) to mark the necessary components. When the Spring auto-configuration runs, it'll register the annotated types as aggregates. Note that only the aggregate root needs to be annotated.
+
+[source, java]
+----
+// ...
+import org.axonframework.spring.stereotype.Aggregate;
+// ...
+@Aggregate
+public class GiftCard {
+    @AggregateIdentifier
+    private String id;
+
+    @CommandHandler
+    public GiftCard(IssueCardCommand cmd) {
+       apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
+    }
+}
+----
+---
+====
+--
+
+The platform renders the above code as shown below.
+
+[tabs]
+====
+Configuration API::
++
+--
+[source, java]
+----
+Configurer configurer = DefaultConfigurer.defaultConfiguration()
+       .configureAggregate(GiftCard.class);
+}
+----
+--
+
+Spring Boot AutoConfiguration::
++
+--
+Use the `@Aggregate` annotation (from `org.axonframework.spring.stereotype` package) to mark the necessary components. When the Spring auto-configuration runs, it'll register the annotated types as aggregates. Note that only the aggregate root needs to be annotated.
+
+[source, java]
+----
+// ...
+import org.axonframework.spring.stereotype.Aggregate;
+// ...
+@Aggregate
+public class GiftCard {
+    @AggregateIdentifier
+    private String id;
+
+    @CommandHandler
+    public GiftCard(IssueCardCommand cmd) {
+       apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
+    }
+}
+----
+
+--
+====
+
