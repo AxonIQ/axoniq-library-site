@@ -675,6 +675,26 @@ paths:
   /v1/contexts/{context}/events:
     parameters:
       - $ref: '#/components/parameters/Context'
+    get:
+      operationId: information
+      summary: Returns information about the event store
+      tags:
+        - events
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventStoreInformation'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
     post:
       operationId: publishEventMessage
       summary: Publishes the event message
@@ -1670,6 +1690,16 @@ components:
           description: Name to recognize this stored authentication
         id:
           $ref: '#/components/schemas/ClientAuthenticationId'
+    EventStoreInformation:
+      type: object
+      description: information about the event store
+      properties:
+        firstEventToken:
+          type: integer
+          format: int64
+        lastEventToken:
+          type: integer
+          format: int64
     ListOfClientAuthentication:
       type: object
       description: List of Client Authentication objects
