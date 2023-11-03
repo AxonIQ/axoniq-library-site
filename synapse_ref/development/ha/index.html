@@ -248,7 +248,7 @@ Whilst it&#8217;s possible to simply run multiple independent Synapse instances 
 <h2 id="_what_ha_in_synapse_covers"><a class="anchor" href="#_what_ha_in_synapse_covers"></a>What HA in synapse covers</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Using HA in Synapse, does provide you with the following</p>
+<p>Using HA in Synapse does provide you with the following:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -256,7 +256,7 @@ Whilst it&#8217;s possible to simply run multiple independent Synapse instances 
 <p>Tolerate individual Synapse instances to go down for maintenance or crash</p>
 </li>
 <li>
-<p>Provide a way for the different handler types to balance themselves and be re-assigned when a Synapse instances goes down.</p>
+<p>Provide a way for the different handler types to balance themselves and be re-assigned when a Synapse instance goes down.</p>
 </li>
 </ul>
 </div>
@@ -266,7 +266,7 @@ Whilst it&#8217;s possible to simply run multiple independent Synapse instances 
 <div class="sect2">
 <h3 id="_command_handlers"><a class="anchor" href="#_command_handlers"></a>Command handlers</h3>
 <div class="paragraph">
-<p>Each Synapse instance registers all configured command handlers with AxonServer. AxonServer then takes care that commands are handled by the correct client application, by sending them via the correct synapse instance to the selected client instance.</p>
+<p>Each Synapse instance registers all configured command handlers with AxonServer. AxonServer then makes sure to send the commands to the correct handler instance via the Synapse instance used to register the handler.</p>
 </div>
 </div>
 <div class="sect2">
@@ -287,13 +287,13 @@ When changing synapse instances, you may see slight duplication of events delive
 </table>
 </div>
 <div class="paragraph">
-<p>When topology changes (for example because a Synapse instance is added or crashed), handlers are re-assigned to available Synapse instances according to a consistent hashing algorithm. This makes sure that if a Synapse instance goes down, other instances pick up the now unassigned event handlers.</p>
+<p>When topology changes (for example when a Synapse instance crashes or a new one appears), handlers are re-assigned to available Synapse instances according to a consistent hashing algorithm. This makes sure that if a Synapse instance goes down, other instances pick up the now unassigned event handlers.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_query_handlers"><a class="anchor" href="#_query_handlers"></a>Query handlers</h3>
 <div class="paragraph">
-<p>As with Command Handlers, each Synapse instance registers all configured query handlers with AxonServer. Again, AxonServer then takes care that queries are handled by the correct client application.</p>
+<p>As with Command Handlers, each Synapse instance registers all configured query handlers with AxonServer. Again, AxonServer then makes sure to send the queries to the correct client application.</p>
 </div>
 </div>
 </div>
@@ -302,7 +302,7 @@ When changing synapse instances, you may see slight duplication of events delive
 <h2 id="_infrastructure"><a class="anchor" href="#_infrastructure"></a>Infrastructure</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>To be fully high-available, it&#8217;s not enough to have Synapse set to HA. The following aspects should be taken into consideration.</p>
+<p>To be fully high-available, it&#8217;s not enough to have Synapse set to HA. One should take the following aspects into consideration.</p>
 </div>
 <div class="sect2">
 <h3 id="_axon_server"><a class="anchor" href="#_axon_server"></a>Axon server</h3>
@@ -313,18 +313,18 @@ When changing synapse instances, you may see slight duplication of events delive
 <div class="sect2">
 <h3 id="_synapse"><a class="anchor" href="#_synapse"></a>Synapse</h3>
 <div class="paragraph">
-<p>Using the AxonServer as storage implementation and enabling HA allows you to tolerate synapse nodes going down and the remaining ones to take over.</p>
+<p>Using the AxonServer as storage implementation and enabling HA allows you to tolerate synapse nodes going down and the remaining ones taking over.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_client_applications"><a class="anchor" href="#_client_applications"></a>Client applications</h3>
 <div class="paragraph">
 <p><!-- vale Google.OxfordComma = NO -->
-If you use Synapse to publish events, command or queries, make sure that your client applications know all available Synapse instances and can retry if one should go down. Alternatively, add a reverse-proxy with multiple upstream destinations for the publish endpoints.</p>
+If you use Synapse to publish events, commands or queries, make sure that your client applications know all available Synapse instances and can retry if one should go down. Alternatively, add a reverse proxy with multiple upstream destinations for the publish endpoints.</p>
 </div>
 <div class="paragraph">
-<p>Further, have you client applications run in an highly available manner.
-If synapse is available but your client application goes down, you didn&#8217;t win much in regards of availability.
+<p>Further, have your client applications run in a highly available manner.
+If Synapse is available but your client application goes down, you didn&#8217;t win much in regards to availability.
 Further, since registered handlers in Synapse only can have one configured URL, make sure to place a reverse proxy with multiple upstream destinations in between Synapse and the client applications it&#8217;s calling. Thereby, synapse can retry calling endpoints if one of the instances of your client application were to go down.</p>
 </div>
 </div>
