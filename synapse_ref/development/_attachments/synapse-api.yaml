@@ -1148,6 +1148,14 @@ components:
       type: string
       description: The last error occuring with this handler
       example: Something went wrong
+    MaxConcurrency:
+      type: integer
+      description: |
+        Maximum number of concurrent command requests Synapse will forward to your registration.
+        Note that this is set to 1 by default so client applications can easily maintain the strong invariants expected by Axon application.
+        If you change this value, make sure you read up on the implications of processing mutliple commands concurrently.
+        Note that Synapse nonetheless sequences commands of a single routing key for you.
+      default: 1
     MessageId:
       type: string
       description: Unique message identifier
@@ -1231,8 +1239,9 @@ components:
       default: 100
       example: 100
     Concurrency:
+      deprecated: true
       type: integer
-      description: The number of concurrent commands that the command handler can handle.
+      description: DEPRECATED, use `maxConcurrency` instead.
       default: 1
       minimum: 1
       example: 1
@@ -1330,6 +1339,8 @@ components:
           $ref: '#/components/schemas/ServerAuthenticationId'
         lastError:
           $ref: '#/components/schemas/LastError'
+        maxConcurrency:
+          $ref: '#/components/schemas/MaxConcurrency'
     CommandHandler:
       type: object
       description: Command handler
