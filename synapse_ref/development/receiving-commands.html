@@ -309,6 +309,9 @@ using Synapse&#8217;s Web interface or through the Synapse HTTP API.</p>
 </dd>
 </dl>
 </div>
+<div class="paragraph">
+<p>For a full list of parameters, including optional ones, please refer to the <a href="openapi/synapse.html#tag/command-handlers/operation/registerCommandHandler" class="xref page">API documentation</a>.</p>
+</div>
 <div class="sect2">
 <h3 id="_registering_a_command_handler_via_axon_synapse_ui"><a class="anchor" href="#_registering_a_command_handler_via_axon_synapse_ui"></a>Registering a command handler via Axon Synapse UI</h3>
 <div class="paragraph">
@@ -353,6 +356,29 @@ Content-Type: application/json
   "enabled": true
 }</code></pre>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_concurrency_control"><a class="anchor" href="#_concurrency_control"></a>Concurrency control</h3>
+<div class="paragraph">
+<p>For a given command handler, synapse allows you to specify the maximum amount of concurrent requests, Synapse calls your application with.
+You can achieve this by setting the <code>maxConcurrency</code> parameter for a given registration.</p>
+</div>
+<div class="paragraph">
+<p>Synapse does however never send you two concurrent requests for the same routing key.
+This allows you not to keep track of ordering of concurrent requests.
+However, this also might lead to lower rates of concurrent processing than specified in the <code>maxConcurrency</code> parameter.
+The decision-making whether Synapse may send a request concurrently, works in the following order:
+1. ensure there are less than <code>maxConcurrency</code> requests already ongoing.
+2. ensure there is no other request running for the current <code>routingKey</code>.</p>
+</div>
+<div class="paragraph">
+<p>While this may allow a lot of requests for the same routingKey block processing for commands of a different routing key that arrive later and Synapse could forward it,
+this approach the safest and most defensive one.</p>
+</div>
+<div class="paragraph">
+<p>Note that the <code>maxConcurrency</code> parameter refers to the <strong>maximum</strong>  amount of concurrent requests.
+Depending on your routing key, your application might observe a lower amount of concurrency (see section above).</p>
 </div>
 </div>
 </div>
