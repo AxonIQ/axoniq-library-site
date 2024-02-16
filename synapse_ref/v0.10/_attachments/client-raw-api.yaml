@@ -1,0 +1,210 @@
+openapi: 3.0.3
+info:
+  title: Axon Synapse Client Raw API
+  description: API for Synapse Clients
+  version: 1.0.0
+paths:
+  /v1/commands:
+    parameters:
+      - $ref: '#/components/parameters/MessageId'
+      - $ref: '#/components/parameters/CommandName'
+      - $ref: 'synapse-api.yaml#/components/parameters/PayloadType'
+      - $ref: 'synapse-api.yaml#/components/parameters/Priority'
+    post:
+      operationId: handleCommand
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: 'synapse-api.yaml#/components/schemas/AnyPayload'
+      responses:
+        '200':
+          description: The result of the command execution
+          content:
+            '*/*':
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/AnyPayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/Error'
+              example:
+                code: AXONIQ-0001
+                message: Invalid message
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/Error'
+              example:
+                code: AXONIQ-1302
+                message: Context not found
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/Error'
+              example:
+                code: AXONIQ-1302
+                message: Internal server error
+  /v1/queries:
+    parameters:
+      - $ref: '#/components/parameters/MessageId'
+      - $ref: '#/components/parameters/QueryName'
+      - $ref: 'synapse-api.yaml#/components/parameters/PayloadType'
+    post:
+      operationId: handleQuery
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: 'synapse-api.yaml#/components/schemas/AnyPayload'
+      responses:
+        '200':
+          description: The result of the query execution
+          content:
+            '*/*':
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/AnyPayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/Error'
+              example:
+                code: AXONIQ-0001
+                message: Invalid message
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/Error'
+              example:
+                code: AXONIQ-1302
+                message: Context not found
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/Error'
+              example:
+                code: AXONIQ-1302
+                message: Internal server error
+  /v1/events:
+    parameters:
+      - $ref: '#/components/parameters/MessageId'
+      - $ref: '#/components/parameters/EventName'
+      - $ref: '#/components/parameters/DateTime'
+      - $ref: '#/components/parameters/GlobalIndex'
+      - $ref: '#/components/parameters/AggregateId'
+      - $ref: '#/components/parameters/AggregateType'
+      - $ref: '#/components/parameters/SequenceNumber'
+    post:
+      operationId: handleEvent
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: 'synapse-api.yaml#/components/schemas/AnyPayload'
+      responses:
+        '200':
+          description: The acknowledge of the event processing
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/Error'
+              example:
+                code: AXONIQ-0001
+                message: Invalid message
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/Error'
+              example:
+                code: AXONIQ-1302
+                message: Context not found
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: 'synapse-api.yaml#/components/schemas/Error'
+              example:
+                code: AXONIQ-1302
+                message: Internal server error
+components:
+  parameters:
+    AggregateId:
+      in: header
+      name: AxonIQ-AggregateId
+      description: Identifier of the aggregate to which the event applies
+      schema:
+        $ref: 'synapse-api.yaml#/components/schemas/AggregateId'
+      required: false
+    AggregateType:
+      in: header
+      name: AxonIQ-AggregateType
+      description: The type of the aggregate to which the event applies
+      schema:
+        $ref: 'synapse-api.yaml#/components/schemas/AggregateType'
+      required: false
+    SequenceNumber:
+      in: header
+      name: AxonIQ-SequenceNumber
+      description: The sequence number of the event within the aggregate
+      schema:
+        $ref: 'synapse-api.yaml#/components/schemas/SequenceNumber'
+      required: false
+    GlobalIndex:
+      in: header
+      name: AxonIQ-Index
+      description: The global index of the event
+      schema:
+        $ref: 'synapse-api.yaml#/components/schemas/GlobalIndex'
+      required: true
+    DateTime:
+      in: header
+      name: AxonIQ-DateTime
+      description: Command name
+      schema:
+        $ref: 'synapse-api.yaml#/components/schemas/DateTime'
+      required: true
+    CommandName:
+      in: header
+      name: AxonIQ-CommandName
+      description: Command name
+      schema:
+        $ref: 'synapse-api.yaml#/components/schemas/CommandName'
+      required: true
+    MessageId:
+      in: header
+      name: AxonIQ-MessageId
+      description: Message identifier
+      schema:
+        $ref: 'synapse-api.yaml#/components/schemas/MessageId'
+      required: true
+    QueryName:
+      in: header
+      name: AxonIQ-QueryName
+      description: Query name
+      schema:
+        $ref: 'synapse-api.yaml#/components/schemas/QueryName'
+      required: true
+    EventName:
+      in: header
+      name: AxonIQ-EventName
+      description: Event name
+      schema:
+        $ref: 'synapse-api.yaml#/components/schemas/EventName'
+      required: true
