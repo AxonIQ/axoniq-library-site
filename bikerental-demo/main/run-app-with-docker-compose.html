@@ -123,23 +123,7 @@
 
 
 </div>
-  <div class="needs-improvement">
-    <div>
-      <h5>This content needs improvements</h5>
-      <ul>
-        <li>Add content for the empty sections.</li>
-      </ul>
-      <div class="improve-request">
-          You are welcome to <a class="action" href="https://github.com/AxonIQ/bike-rental-quick-start/edit/main/docs/tutorial/modules/ROOT/pages/run-app-with-docker-compose.adoc">edit this page</a>.
-        You can search for and contribute to
-        <a class="action" href="https://discuss.axoniq.io/search?q&#x3D;https%3A%2F%2Flibrary.axoniq.io%2Fbikerental-demo%2Fmain%2Frun-app-with-docker-compose.html%20%23library" target="discuss_search">previous discussions about this page</a>
-        or
-        <a class="action" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Running%20The%20Application%20Locally%20With%20Docker%20Compose%22%20library%20page%20...&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BRunning%20The%20Application%20Locally%20With%20Docker%20Compose%5D(https%3A%2F%2Flibrary.axoniq.io%2Fbikerental-demo%2Fmain%2Frun-app-with-docker-compose.html)%0A%5B%2Fdetails%5D%0A" target="discuss_add">start a new one</a>
-        .
-      </div>
-    </div>
-</div>
-  <div class="content">
+    <div class="content">
         <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
@@ -148,7 +132,13 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>In this step, we will see how to run your application in your local environment with everything you need. Thanks to SpringBoot&#8217;s support in starting Docker containers and the Axon Server Docker images, it will be an easy task.</p>
+<p>In this step, we will see how to run your application in your local environment with everything you need.</p>
+</div>
+<div class="paragraph">
+<p>If this were just a simple SpringBoot application we will simply have to run it from oir IDE. But our application needs to rely on some external messaging infrastructure to route, store and deliver the messages (commands, events and queries). In our case we will use Axon Server which acts both as a message broker to route the messages and as an event store optimized for storing and retrieving events in an Event Sourcing-based system.</p>
+</div>
+<div class="paragraph">
+<p>To avoid having to installing and starting the Axon Server manually, we rely on the Axon Server Docker images, and SpringBoot&#8217;s support to start docker containers. In this section you will learn how to configure it to run with a single click everything you need.</p>
 </div>
 </div>
 </div>
@@ -164,35 +154,159 @@
 </div>
 </div>
 <div class="sect1">
-<h2 id="_components_diagram"><a class="anchor" href="#_components_diagram"></a>Components diagram</h2>
-<div class="sectionbody">
-<div class="sect2">
-<h3 id="_axon_server"><a class="anchor" href="#_axon_server"></a>Axon Server</h3>
-
-</div>
-<div class="sect2">
-<h3 id="_axon_framework_application"><a class="anchor" href="#_axon_framework_application"></a>Axon Framework application</h3>
-
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_configuring_docker_compose"><a class="anchor" href="#_configuring_docker_compose"></a>Configuring docker compose</h2>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_create_docker_compose_descriptor"><a class="anchor" href="#_create_docker_compose_descriptor"></a>Create docker compose descriptor</h3>
-
+<div class="paragraph">
+<p><a href="https://docs.docker.com/compose/">Docker compose</a> is a tool that allows you to define all the docker containers, networks, volumes and any other characteristics that we need from the infrastructure to run our application.</p>
+</div>
+<div class="paragraph">
+<p>Even if we are going to run only one docker image (Axon Server), docker compose is convenient because allows to start everything in one comand.</p>
+</div>
+<div class="paragraph">
+<p>We will start by creating the docker compose configuration file. Create a <code>compose.yaml</code> file in the <code>root</code> project with the following contents:</p>
+</div>
+<div class="listingblock">
+<div class="title">compose.yaml</div>
+<div class="content">
+<pre>services:
+  axonserver: <i class="conum" data-value="1"></i><b>(1)</b>
+    image: 'axoniq/axonserver:latest-dev'  <i class="conum" data-value="2"></i><b>(2)</b>
+    environment: <i class="conum" data-value="3"></i><b>(3)</b>
+      - 'AXONIQ_AXONSERVER_STANDALONE=TRUE'
+    ports: <i class="conum" data-value="4"></i><b>(4)</b>
+      - '8024:8024'  <i class="conum" data-value="5"></i><b>(5)</b>
+      - '8124:8124'  <i class="conum" data-value="6"></i><b>(6)</b></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>We define the name of the service for axonserver. This will be the name used for the service when started by Docker Desktop</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>axoniq/axonserver:latest-dev</code> image refers to the docker image for the latest Axon Server published in the public dockerhum images repository.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>We set the <code>AXONIQ_AXONSERVER_STANDALONE</code> environment property to <code>TRUE</code> so that Axon Server starts without the need to do the initial configuration.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>We configure the ports that will be exported from the running docker container:</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td><code>8024</code> is the default port to access the Axon Server console from your browser.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td><code>8124</code> is Axon Server&#8217;s gRPC port used by the applications.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+YAML files are sensible to tabs and spaces. Make sure you use the correct indentation using tabs.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Once that we have this file you should be able to run the axon server image from the command line:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">bike-rental-quick-start % docker-compose  up
+[+] Running 1/0
+ ✔ Container bike-rental-quick-start-axonserver-1  Created                                                                                                                             0.0s
+Attaching to axonserver-1
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wwe don&#8217;t want to start the server manually, we will configure SpringBoot&#8217;s support for docker compose so that the docker containers are started automatically when running the application from our IDE.</p>
+</div>
+<div class="paragraph">
+<p>Stop the container by typing ^C on the console and move to the next section.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_configuring_springboot_support_to_run_docker_compose"><a class="anchor" href="#_configuring_springboot_support_to_run_docker_compose"></a>Configuring SpringBoot support to run Docker compose</h3>
-
+<div class="paragraph">
+<p>Since v3.1 Supports starting docker compose services linked to the start of our application.</p>
+</div>
+<div class="paragraph">
+<p>To enable that feature, we will need to add the following dependency to the maven descriptor <code>pom.xml</code> file in our <code>root</code> project:</p>
+</div>
+<div class="listingblock">
+<div class="title">/pom.xml</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependencies&gt;
+	&lt;dependency&gt;
+		&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+		&lt;artifactId&gt;spring-boot-docker-compose&lt;/artifactId&gt;
+		&lt;scope&gt;runtime&lt;/scope&gt;
+		&lt;optional&gt;true&lt;/optional&gt;
+	&lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once that we have added this dependency, we can run our application right from our IDE. SpringBoot will detect the <code>compose.yaml</code> file and will start the docker containers described in that file.</p>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_running_the_application"><a class="anchor" href="#_running_the_application"></a>Running the application</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>Run your application from your IDE. You should see in the logs how SpringBoot dowloads the AxonServer docker image, and starts running AxonServer automatically for you before starting your application:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.1)
 
+ INFO --- [Rental Monolith] i.a.d.b.rental.RentalApplication         : Starting RentalApplication using Java 21 with PID 69132 (/Users/dgomezg/projects/axon/code-samples/bike-rental-quick-start/rental/target/classes started by dgomezg in /Users/dgomezg/projects/axon/code-samples/bike-rental-quick-start)
+ INFO --- [Rental Monolith] i.a.d.b.rental.RentalApplication         : No active profile set, falling back to 1 default profile: "default"
+ INFO --- [Rental Monolith] .s.b.d.c.l.DockerComposeLifecycleManager : Using Docker Compose file '/Users/dgomezg/projects/axon/code-samples/bike-rental-quick-start/compose.yaml'
+ INFO --- [Rental Monolith] o.s.boot.docker.compose.core.DockerCli   :  Container bike-rental-quick-start-axonserver-1  Created
+ INFO --- [Rental Monolith] o.s.boot.docker.compose.core.DockerCli   :  Container bike-rental-quick-start-axonserver-1  Starting
+ INFO --- [Rental Monolith] o.s.boot.docker.compose.core.DockerCli   :  Container bike-rental-quick-start-axonserver-1  Started
+ INFO --- [Rental Monolith] o.s.boot.docker.compose.core.DockerCli   :  Container bike-rental-quick-start-axonserver-1  Waiting
+ INFO --- [Rental Monolith] o.s.boot.docker.compose.core.DockerCli   :  Container bike-rental-quick-start-axonserver-1  Healthy
+ INFO --- [Rental Monolith] verDockerComposeConnectionDetailsFactory : Detected Axon Server container. To access the dashboard, visit http://127.0.0.1:8024</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After the application starts, you can open your browser and go to <code><a href="http://localhost:8024" class="bare">http://localhost:8024</a></code>. You will access the Axon Server dashboard.</p>
+</div>
+<div class="paragraph">
+<p>If you click on the "Overview" button from the right panel, you will see the Axon Server instance and your <code>Rental Monolith</code> Application connected to it.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/AxonServer-Dashboard.png" alt="Screenshot of the Axon Server dashboard" width="showing the Rental Application connected to the Axon Server instance">
+</div>
+</div>
+<div class="paragraph">
+<p>In the next step we will implement the feature to retrieve a list of all the bikes in our system. So, we will look at how to implement the <code>Query Model</code> with some projections.</p>
+</div>
 </div>
 </div>
         <nav class="pagination">
