@@ -4,6 +4,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  VALE_VERSION: ${{ vars.LIBRARY_VALE_VERSION || '3.3.0' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,8 +23,8 @@ jobs:
         npx antora -v
     - name: Install vale
       run: |
-        wget https://github.com/errata-ai/vale/releases/download/v${{ vars.LIBRARY_VALE_VERSION }}/vale_${{ vars.LIBRARY_VALE_VERSION }}_Linux_64-bit.tar.gz
-        sudo tar -xvzf vale_${{ vars.LIBRARY_VALE_VERSION }}_Linux_64-bit.tar.gz -C /usr/local/bin vale
+        wget https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz
+        sudo tar -xvzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz -C /usr/local/bin vale
         npm install @axoniq/antora-vale-extension
     - name: Generate Site
       run: |
