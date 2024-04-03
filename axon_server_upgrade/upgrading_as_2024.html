@@ -125,35 +125,29 @@
 <div class="paragraph">
 <p>Axon Server 2024.0.0 uses an updated version of the H2 database to store the Control DB. This is required to solve some critical issues in the H2 version used in previous Axon Server versions.</p>
 </div>
+<div class="paragraph">
+<p>When you download Axon Server 2024.0, the package contains a new jar file <code>controldb-migration.jar</code>.</p>
+</div>
+<div class="paragraph">
+<p>For Axon Server to upgrade the Control DB, you need to place this jar file in the working directory of Axon Server (usually the same directory as the axonserver.jar file). When you start Axon Server, it invokes the <code>controldb-migration.jar</code> to migrate the Control DB. After the migration, a new DB file is in the same directory as the old Control DB. This new DB is called <code>axonserver-configdb</code>, the filename is <code>axonserver-configdb.mv.db</code>. The docker image axoniq/axonserver already contains the <code>controldb-migration.jar</code>.</p>
+</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_how_to_perform_a_manual_upgrade_of_the_control_db_schemas"><a class="anchor" href="#_how_to_perform_a_manual_upgrade_of_the_control_db_schemas"></a>How to perform a manual upgrade of the control DB schemas</h2>
+<h2 id="_datasource_override"><a class="anchor" href="#_datasource_override"></a>Datasource override</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>When you download Axon Server 2024.0, the package contains a new jar file <code>controldb-migration.jar</code>.  If you wish to upgrade, you need to place this jar file in the working directory of Axon Server (usually the same directory as the <code>axonserver.jar</code> file). When you start Axon Server, it invokes the <code>controldb-migration.jar</code> to migrate the Control DB. After the migration, a new DB file is in the same directory as the old Control DB. This new DB is called <code>axonserver-configdb</code>, the filename is <code>axonserver-configdb.mv.db</code>.  The docker image <code>axoniq/axonserver</code> already contains the <code>controldb-migration.jar</code>.</p>
+<p>If you have configured the property <code>spring.datasource.url</code> in axonserver.properties yourself, you must update the database name before starting Axon Server. Change the name from axonserver-controldb to axonserver-configdb.
+For example:
+<code>spring.datasource.url=jdbc:h2:./data/axonserver-controldb;DEFRAG_ALWAYS=true</code>
+Should now look like this:
+<code>spring.datasource.url=jdbc:h2:./data/axonserver-configdb;DEFRAG_ALWAYS=true</code></p>
 </div>
-<div class="paragraph">
-<p>If you have configured the property <code>spring.datasource.url</code> in <code>axonserver.properties yourself</code>, you must update the database name before starting Axon Server. Change the name from <code>axonserver-controldb</code> to <code>axonserver-configdb</code>.</p>
 </div>
-<div class="paragraph">
-<p>For example:</p>
 </div>
-<div class="paragraph">
-<p><code>spring.datasource.url=jdbc:h2:${axoniq.axonserver.controldb-path:./data}/axonserver-controldb;DEFRAG_ALWAYS=true</code></p>
-</div>
-<div class="paragraph">
-<p>Should now look like this:</p>
-</div>
-<div class="paragraph">
-<p><code>spring.datasource.url=jdbc:h2:${axoniq.axonserver.controldb-path:./data}/axonserver-configdb;DEFRAG_ALWAYS=true</code></p>
-</div>
-<div class="paragraph">
-<p>Or</p>
-</div>
-<div class="paragraph">
-<p><code>spring.datasource.url=jdbc:h2:${axoniq.axonserver.configdb-path:./data}/axonserver-configdb;DEFRAG_ALWAYS=true</code></p>
-</div>
+<div class="sect1">
+<h2 id="_configuring_the_database_location"><a class="anchor" href="#_configuring_the_database_location"></a>Configuring the database location</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>The preferred property to define the location of the configuration database is changed to <code>axoniq.axonserver.configdb-path</code>. The property <code>axoniq.axonserver.controldb-path</code> is deprecated, but still works for this version.</p>
 </div>
@@ -163,7 +157,7 @@
 <h2 id="_migration_of_extensions"><a class="anchor" href="#_migration_of_extensions"></a>Migration of extensions</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>If you use the OAuth or LDAP extension for Axon Server, replace the jar files in the <code>exts</code> directory with those included in the new extension.</p>
+<p>If you use the OAuth or LDAP extension for Axon Server, replace the jar files in the exts directory with those included in the new extension.</p>
 </div>
 </div>
 </div>
@@ -189,7 +183,7 @@ The upgrade should be reasonably straightforward:</p>
 <p>start the node</p>
 </li>
 <li>
-<p>Repeat the procedure for every node in the cluster</p>
+<p>repeat the procedure for every node in the cluster</p>
 </li>
 </ul>
 </div>
