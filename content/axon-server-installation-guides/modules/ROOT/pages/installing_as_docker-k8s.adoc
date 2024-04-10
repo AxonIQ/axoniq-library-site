@@ -31,31 +31,39 @@ Both images are based on https://hub.docker.com/_/eclipse-temurin[Eclipse Temuri
 
 * The "`root`" image of version 2023.1 is available as "`axoniq/axonserver:2023.1`" and is based on "`eclipse-temurin:11-focal`".
 This image is particularly useful for running in Docker Desktop, as it will not have any trouble creating files and directories as user "`root`".
-* The "`axonserver`" image of version 2023.1 is available as "`axoniq/axonserver:2023.1-nonroot`" and is based on the same Eclipse Temurin image.
+* The `axonserver` image of version 2023.1 is available as "`axoniq/axonserver:2023.1-nonroot`" and is based on the same Eclipse Temurin image.
 This image is more secure and useful in Kubernetes and OpenShift clusters.
 You should take care to declare the user- and group-id, both of which are `1001` and are named "`axonserver`".
 Doing this will ensure that any mounted volumes will be writable by the user running Axon Server.
 
+=== Exported volumes
+
+
 The images export the following volumes:
 
-* "`/axonserver/config`"
+==== `/axonserver/config`
 
 This is where you can add configuration files, such as an additional `axonserver.properties` and the license file.
 However, you can also opt to use, for instance, Kubernetes, or Docker-compose secrets.
 Note that Axon Server EE assumes it can write to the directory configured with "`axoniq.axonserver.enterprise.licenseDirectory`", so you don't have to put the license on all nodes.
-* "`/axonserver/data`"
+
+==== `/axonserver/data`
 
 This is where the ControlDB, the PID file, and a copy of the application logs are written to.
-* "`/axonserver/events`"
+
+==== `/axonserver/events`
 
 In this volume the Event Store is created, with a single directory per context.
-* "`/axonserver/log`"
+
+==== `/axonserver/log`
 
 In this volume the Replication Logs are created, with a single directory per Replication Group.
-* "`/axonserver/exts`"
+
+==== `/axonserver/exts`
 
 In this volume you can place Extension JAR-files, such as the LDAP and OAuth2 extensions.
-* "`/axonserver/plugins`"
+
+==== `/axonserver/plugins`
 
 In this volume Axon Server will place all uploaded plugins.
 
@@ -98,7 +106,7 @@ This step cannot be performed in the Distroless image, because that image does n
 * The last steps copy the executable jar named axonserver.jar and a common set of properties.
 It marks the volume mounting points and exposed ports and finally specifies the command to start Axon Server EE.
 
-[source,bash]
+[source,docker]
 ----
 FROM busybox as source
 
@@ -120,7 +128,7 @@ ENTRYPOINT [ "java", "-jar", "./axonserver.jar" ]
 
 If you want to build a "nonroot" version, you need to adjust this as follows:
 
-[source,text]
+[source,docker]
 ----
 FROM busybox as source
 RUN addgroup -S -g 1001 axonserver \
@@ -148,10 +156,10 @@ ENTRYPOINT [ "java", "-jar", "./axonserver.jar" ]
 As you can see this will start by creating the user "`axonserver`" belonging to a group with the same name.
 When copying the directory, we now have to ensure that ownership transfers correctly and specify the user to run as, but otherwise it looks pretty similar.
 
-For the common properties (axonserver.properties), the minimum set can be added to ensure that the volumes get mounted and logs generated.
+For the common properties (`axonserver.properties`), the minimum set can be added to ensure that the volumes get mounted and logs generated.
 Again these can be tailored as per the deployment requirements.
 
-[source,text]
+[source,properties]
 ----
 axoniq.axonserver.event.storage=./events
 axoniq.axonserver.snapshot.storage=./events
@@ -169,10 +177,10 @@ logging.file.max-size=10MB
 
 ----
 
-Place the Dockerfile, the Axon Server jar file (axonserver.jar), the Axon Server client jar file (axonserver-cli.jar) and the axonserver.properties in the current directory.
+Place the Dockerfile, the Axon Server jar file (`axonserver.jar`), the Axon Server client jar file (`axonserver-cli.jar`) and the `axonserver.properties` in the current directory.
 Assuming we are building version 2023.1.1, the image can be constructed using the following command:
 
-[source,bash]
+[source,console]
 ----
 $ docker build --tag my-repository/axonserver:2023.1.1.
 
@@ -182,9 +190,9 @@ This completes the construction of the Docker image.
 The image can pushed to your local repository or you could keep it local if you only want to run it on your development machine.
 The next step is to run it either using <<docker-compose,Docker Compose>> or <<kubernetes,Kubernetes>>.
 
-If you want to run the docker image for a standalone instance of Axon Server and have it initialized automatically, you can start it with the "axoniq.axonserver.standalone" property set through the environment, for instance:
+If you want to run the docker image for a standalone instance of Axon Server and have it initialized automatically, you can start it with the `axoniq.axonserver.standalone` property set through the environment, for instance:
 
-[source,bash]
+[source,console]
 ----
 $ docker run -dit -e axoniq.axonserver.standalone=true -p 8024:8024 -p 8124:8124 my-repository/axonserver:2023.1.1
 
@@ -204,7 +212,7 @@ We will use "secrets" to inject the license file, tokens as well as the cluster/
 
 The complete docker-compose file is depicted below.
 
-[source,text]
+[source,yaml]
 ----
 version: '3.3'
 services:
@@ -349,9 +357,9 @@ The “axonserver-token” secret is used to allow the CLI to talk with nodes.
 The access control section details the generation of these tokens.
 A similar approach can be used to configure more secrets for the certificates, and so enable SSL.
 
-The "axonserver.properties" properties file referred to in the secrets’ definition section is depicted below.
+The `axonserver.properties` properties file referred to in the secrets’ definition section is depicted below.
 
-[source,text]
+[source,properties]
 ----
 axoniq.axonserver.autocluster.first=axonserver-1
 axoniq.axonserver.autocluster.contexts=_admin,default
@@ -364,7 +372,7 @@ axoniq.axonserver.accesscontrol.systemtokenfile=/axonserver/config/axonserver.to
 
 Starting Axon Server using the docker-compose command is depicted below.
 
-[source,text]
+[source,console]
 ----
 $ docker-compose up
 ----
@@ -388,15 +396,15 @@ Since a "nonroot" image runs Axon Server under its own user, it has no rights on
 The context can be specified, but only through the user or group’s ID, and not using their name as we did in the image, because that name does not exist in the k8s management context.
 So we have to adjust the first stage to specify a specific numeric value _(here we have given 1001)_ , and then use that value in the security context of the Stateful set which we shall see below.
 
-We would need to supply a licence/token file (for client applications) and cluster/context definitions via an axonserver.properties file.
+We would need to supply a licence/token file (for client applications) and cluster/context definitions via an `axonserver.properties` file.
 Unlike Docker Compose, Kubernetes mounts Secrets and ConfigMaps as directories rather than files, so we need to split license and configuration to two separate locations.
-For the license secret we can use a new location “/axonserver/license/axoniq.license” and adjust the environment variable to match.
-For the system token we’ll use “/axonserver/security/token.txt”, and for the properties file we’ll use a ConfigMap that we mount on top of the “/axonserver/config” directory.
+For the license secret we can use a new location `/axonserver/license/axoniq.license` and adjust the environment variable to match.
+For the system token we’ll use `/axonserver/security/token.txt`, and for the properties file we’ll use a ConfigMap that we mount on top of the `/axonserver/config` directory.
 
 These can be created using "kubectl" directly from their respective file as depicted below.
 It is recommended to create a dedicated namespace before creating the secrets and the config maps.
 
-[source,text]
+[source,console]
 ----
 $ kubectl create secret generic axonserver-license --from-file=./axoniq.license -n ${axonserver-ns}
 secret/axonserver-license created
@@ -415,7 +423,7 @@ Then a list of volumes has to be added to link the actual license and properties
 The complete spec for the Axon Server Stateful set is given below.
 This includes the security context, the volume mounts, the readiness and liveness probes and finally the volumes.
 
-[source,text]
+[source,yaml]
 ----
 apiVersion: apps/v1
 kind: StatefulSet
@@ -517,9 +525,9 @@ spec:
             storage: 1Gi
 ----
 
-The StatefulSet can be applied using the following command (assuming that the StatefulSet spec is stored in the file "axonserver-sts.yml").
+The StatefulSet can be applied using the following command (assuming that the StatefulSet spec is stored in the file `axonserver-sts.yml`).
 
-[source,text]
+[source,console]
 ----
 $ kubectl apply -f axonserver-sts.yml -n ${axonserver-ns}
 statefulset.apps/axonserver created
@@ -527,7 +535,7 @@ statefulset.apps/axonserver created
 
 The next step would be to create the two services required for Axon Server, that is axonserver-gui on 8024 (HTTP) and axonserver on 8124 (gRPC).
 
-[source,text]
+[source,yaml]
 ----
 ---
 apiVersion: v1
@@ -579,9 +587,9 @@ spec:
 ---
 ----
 
-The services use an Ingress to allow incoming traffic and can be deployed with the following command (assuming that the Service specs are stored in the file "axonserver-ing.yml").
+The services use an Ingress to allow incoming traffic and can be deployed with the following command (assuming that the Service specs are stored in the file `axonserver-ing.yml`).
 
-[source,text]
+[source,console]
 ----
 $ kubectl apply -f axonserver-ing.yml -n ${axonserver-ns}
 service/axonserver-gui created
@@ -594,7 +602,7 @@ The simplest approach, and most often correct one, is to use a scaling factor ot
 This means we will get several nodes that Kubernetes can dynamically manage and migrate as needed, while at the same time fixing the name and storage.
 We will get a number suffixed to the name starting at 0, so a scaling factor of 3 gives us “axonserver-0” through “axonserver-2”.
 
-[source,text]
+[source,console]
 ----
 $ kubectl scale sts axonserver -n ${axonserver-ns} --replicas=3
 statefulset.apps/axonserver scaled
