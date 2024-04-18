@@ -99,7 +99,7 @@ A starter Dockerfile is included below which can be tailored as per your require
 
 The starter file helps create the image in multiple stages,
 
-* The image will be based on a compact image from Google’s “distroless” base images at the gcr.io repository, in this case “gcr.io/distroless/java:11”.
+* The image will be based on a compact image from Google’s `distroless` base images at the gcr.io repository, in this case `gcr.io/distroless/java:11`.
 * The first stage creates the directories that will become our volumes.
 This step cannot be performed in the Distroless image, because that image does not provide a shell.
 * The second stage begins by copying the home directory with its volume mount points, carefully keeping ownership set to the new user.
@@ -204,9 +204,9 @@ Axon Server is meant to be run in a distributed manner, as a cluster where there
 
 The installation process assumes that Docker Compose will be used to run a 3-node Axon Server cluster, that is running 3 services of the same container image we built above.
 Let us designate these services as "_axonserver-1_", "_axonserver-2_" and "_axonserver-3_".
-We will also give a tag to the image that we constructed above as "_my-repository/axonserver:2023.1_".
+We will also give a tag to the image that we constructed above as `_my-repository/axonserver:2023.1_`.
 
-Each container instance will use separate volumes for “data”, “events”, and “log”.
+Each container instance will use separate volumes for `data`, `events`, and `log`.
 An environment variable is added to tell Axon Server about the location of the license file.
 We will use "secrets" to inject the license file, tokens as well as the cluster/context definitions using the autocluster mechanism.
 
@@ -353,7 +353,7 @@ secrets:
     file: ./axonserver.token
 ----
 
-The “axonserver-token” secret is used to allow the CLI to talk with nodes.
+The `axonserver-token` secret is used to allow the CLI to talk with nodes.
 The access control section details the generation of these tokens.
 A similar approach can be used to configure more secrets for the certificates, and so enable SSL.
 
@@ -383,16 +383,16 @@ $ docker-compose up
 
 The examples below show only one of the ways you could deploy Axon Server to Kubernetes.
 As discussed in https://developer.axoniq.io/w/revisiting-axon-server-in-containers[this Blog article], there are many aspects that you need to carefully plan ahaead for.
-A complete set of examples can be found in the "https://github.com/AxonIQ/running-axon-server[Running Axon Server]" GitHub repository.
-We especially recommend using https://github.com/AxonIQ/running-axon-server/tree/master/3-k8s/4-k8s-ssts-tls[the "Singleton StatefulSet" approach].
+A complete set of examples can be found in the `https://github.com/AxonIQ/running-axon-server[Running Axon Server]` GitHub repository.
+We especially recommend using `https://github.com/AxonIQ/running-axon-server/tree/master/3-k8s/4-k8s-ssts-tls`[the "Singleton StatefulSet" approach].
 Although the complexity of deploying any application to Kubernetes can be overwhelming, we strongly recommend you to study this subject carefully.
 The examples we provide are not necessarily the best approach for your particular situation, so be careful about copying them without any further modifications, if only because they generate self-signed certificates that have a one-year validity.
 
 === Creating the Secrets and ConfigMap
 
 An important thing to consider is the use of a "nonroot" image.
-This is due to the fact that volumes are mounted as owned by the mount location’s owner in Docker, while Kubernetes uses a special security context, defaulting to "`root`".
-Since a "nonroot" image runs Axon Server under its own user, it has no rights on the mounted volume other than “read”.
+This is due to the fact that volumes are mounted as owned by the mount location’s owner in Docker, while Kubernetes uses a special security context, defaulting to `root`.
+Since a "nonroot" image runs Axon Server under its own user, it has no rights on the mounted volume other than `read`.
 The context can be specified, but only through the user or group’s ID, and not using their name as we did in the image, because that name does not exist in the k8s management context.
 So we have to adjust the first stage to specify a specific numeric value _(here we have given 1001)_ , and then use that value in the security context of the Stateful set which we shall see below.
 
@@ -401,7 +401,7 @@ Unlike Docker Compose, Kubernetes mounts Secrets and ConfigMaps as directories r
 For the license secret we can use a new location `/axonserver/license/axoniq.license` and adjust the environment variable to match.
 For the system token we’ll use `/axonserver/security/token.txt`, and for the properties file we’ll use a ConfigMap that we mount on top of the `/axonserver/config` directory.
 
-These can be created using "kubectl" directly from their respective file as depicted below.
+These can be created using `kubectl` directly from their respective file as depicted below.
 It is recommended to create a dedicated namespace before creating the secrets and the config maps.
 
 [source,console]
@@ -458,7 +458,7 @@ spec:
           protocol: TCP
         env:
         - name: AXONIQ_LICENSE
-          value: "/axonserver/license/axoniq.license"
+          value: /axonserver/license/axoniq.license
         volumeMounts:
         - name: data
           mountPath: /axonserver/data
@@ -505,21 +505,21 @@ spec:
     - metadata:
         name: events
       spec:
-        accessModes: [ "ReadWriteOnce" ]
+        accessModes: [ ReadWriteOnce ]
         resources:
           requests:
             storage: 5Gi
     - metadata:
         name: log
       spec:
-        accessModes: [ "ReadWriteOnce" ]
+        accessModes: [ ReadWriteOnce ]
         resources:
           requests:
             storage: 1Gi
     - metadata:
         name: data
       spec:
-        accessModes: [ "ReadWriteOnce" ]
+        accessModes: [ ReadWriteOnce ]
         resources:
           requests:
             storage: 1Gi
@@ -600,7 +600,7 @@ ingress.networking.k8s.io/axonserver created
 The final step is to scale out the cluster.
 The simplest approach, and most often correct one, is to use a scaling factor other than 1, letting Kubernetes take care of deploying several instances.
 This means we will get several nodes that Kubernetes can dynamically manage and migrate as needed, while at the same time fixing the name and storage.
-We will get a number suffixed to the name starting at 0, so a scaling factor of 3 gives us “axonserver-0” through “axonserver-2”.
+We will get a number suffixed to the name starting at 0, so a scaling factor of 3 gives us `axonserver-0` through `axonserver-2`.
 
 [source,console]
 ----
