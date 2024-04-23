@@ -411,7 +411,7 @@ public class BikeStatusProjection {
 <h2 id="_handling_the_queries_from_the_projection"><a class="anchor" href="#_handling_the_queries_from_the_projection"></a>Handling the queries from the projection.</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Our final task in defining our projection is to implement the support for handling queries and returning the current information we have.</p>
+<p>Our next task in defining our projection is to implement the support for handling queries and returning the current information we have.</p>
 </div>
 <div class="paragraph">
 <p>We need to add a <code>@QueryHandler</code> method for each query we want to support. Since we already have the bike statuses persisted in the way we need to return the information, we only need to query the database and return that.</p>
@@ -493,7 +493,7 @@ public class BikeStatusProjection {
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>We need to add a specific method to our <code>BikeStatusRepository</code> that implements the query to the DB. We will do that right after this. But, since we are using Spring Data, the name of the method should follow a specific pattern. (More on this in a few lines)</td>
+<td>We need to add a specific method to our <code>BikeStatusRepository</code> that implements the query to the DB. We will do that right after this. Since we are using Spring Data, the name of the method should follow a specific pattern. (More on this in a few lines)</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
@@ -552,6 +552,408 @@ public interface BikeStatusRepository
 <div class="paragraph">
 <p>In the next section we will extend our <code>RestController</code> to add endpoints for these queries and route the queries to the system using <code>Query</code> messages.</p>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_creating_the_endpoint_to_accept_query_request"><a class="anchor" href="#_creating_the_endpoint_to_accept_query_request"></a>Creating the Endpoint to accept query request.</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Now that we have full support in our projection to handle queries, let&#8217;s implement and expose the endpoint in our controller that will receive HTTP requests for the query and route the corresponding query message internally.</p>
+</div>
+<div class="paragraph">
+<p>To do this, we will add a couple of <code>@GetMapping</code> annotated methods in the <code>RentalController</code> we created in <a href="implement-create-bike.html#_implementing_the_http_rest_controller" class="xref page">Implementing the HTTP REST controller</a>. Those methods will use the <code>QueryGateway</code> that we already added to the <code>RentalController</code> to route the queries through Axon Framework:</p>
+</div>
+<div class="listingblock">
+<div class="title">/rental/src/main/java/io/axoniq/demo/bikerental/rental/iu/RentalController.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@RestController      <i class="conum" data-value="1"></i><b>(1)</b>
+@RequestMapping("/") <i class="conum" data-value="2"></i><b>(2)</b>
+public class RentalController {
+
+    private final CommandGateway commandGateway;    <i class="conum" data-value="3"></i><b>(3)</b>
+    private final QueryGateway queryGateway;        <i class="conum" data-value="4"></i><b>(4)</b>
+
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>RestController</code> annotation by spring defines this as a component that will expose the REST endpoint URLs.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>@RequestMapping</code> annotation establishes the root URL for all the endpoints exposed by this controller.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The <code>CommandGateway</code> is the Axon Framework component that we already used to route commands.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The <code>QueryGateway</code> is the Axon Framework component that we will use now to route the query messages.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>We already configured the query handler methods in the last section to use the <code>queryName</code> attribute and link the method to the query by query name. So, we will add these query names as constants to our <code>RestController</code>:</p>
+</div>
+<div class="listingblock">
+<div class="title">/rental/src/main/java/io/axoniq/demo/bikerental/rental/iu/RentalController.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@RestController
+@RequestMapping("/")
+public class RestController {
+
+    public static final String FIND_ALL_QUERY = "findAll";
+    public static final String FIND_ONE_QUERY = "findOne";
+
+}</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_implementing_endpoint_for_findall_query"><a class="anchor" href="#_implementing_endpoint_for_findall_query"></a>Implementing endpoint for <code>findAll</code> query</h3>
+<div class="paragraph">
+<p>To implement the method that exposes the endpoint for returning all the bikes and their status, add the following method to our <code>RestController</code>:</p>
+</div>
+<div class="listingblock">
+<div class="title">/rental/src/main/java/io/axoniq/demo/bikerental/rental/iu/RentalController.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@RestController
+@RequestMapping("/")
+public class RestController {
+
+    @GetMapping("/bikes") <i class="conum" data-value="1"></i><b>(1)</b>
+    public CompletableFuture&lt;List&lt;BikeStatus&gt;&gt; findAll() { <i class="conum" data-value="2"></i><b>(2)</b>
+        return queryGateway.query( <i class="conum" data-value="3"></i><b>(3)</b>
+                FIND_ALL_QUERY, <i class="conum" data-value="4"></i><b>(4)</b>
+                null, <i class="conum" data-value="5"></i><b>(5)</b>
+                ResponseTypes.multipleInstancesOf(BikeStatus.class) <i class="conum" data-value="6"></i><b>(6)</b>
+        );
+    }
+
+
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>GetMapping</code> Spring annotation specifies that this method will be invoked whenever a <code>GET</code> request to the URL <code>/bikes</code> is received by the application.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The method will return a list of <code>BikeStatus</code> responses. See the info block below for an explanation on returning the <code>CompletableFuture</code> or the <code>List&lt;BikeStatus&gt;</code> directly.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>We will use the <code>query</code> mehtod on the <code>queryGateway</code> component provided by AxonFramework to route the query. This method receives three parameters:</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The query. It could be an object or a <code>String</code> with the query name. In this case, as the queries are simple ones, we have choosen to use query names.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>The query itself, with the parameters or criteria for filtering the results. In this case, the <code>findAll</code> query does not have any filter, so we specify <code>null</code> as the query.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>The type of reponse we are expecting from this query. In this case, we expect one or more instances of <code>BikeStatus</code>.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><strong>A performance consideration on returning CompletableFutures from your RestController method.</strong></p>
+</div>
+<div class="paragraph">
+<p>The <code>queryGateway</code> returns a <code>CompletableFuture&lt;T&gt;</code> which keeps a reference to the result of executing the query, and allows to get the results of type <code>T</code>
+when they are ready.</p>
+</div>
+<div class="paragraph">
+<p>This way, the call to the <code>query</code> method does not block and returns immediately after sending the query message to the query bus, even though the response message has not been calculated.</p>
+</div>
+<div class="paragraph">
+<p>This way, with Axon Framework, any code sending a query message does not need to wait until the query is fully executed and can do something else while the response is received. Only when we call the <code>get()</code> method on the <code>CompletableFuture</code> the executing thread will block until the response is ready.</p>
+</div>
+<div class="paragraph">
+<p>We could have implemented the method to return the result instead, by returning the result of callling the <code>CompletableFuture::get</code> method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public List&lt;BikeStatus&gt; findAll() {
+    CompletableFuture&lt;List&lt;BikeStatus&gt;&gt; result =
+        queryGateway.query(FIND_ALL_QUERY, null, ResponseTypes.multipleInstanceOf(BikeStatus.class));
+    return result.get(); <i class="conum" data-value="1"></i><b>(1)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>get()</code> call will block the thread until the result is received back.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In this case, the thread calling the <code>findAll</code> method will be blocked until the response message is received, and thus, we are blocking one of the Tomcat&#8217;s worker threads.</p>
+</div>
+<div class="paragraph">
+<p>By returning the <code>CompletableFuture&lt;List&lt;BikeStatus&gt;&gt;</code> we are not blocking the Tomcat Worker Thread inside <code>findAll</code>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_implementing_endpoint_for_findone_query"><a class="anchor" href="#_implementing_endpoint_for_findone_query"></a>Implementing endpoint for <code>findOne</code> query</h3>
+<div class="paragraph">
+<p>In a similar way, we can add another <code>@GetMapping</code> annotated method to expose the endpoint for receiving requests to get the BikeStatus for a specific bike given its <code>bikeId</code>:</p>
+</div>
+<div class="listingblock">
+<div class="title">/rental/src/main/java/io/axoniq/demo/bikerental/rental/iu/RentalController.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@RestController
+@RequestMapping("/")
+public class RestController {
+
+    @GetMapping("/bikes/{bikeId}") <i class="conum" data-value="1"></i><b>(1)</b>
+    public CompletableFuture&lt;BikeStatus&gt; findStatus(@PathVariable("bikeId") String bikeId) { <i class="conum" data-value="2"></i><b>(2)</b>
+        return queryGateway.query(FIND_ONE_QUERY, bikeId, BikeStatus.class); <i class="conum" data-value="3"></i><b>(3)</b>
+    }
+
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>@GetMapping</code> annotation configures the method to be invoked when a <code>GET</code> request to <code>/bikes/{bikeId}</code> is received, and defines the part of the URL that comes after <code>/bikes/</code> to be assigned to the <code>bikeId</code> path variable.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>@PathVariable("bikeId")</code> annotation instruct Spring to provide to the method argument the value of the URL that matches the <code>bikeId</code> path variable.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>We use the <code>query</code> method of the <code>queryGateway</code> to send the query message. This time, we specify the provide <code>bikeId</code> as the query criteria as the second argument, and the <code>BikeStatus.class</code> as the type of the response we are expecting from the query.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_running_and_invoking_the_queries"><a class="anchor" href="#_running_and_invoking_the_queries"></a>Running and invoking the queries</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Now we can run our application again as we described in <a href="run-app-with-docker-compose.html" class="xref page">Running your application in your local environment with Docker Compose</a> and test that our queries work.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>When we invoked the endpoint to register new bikes after we implemented the command handler, the command handler triggered the corresponding <code>BikeRegisteredEvent</code> to notify all the components (like our projection) of the changes.</p>
+</div>
+<div class="paragraph">
+<p>Back then, we didn&#8217;t have our <code>BikeStatusProjection</code> implemented, which means we didn&#8217;t have the event handlers for those <code>BikeRegisteredEvent</code>. What happen to those changes? Have we lost those events? How are we going to keep our query model updated?</p>
+</div>
+<div class="paragraph">
+<p>Remember that Axon Server acts both as a Message Broker (optimized and configured for routing Events, Commands and Queries), but also as an Event Store. Which means not only that it keeps all those Events persisted, but also that its persistence is optimized for the storage and retrieval patterns needed in a Event-Sourcing architecture.</p>
+</div>
+<div class="paragraph">
+<p>When we start Axon Server (as configured in the <code>docker-compose.yml</code> file), Axon Server will start and all the previous events are still available. When our application connects and register the event handlers for the <code>BikeRegisteredEvent</code>, Axon Server will know that this is a new component that needs all the events from the start. Consequently, Axon Server will deliver to our <code>BikeStatusProjection</code> all the past events in the order that they happened.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_invoking_the_findall_and_findone_queries"><a class="anchor" href="#_invoking_the_findall_and_findone_queries"></a>Invoking the <code>findAll</code> and <code>findOne</code> queries</h3>
+<div class="paragraph">
+<p>To test our <code>findAll</code> query we simply need to send a <code>HTTP GET</code> request to the following endpoint:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost:8080/bikes</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To get the status of a specific bike, we need to send an <code>HTTP GET</code> request to the following URL:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://localhost:8080/bikes/{bikeId}</pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_from_the_command_line"><a class="anchor" href="#_from_the_command_line"></a>From the command line</h4>
+<div class="paragraph">
+<p>We can invoke the endpoint from the command line using the <code>curl</code> command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">% curl -X GET "http://localhost:8080/bikes"
+[
+  {
+    "bikeId": "8427681b-1ee6-4e0a-b5d8-c524b9ed553d",
+    "bikeType": "city",
+    "location": "Utrecht",
+    "renter": null,
+    "status": "AVAILABLE"
+  },
+  {
+    "bikeId": "9f4572c0-c09d-4452-bd31-e0464143baf7",
+    "bikeType": "city",
+    "location": "Utrecht",
+    "renter": null,
+    "status": "AVAILABLE"
+  },
+  {
+    "bikeId": "547a47fa-573b-4140-88af-0ea84862944b",
+    "bikeType": "city",
+    "location": "Utrecht",
+    "renter": null,
+    "status": "AVAILABLE"
+  }
+]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also invoke the <code>findOne</code> query:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">%% curl -X GET "http://localhost:8080/bikes/8427681b-1ee6-4e0a-b5d8-c524b9ed553d"
+{
+  "bikeId": "8427681b-1ee6-4e0a-b5d8-c524b9ed553d",
+  "bikeType": "city",
+  "location": "Utrecht",
+  "renter": null,
+  "status": "AVAILABLE"
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_using_intellij_idea"><a class="anchor" href="#_using_intellij_idea"></a>Using IntelliJ IDEA</h4>
+<div class="paragraph">
+<p>If you are using IntelliJ IDEA you can edit the <code>requests.http</code> file we created at <a href="invoking-create-bike-endpoint.html#_using_intellij_idea" class="xref page">Invoking the Create Bike EndPoint Using IntelliJ IDEA</a> to add the following lines:</p>
+</div>
+<div class="listingblock">
+<div class="title">/requests.http</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-httprequest hljs" data-lang="httprequest">### List all
+# Show available bikes
+GET {{rental}}/bikes
+Accept: application/json
+
+### Bike status
+# Show bike status
+GET {{rental}}/bikes/8427681b-1ee6-4e0a-b5d8-c524b9ed553d
+Accept: application/json
+
+###</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now you can click on the green "play" icon that is shown right to the left of the requests to execute the request:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">GET http://localhost:8080/bikes
+
+HTTP/1.1 200 OK
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Content-Type: application/json
+Content-Length: 497
+
+[
+  {
+    "bikeId": "4ee11ca7-3a38-4c37-9584-f016e450998e",
+    "bikeType": "city",
+    "location": "Utrecht",
+    "renter": null,
+    "status": "AVAILABLE"
+  },
+  {
+    "bikeId": "9f4572c0-c09d-4452-bd31-e0464143baf7",
+    "bikeType": "city",
+    "location": "Utrecht",
+    "renter": null,
+    "status": "AVAILABLE"
+  },
+  {
+    "bikeId": "547a47fa-573b-4140-88af-0ea84862944b",
+    "bikeType": "city",
+    "location": "Utrecht",
+    "renter": null,
+    "status": "AVAILABLE"
+  },
+  {
+    "bikeId": "d29775ea-2cd6-4102-b887-552d4cdb84db",
+    "bikeType": "city",
+    "location": "Utrecht",
+    "renter": null,
+    "status": "AVAILABLE"
+  }
+]
+Response file saved.
+&gt; 2024-04-22T173839.200.json
+
+Response code: 200 (OK); Time: 34ms (34 ms); Content length: 497 bytes (497 B)</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_conclusion"><a class="anchor" href="#_conclusion"></a>Conclusion.</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>With this, we have implemented an example of the main message handler component that we will have on an application that is designed to be able to scale out easily:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>We have a <strong>command model</strong> with the implementation of the <code>Bike</code> aggregate, that defines the <code>@CommandHandler</code> s and sends the events that notifies the changes made in the system as a result of processing the command. The <strong>command model</strong> also subscribes to those events using some <code>@EventSourcingHandler</code>. This way we can guarantee that the set of events produced by the command handler are the real <strong>source of truth</strong> for any changes in our system.</p>
+</li>
+<li>
+<p>We also have defined the <strong>query model</strong> which consists of a <strong>Projection</strong> of the data kept in a structure that helps replying to any <strong>request for information</strong> as quick as posible. This queries are processed by the <code>@QueryHandlers</code> defined in the Projection.</p>
+</li>
+<li>
+<p>To keep the data in the <strong>Projection</strong> up-to-date, we have defined a set of <code>@EventHandler`s that will be invoked upon reception of the events sent by the `@CommandHandler</code>. This event handlers will update the projection&#8217;s DB accordinglu.</p>
+</li>
+<li>
+<p>Finally, we have a <code>@RestController</code> that exposes the endpoints for invoking the request to register a new bike, or the queries to retrieve information about all or one specific bike. This controller methods, will send the corresponding <code>Command</code> or <code>Query</code> messages through the <code>CommandGateway</code> or <code>QueryGateway</code> provided by Axon Framework.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>These are the basic components that we will use to implement any further feature in our system. Sometimes, some of those features, can be a little bit more complex and the business logic may require additional things to consider.</p>
+</div>
+<div class="paragraph">
+<p>We will explore some more advanced topics of building applications with Axon Framework in upcoming sections.</p>
 </div>
 </div>
 </div>
