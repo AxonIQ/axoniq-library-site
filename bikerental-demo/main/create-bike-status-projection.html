@@ -416,6 +416,36 @@ public class BikeStatusProjection {
 <div class="paragraph">
 <p>We need to add a <code>@QueryHandler</code> method for each query we want to support. Since we already have the bike statuses persisted in the way we need to return the information, we only need to query the database and return that.</p>
 </div>
+<div class="paragraph">
+<p>Before jumping into creating the methds to handle the queries, we need to consider how we are going to identify the different queries.</p>
+</div>
+<div class="sect2">
+<h3 id="_using_named_queries"><a class="anchor" href="#_using_named_queries"></a>Using named queries.</h3>
+<div class="paragraph">
+<p>Axon Framework allows different ways to identify a query message and link that query to the right method for handling it. In this tutorial we are going to start using the most simple way to identify a query: by assigning each query a name.</p>
+</div>
+<div class="paragraph">
+<p>We are going to use <code>String</code> constants to make sure we always refer to the same query name, both in the modules that send the query messages and in the components that are handling them.</p>
+</div>
+<div class="paragraph">
+<p>So, as the first step we will create a class to define and share those query names in different components. Define the following class in the <code>core-api</code> module:</p>
+</div>
+<div class="listingblock">
+<div class="title">/core-api/src/main/java/io/axoniq/demo/bikerental/coreapi/rental/BikeStatusNamedQueries.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.bikerental.coreapi.rental;
+
+public class BikeStatusNamedQueries {
+    public static final String FIND_ALL = "findAll";
+    public static final String FIND_ONE = "findOne";
+    public static final String FIND_AVAILABLE = "findAvailable";
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now that we have the names of the queries defined, let&#8217;s define the methods that will handle and respond them.</p>
+</div>
+</div>
 <div class="sect2">
 <h3 id="_implement_a_query_to_return_all_the_bikes"><a class="anchor" href="#_implement_a_query_to_return_all_the_bikes"></a>Implement a query to return all the bikes.</h3>
 <div class="paragraph">
@@ -427,7 +457,7 @@ public class BikeStatusProjection {
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Component
 public class BikeStatusProjection {
 
-    @QueryHandler(queryName = "findAll") <i class="conum" data-value="1"></i><b>(1)</b>
+    @QueryHandler(queryName = BikeStatusNamedQueries.FIND_ALL) <i class="conum" data-value="1"></i><b>(1)</b>
     public Iterable&lt;BikeStatus&gt; findAll() { <i class="conum" data-value="2"></i><b>(2)</b>
         return bikeStatusRepository.findAll(); <i class="conum" data-value="3"></i><b>(3)</b>
     }
@@ -452,7 +482,7 @@ public class BikeStatusProjection {
 </table>
 </div>
 <div class="paragraph">
-<p>In short, we have defined a query handler method that Axon Framework will call upon the reception of a query message to <code>findAll</code> the bikes in our system. And the method will simply retrieve the up-to-date information from the DB and return the <code>BikeStatus</code> for all the bikes.</p>
+<p>In short, we have defined a query handler method that Axon Framework will call upon the reception of a query message to <code>FIND_ALL</code> the bikes in our system. And the method will simply retrieve the up-to-date information from the DB and return the <code>BikeStatus</code> for all the bikes.</p>
 </div>
 </div>
 <div class="sect2">
@@ -469,15 +499,16 @@ public class BikeStatusProjection {
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Component
 public class BikeStatusProjection {
 
-    @QueryHandler(queryName = "findAvailable") <i class="conum" data-value="1"></i><b>(1)</b>
+    @QueryHandler(queryName = BikeStatusNamedQueries.FIND_AVAILABLE) <i class="conum" data-value="1"></i><b>(1)</b>
     public Iterable&lt;BikeStatus&gt; findAvailable(String bikeType) { <i class="conum" data-value="2"></i><b>(2)</b>
         return bikeStatusRepository.findAllByBikeTypeAndStatus(bikeType, RentalStatus.AVAILABLE);
     }
 
-    @QueryHandler(queryName = "findOne") <i class="conum" data-value="3"></i><b>(3)</b>
+    @QueryHandler(queryName = BikeStatusNamedQueries.FIND_ONE) <i class="conum" data-value="3"></i><b>(3)</b>
     public BikeStatus findOne(String bikeId) { <i class="conum" data-value="4"></i><b>(4)</b>
         return bikeStatusRepository.findById(bikeId).orElse(null); <i class="conum" data-value="5"></i><b>(5)</b>
     }
+
 }</code></pre>
 </div>
 </div>
@@ -497,7 +528,7 @@ public class BikeStatusProjection {
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>We define another <code>QueryHandler</code> method for the <code>findOne</code> query.</td>
+<td>We define another <code>QueryHandler</code> method for the <code>FIND_ONE</code> query.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="5"></i><b>5</b></td>
@@ -522,6 +553,7 @@ public interface BikeStatusRepository
         extends JpaRepository&lt;BikeStatus, String&gt; { <i class="conum" data-value="2"></i><b>(2)</b>
 
     List&lt;BikeStatus&gt; findAllByBikeTypeAndStatus(String bikeType, RentalStatus status);
+    long countBikeStatusesByBikeType(String bikeType);
 
 }</code></pre>
 </div>
@@ -607,8 +639,6 @@ public class RentalController {
 @RequestMapping("/")
 public class RestController {
 
-    public static final String FIND_ALL_QUERY = "findAll";
-    public static final String FIND_ONE_QUERY = "findOne";
 
 }</code></pre>
 </div>
@@ -628,12 +658,11 @@ public class RestController {
     @GetMapping("/bikes") <i class="conum" data-value="1"></i><b>(1)</b>
     public CompletableFuture&lt;List&lt;BikeStatus&gt;&gt; findAll() { <i class="conum" data-value="2"></i><b>(2)</b>
         return queryGateway.query( <i class="conum" data-value="3"></i><b>(3)</b>
-                FIND_ALL_QUERY, <i class="conum" data-value="4"></i><b>(4)</b>
+                BikeStatusNamedQueries.FIND_ALL, <i class="conum" data-value="4"></i><b>(4)</b>
                 null, <i class="conum" data-value="5"></i><b>(5)</b>
                 ResponseTypes.multipleInstancesOf(BikeStatus.class) <i class="conum" data-value="6"></i><b>(6)</b>
         );
     }
-
 
 }</code></pre>
 </div>
@@ -731,8 +760,9 @@ public class RestController {
 
     @GetMapping("/bikes/{bikeId}") <i class="conum" data-value="1"></i><b>(1)</b>
     public CompletableFuture&lt;BikeStatus&gt; findStatus(@PathVariable("bikeId") String bikeId) { <i class="conum" data-value="2"></i><b>(2)</b>
-        return queryGateway.query(FIND_ONE_QUERY, bikeId, BikeStatus.class); <i class="conum" data-value="3"></i><b>(3)</b>
+        return queryGateway.query(BikeStatusNamedQueries.FIND_ONE, bikeId, BikeStatus.class); <i class="conum" data-value="3"></i><b>(3)</b>
     }
+
 
 }</code></pre>
 </div>
