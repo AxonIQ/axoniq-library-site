@@ -275,11 +275,75 @@
 <div class="paragraph">
 <p>This module contains all necessary components and building blocks to provide scalable, robust, and hassle-free messaging between components.</p>
 </div>
-<div id="axon-arch-diagram" class="imageblock kroki">
+<div id="axon-arch-diagram" class="literalblock kroki-error">
+<div class="title">Messaging in the high-level application architecture</div>
 <div class="content">
-<img src="_images/diag-df9020aa52d5be199ca8c700469bbb274e4b6ed2.svg" alt="Messaging in the high-level application architecture">
+<pre>digraph foo {
+    layout="dot"
+    rankdir="LR"
+
+    node [style=rounded, colorscheme=oranges9]
+
+    subgraph cluster_command_side {
+        label="Command side";
+        graph[style=dotted];
+
+        "Command Handling Component" [shape=box, style="filled", fillcolor=white]
+        "Command model repository" [shape=cylinder, style="filled", fillcolor=white]
+        "Command Handling Component" -&gt; "Command model repository" [name="persistCommandModel", dir=both]
+
+        // hack to align the UI
+        c1 -&gt; "Command Handling Component" [style="invis"]
+    }
+
+    subgraph cluster_query_side {
+        label="Query side";
+        graph[style=dotted];
+
+        "Event Handling Component" [shape=box, style="filled", fillcolor=white]
+        "Query Handling Component" [shape=box, style="filled", fillcolor=white]
+        "Query model repository" [shape=cylinder, style="filled", fillcolor=white]
+
+        "Event Handling Component" -&gt; "Query model repository" [name="persistQueryModel"]
+        "Query Handling Component" -&gt; "Query model repository" [name="read", dir=both]
+
+        // hack to align the UI
+        "Event Handling Component" -&gt; c2 [style="invis"]
+    }
+
+    subgraph cluster_messaging {
+
+        label="Messaging";
+        bgcolor="lightyellow"
+        pencolor=orange
+        graph[style=bold];
+
+        CommandBus [shape=assembly, label=""]
+        EventBus [shape=assembly, label=""]
+        QueryBus [shape=assembly, label=""]
+
+
+    }
+
+    Client [shape=component, color=9, weight=1, height=2]
+
+    "Command Handling Component" -&gt; EventBus [name="event", label="event"]
+    EventBus -&gt; "Event Handling Component" [name="event", label="event"]
+
+
+    Client -&gt; CommandBus -&gt; "Command Handling Component" [name="command", label="command", dir=both]
+    Client -&gt; QueryBus -&gt; "Query Handling Component" [name="query", xlabel="query", dir=both]
+    Client -&gt; EventBus [name="event", label="event"]
+
+    // hack to align the UI
+    {
+        rank=same
+        c1 [style="invis"]
+        c2 [style="invis"]
+    }
+
+}</pre>
 </div>
-<div class="title">Figure 1. Messaging in the high-level application architecture</div>
 </div>
 </div>
 </div>

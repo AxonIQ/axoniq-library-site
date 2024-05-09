@@ -302,11 +302,67 @@
 <div class="paragraph">
 <p>In Axon Framework, a query message is an immutable, serializable Java object implementing the <code>QueryMessage</code> interface.</p>
 </div>
-<div class="imageblock kroki">
+<div class="literalblock kroki-error">
+<div class="title">Query messaging class diagram</div>
 <div class="content">
-<img src="../_images/svg-810a5c9538b669c661fc492376269ce65a54a9cf.svg" alt="Query messaging class diagram">
+<pre>skinparam linetype ortho
+left to right direction
+
+together {
+
+  interface Message{
+    -identifier: String
+    -payloadType: Class
+    -payload: Object
+    -metdata:  MetaData
+  }
+
+  interface ResultMessage&lt;R&gt; {
+    -exceptional: boolean
+    -exceptionDetails: Throwable
+  }
+
+  abstract AbstractMessage&lt;T&gt; {}
+  class GenericMessage&lt;T&gt; {}
+  class GenericResultMessage&lt;T&gt;
+
+  abstract MessageDecorator&lt;T&gt; {
+    -delegate: Message
+  }
+}
+
+
+AbstractMessage ..|&gt; Message
+MessageDecorator ..|&gt; Message
+ResultMessage --|&gt; Message
+GenericMessage --|&gt; AbstractMessage
+GenericResultMessage ..|&gt; ResultMessage
+
+' This is a fragment of a diagram
+' It is meant to be used together with generic_messaging_classes.puml
+
+package "query messages" &lt;&lt;Rectangle&gt;&gt; {
+
+  interface QueryMessage&lt;T,R&gt; {
+   	-queryName: String
+   	-responseType: ResponseType
+  }
+
+  interface QueryResponseMessage&lt;T&gt; {}
+
+  class GenericQueryMessage&lt;T,R&gt; {}
+
+  class GenericQueryResponseMessage{}
+
+}
+
+QueryMessage --|&gt; Message
+GenericQueryMessage ..|&gt; QueryMessage
+GenericQueryMessage --|&gt; MessageDecorator
+QueryResponseMessage --|&gt; ResultMessage
+GenericQueryResponseMessage ..|&gt; QueryResponseMessage
+GenericQueryResponseMessage --|&gt; GenericResultMessage</pre>
 </div>
-<div class="title">Figure 1. Query messaging class diagram</div>
 </div>
 <div class="paragraph">
 <p>With queries the communication is always bidirectional, and the response is an object that implements <code>QueryResponseMessage</code>.</p>
