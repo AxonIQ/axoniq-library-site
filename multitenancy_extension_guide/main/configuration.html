@@ -412,6 +412,50 @@ Only JPA Dead letter queue and In-Memory queues are supported.
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_advanced_configuration"><a class="anchor" href="#_advanced_configuration"></a>Advanced configuration</h3>
+<div class="sect3">
+<h4 id="_overriding_default_message_source"><a class="anchor" href="#_overriding_default_message_source"></a>Overriding default message source</h4>
+<div class="paragraph">
+<p>You can override the default message source for each tenant by defining the following bean:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public MultiTenantStreamableMessageSourceProvider multiTenantStreamableMessageSourceProvider(AxonServerEventStore customSource) {
+    return (defaultTenantSource, processorName, tenantDescriptor, configuration) -&gt; {
+        if (tenantDescriptor.tenantId().startsWith("tenant-custom")) {
+            return customSource;
+        }
+        return defaultTenantSource;
+    };
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This bean should return a <code>StreamableMessageSource</code> that will be used for specific tenants. This lambda will be called for each tenant and each event processor, so be sure to return a default tenant source if you don&#8217;t want to override it.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_disable_multi_tenancy_for_specific_event_processor"><a class="anchor" href="#_disable_multi_tenancy_for_specific_event_processor"></a>Disable multi-tenancy for specific event processor</h4>
+<div class="paragraph">
+<p>In certain cases, you may want to disable multi-tenancy for specific Event Processor which does not have any tenants.
+For example, when you have an event processor that is consuming events from an external context.
+Per default, each event processor is scaled, and duplicated for each tenant. To disable this behavior for a specific processing, you can define following bean:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public MultiTenantEventProcessorPredicate multiTenantEventProcessorPredicate() {
+    return (processorName) -&gt; !processorName.equals("external-context");
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This bean should return <code>true</code> for each processor that you want to be multi-tenant, and <code>false</code> for each processor that you want to be single tenant.</p>
+</div>
+</div>
+</div>
 </div>
 </div>
         <nav class="pagination">
