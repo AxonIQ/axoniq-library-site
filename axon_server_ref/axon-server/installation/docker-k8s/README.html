@@ -318,17 +318,6 @@
 </li>
 </ul>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p>Unified Axon Server Artifact</p>
-</div>
-<div class="paragraph">
-<p>In an effort to simplify the deployment process, since 2023.1 version we&#8217;ve updated Axon Server to release a single artifact, replacing the previously separate artifacts for the Standard and Enterprise edition.
-Depending on the presence of a license, Axon Server will now automatically adjust.</p>
-</div>
-</blockquote>
-</div>
 </div>
 </div>
 <div class="sect1">
@@ -366,7 +355,7 @@ Doing this will ensure that any mounted volumes will be writable by the user run
 <div class="paragraph">
 <p>This is where you can add configuration files, such as an additional <code>axonserver.properties</code> and the license file.
 However, you can also opt to use, for instance, Kubernetes, or Docker-compose secrets.
-Note that Axon Server EE assumes it can write to the directory configured with &#8220;axoniq.axonserver.enterprise.licenseDirectory&#8221;, so you don&#8217;t have to put the license on all nodes.
+Note that Axon Server assumes it can write to the directory configured with &#8220;axoniq.axonserver.enterprise.licenseDirectory&#8221;, so you don&#8217;t have to put the license on all nodes.
 * &#8220;/axonserver/data&#8221;</p>
 </div>
 <div class="paragraph">
@@ -619,7 +608,6 @@ services:
     ports:
       - '8024:8024'
       - '8124:8124'
-      - '8224:8224'
     networks:
       - axon-demo
 
@@ -642,7 +630,6 @@ services:
     ports:
       - '8025:8024'
       - '8125:8124'
-      - '8225:8224'
     networks:
       - axon-demo
 
@@ -665,7 +652,6 @@ services:
     ports:
       - '8026:8024'
       - '8126:8124'
-      - '8226:8224'
     networks:
       - axon-demo
 
@@ -774,9 +760,9 @@ axoniq.axonserver.accesscontrol.systemtokenfile=/axonserver/config/axonserver.to
 </div>
 <div class="paragraph">
 <p>The examples below show only one of the ways you could deploy Axon Server to Kubernetes.
-As discussed in <a href="https://developer.axoniq.io/w/revisiting-axon-server-in-containers">this Blog article</a>, there are many aspects that you need to carefully plan ahaead for.
+As discussed in <a href="https://developer.axoniq.io/w/revisiting-axon-server-in-containers">this Blog article</a>, there are many aspects that you need to carefully plan ahead for.
 A complete set of examples can be found in the "<a href="https://github.com/AxonIQ/running-axon-server">Running Axon Server</a>" GitHub repository.
-We especially recommend using <a href="https://github.com/AxonIQ/running-axon-server/tree/master/3-k8s/4-k8s-ssts-tls">the "Singleton StatefulSet" approach</a>.
+We especially recommend using <a href="https://github.com/AxonIQ/running-axon-server/tree/master/3-k8s/4-k8s-ee-ssts-tls">the "Singleton StatefulSet" approach</a>.
 Although the complexity of deploying any application to Kubernetes can be overwhelming, we strongly recommend you to study this subject carefully.
 The examples we provide are not necessarily the best approach for your particular situation, so be careful about copying them without any further modifications, if only because they generate self-signed certificates that have a one-year validity.</p>
 </div>
@@ -999,20 +985,7 @@ ingress.networking.k8s.io/axonserver created</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The final step is to scale out the cluster.
-The simplest approach, and most often correct one, is to use a scaling factor other than 1, letting Kubernetes take care of deploying several instances.
-This means we will get several nodes that Kubernetes can dynamically manage and migrate as needed, while at the same time fixing the name and storage.
-We will get a number suffixed to the name starting at 0, so a scaling factor of 3 gives us “axonserver-0” through “axonserver-2”.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">$ kubectl scale sts axonserver -n ${axonserver-ns} --replicas=3
-statefulset.apps/axonserver scaled</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This completes a basic setup to help install Axon Server on Kubernetes.
-The customer can choose to tailor the entire setup based on their requirements and usage of Kubernetes.</p>
+<p>To run an Axon Server cluster in Kubernetes it is recommended to create a separate stateful set for each node, and not to scale a single stateful set to multiple instances. Scaling a single stateful set makes it hard to control individual nodes in the cluster.</p>
 </div>
 </div>
 </div>
