@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Heartbeat Monitoring</title>
+    <link rel="canonical" href="https://library.axoniq.io/axon_server_ref/v2024.1/axon-server/administration/monitoring/heartbeat-monitoring.html">
+    <link rel="prev" href="grpc-metrics.html">
+    <link rel="next" href="diagnostics.html">
+    <meta name="generator" content="Antora 3.1.1">
+    <link rel="stylesheet" href="../../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../../_/img/favicon.ico" sizes="32x32">
+    <link rel="icon" href="../../../../../_/img/icon.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../../../../../_/img/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="../../../../../_/img/apple-touch-icon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../../_/static/manifest.webmanifest">
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../../_'</script>
+
+
+  </head>
+  <body class="article">
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://library.axoniq.io">Docs</a>
+      <div class="navbar-item search hide-for-print">
+        <div id="search-field" class="field">
+          <input id="search-input" type="text" placeholder="Search the docs">
+        </div>
+      </div>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../../../../home/basics.html">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Guides</a>
+          <div class="navbar-dropdown">
+              <a class="navbar-item" href="../../../../../home/guides/axon-framework.html">Axon Framework</a>
+              <a class="navbar-item" href="../../../../../home/guides/axon-server.html">Axon Server</a>
+              <a class="navbar-item" href="../../../../../home/guides/migration.html">Migration</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Reference</a>
+          <div class="navbar-dropdown">
+                <a class="navbar-item" href="../../../../../axon_framework_ref/introduction.html">Axon Framework</a>
+                <a class="navbar-item" href="../../../index.html">Axon Server</a>
+                <a class="navbar-item" href="../../../../../synapse_ref/latest/index.html">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../../axoniq_console_ref/main/index.html">AxonIQ Console</a>
+          </div>
+        </div>
+        <a class="navbar-item" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item" href="https://discuss.axoniq.io" target="_blank">AxonIQ Discuss</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="axon_server_ref" data-version="v2024.1">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../../index.html">Axon Server</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../index.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../installation/README.html">Installation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../installation/local-installation/README.html">Local installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../installation/docker-k8s/README.html">Docker / K8s</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../README.html">Administration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../admin-configuration/README.html">Configuration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../admin-configuration/configuration.html">System properties</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../admin-configuration/command-line-interface.html">Command Line Interface</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../admin-configuration/rest-api.html">REST API</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../admin-configuration/grpc-api.html">gRPC API</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="README.html">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="actuator-endpoints.html">Actuator Endpoints</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="axon-server-metrics.html">Axon Server Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="grpc-metrics.html">gRPC Metrics</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="heartbeat-monitoring.html">Heartbeat Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="diagnostics.html">Diagnostics</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../clustering.html">Clusters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../replication-groups.html">Replication Groups</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../multi-context.html">Multi-Context</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tiered-storage.html">Tiered Storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-transformation.html">Event Transformation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tagging.html">Tagging</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../backup-and-messaging-only-nodes.html">Backup and Messaging-Only Nodes</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../backups.html">Backups</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../recovery.html">Recovery</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../plugins.html">Axon Server Plugins</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../logging/README.html">Logging</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../logging/logging-format.html">Logging Format</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../error-codes.html">Error Codes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../security/README.html">Security</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/ssl.html">SSL</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-ee.html">Access Control for Axon Server</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-clients.html">Security for Axon Framework Client Applications</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-cli.html">Access Control and the CLI</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-api.html">Access Control on the REST and gRPC APIs</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-ldap.html">Axon Server EE - LDAP Extension</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-oauth2.html">Axon Server EE - OAuth Extension</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../performance/README.html">Performance</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../performance/tuning-event-processing.html">Event Segments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../performance/flow-control.html">Flow Control</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/README.html">Migration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/non-axon-server-to-axon-server.html">Non-Axon Server to Axon Server</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../release-notes.html">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../rn-as-major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../rn-as-minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+  <div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../../home/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../../index.html">Axon Server Reference</a></li>
+    <li><a href="../README.html">Administration</a></li>
+    <li><a href="README.html">Monitoring</a></li>
+    <li><a href="heartbeat-monitoring.html">Heartbeat Monitoring</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v2024.1</button>
+  <div class="version-menu">
+    <a class="version is-current" href="heartbeat-monitoring.html">v2024.1</a>
+    <a class="version is-missing" href="../../../../0/index.html">older releases</a>
+  </div>
+</div>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu">
+
+    <a class="action" href="https://discuss.axoniq.io/search?q&#x3D;https%3A%2F%2Flibrary.axoniq.io%2Faxon_server_ref%2Fv2024.1%2Faxon-server%2Fadministration%2Fmonitoring%2Fheartbeat-monitoring.html%20%23library" target="discuss_search">View Discussions</a>
+    <a class="action" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Heartbeat%20Monitoring%22%20library%20page%20...&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BHeartbeat%20Monitoring%5D(https%3A%2F%2Flibrary.axoniq.io%2Faxon_server_ref%2Fv2024.1%2Faxon-server%2Fadministration%2Fmonitoring%2Fheartbeat-monitoring.html)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+</div>
+    <div class="content">
+        <aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+            <h1 class="page">Heartbeat Monitoring</h1>
+            <div class="paragraph">
+<p><!-- vale AxonIQ.AcronymCase = NO -->
+<!-- vale Google.Passive = NO --></p>
+</div>
+<div class="paragraph">
+<p>You can enable the heartbeat monitoring in Axon Server in order to activate an high level monitoring of client connection availability.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework and Axon Server need to know whether the connection is still alive.
+GRPC already provides an internal heartbeat in its protocol but does not suffice in many situations, such as in the cloud or when using a service mesh.
+Proxies and Load Balancers understand this heartbeat and respond to it, while the connection beyond that&#8217;s connected to Axon Server is not checked properly.</p>
+</div>
+<div class="paragraph">
+<p>For this reason, the API of Axon Server implements a non-protocol heartbeat that is a regular gRPC call, sent at intervals.
+If the call is not responded to in time, the connection is terminated and re-established, providing recoverability from various network issues.
+Therefore it&#8217;s enabled by default.</p>
+</div>
+<div class="paragraph">
+<p>This feature can be enabled by configuring the following property:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axoniq.axonserver.heartbeat.enabled=true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Please note that when combining Axon Server with Axon Framework, the framework application should also have Heartbeat Monitoring enabled.
+Note that this is enabled <em>by default</em> in Axon Framework.</p>
+</div>
+<div class="paragraph">
+<p>If you want to disable heartbeat monitoring this further, regard the following configuration:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_axon_configuration_api" class="tab">
+<p>Axon Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot_auto_configuration" class="tab">
+<p>Spring Boot Auto Configuration</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_axon_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
+    // ...
+    public void disableHeartbeats(Configurer configurer) {
+        configurer.registerComponent(AxonServerConfiguration.class, config -&gt; {
+            AxonServerConfiguration.HeartbeatConfiguration heartbeatConfig =
+                    new AxonServerConfiguration.HeartbeatConfiguration();
+            heartbeatConfig.setEnabled(false);
+
+            AxonServerConfiguration serverConfig = new AxonServerConfiguration();
+            serverConfig.setHeartbeat(heartbeatConfig);
+            return serverConfig;
+        });
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_spring_boot_auto_configuration--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot_auto_configuration">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.axonserver.heartbeat.enabled=false</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Axon Framework supports heartbeat monitoring starting from 4.2.1 version.
+</td>
+</tr>
+</table>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="grpc-metrics.html">gRPC Metrics</a></span>
+  <span class="next"><a href="diagnostics.html">Diagnostics</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-framework">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-server">Axon Server</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-cloud">AxonIQ Cloud</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-console">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-synapse">Axon Synapse</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/blog/protect-sensitive-data-in-an-event-sourced-application">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/">Customer Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://console.axoniq.io/">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+          <li><a class="ext" target="_blank" href="https://console.cloud.axoniq.io">AxonIQ Cloud</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+<script id="site-script" src="../../../../../_/js/site.js" data-ui-root-path="../../../../../_"></script>
+<script async src="../../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../../.." data-snippet-length="100" data-stylesheet="../../../../../_/css/search.css"></script>
+<script async src="../../../../../search-index.js"></script>
+  </body>
+</html>
