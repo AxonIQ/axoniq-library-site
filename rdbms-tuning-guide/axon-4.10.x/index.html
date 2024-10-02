@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>RDBMS Tuning</title>
+    <meta name="generator" content="Antora 3.1.1">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <link rel="stylesheet" href="../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../_/img/favicon.ico" sizes="32x32">
+    <link rel="icon" href="../../_/img/icon.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../../_/img/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="../../_/img/apple-touch-icon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../_/static/manifest.webmanifest">
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../_'</script>
+
+
+  </head>
+  <body class="article">
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io"><img src="../../_/img/logo-dark2x.png" class="header_logo" /></a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../home/basics.html">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Guides</a>
+          <div class="navbar-dropdown card">
+              <a class="navbar-item" href="../../home/guides/axon-framework.html">Axon Framework</a>
+              <a class="navbar-item" href="../../home/guides/axon-server.html">Axon Server</a>
+              <a class="navbar-item" href="../../home/guides/migration.html">Migration</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../axon_framework_ref/introduction.html">Axon Framework</a>
+                <a class="navbar-item" href="../../axon_server_ref/v2024.1/index.html">Axon Server</a>
+                <a class="navbar-item" href="../../synapse_ref/latest/index.html">Axon Synapse</a>
+                <a class="navbar-item" href="../../axoniq_console_ref/main/index.html">AxonIQ Console</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item search hide-for-print">
+          <div id="search-field" class="field">
+            <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+          </div>
+        </div>
+        <a class="navbar-item navbar-button" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item navbar-button" href="https://discuss.axoniq.io" target="_blank">AxonIQ Discuss</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../home/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Axon Framework RDBMS tuning Guide </a></li>
+    <li><a href="index.html">RDBMS Tuning</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-4.10.x/docs/rdbms-tuning-guide/modules/ROOT/pages/index.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;https%3A%2F%2Fdocs.axoniq.io%2Frdbms-tuning-guide%2Faxon-4.10.x%2Findex.html%20%23library" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22RDBMS%20Tuning%22%20library%20page%20...&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BRDBMS%20Tuning%5D(https%3A%2F%2Fdocs.axoniq.io%2Frdbms-tuning-guide%2Faxon-4.10.x%2Findex.html)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">axon-4.10.x</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../index.html">development</a>
+    <a class="version item" href="../axon-5.0.x/index.html">axon-5.0.x</a>
+    <a class="version item is-current" href="index.html">axon-4.10.x</a>
+  </div>
+</div>
+</div>
+<div class="body">
+<div class="nav-container" data-component="rdbms-tuning-guide" data-version="axon-4.10.x">
+  <aside class="nav card">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html">Axon Framework RDBMS tuning Guide</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="index.html">RDBMS Tuning</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+    <div class="content">
+        <aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+            <h1 class="page">RDBMS Tuning</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This chapter will cover several considerations in regards to tuning the database for events.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sql_databases"><a class="anchor" href="#_sql_databases"></a>SQL databases</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you have generated the tables automatically using your JPA implementation (for example, Hibernate), you probably do not have all the right indexes set on your tables. Different usages of the event store require different indexes to be set for optimal performance. This list suggests the indexes that should be added for the different types of queries used by the default <code>EventStorageEngine</code> implementation:</p>
+</div>
+<details open>
+<summary class="title"><strong>Normal operational use (storing and loading events)</strong></summary>
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>Table <code>DomainEventEntry</code>, columns <code>aggregateIdentifier</code> and <code>sequenceNumber</code> (unique index)</p>
+</li>
+<li>
+<p>Table <code>DomainEventEntry</code>, <code>eventIdentifier</code> (unique index)</p>
+</li>
+</ul>
+</div>
+</div>
+</details>
+<details open>
+<summary class="title"><strong>Snapshotting</strong></summary>
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>Table <code>SnapshotEventEntry</code>, <code>aggregateIdentifier</code> column.</p>
+</li>
+<li>
+<p>Table <code>SnapshotEventEntry</code>, <code>eventIdentifier</code> (unique index)</p>
+</li>
+</ul>
+</div>
+</div>
+</details>
+<details open>
+<summary class="title"><strong>Sagas</strong></summary>
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>Table <code>AssociationValueEntry</code>, columns <code>sagaType</code>, <code>associationKey</code> and <code>associationValue</code>,</p>
+</li>
+<li>
+<p>Table <code>AssociationValueEntry</code>, columns <code>sagaId</code> and <code>sagaType</code>,</p>
+</li>
+</ul>
+</div>
+</div>
+</details>
+<div class="paragraph">
+<p>The default column lengths generated by, for example, Hibernate may work, but won&#8217;t be optimal. A UUID, for example, will always have the same length. Instead of a variable length column of 255 characters, you could use a fixed length column of 36 characters for the aggregate identifier.</p>
+</div>
+<div class="paragraph">
+<p>The <code>timestamp</code> column in the <code>DomainEventEntry</code> table only stores ISO 8601 timestamps. If all times are stored in the UTC timezone, they need a column length of 24 characters. If you use another timezone, this may be up to 28. Using variable length columns is generally not necessary, since time stamps always have the same length.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>It is highly recommended to store all timestamps in UTC format. In countries with daylight saving time, storing timestamps in local time may result in sorting errors for events generated around and during the timezone switch. This does not occur when UTC is used. Some servers are configured to always use UTC. Alternatively, you should configure the event store to convert timestamps to UTC before storing them.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>type</code> column in the <code>DomainEventEntry</code> stores the type identifiers of aggregates. Generally, these are the <code>'simple name'</code> of the aggregate. Even the infamous <code>AbstractDependencyInjectionSpringContextTests</code> in Spring only counts 45 characters. Here, again, a shorter (but variable) length field should suffice.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_auto_increments_and_sequences"><a class="anchor" href="#_auto_increments_and_sequences"></a>Auto-increments and sequences</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When using a relational database as an event store, Axon relies on an auto-increment value to allow tracking processors to read all events roughly in the order they were inserted. We say "roughly", because "insert-order" and "commit-order" are different things.</p>
+</div>
+<div class="paragraph">
+<p>While auto-increment values are (generally) generated at insert-time, these values only become visible at commit-time. This means another process may observe these sequence numbers arriving in a different order. While Axon has mechanisms to ensure eventually all events are handled, even when they become visible in a different order, there are limitations and performance aspects to consider.</p>
+</div>
+<div class="paragraph">
+<p>When a tracking processor reads events, it uses the "global sequence" to track its progress. When events become available in a different order than they were inserted, Axon will encounter a "gap". Axon will remember these "gaps" to verify that data has become available since the last read. These gaps may be the result of events becoming visible in a different order, but also because a transaction was rolled back. It is highly recommended to ensure that no gaps exist because of over eagerly increasing the sequence number. The mechanism for checking gaps is convenient, but comes with a performance impact.</p>
+</div>
+<div class="paragraph">
+<p>When using a <code>JpaEventStorageEngine</code>, Axon relies on the JPA implementation to create the table structure. While this will work, it is unlikely to provide the configuration that has the best performance for the database engine in use. That is because Axon uses default settings for the <code>@GeneratedValue</code> annotation.</p>
+</div>
+<div class="paragraph">
+<p>To override these settings, create a file called <code>/META-INF/orm.xml</code> on the classpath, which looks as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;entity-mappings version="1.0" xmlns="http://java.sun.com/xml/ns/persistence/orm"&gt;
+    &lt;mapped-superclass access="FIELD" metadata-complete="false" class="org.axonframework.eventhandling.AbstractSequencedDomainEventEntry"&gt;
+        &lt;attributes&gt;
+            &lt;id name="globalIndex"&gt;
+                &lt;generated-value strategy="SEQUENCE" generator="myGenerator"/&gt;
+                &lt;sequence-generator name="myGenerator" sequence-name="mySequence"/&gt;
+            &lt;/id&gt;
+        &lt;/attributes&gt;
+    &lt;/mapped-superclass&gt;
+&lt;/entity-mappings&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is important to specify <code>metadata-complete="false"</code>. This indicates this file should be used to override existing annotations, instead of replacing them. For the best results, ensure that the <code>DomainEventEntry</code>  table uses its own sequence. This can be ensured by specifying a different sequence generator for that entity only.</p>
+</div>
+</div>
+</div>
+            </article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-framework">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-server">Axon Server</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-cloud">AxonIQ Cloud</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-console">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-synapse">Axon Synapse</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/blog/protect-sensitive-data-in-an-event-sourced-application">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/">Customer Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://console.axoniq.io/">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+          <li><a class="ext" target="_blank" href="https://console.cloud.axoniq.io">AxonIQ Cloud</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script async src="../../_/js/vendor/page-actions.js"></script>
+<script async src="../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+  </body>
+</html>
