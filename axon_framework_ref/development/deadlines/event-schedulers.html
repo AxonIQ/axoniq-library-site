@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Event Schedulers</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon_framework_ref/4.10/deadlines/event-schedulers.html">
+    <link rel="prev" href="deadline-managers.html">
+    <link rel="next" href="../testing/README.html">
+    <meta name="generator" content="Antora 3.1.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../_/img/favicon.ico" sizes="32x32">
+    <link rel="icon" href="../../../_/img/icon.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../../../_/img/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="../../../_/img/apple-touch-icon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../_/static/manifest.webmanifest">
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../_'</script>
+
+
+  </head>
+  <body class="article">
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io"><img src="../../../_/img/logo-dark2x.png" class="header_logo" /></a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../../home/basics.html">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Guides</a>
+          <div class="navbar-dropdown card">
+              <a class="navbar-item" href="../../../home/guides/axon-framework.html">Axon Framework</a>
+              <a class="navbar-item" href="../../../home/guides/axon-server.html">Axon Server</a>
+              <a class="navbar-item" href="../../../home/guides/migration.html">Migration</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../4.10/introduction.html">Axon Framework</a>
+                <a class="navbar-item" href="../../../axon_server_ref/v2024.1/index.html">Axon Server</a>
+                <a class="navbar-item" href="../../../synapse_ref/latest/index.html">Axon Synapse</a>
+                <a class="navbar-item" href="../../../axoniq_console_ref/main/index.html">AxonIQ Console</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item search hide-for-print">
+          <div id="search-field" class="field">
+            <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+          </div>
+        </div>
+        <a class="navbar-item navbar-button" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item navbar-button" href="https://discuss.axoniq.io" target="_blank">AxonIQ Discuss</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../home/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../introduction.html">Axon Framework Reference</a></li>
+    <li><a href="README.html">Deadlines</a></li>
+    <li><a href="event-schedulers.html">Event Schedulers</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/master/docs/old-reference-guide/modules/deadlines/pages/event-schedulers.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;https%3A%2F%2Fdocs.axoniq.io%2Faxon_framework_ref%2Fdevelopment%2Fdeadlines%2Fevent-schedulers.html%20%23library" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Event%20Schedulers%22%20library%20page%20...&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BEvent%20Schedulers%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon_framework_ref%2Fdevelopment%2Fdeadlines%2Fevent-schedulers.html)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">development</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-current" href="event-schedulers.html">development</a>
+    <a class="version item" href="../../4.10/deadlines/event-schedulers.html">4.10</a>
+    <a class="version item is-missing" href="../../0/index.html">older releases</a>
+  </div>
+</div>
+</div>
+<div class="body">
+<div class="nav-container" data-component="axon_framework_ref" data-version="development">
+  <aside class="nav card">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../introduction.html">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../introduction.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../upgrading-to-4-7.html">Upgrading to Axon Framework 4.7</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../messaging-concepts/README.html">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/anatomy-message.html">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/message-correlation.html">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/message-intercepting.html">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/supported-parameters-annotated-handlers.html">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/exception-handling.html">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/unit-of-work.html">Unit of Work</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../axon-framework-commands/README.html">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Modelling</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework-commands/modeling/aggregate.html">Aggregate</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework-commands/modeling/multi-entity-aggregates.html">Multi-Entity Aggregates</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework-commands/modeling/state-stored-aggregates.html">State Stored Aggregates</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework-commands/modeling/aggregate-creation-from-another-aggregate.html">Aggregate Creation from another Aggregate</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework-commands/modeling/aggregate-polymorphism.html">Aggregate Polymorphism</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../axon-framework-commands/modeling/conflict-resolution.html">Conflict Resolution</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework-commands/command-dispatchers.html">Command Dispatchers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework-commands/command-handlers.html">Command Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework-commands/infrastructure.html">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../axon-framework-commands/configuration.html">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/README.html">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-dispatchers.html">Event Dispatchers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-handlers.html">Event Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/event-processors/README.html">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-processors/subscribing.html">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-processors/streaming.html">Streaming Event Processor</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-bus-and-event-store.html">Event Bus &amp; Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-versioning.html">Event Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../queries/README.html">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/query-processing.html">Query Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/query-dispatchers.html">Query Dispatchers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/query-handlers.html">Query Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/implementations.html">Implementations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/configuration.html">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../sagas/README.html">Sagas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../sagas/implementation.html">Implementation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../sagas/associations.html">Associations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../sagas/infrastructure.html">Infrastructure</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="README.html">Deadlines</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="deadline-managers.html">Deadline Managers</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="event-schedulers.html">Event Schedulers</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../testing/README.html">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/commands-events.html">Commands / Events</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/sagas-1.html">Sagas</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../serialization.html">Serialization</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../tuning/README.html">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/event-snapshots.html">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/event-processing.html">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/command-processing.html">Command Processing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../monitoring/README.html">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/tracing.html">Distributed Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/metrics.html">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/health.html">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/processors.html">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/message-tracking.html">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../spring-boot-integration.html">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modules.html">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/README.html">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../release-notes/major-releases.html">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../release-notes/minor-releases.html">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+    <div class="content">
+        <aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+            <h1 class="page">Event Schedulers</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section will proceed with a suggested course of action when utilizing the <code>EventScheduler</code> for dealing with deadlines.</p>
+</div>
+<div class="paragraph">
+<p>To help understand this better lets take the scenario of a saga:
+It is easy to make a saga take action when something happens.
+After all, there is an event to notify the saga.
+That said, what if you want your saga to do something when <em>nothing</em> happens?
+That&#8217;s what deadlines are used for.
+For invoices, that is typically several weeks, whereas the confirmation of a credit card payment should occur within a few seconds.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_scheduled_events_as_deadlines"><a class="anchor" href="#_scheduled_events_as_deadlines"></a>Scheduled events as deadlines</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In Axon, you can use an <code>EventScheduler</code> to schedule an event for publication.
+In the example of an invoice, you would expect the invoice to be paid within thirty days.
+A saga would, after sending the <code>CreateInvoiceCommand</code>, schedule an <code>InvoicePaymentDeadlineExpiredEvent</code> to be published in 30 days.
+The <code>EventScheduler</code> returns a <code>ScheduleToken</code> after scheduling an event.
+This token can be used to cancel the schedule, for example when a payment of an Invoice has been received.</p>
+</div>
+<div class="paragraph">
+<p>Axon provides four <code>EventScheduler</code> implementations:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="#_simple_event_scheduler">Pure Java</a></p>
+</li>
+<li>
+<p><a href="#_jobrunr_event_scheduler">JobRunr</a></p>
+</li>
+<li>
+<p><a href="#_db_scheduler_event_scheduler">db-scheduler</a></p>
+</li>
+<li>
+<p><a href="#_axon_server_event_scheduler">Axon Server</a></p>
+</li>
+<li>
+<p><a href="#_quartz_event_scheduler">Quartz</a></p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>It is important to note that the <code>JubRunrEventScheduler</code>, <code>QuartzEventScheduler</code>, <code>AxonServerEventScheduler</code> and <code>DbSchedulerEventSerializer</code> all should use the <a href="../serialization.html#different-serializer-for-events" class="xref page">event Serializer</a> to serialize and deserialize the scheduled event.
+If the <code>Serializer</code> used by the scheduler does not align with the <code>Seralizer</code> used by the event store, exceptional scenarios should be expected.
+The Quartz implementation&#8217;s <code>Serializer</code> can be set by defining a different <code>EventJobDataBinder</code>, whereas the JobRunr, Axon Server and db-scheduler implementations allows defining the used <code>Serializer</code> directly through the builder.</p>
+</div>
+<div class="paragraph">
+<p>One or more components will be listening for scheduled Events.
+These components might rely on a transaction bound to the thread that invokes them.
+Scheduled events are published by threads managed by the <code>EventScheduler</code>.
+To manage transactions on these threads, you can configure a <code>TransactionManager</code> or a <code>UnitOfWorkFactory</code> that creates a transaction bound unit of work.</p>
+</div>
+<div class="sect2">
+<h3 id="_simple_event_scheduler"><a class="anchor" href="#_simple_event_scheduler"></a>Simple event scheduler</h3>
+<div class="paragraph">
+<p>The pure-Java implementation of the <code>EventScheduler</code> uses a <code>ScheduledExecutorService</code> to schedule event publication.
+Although the timing of this scheduler is highly reliable, it is a pure in-memory implementation.
+Once the JVM is shut down, all schedules are lost.
+This makes this implementation unsuitable for long-term schedules.
+The <code>SimpleEventScheduler</code> needs to be configured with an <code>EventBus</code> and a <code>SchedulingExecutorService</code> (see the static methods on the <code>java.util.concurrent.Executors</code> class for helper methods).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jobrunr_event_scheduler"><a class="anchor" href="#_jobrunr_event_scheduler"></a>JobRunr event scheduler</h3>
+<div class="paragraph">
+<p>The <code>JobRunrEventScheduler</code> is a more reliable and enterprise-worthy implementation based on <a href="https://www.jobrunr.io/">JobRunr</a>.
+It offers several ways to persist the scheduled jobs, and has good integration with Spring Boot.
+Using JobRunr as underlying scheduling mechanism, it provides more powerful features, such as clustering, misfire management as well as an optional dashboard.
+This means event publication is guaranteed.
+It might be a little late, but it will be published.
+JobRunr supports <a href="https://www.jobrunr.io/en/documentation/installation/storage/">both SQL and some NoSQL databases</a>.
+It needs to be configured with a JobRunr <code>JobScheduler</code>, an <code>EventBus</code> and a <code>Serializer</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_db_scheduler_event_scheduler"><a class="anchor" href="#_db_scheduler_event_scheduler"></a>Db-scheduler event scheduler</h3>
+<div class="paragraph">
+<p>The <code>DbSchedulerEventScheduler</code> is similar in convenience compared to the JobRunr- and the Axon Server <code>EventScheduler</code> implementations, based on the <a href="https://github.com/kagkarlsson/db-scheduler">db-scheduler</a> project.
+It offers several ways to persist the scheduled jobs, and has good integration with Spring Boot.
+It&#8217;s pretty simple, as it only needs one table.
+For most sql databases the sql to set the table is <a href="https://github.com/kagkarlsson/db-scheduler/tree/master/db-scheduler/src/test/resources/com/github/kagkarlsson/scheduler">available</a></p>
+</div>
+<div class="paragraph">
+<p>Compared to JobRunr, it lets you set a poll interval for new tasks more freely.
+Another advantage compared to JobRunr is that adding a task will become part of the current transaction when a <code>TransactionManager</code> is set.
+The biggest things missing compared to JobRunr are a dashboard, and support for multiple NoSQL databases.
+The <code>DbSchedulerEventScheduler</code> needs to be configured with a db-scheduler <code>Scheduler</code>, an <code>EventBus</code>, and a <code>Serializer</code>.</p>
+</div>
+<div class="paragraph">
+<p>The data for an event can be serialized in either a binary format or in a human-readable format.
+Switching between these formats is done via the <code>useBinaryPojo</code> property on the scheduler&#8217;s builder.
+Depending on this property, the correct task should be added in the constructor of the <code>Scheduler</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_server_event_scheduler"><a class="anchor" href="#_axon_server_event_scheduler"></a>Axon Server event scheduler</h3>
+<div class="paragraph">
+<p>The <code>AxonServerEventScheduler</code> uses Axon Server to schedule events for publication.
+As such, it is a <em>hard requirement</em> to use Axon Server as your Event Store solution to utilize this event scheduler.
+Just as the <code>QuartzEventScheduler</code>, the <code>AxonServerEventScheduler</code> is a reliable and enterprise-worthy implementation of the <code>EventScheduler</code> interface.
+Creating a <code>AxonServerEventScheduler</code> can be done through its builder, whose sole requirement is the <code>AxonServerConnectionManager</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_quartz_event_scheduler"><a class="anchor" href="#_quartz_event_scheduler"></a>Quartz event scheduler</h3>
+<div class="paragraph">
+<p>The <code>QuartzEventScheduler</code> is an alternative enterprise-worthy implementation based on <a href="http://www.quartz-scheduler.org/">Quartz</a>, but the project has not seen much recent activity.
+Using Quartz as underlying scheduling mechanism, it provides features, such as persistence, clustering and misfire management.
+It needs to be configured with a Quartz <code>Scheduler</code> and an <code>EventBus</code>.
+Optionally, you may set the name of the group that Quartz jobs are scheduled in, which defaults to <code>"AxonFramework-Events"</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_configuration"><a class="anchor" href="#_spring_configuration"></a>Spring configuration</h3>
+<div class="paragraph">
+<p>Spring users can use the <code>QuartzEventSchedulerFactoryBean</code> or <code>SimpleEventSchedulerFactoryBean</code> for easier configuration.
+It allows you to set the <code>PlatformTransactionManager</code> directly.
+Spring Boot users which rely on Axon Server do not have to define anything.
+The auto-configuration will automatically create a <code>AxonServerEventScheduler</code> for them.</p>
+</div>
+<div class="paragraph">
+<p>Spring Boot users who want to use the JobRunr event scheduler can add <a href="https://mvnrepository.com/artifact/org.jobrunr/jobrunr-spring-boot-starter"><code>jobrunr-spring-boot-starter</code></a> as a dependency.
+In addition, an <code>EventScheduler</code> bean configuration needs to be added.
+This should look like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public EventScheduler eventScheduler(
+        @Qualifier("eventSerializer") final Serializer serializer,
+        final JobScheduler jobScheduler,
+        final EventBus eventBus,
+        final TransactionManager transactionManager,
+        final Spanfactory spanfactory
+) {
+    return JobRunrEventScheduler.builder()
+            .jobScheduler(jobScheduler)
+            .serializer(serializer)
+            .eventBus(eventBus)
+            .transactionManager(transactionManager)
+            .spanFactory(spanfactory)
+            .build();
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For both JobRunr and db-scheduler, auto-configuration is included via the <a href="https://github.com/AxonFramework/AxonFramework/tree/master/spring-boot-starter">axon-spring-boot-starter</a>.
+This means that if you don&#8217;t have an <code>EventScheduler</code> configured in the application, but you do have a <code>JobScheduler</code> bean (in the case of JobRunr) or a <code>Scheduler</code> bean (in the case of db-scheduler), an <code>EventScheduler</code> will be auto-configured for you.
+In these cases, it is recommended to set the <code>axon.axonserver.enabled</code> property to <code>false</code> to prevent the creation of the <code>AxonServerEventScheduler</code>.</p>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="deadline-managers.html">Deadline Managers</a></span>
+  <span class="next"><a href="../testing/README.html">Testing</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-framework">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-server">Axon Server</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-cloud">AxonIQ Cloud</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-console">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-synapse">Axon Synapse</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/blog/protect-sensitive-data-in-an-event-sourced-application">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/">Customer Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://console.axoniq.io/">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+          <li><a class="ext" target="_blank" href="https://console.cloud.axoniq.io">AxonIQ Cloud</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>
