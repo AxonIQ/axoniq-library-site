@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>gRPC API</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon_server_ref/latest/axon-server/administration/admin-configuration/grpc-api/">
+    <link rel="prev" href="../rest-api/">
+    <link rel="next" href="../../monitoring/README/">
+    <meta name="generator" content="Antora 3.1.1">
+    <link rel="stylesheet" href="../../../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../../../_/img/favicon.ico" sizes="32x32">
+    <link rel="icon" href="../../../../../../_/img/icon.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../../../../../../_/img/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="../../../../../../_/img/apple-touch-icon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../../../_/static/manifest.webmanifest">
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../../../_'</script>
+
+
+  </head>
+  <body class="article">
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io"><img src="../../../../../../_/img/logo-dark4x.png" class="header_logo" /></a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Guides</a>
+          <div class="navbar-dropdown card">
+              <a class="navbar-item" href="../../../../../../home/guides/axon-framework/">Axon Framework</a>
+              <a class="navbar-item" href="../../../../../../home/guides/axon-server/">Axon Server</a>
+              <a class="navbar-item" href="../../../../../../home/guides/migration/">Migration</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../../../../axon-framework-reference/latest/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../../../axon-server-reference/latest/">Axon Server</a>
+                <a class="navbar-item" href="../../../../">Axon Server</a>
+                <a class="navbar-item" href="../../../../../../synapse_ref/latest/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../../../axoniq_console_ref/latest/">AxonIQ Console</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item search hide-for-print">
+          <div id="search-field" class="field">
+            <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+          </div>
+        </div>
+        <a class="navbar-item navbar-button" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item navbar-button" href="https://discuss.axoniq.io" target="_blank">AxonIQ Discuss</a>
+        <a class="navbar-item navbar-button" href="https://console.axoniq.io" target="_blank">AxonIQ Console</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../../../">Axon Server Reference</a></li>
+    <li><a href="../../README/">Administration</a></li>
+    <li><a href="../README/">Configuration</a></li>
+    <li><a href="./">gRPC API</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;https%3A%2F%2Fdocs.axoniq.io%2Faxon_server_ref%2Flatest%2Faxon-server%2Fadministration%2Fadmin-configuration%2Fgrpc-api%2F%20%23library" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22gRPC%20API%22%20library%20page%20...&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BgRPC%20API%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon_server_ref%2Flatest%2Faxon-server%2Fadministration%2Fadmin-configuration%2Fgrpc-api%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+</div>
+<div class="body">
+<div class="nav-container" data-component="axon_server_ref" data-version="v2024.1">
+  <aside class="nav card">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../../../">Axon Server</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../installation/README/">Installation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../installation/local-installation/README/">Local installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../installation/docker-k8s/README/">Docker / K8s</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../README/">Administration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../README/">Configuration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/">System properties</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../command-line-interface/">Command Line Interface</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../rest-api/">REST API</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="./">gRPC API</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/README/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../monitoring/actuator-endpoints/">Actuator Endpoints</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../monitoring/axon-server-metrics/">Axon Server Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../monitoring/grpc-metrics/">gRPC Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../monitoring/heartbeat-monitoring/">Heartbeat Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../monitoring/diagnostics/">Diagnostics</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../clustering/">Clusters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../replication-groups/">Replication Groups</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-context/">Multi-Context</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tiered-storage/">Tiered Storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../event-transformation/">Event Transformation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tagging/">Tagging</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../backup-and-messaging-only-nodes/">Backup and Messaging-Only Nodes</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../backups/">Backups</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../recovery/">Recovery</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../plugins/">Axon Server Plugins</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../logging/README/">Logging</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../logging/logging-format/">Logging Format</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../error-codes/">Error Codes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../security/README/">Security</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../security/ssl/">SSL</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../security/access-control-ee/">Access Control for Axon Server</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../security/access-control-clients/">Security for Axon Framework Client Applications</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../security/access-control-cli/">Access Control and the CLI</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../security/access-control-api/">Access Control on the REST and gRPC APIs</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../security/access-control-ldap/">Axon Server EE - LDAP Extension</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../security/access-control-oauth2/">Axon Server EE - OAuth Extension</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../performance/README/">Performance</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../performance/tuning-event-processing/">Event Segments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../performance/flow-control/">Flow Control</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../migration/README/">Migration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../migration/non-axon-server-to-axon-server/">Non-Axon Server to Axon Server</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../../rn-as-major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../../rn-as-minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+    <div class="content">
+        <aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+            <h1 class="page">gRPC API</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><!-- vale Google.Spacing = NO -->
+<!-- vale Google.Passive = NO -->
+<!-- vale Google.Colons = NO --></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_event_processor_administration"><a class="anchor" href="#_event_processor_administration"></a>Event processor administration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Service name: <a href="https://github.com/AxonIQ/axon-server-api/blob/master/src/main/proto/admin.proto">EventProcessorAdminService</a></p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Operation</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+<th class="tableblock halign-left valign-top">Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List all even processor</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a list of all event processors defined by the connected applications.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetAllEventProcessors(google.protobuf.Empty) returns (stream EventProcessor)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List event processors by component</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a list of all event processors defined by the specified component.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetEventProcessorsByComponent(Component) returns (stream EventProcessor)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Start event processor</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Start a distributed event processor, propagating the start request to all EP instances connected to AS *</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc StartEventProcessor(EventProcessorIdentifier) returns (AdminActionResult)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pause event processor</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pause a distributed event processor, propagating the pause request to all EP instances connected to AS *</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc PauseEventProcessor(EventProcessorIdentifier) returns (AdminActionResult)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Split event processor segment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Split the largest known segment of the distributed event processor into two segments.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc SplitEventProcessor(EventProcessorIdentifier) returns (AdminActionResult)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Merge event processor segments</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Merge the smallest known two segments of the distributed event processor into one. **</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc MergeEventProcessor(EventProcessorIdentifier) returns (AdminActionResult)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List load balance strategies</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a list of all load balancing strategies.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetBalancingStrategies(google.protobuf.Empty) returns (stream LoadBalancingStrategy)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Load balance event processor</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Balance the load across several instances of an event processor, accordingly to the selected strategy.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc LoadBalanceProcessor(LoadBalanceRequest) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set auto load balance strategy</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Define the load balancing strategy to use for automatic load balancing.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc SetAutoLoadBalanceStrategy(LoadBalanceRequest) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="ulist">
+<ul>
+<li>
+<p>Clients need to be already running and connected to AS before the operation is executed.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>It may not work if the two smallest segments are not claimed by applications connected to AS.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_context_administration"><a class="anchor" href="#_context_administration"></a>Context administration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Service name: <a href="https://github.com/AxonIQ/axon-server-api/blob/master/src/main/proto/admin.proto">ContextAdminService</a></p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Operation</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+<th class="tableblock halign-left valign-top">Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Context details</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide all details about a context.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetContext(GetContextRequest) returns (ContextOverview)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List contexts</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a stream of all contexts with details.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetContexts(google.protobuf.Empty) returns (stream ContextOverview)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create context</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create a new context.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc CreateContext(CreateContextRequest) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete context</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete an existing context.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc DeleteContext(DeleteContextRequest) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Update context properties</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Update specified properties of a context.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc UpdateContextProperties(UpdateContextPropertiesRequest) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Subscribe to contexts' updates</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a stream of all changes in cluster configuration related to context (creations, deletions, updates).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc SubscribeContextUpdates(google.protobuf.Empty) returns (stream ContextUpdate)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_replication_group_administration"><a class="anchor" href="#_replication_group_administration"></a>Replication group administration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Service name: <a href="https://github.com/AxonIQ/axon-server-api/blob/master/src/main/proto/admin.proto">ReplicationGroupAdminService</a></p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Operation</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+<th class="tableblock halign-left valign-top">Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replication group details</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide all details about a replication group.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetReplicationGroup(GetReplicationGroupRequest) returns (ReplicationGroupOverview)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List replication groups</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a stream of all replication groups with details.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetReplicationGroups(google.protobuf.Empty) returns (stream ReplicationGroupOverview)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List nodes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a stream of all nodes in the cluster with details.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetNodes (google.protobuf.Empty) returns (stream NodeOverview)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create replication group</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create a new replication group.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc CreateReplicationGroup(CreateReplicationGroupRequest) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete replication group</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete an existing replication group.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc DeleteReplicationGroup(DeleteReplicationGroupRequest) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add node</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a node to a replication group with the specified role.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc AddNodeToReplicationGroup(JoinReplicationGroup) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remove node</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remove a node from a replication group.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc RemoveNodeFromReplicationGroup(LeaveReplicationGroup) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_applications_administration"><a class="anchor" href="#_applications_administration"></a>Applications administration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Service name: <a href="https://github.com/AxonIQ/axon-server-api/blob/master/src/main/proto/admin.proto">ApplicationAdminService</a></p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Operation</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+<th class="tableblock halign-left valign-top">Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Application details</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide all details about an application.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetApplication(ApplicationId) returns (ApplicationOverview)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List applications</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a stream of all applications with details.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetApplications(google.protobuf.Empty) returns (stream ApplicationOverview)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create/update application</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create or update an application.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc CreateOrUpdateApplication(ApplicationRequest) returns (Token)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete application</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete an existing application.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc DeleteApplication(ApplicationId) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Refresh token</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Regenerate the token for the specified application.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc RefreshToken(ApplicationId) returns (Token)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_users_administration"><a class="anchor" href="#_users_administration"></a>Users administration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Service name: <a href="https://github.com/AxonIQ/axon-server-api/blob/master/src/main/proto/admin.proto">UserAdminService</a></p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Operation</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+<th class="tableblock halign-left valign-top">Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List users</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a stream of all users with details.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc GetUsers(google.protobuf.Empty) returns (stream UserOverview)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create/update user</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create or update a user.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc CreateOrUpdateUser(CreateOrUpdateUserRequest) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete user</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete an existing user.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rpc DeleteUser(DeleteUserRequest) returns (stream google.protobuf.Empty)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../rest-api/">REST API</a></span>
+  <span class="next"><a href="../../monitoring/README/">Monitoring</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-framework">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-server">Axon Server</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-cloud">AxonIQ Cloud</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-console">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-synapse">Axon Synapse</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/blog/protect-sensitive-data-in-an-event-sourced-application">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/">Customer Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://console.axoniq.io/">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+          <li><a class="ext" target="_blank" href="https://console.cloud.axoniq.io">AxonIQ Cloud</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+<script id="site-script" src="../../../../../../_/js/site.js" data-ui-root-path="../../../../../../_"></script>
+<script async src="../../../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../../../.." data-snippet-length="100" data-stylesheet="../../../../../../_/css/search.css"></script>
+<script async src="../../../../../../search-index.js"></script>
+  </body>
+</html>

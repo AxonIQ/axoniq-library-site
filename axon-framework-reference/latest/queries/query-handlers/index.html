@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Query Handlers</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/latest/queries/query-handlers/">
+    <link rel="prev" href="../query-dispatchers/">
+    <link rel="next" href="../implementations/">
+    <meta name="generator" content="Antora 3.1.1">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.ico" sizes="32x32">
+    <link rel="icon" href="../../../../_/img/icon.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../../../../_/img/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="../../../../_/img/apple-touch-icon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+  </head>
+  <body class="article">
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io"><img src="../../../../_/img/logo-dark4x.png" class="header_logo" /></a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Guides</a>
+          <div class="navbar-dropdown card">
+              <a class="navbar-item" href="../../../../home/guides/axon-framework/">Axon Framework</a>
+              <a class="navbar-item" href="../../../../home/guides/axon-server/">Axon Server</a>
+              <a class="navbar-item" href="../../../../home/guides/migration/">Migration</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/latest/">Axon Server</a>
+                <a class="navbar-item" href="../../../../axon_server_ref/latest/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse_ref/latest/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq_console_ref/latest/">AxonIQ Console</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item search hide-for-print">
+          <div id="search-field" class="field">
+            <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+          </div>
+        </div>
+        <a class="navbar-item navbar-button" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item navbar-button" href="https://discuss.axoniq.io" target="_blank">AxonIQ Discuss</a>
+        <a class="navbar-item navbar-button" href="https://console.axoniq.io" target="_blank">AxonIQ Console</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Queries</a></li>
+    <li><a href="./">Query Handlers</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-4.10.x/docs/old-reference-guide/modules/queries/pages/query-handlers.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Flatest%2Fqueries%2Fquery-handlers%2F%20%23library" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Query%20Handlers%22%20library%20page%20...&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BQuery%20Handlers%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Flatest%2Fqueries%2Fquery-handlers%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">4.10</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/queries/query-handlers/">development</a>
+    <a class="version item is-current" href="./">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+<div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="4.10">
+  <aside class="nav card">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../upgrading-to-4-7/">Upgrading to Axon Framework 4.7</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/unit-of-work/">Unit of Work</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../axon-framework-commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Modelling</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregate</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../axon-framework-commands/modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../axon-framework-commands/modeling/state-stored-aggregates/">State Stored Aggregates</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate-creation-from-another-aggregate/">Aggregate Creation from another Aggregate</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate-polymorphism/">Aggregate Polymorphism</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../axon-framework-commands/modeling/conflict-resolution/">Conflict Resolution</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Command Dispatchers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Command Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../axon-framework-commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../axon-framework-commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-dispatchers/">Event Dispatchers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Event Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Event Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../query-processing/">Query Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../query-dispatchers/">Query Dispatchers</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Query Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../implementations/">Implementations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../sagas/">Sagas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../sagas/implementation/">Implementation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../sagas/associations/">Associations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../sagas/infrastructure/">Infrastructure</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../deadlines/">Deadlines</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../deadlines/deadline-managers/">Deadline Managers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../deadlines/event-schedulers/">Event Schedulers</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/commands-events/">Commands / Events</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/sagas-1/">Sagas</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../serialization/">Serialization</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Distributed Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+    <div class="content">
+        <aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+            <h1 class="page">Query Handlers</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The handling of a query comes down to an annotated handler returning the query&#8217;s response. The goal of this chapter is to describe what such an <code>@QueryHandler</code> annotated method looks like, as well as describing the call order and response type options. For configuration of query handlers and the <code>QueryBus</code>, it is recommended to read the <a href="../configuration/" class="xref page">Configuration</a> section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="writing-query-handler"><a class="anchor" href="#writing-query-handler"></a>Writing a query handler</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In Axon, an object may declare a number of query handler methods, by annotating them with the <code>@QueryHandler</code> annotation. The object in question is what you would refer to as the Query Handler, or Query Handling Component. For a query handler method, the first declared parameter defines which query message object it will receive.</p>
+</div>
+<div class="paragraph">
+<p>Taking the 'Gift Card' domain which contains a <code>CardSummary</code> Query Model, we can assume there is a query message to fetch a single <code>CardSummary</code> instance. Let us define the format of the query message as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class FetchCardSummaryQuery {
+
+    private final String cardSummaryId;
+
+    public FetchCardSummaryQuery(String cardSummaryId) {
+        this.cardSummaryId = cardSummaryId;
+    }
+    // omitted getters, equals/hashCode, toString functions
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As shown, we have a regular POJO that will fetch a <code>CardSummary</code> based on the <code>cardSummaryId</code> field. This <code>FetchCardSummaryQuery</code> will be <a href="../query-dispatchers/" class="xref page">dispatched</a> to a handler that defines the given message as its first declared parameter. The handler will likely be contained in an object which is in charge of or has access to the <code>CardSummary</code> model in question:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.queryhandling.QueryHandler;
+
+public class CardSummaryProjection {
+
+    private Map&lt;String, CardSummary&gt; cardSummaryStorage;
+
+    @QueryHandler // 1.
+    public CardSummary handle(FetchCardSummaryQuery query) { // 2.
+        return cardSummaryStorage.get(query.getCardSummaryId());
+    }
+    // omitted CardSummary event handlers which update the model
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>From the above sample we want to highlight two specifics when it comes to writing a query handler:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The <code>@QueryHandler</code> annotation which marks a function as a query handler method.</p>
+</li>
+<li>
+<p>The method in question is defined by the return type <code>CardSummary</code>, which is called the query response type, and the <code>FetchCardSummaryQuery</code> which is the query payload.</p>
+</li>
+</ol>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><strong>Storing a Query Model</strong></p>
+</div>
+<div class="paragraph">
+<p>For the purpose of the example we have chosen to use a regular <code>Map</code> as the storage approach. In a real life system, this would be replaced by a form of database or repository layer for example.</p>
+</div>
+</blockquote>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_query_handler_call_order"><a class="anchor" href="#_query_handler_call_order"></a>Query handler call order</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In all circumstances, at most one query handler method is invoked per query handling instance. Axon will search for the most specific method to invoke, using following rules:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>On the actual instance level of the class hierarchy (as returned by <code>this.getClass()</code>), all annotated methods are evaluated</p>
+</li>
+<li>
+<p>If one or more methods are found of which all parameters can be resolved to a value, the method with the most specific type is chosen and invoked</p>
+</li>
+<li>
+<p>If no methods are found on this level of the class hierarchy, the super type is evaluated the same way</p>
+</li>
+<li>
+<p>When the top level of the hierarchy is reached, and no suitable query handler is found, this query handling instance is ignored.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Note that similar to command handling, and unlike event handling, query handling does not take the class hierarchy of the query message into account.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// assume QueryB extends QueryA
+// and    QueryC extends QueryB
+// and    a single instance of SubHandler is registered
+
+public class QueryHandler {
+
+    @QueryHandler
+    public MyResult handle(QueryA query) {
+        // Return result
+    }
+
+    @QueryHandler
+    public MyResult handle(QueryB query) {
+        // Return result
+    }
+
+    @QueryHandler
+    public MyResult handle(QueryC query) {
+        // Return result
+
+    }
+}
+
+public class SubQueryHandler extends QueryHandler {
+
+    @QueryHandler
+    public MyResult handleEx(QueryB query) {
+        // Return result
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the example above, the handler method of <code>SubQueryHandler</code> will be invoked for queries for <code>QueryB</code> and result <code>MyResult</code> the handler methods of <code>QueryHandler</code> are invoked for queries for <code>QueryA</code> and <code>QueryC</code> and result <code>MyResult</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_query_handler_return_values"><a class="anchor" href="#_query_handler_return_values"></a>Query handler return values</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon allows a multitude of return types for a query handler method, as defined <a href="#writing-query-handler">earlier</a> on this page. You should think of single objects and collections of objects, taking into account wildcards or generics too. Below we share a list of all the options which are supported and tested in the framework.</p>
+</div>
+<div class="paragraph">
+<p>For clarity, we make a deviation between single instance and multiple instances of a response type. This follows the requirement to specify the <code>ResponseType</code> when <a href="../query-dispatchers/" class="xref page">dispatching a query</a>, which expects the user to state if either a single result or multiple results are desired. Axon will use this <code>ResponseType</code> object to match a query with a query handler method, alongside the query payload and query name.</p>
+</div>
+<div class="sect2">
+<h3 id="_supported_single_instance_return_values"><a class="anchor" href="#_supported_single_instance_return_values"></a>Supported single instance return values</h3>
+<div class="paragraph">
+<p>To query for a single object, the <code>ReponseTypes#instanceOf(Class)</code> method should be used to create the required <code>ResponseType</code> object. This "instance-of-<code>Class`" `ResponseType</code> object in turn supports the following query handler return values:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An exact match of <code>Class</code></p>
+</li>
+<li>
+<p>A subtype of <code>Class</code></p>
+</li>
+<li>
+<p>A generic bound to <code>Class</code></p>
+</li>
+<li>
+<p>A <code>Future</code> of <code>Class</code></p>
+</li>
+<li>
+<p>A primitive of <code>Class</code></p>
+</li>
+<li>
+<p>An <code>Optional</code> of <code>Class</code></p>
+</li>
+</ul>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><strong>Primitive Return Types</strong></p>
+</div>
+<div class="paragraph">
+<p>Among the usual Objects, it is also possible for queries to return primitive data types:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class QueryHandler {
+
+     @QueryHandler
+     public float handle(QueryA query) {
+     }
+ }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the querying party will retrieve a boxed result instead of the primitive type.</p>
+</div>
+</blockquote>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_supported_multiple_instances_return_values"><a class="anchor" href="#_supported_multiple_instances_return_values"></a>Supported multiple instances return values</h3>
+<div class="paragraph">
+<p>To query for a multiple objects, the <code>ReponseTypes#multipleInstancesOf(Class)</code> method should be used to create the required <code>ResponseType</code> object. This "multiple-instances-of-<code>Class`" `ResponseType</code> object in turn supports the following query handler return values:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An array containing:</p>
+</li>
+<li>
+<p><code>Class</code></p>
+</li>
+<li>
+<p>A subtype of <code>Class</code></p>
+</li>
+<li>
+<p>A generic bound to <code>Class</code></p>
+</li>
+<li>
+<p>An <code>Iterable</code> or a custom implementation of <code>Iterable</code> containing:</p>
+</li>
+<li>
+<p><code>Class</code></p>
+</li>
+<li>
+<p>A subtype <code>Class</code></p>
+</li>
+<li>
+<p>A generic bound to <code>Class</code></p>
+</li>
+<li>
+<p>A wildcard bound to <code>Class</code></p>
+</li>
+<li>
+<p>A <code>Stream</code> of <code>Class</code></p>
+</li>
+<li>
+<p>A <code>Future</code> of an <code>Iterable</code> of <code>Class</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_unsupported_return_values"><a class="anchor" href="#_unsupported_return_values"></a>Unsupported return values</h3>
+<div class="paragraph">
+<p>The following list contains method return values which are not supported when queried for:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An array of primitive types</p>
+</li>
+<li>
+<p>A <code>Map</code> of a given key and value type</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../query-dispatchers/">Query Dispatchers</a></span>
+  <span class="next"><a href="../implementations/">Implementations</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-framework">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-server">Axon Server</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-cloud">AxonIQ Cloud</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-console">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-synapse">Axon Synapse</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/blog/protect-sensitive-data-in-an-event-sourced-application">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/">Customer Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://console.axoniq.io/">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+          <li><a class="ext" target="_blank" href="https://console.cloud.axoniq.io">AxonIQ Cloud</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+  </body>
+</html>

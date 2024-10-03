@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Testing Command Handlers</title>
+    <link rel="canonical" href="https://docs.axoniq.io/bikerental-demo/latest/unit-testing-commands/">
+    <link rel="prev" href="../invoking-create-bike-endpoint/">
+    <link rel="next" href="../create-bike-status-projection/">
+    <meta name="generator" content="Antora 3.1.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../_/img/favicon.ico" sizes="32x32">
+    <link rel="icon" href="../../../_/img/icon.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../../../_/img/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="../../../_/img/apple-touch-icon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../_/static/manifest.webmanifest">
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../_'</script>
+
+
+  </head>
+  <body class="article">
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io"><img src="../../../_/img/logo-dark4x.png" class="header_logo" /></a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Guides</a>
+          <div class="navbar-dropdown card">
+              <a class="navbar-item" href="../../../home/guides/axon-framework/">Axon Framework</a>
+              <a class="navbar-item" href="../../../home/guides/axon-server/">Axon Server</a>
+              <a class="navbar-item" href="../../../home/guides/migration/">Migration</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../axon-framework-reference/latest/">Axon Framework</a>
+                <a class="navbar-item" href="../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../axon-server-reference/latest/">Axon Server</a>
+                <a class="navbar-item" href="../../../axon_server_ref/latest/">Axon Server</a>
+                <a class="navbar-item" href="../../../synapse_ref/latest/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../axoniq_console_ref/latest/">AxonIQ Console</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item search hide-for-print">
+          <div id="search-field" class="field">
+            <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+          </div>
+        </div>
+        <a class="navbar-item navbar-button" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item navbar-button" href="https://discuss.axoniq.io" target="_blank">AxonIQ Discuss</a>
+        <a class="navbar-item navbar-button" href="https://console.axoniq.io" target="_blank">AxonIQ Console</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../">Building An Axon Framework Application From Scratch </a></li>
+    <li><a href="./">Add Unit Tests For Command Handlers</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonIQ/bike-rental-quick-start/edit/main/docs/tutorial/modules/ROOT/pages/unit-testing-commands.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;https%3A%2F%2Fdocs.axoniq.io%2Fbikerental-demo%2Flatest%2Funit-testing-commands%2F%20%23library" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Testing%20Command%20Handlers%22%20library%20page%20...&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BTesting%20Command%20Handlers%5D(https%3A%2F%2Fdocs.axoniq.io%2Fbikerental-demo%2Flatest%2Funit-testing-commands%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+</div>
+<div class="body">
+<div class="nav-container" data-component="bikerental-demo" data-version="main">
+  <aside class="nav card">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../">Building An Axon Framework Application From Scratch</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../create-axon-framework-project/">Create New Project</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../bootstraping-axonframework/">Bootstrap AxonFramework</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../implement-create-bike/">Create New Bike Feature</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../run-app-with-docker-compose/">Running Your Application Locally With Docker Compose</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../invoking-create-bike-endpoint/">Invoking the Register Bike Endpoint</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="./">Add Unit Tests For Command Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../create-bike-status-projection/">Creating the Query Model</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+    <div class="content">
+        <aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+            <h1 class="page">Testing Command Handlers</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>As our application grows, we won&#8217;t be able to manually test that everything works correctly after a new feature. It is convenient to have a way to test automatically that our application works as expected.</p>
+</div>
+<div class="paragraph">
+<p>In your applications, you probably already have some unit tests to check the business logic of your application.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework provides you with a <a href="https://go.axoniq.io/refguide/axon-framework/testing" class="external" target="_blank" rel="noopener">Test Module</a> that will help you write unit tests designed to test the processing and handling of commands, events and queries in your application.</p>
+</div>
+<div class="paragraph">
+<p>In this tutorial step, you will implement a unit test to check if our system processes the <code>RegisterBikeCommand</code> as expected.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuring_axon_framework_test_support"><a class="anchor" href="#_configuring_axon_framework_test_support"></a>Configuring Axon Framework test support</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before writing our command handler test, we need to add the component Axon Framework provides to support unit testing.</p>
+</div>
+<div class="paragraph">
+<p>We need to add the <code>org.axonframework:axon-test</code> dependency to the Maven file descriptor in our <code>rental</code> module to do this. Fortunately, we already added this dependency when <a href="../bootstraping-axonframework/#axon-dependencies" class="xref page">we configured the Axon Framework dependencies</a>.</p>
+</div>
+<div class="paragraph">
+<p>Check that your <code>rental/pom.xml</code> file contains the reference to the <code>axon-test</code> module:</p>
+</div>
+<div class="listingblock">
+<div class="title">rental/pom.xml</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependencies&gt;
+
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
+        &lt;artifactId&gt;axon-spring-boot-starter&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
+        &lt;artifactId&gt;axon-test&lt;/artifactId&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The components provided by Axon Framework for unit testing are only needed during the <code>test</code> execution phase during the maven build process. Thus, we specify the <code>&lt;scope&gt;test&lt;/scope&gt;</code> for the <code>axon-test</code> dependency.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>With the <code>axon-test</code> component added to our project&#8217;s dependency list we can create our command handler test.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_creating_the_command_biketest"><a class="anchor" href="#_creating_the_command_biketest"></a>Creating the command <code>BikeTest</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To start writing our command handler test, create a new Java class with the name <code>BikeTest</code> in <code>/src/test/java/io/axoniq/demo/bikerental/rental/command</code> of your <code>rental</code> module.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+You can also use your IDE to create the unit test class. Open the <code>Bike</code> class and ask your IDE to generate the corresponding unit test. Depending on your IDE, the shortcut or menu may vary, but it&#8217;s a shortcut worth knowing for your IDE.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">/rental/src/test/java/io/axoniq/demo/bikerental/rental/command/BikeTest.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class BikeTest {
+
+
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_defining_the_aggregatetestfixture"><a class="anchor" href="#_defining_the_aggregatetestfixture"></a>Defining the <code>AggregateTestFixture</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework provides a component that allows you to create unit tests specifically focused on testing the behavior of handling a command by an aggregate. This component is called <code>AggregateTestFixture</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You can read more details about how an AggregateTestFixture works at the <a href="https://go.axoniq.io/refguide/axon-framework/testing/commands-events#command-model-testing" class="external" target="_blank" rel="noopener">Command Model Testing</a>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>So, we need to add and initialize the <code>AggregateTestFixture</code> for the <code>Bike</code> class (the component that handles the command we want to test):</p>
+</div>
+<div class="listingblock">
+<div class="title">/rental/src/test/java/io/axoniq/demo/bikerental/rental/command/BikeTest.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class BikeTest {
+
+    private AggregateTestFixture&lt;Bike&gt; fixture; <i class="conum" data-value="1"></i><b>(1)</b>
+
+    @BeforeEach <i class="conum" data-value="2"></i><b>(2)</b>
+    void setUp() {
+        fixture = new AggregateTestFixture&lt;&gt;(Bike.class); <i class="conum" data-value="3"></i><b>(3)</b>
+    }
+
+
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Define an <code>AggregateTestFixture</code> for the <code>Bike</code> aggregate. This is the "Subject Under Test" (or SUT) for our test.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>@BeforeEach</code> marks this method to be called before any test is executed in our test class. Adding the code to create the <code>AggregateTestFixture</code> here will ensure that we have a fresh fixture for each test case, and thus we make our different tests independent.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>This line creates a new <code>AggregateTestFixture</code> for our <code>Bike</code> class.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_testing_the_command_handler"><a class="anchor" href="#_testing_the_command_handler"></a>Testing the command handler</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Thanks to the help of the <code>AggregateTestFixture</code> we can now create a test with the following structure:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Given</strong>: Set the initial state for our test. Since we are designing our system to follow Event-Sourcing patterns, we need to set the list of events that have already happened for the same aggregate (the bike) before receiving the command.</p>
+</li>
+<li>
+<p><strong>When</strong>: Specify the command whose execution we want to test. In this case, we will test the processing of a <code>RegisterBikeCommand</code>.</p>
+</li>
+<li>
+<p><strong>Expect</strong>: We can instruct the fixture on the expectations we have from our system after processing the command. In an Event-Sourcing system, we will specify these expectations in the form of what events should have been produced by the command handler as a result of processing the command.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>So, let&#8217;s define a method in our unit test to check that our system can successfully process the request to create a bike:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class BikeTest {
+
+    @Test
+    void canRegisterBike() {
+        fixture.givenNoPriorActivity()  <i class="conum" data-value="1"></i><b>(1)</b>
+               .when(new RegisterBikeCommand("bikeId-1234", "city-bike", "Amsterdam")) <i class="conum" data-value="2"></i><b>(2)</b>
+               .expectEvents(new BikeRegisteredEvent("bikeId-1234", "city-bike", "Amsterdam")); <i class="conum" data-value="3"></i><b>(3)</b>
+    }
+
+
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>In our case, when we receive the <code>RegisterBikeCommand</code>, we expect that no previous events were received in the system for the same <code>bikeId</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>We provide the <code>RegisterBikeCommand</code> we want to send to the command handler.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>After successfully processing the <code>RegisterBikeCommand</code>, we expect the command handler to produce a new <code>BikeRegisteredEvent</code> with the details of the new bike.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>AggregateTestFixture</code> will prepare the Bike aggregate to execute the command (in this case, this step is empty, as we specified that there had been no previous activity), execute the command handler for the <code>RegisterBikeCommand</code> and assert that the command handler has emitted the <code>BikeRegisteredEvent</code> with these specific values.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You can learn more about the different things you can check from the fixture using <code>Matchers</code> in the section dedicated to <a href="https://go.axoniq.io/refguide/axon-framework/testing/commands-events#validation-phase" class="external" target="_blank" rel="noopener">Validation-phase of the test fixture in the Axon Framework reference guide</a>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_executing_the_test"><a class="anchor" href="#_executing_the_test"></a>Executing the test</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can run the test manually from your IDE, and you should see that the test passes, meaning that the fixture has checked that the expectations are met after processing the <code>RegisterBikeCommand</code>.</p>
+</div>
+<div class="paragraph">
+<p>In addition to running the test manually, we now have a test that is automatically run by Maven every time we build the application. If you run <code>mvn package</code> from your command line, you will see the execution of the test:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">% mvn package
+[...]
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running io.axoniq.demo.bikerental.rental.command.BikeTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.120 s -- in io.axoniq.demo.bikerental.rental.command.BikeTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[...]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This automatic execution of the tests guarantees that if we break the expected behavior for this command handling while implementing a new feature in the future, we will know about it immediately.</p>
+</div>
+<div class="paragraph">
+<p>With that certainty, we can move on and implement the next feature for our system.</p>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../invoking-create-bike-endpoint/">Invoking the Register Bike Endpoint</a></span>
+  <span class="next"><a href="../create-bike-status-projection/">Creating the Query Model</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-framework">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-server">Axon Server</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-cloud">AxonIQ Cloud</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-console">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-synapse">Axon Synapse</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/blog/protect-sensitive-data-in-an-event-sourced-application">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/">Customer Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://console.axoniq.io/">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+          <li><a class="ext" target="_blank" href="https://console.cloud.axoniq.io">AxonIQ Cloud</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+  </body>
+</html>
