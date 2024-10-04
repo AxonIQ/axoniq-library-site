@@ -360,11 +360,14 @@ To be able to handle those correctly, the <code>String commandName</code> value 
 <p>In order for Axon to know which instance of an Aggregate type should handle the Command Message, the property carrying the Aggregate Identifier in the command object <strong>must</strong> be annotated with <code>@TargetAggregateIdentifier</code>.
 The annotation may be placed on either the field or an accessor method (for example, a getter) in the Command object.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Routing in a distributed environment</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Routing in a distributed environment</div>
 <div class="paragraph">
 <p>Regardless of the type of command, as soon as you start distributing your application (through Axon Server, for example), it is recommended to specify a routing key on the command.
 This is the job of the <code>@TargetAggregateIdentifier</code>, but in absence of a field worthy of the annotation, the <code>@RoutingKey</code> annotation should be added to ensure the command can be routed.</p>
@@ -372,7 +375,9 @@ This is the job of the <code>@TargetAggregateIdentifier</code>, but in absence o
 <div class="paragraph">
 <p>If neither annotation works for your use case, a different <code>RoutingStrategy</code> can be configured, as is explained in the <a href="../infrastructure/#routing-strategy" class="xref page">Routing Strategy</a> section.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Taking the <code>GiftCard</code> Aggregate as an example, we can identify two Command Handlers on the Aggregate:</p>
@@ -454,18 +459,23 @@ It is nonetheless recommended for consistency to annotate the Aggregate Identifi
 <p>If you prefer to use another mechanism for routing commands, the behavior can be overridden by supplying a custom <code>CommandTargetResolver</code>.
 This class should return the Aggregate Identifier and expected version (if any) based on a given command.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Aggregate Creation Command Handlers</strong></p>
-</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Aggregate Creation Command Handlers</div>
 <div class="paragraph">
 <p>When the <code>@CommandHandler</code> annotation is placed on an aggregate&#8217;s constructor, the respective command will create a new instance of that aggregate and add it to the repository.
-Those commands do not require to target a specific aggregate instance.
+Those commands do not require targeting a specific aggregate instance.
 Therefore, those commands need neither the <code>@TargetAggregateIdentifier</code> nor the <code>@TargetAggregateVersion</code> annotation.
 Furthermore, a custom <code>CommandTargetResolver</code> will not be invoked for these commands.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_business_logic_and_state_changes"><a class="anchor" href="#_business_logic_and_state_changes"></a>Business logic and state changes</h3>
@@ -481,7 +491,7 @@ The Event Sourcing Handlers should be the only methods where the Aggregate&#8217
 Failing to do so means the Aggregate would miss state changes when it is being sourced from its events.</p>
 </div>
 <div class="paragraph">
-<p>The <a href="../../testing/commands-events/" class="xref page"> Aggregate Test Fixture</a> will guard against unintentional state changes in Command Handling functions.
+<p>The <a href="../../testing/commands-events/" class="xref page">Aggregate Test Fixture</a> will guard against unintentional state changes in Command Handling functions.
 It is thus advised to provide thorough test cases for <em>any</em> Aggregate implementation.</p>
 </div>
 <div class="quoteblock">
@@ -602,8 +612,8 @@ This effectively works like any regular command handler annotated method.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Command handling functions are most often directly placed on the Aggregate (as described in more detail <a href="#_aggregate_command_handlers">here</a>).
-There are situations however where it is not possible nor desired to route a command directly to an Aggregate instance.
-Message handling functions, like Command Handlers, can however be placed on any object.
+There are situations, however, where it is not possible nor desired to route a command directly to an Aggregate instance.
+Message handling functions, like Command Handlers, can, however, be placed on any object.
 It is thus possible to instantiate a 'Command Handling Object'.</p>
 </div>
 <div class="paragraph">
@@ -639,7 +649,7 @@ Instead, we load the <code>GiftCard</code> manually and execute the desired meth
 <li>
 <p>The <code>Repository</code> for the <code>GiftCard</code> Aggregate, used for retrieval and storage of an Aggregate.
 If <code>@CommandHandler</code> methods are placed directly on the Aggregate, Axon will automatically know to call the <code>Repository</code> to load a given instance.
-It is thus <em>not</em> mandatory to directly access the <code>Repository</code>, but a <a href="../../architecture-overview/#separation-of-business-logic-and-infrastructure">design choice</a>.</p>
+It is thus <em>not</em> mandatory to directly access the <code>Repository</code>, but a design choice.</p>
 </li>
 <li>
 <p>To load the intended <code>GiftCard</code> Aggregate instance, the <code>Repository#load(String)</code> method is used.
