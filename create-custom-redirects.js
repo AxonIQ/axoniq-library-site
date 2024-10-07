@@ -4,6 +4,19 @@ const express = require('express');
 const childProcess = require('child_process');
 const fs = require('fs');
 
+const latestFrameworkVersion = "4.10"
+const latestServerVersion = "v2024.1"
+const latestDefinitions = [
+    {
+        baseFolder: "axon-framework-reference",
+        latestVersion: latestFrameworkVersion
+    },
+    {
+        baseFolder: "axon-server-reference",
+        latestVersion: latestServerVersion
+    }
+]
+
 
 const commander = require('commander');
 const {rimraf} = require("rimraf");
@@ -51,9 +64,9 @@ async function run() {
     const parser = new XMLParser();
 
     const standardReplaceMapping = {
-        "/axon-framework/": "/axon-framework-reference/4.10/",
-        "/axon-server/introduction": "/axon-server-reference/v2024.1/",
-        "/axon-server/": "/axon-server-reference/v2024.1/axon-server/",
+        "/axon-framework/": `/axon-framework-reference/${latestFrameworkVersion}/`,
+        "/axon-server/introduction": `/axon-server-reference/${latestServerVersion}/`,
+        "/axon-server/": `/axon-server-reference/${latestServerVersion}/axon-server/`,
         "/extensions/spring-amqp": "/amqp-extension-reference",
         "/extensions/jgroups": "/jgroups-extension-reference",
         "/extensions/jobrunrpro": "/jobrunr-pro-extension-reference/main",
@@ -83,11 +96,11 @@ async function run() {
         }
 
         if (url.startsWith("/release-notes/rn-axon-framework")) {
-            return "https://docs.axoniq.io/axon-framework-reference/4.10/release-notes"
+            return `https://docs.axoniq.io/axon-framework-reference/${latestFrameworkVersion}/release-notes`
         }
 
         if (url.startsWith("/release-notes/rn-axon-server")) {
-            return "/axon-server-reference/v2024.1/release-notes/"
+            return `/axon-server-reference/${latestServerVersion}/release-notes/`
         }
         // The release notes for the extensions are not available yet. Redirect to the extensions page for now
         if (url.startsWith("/release-notes/rn-extensions")) {
@@ -99,7 +112,7 @@ async function run() {
         }
         // The release notes for the extensions are not available yet. Redirect to the extensions page for now
         if (url.startsWith("/axon-server/migration")) {
-            return "/axon-server-reference/v2024.1/axon-server/migration"
+            return `/axon-server-reference/${latestServerVersion}/axon-server/migration`
         }
 
         // This page no longer exists
@@ -179,6 +192,18 @@ async function run() {
                 console.log("Created redirect for " + url.url + " => " + url.redirect + " in " + path)
             }
           })
+        })
+
+        latestDefinitions.forEach(definition => {
+            console.log("Generating latest urls for " + definition.baseFolder + " now")
+            fs.readdirSync(`build/site/${definition.baseFolder}/${definition.latestVersion}`, {recursive: true}).forEach(v => {
+                if(v.endsWith(".html")) {
+                    console.log("Generating latest redirect for " + v)
+                    fs.writeFileSync(`build/site/${definition.baseFolder}/latest/${v}`, redirectTemplate.replaceAll("__TARGET_FILE__", `/${definition.baseFolder}/${definition.latestVersion}/` + v.replaceAll("index.html", "")))
+                } else {
+                    fs.mkdirSync(`build/site/${definition.baseFolder}/latest/${v}`, {recursive: true})
+                }
+            })
         })
 
         server.close()
