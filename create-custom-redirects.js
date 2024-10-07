@@ -165,7 +165,7 @@ async function run() {
         console.log("All urls are valid")
         allUrls.forEach(url => {
             const fileContent = redirectTemplate.replaceAll("__TARGET_FILE__", url.redirect)
-            const path = "build/site" + url.url;
+            const path = "build/site/reference-guide" + url.url;
             const fileName = path + "/index.html";
             if(fs.existsSync(fileName)) {
                 console.log("no need to create redirect for " + url.url + " => " + url.redirect + " in " + path)
