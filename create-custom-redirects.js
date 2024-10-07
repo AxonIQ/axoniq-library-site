@@ -50,10 +50,10 @@ const rewriteMappings = {
     "/extensions/spring-aot": "/spring-aot-extension-reference/main",
     "/extensions/spring-cloud": "/spring-cloud-extension-reference",
     "/extensions/tracing": "/tracing-extension-reference",
-    "/appendices/rdbms-tuning": "/rdbms-tuning-guide/",
-    "/appendices/message-handler-tuning": "/message-handler-tuning-guide",
-    "/appendices/meta-annotations": "/meta-annotations-guide",
-    "/appendices/identifier-generation": "/identifier-generation-guide",
+    "/appendices/rdbms-tuning": "/relational-database-guide/latest",
+    "/appendices/message-handler-tuning": "/message-handler-customization-guide/latest",
+    "/appendices/meta-annotations": "/meta-annotations-guide/latest",
+    "/appendices/identifier-generation": "/identifier-generation-guide/latest",
     "/appendices/query-reference": "/axon-server-query-language-guide",
 }
 
@@ -86,6 +86,30 @@ const redirectFallback = "/home/"
 const latestDefinitions = [
     {
         baseFolder: "axon-framework-reference",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "message-handler-customization-guide",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "meta-annotations-guide",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "identifier-generation-guide",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "deadlines-guide",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "dead-letter-queue-guide",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "relational-database-guide",
         latestVersion: "4.10"
     },
     {
@@ -127,6 +151,20 @@ async function run() {
         await rimraf("build")
         childProcess.execSync("npx antora playbook.yaml", {stdio: 'inherit'})
     }
+
+    latestDefinitions.forEach(definition => {
+        console.log("Generating latest urls for " + definition.baseFolder + " now")
+        fs.readdirSync(`build/site/${definition.baseFolder}/${definition.latestVersion}`, {recursive: true}).forEach(v => {
+            if(v.endsWith(".html")) {
+                console.log("Generating latest redirect for " + v)
+                const folderName = v.replaceAll("index.html", "");
+                fs.mkdirSync(`build/site/${definition.baseFolder}/latest/${folderName}`, {recursive: true})
+                fs.writeFileSync(`build/site/${definition.baseFolder}/latest/${v}`, redirectTemplate.replaceAll("__TARGET_FILE__", `/${definition.baseFolder}/${definition.latestVersion}/` + folderName))
+            } else {
+            }
+        })
+    })
+
 
     async function checkUrlStatus(url) {
         let fullUrl = url
@@ -201,20 +239,6 @@ async function run() {
           })
         })
     }
-
-
-
-    latestDefinitions.forEach(definition => {
-        console.log("Generating latest urls for " + definition.baseFolder + " now")
-        fs.readdirSync(`build/site/${definition.baseFolder}/${definition.latestVersion}`, {recursive: true}).forEach(v => {
-            if(v.endsWith(".html")) {
-                console.log("Generating latest redirect for " + v)
-                fs.writeFileSync(`build/site/${definition.baseFolder}/latest/${v}`, redirectTemplate.replaceAll("__TARGET_FILE__", `/${definition.baseFolder}/${definition.latestVersion}/` + v.replaceAll("index.html", "")))
-            } else {
-                fs.mkdirSync(`build/site/${definition.baseFolder}/latest/${v}`, {recursive: true})
-            }
-        })
-    })
 
     server.close()
 
