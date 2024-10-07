@@ -9,3 +9,48 @@ Some notable resources:
 * https://docs.axoniq.io/meta/design/doc-system.html[Explanation of the documentation system]
 * https://docs.axoniq.io/meta/overview/build.html[Instructions how to build the documentation]
 * https://docs.axoniq.io/meta/reference/improvements.html[List of pages needing improvements]
+
+== Building and serving the documentation
+
+To build the documentation, first install the requirements:
+[source,shell]
+----
+npm install
+VALE_VERSION=3.3.0
+wget https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz
+sudo tar -xvzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz -C /usr/local/bin vale
+----
+
+Then run te following to download all repositories locally
+[source,shell]
+----
+cd localLinks
+sh update.sh
+cd ../
+----
+
+Now you can build the documentation:
+
+[source,shell]
+----
+npm run build:dev
+----
+
+And serve it locally on port 3000 (http://localhost:3000/)
+
+[source,shell]
+----
+npm run serve
+----
+
+== Checking links
+
+A script has been written that crawls the documentation and checks all links. To run it, execute the following command after you have built the documentation
+
+[source,shell]
+----
+npm run check-links
+----
+
+[TIP]
+This script also runs during the build process, and will prevent the build from succeeding if it finds any broken links.
