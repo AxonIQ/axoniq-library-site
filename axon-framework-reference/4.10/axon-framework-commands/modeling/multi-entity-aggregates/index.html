@@ -359,15 +359,20 @@
 <div class="paragraph">
 <p>Complex business logic often requires more than what an Aggregate with only an Aggregate Root can provide. In that case, it is important that the complexity is spread over a number of 'Entities' within the aggregate. In this chapter we will discuss the specifics around creating entities in your aggregates and how they can handle message.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">State among Entities</div>
 <div class="paragraph">
-<p><strong>State among Entities</strong></p>
+<p>A common misinterpretation of the rule that aggregates should not expose state, is that none of the entities should contain any property accessor methods. This is not the case. In fact, an aggregate will probably benefit a lot if the entities <em>within</em> the aggregate expose state to the other entities in that same aggregate. However, is is recommended not to expose the state <em>outside</em> the aggregate.</p>
 </div>
-<div class="paragraph">
-<p>A common misinterpretation of the rule that aggregates should not expose state, is that none of the entities should contain any property accessor methods. This is not the case. In fact, an aggregate will probably benefit a lot if the entities <em>within</em> the aggregate expose state to the other entities in that same aggregate. However, is is recommended not to expose the state <em>outside</em> of the aggregate.</p>
-</div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Within the 'Gift Card' domain, the <code>GiftCard</code> aggregate root was defined in <a href="../aggregate/" class="xref page">this</a> section. Let&#8217;s leverage this domain to introduce entities:</p>
@@ -435,18 +440,23 @@ Note that this annotation can be placed on a field and a method.</p>
 </li>
 </ol>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Defining the Entity type</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Defining the Entity type</div>
 <div class="paragraph">
 <p>The field declaration for both the <code>Collection</code> or <code>Map</code> should contain proper generics to allow Axon to identify the type of Entity contained in the collection or map. If it is not possible to add the generics in the declaration (for example, because you&#8217;re using a custom implementation which already defines generic types), you must specify the entity type by specifying the <code>type</code> field in the <code>@AggregateMember</code> annotation:</p>
 </div>
 <div class="paragraph">
 <p><code>@AggregateMember(type = GiftCardTransaction.class)</code></p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -507,18 +517,23 @@ public class GiftCardTransaction {
 <div class="paragraph">
 <p>Note that only the declared type of the annotated field is inspected for command handlers. If a field value is null at the time an incoming command arrives for that entity, an exception is thrown. If there is a <code>Collection</code> or <code>Map</code> of child entities and none entity can be found which matches the routing key of the command, Axon throws an <code>IllegalStateException</code> as apparently the aggregate is not capable of processing the command at that point in time.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Command Handler considerations</div>
 <div class="paragraph">
-<p><strong>Command Handler considerations</strong></p>
-</div>
-<div class="paragraph">
-<p>Note that each command must have exactly one handler in the aggregate. This means that you cannot annotate multiple entities (either root nor not) with <code>@CommandHandler</code> which handle the same command type. In case you need to conditionally route a command to an entity, the parent of these entities should handle the command, and forward it based on the conditions that apply.</p>
+<p>Each command must have exactly one handler in the aggregate. This means that you cannot annotate multiple entities (either root nor not) with <code>@CommandHandler</code> which handle the same command type. In case you need to conditionally route a command to an entity, the parent of these entities should handle the command, and forward it based on the conditions that apply.</p>
 </div>
 <div class="paragraph">
 <p>The runtime type of the field does not have to be exactly the declared type. However, only the declared type of the <code>@AggregateMember</code> annotated field is inspected for <code>@CommandHandler</code> methods.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
