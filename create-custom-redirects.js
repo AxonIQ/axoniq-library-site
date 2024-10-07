@@ -3,23 +3,96 @@ const {XMLParser, XMLBuilder, XMLValidator} = require("fast-xml-parser");
 const express = require('express');
 const childProcess = require('child_process');
 const fs = require('fs');
+const commander = require('commander');
+const {rimraf} = require("rimraf");
 
-const latestFrameworkVersion = "4.10"
-const latestServerVersion = "v2024.1"
+
+/**
+ * This script will create redirects for the legacy documentation URLs to the new documentation URLs.
+ * It will also create a "latest" alias for the latest version of the Framework and Server reference documentation.
+ *
+ * All redirects will be checked for 404 errors, and the script will fail if any of the redirects are invalid.
+ */
+
+
+commander
+    .version('0.0.1', '-v, --version')
+    .usage('[OPTIONS]...')
+    .option('-b --build', 'Trigger Full Antora build')
+    .parse(process.argv);
+const options = commander.opts()
+
+
+/**
+ * The site maps to check for redirects. It will have two kind of mappings:
+ * - Full replace mappings, which will replace the URL with the target URL
+ * - Rewrite mappings, which will rebase the url to a different location
+ */
+const siteMaps = [
+    "https://legacydocs.axoniq.io/reference-guide/sitemap.xml",
+]
+/**
+ * The mappings for the redirects, in which each url that starts with the key will be rewritten.
+ * For example, "/axon-framework/modeling" will be rewritten to "/axon-framework-reference/latest/modeling"
+ */
+const rewriteMappings = {
+    "/axon-framework/": `/axon-framework-reference/latest/`,
+    "/axon-server/introduction": `/axon-server-reference/latest/`,
+    "/axon-server/": `/axon-server-reference/latest/axon-server/`,
+    "/extensions/spring-amqp": "/amqp-extension-reference",
+    "/extensions/jgroups": "/jgroups-extension-reference",
+    "/extensions/jobrunrpro": "/jobrunr-pro-extension-reference/main",
+    "/extensions/kafka": "/kafka-extension-reference",
+    "/extensions/kotlin": "/kotlin-extension-reference",
+    "/extensions/mongo": "/mongodb-extension-reference",
+    "/extensions/reactor/reactive-gateways": "/reactor-extension-reference/reactor-gateways",
+    "/extensions/reactor": "/reactor-extension-reference",
+    "/extensions/spring-aot": "/spring-aot-extension-reference/main",
+    "/extensions/spring-cloud": "/spring-cloud-extension-reference",
+    "/extensions/tracing": "/tracing-extension-reference",
+    "/appendices/rdbms-tuning": "/rdbms-tuning-guide/",
+    "/appendices/message-handler-tuning": "/message-handler-tuning-guide",
+    "/appendices/meta-annotations": "/meta-annotations-guide",
+    "/appendices/identifier-generation": "/identifier-generation-guide",
+    "/appendices/query-reference": "/axon-server-query-language-guide",
+}
+
+/**
+ * The mappings for the redirects, in which each url that starts with the key will be replaced with the target URL.
+ * For example, "/architecture-overview" will be replaced with "https://www.axoniq.io/concepts/cqrs-and-event-sourcing"
+ */
+const fullReplaceMappings = {
+    "/architecture-overview": "https://www.axoniq.io/concepts/cqrs-and-event-sourcing",
+    "/axon-server-introduction": "https://www.axoniq.io/products/axon-server",
+    "/release-notes/rn-axon-framework": `https://docs.axoniq.io/axon-framework-reference/latest/release-notes`,
+    "/release-notes/rn-axon-server": `/axon-server-reference/latest/release-notes/`,
+    // The release notes for the extensions are not available yet. Redirect to the extensions page for now
+    "/release-notes/rn-extensions": "/axon-framework-extensions/",
+    // The quickstart no longer exists, redirect to the demo
+    "/getting-started/quick-start": "/bikerental-demo/main",
+    "/axon-server/migration": `/axon-server-reference/latest/axon-server/migration`,
+    // This page no longer exists, redirect to its parent
+    "/axon-framework/axon-framework-commands/modeling": "/axon-framework-reference/latest/axon-framework-commands",
+}
+
+// Redirect all unknown URLs to the home page
+const redirectFallback = "/home/"
+
+/**
+ * Antora won't let us use the actual version and a "latest" modifier in the URL on Github Pages.
+ * This script will create a "latest" alias for the latest version of the Framework and Server reference documentation.
+ * This alias will redirect using a 301 to the actual version.
+ */
 const latestDefinitions = [
     {
         baseFolder: "axon-framework-reference",
-        latestVersion: latestFrameworkVersion
+        latestVersion: "4.10"
     },
     {
         baseFolder: "axon-server-reference",
-        latestVersion: latestServerVersion
+        latestVersion: "v2024.1"
     }
 ]
-
-
-const commander = require('commander');
-const {rimraf} = require("rimraf");
 const app = express()
 app.use(express.static('build/site'))
 const server = app.listen(3001, () => {
@@ -37,107 +110,25 @@ const redirectTemplate = `
 <p>The page you requested has been relocated to <a href="__TARGET_FILE__">__TARGET_FILE__</a>.</p>
 `
 
-commander
-    .version('0.0.1', '-v, --version')
-    .usage('[OPTIONS]...')
-    .option('-c --check', 'Checks the urls')
-    .option('-b --build', 'Trigger Antora build')
-    .option('-l --local', 'Will run against the locally built Antora')
-    .parse(process.argv);
 
+String.prototype.padRight = function (len) {
+    if (this.length >= len) {
+        return this;
+    }
+    return this + " ".repeat(len - this.length);
+}
+
+
+const parser = new XMLParser();
 async function run() {
 
-    const options = commander.opts()
-
-    let baseUrlForChecks = "https://docs.axoniq.io"
-    if (options.local) {
-        // Run the script against the local Antora build
-        console.log("Running against local Antora")
-        baseUrlForChecks = "http://localhost:3001"
-
-        if(options.build) {
-            await rimraf("build")
-            childProcess.execSync("npx antora playbook.yaml", {stdio: 'inherit'})
-        }
+    const baseUrlForChecks = "http://localhost:3001"
+    if(options.build) {
+        await rimraf("build")
+        childProcess.execSync("npx antora playbook.yaml", {stdio: 'inherit'})
     }
 
-    const parser = new XMLParser();
-
-    const standardReplaceMapping = {
-        "/axon-framework/": `/axon-framework-reference/${latestFrameworkVersion}/`,
-        "/axon-server/introduction": `/axon-server-reference/${latestServerVersion}/`,
-        "/axon-server/": `/axon-server-reference/${latestServerVersion}/axon-server/`,
-        "/extensions/spring-amqp": "/amqp-extension-reference",
-        "/extensions/jgroups": "/jgroups-extension-reference",
-        "/extensions/jobrunrpro": "/jobrunr-pro-extension-reference/main",
-        "/extensions/kafka": "/kafka-extension-reference",
-        "/extensions/kotlin": "/kotlin-extension-reference",
-        "/extensions/mongo": "/mongodb-extension-reference",
-        "/extensions/reactor/reactive-gateways": "/reactor-extension-reference/reactor-gateways",
-        "/extensions/reactor": "/reactor-extension-reference",
-        "/extensions/spring-aot": "/spring-aot-extension-reference/main",
-        "/extensions/spring-cloud": "/spring-cloud-extension-reference",
-        "/extensions/tracing": "/tracing-extension-reference",
-        "/appendices/rdbms-tuning": "/rdbms-tuning-guide/",
-        "/appendices/message-handler-tuning": "/message-handler-tuning-guide",
-        "/appendices/meta-annotations": "/meta-annotations-guide",
-        "/appendices/identifier-generation": "/identifier-generation-guide",
-        "/appendices/query-reference": "/axon-server-query-language-guide",
-    }
-
-    function determineRedirect(url) {
-        if (url.startsWith("/architecture-overview")) {
-            // We don't have these pages yet. Redirect to the concepts page for now
-            return "https://www.axoniq.io/concepts/cqrs-and-event-sourcing"
-        }
-
-        if (url.startsWith("/axon-server-introduction")) {
-            return "https://www.axoniq.io/products/axon-server"
-        }
-
-        if (url.startsWith("/release-notes/rn-axon-framework")) {
-            return `https://docs.axoniq.io/axon-framework-reference/${latestFrameworkVersion}/release-notes`
-        }
-
-        if (url.startsWith("/release-notes/rn-axon-server")) {
-            return `/axon-server-reference/${latestServerVersion}/release-notes/`
-        }
-        // The release notes for the extensions are not available yet. Redirect to the extensions page for now
-        if (url.startsWith("/release-notes/rn-extensions")) {
-            return "/axon-framework-extensions/"
-        }
-        // The release notes for the extensions are not available yet. Redirect to the extensions page for now
-        if (url.startsWith("/getting-started/quick-start")) {
-            return "/bikerental-demo/main"
-        }
-        // The release notes for the extensions are not available yet. Redirect to the extensions page for now
-        if (url.startsWith("/axon-server/migration")) {
-            return `/axon-server-reference/${latestServerVersion}/axon-server/migration`
-        }
-
-        // This page no longer exists
-        if (url.startsWith("/axon-framework/axon-framework-commands/modeling")) {
-            return determineRedirect("/axon-framework/axon-framework-commands")
-        }
-
-        for (const [from, to] of Object.entries(standardReplaceMapping)) {
-            if (url.startsWith(from)) {
-                return url.replaceAll(from, to)
-            }
-        }
-
-
-        return "/home/"
-    }
-
-    String.prototype.padRight = function (len) {
-        if (this.length >= len) {
-            return this;
-        }
-        return this + " ".repeat(len - this.length);
-    }
-
-    async function checkUrlValid(url) {
+    async function checkUrlStatus(url) {
         let fullUrl = url
         if (url.startsWith("/")) {
             fullUrl = baseUrlForChecks + url
@@ -146,20 +137,36 @@ async function run() {
         return await axios.get(fullUrl).then(response => {
             return response.status
         }).catch(error => {
-            return error.response?.status
+            return error.response?.status ?? -1
         })
     }
 
-    axios.get("https://legacydocs.axoniq.io/reference-guide/sitemap.xml").then(async response => {
-        let data = parser.parse(response.data);
-        const allUrls = data.urlset.url
+    function determineRedirectUrlBasedOnMappings(url) {
+        for (const [from, to] of Object.entries(fullReplaceMappings)) {
+            if (url.startsWith(from)) {
+                return to
+            }
+        }
+
+        for (const [from, to] of Object.entries(rewriteMappings)) {
+            if (url.startsWith(from)) {
+                return url.replaceAll(from, to)
+            }
+        }
+
+        return redirectFallback
+    }
+
+    const siteMapResponses = await Promise.all(siteMaps.map(url => axios.get(url)))
+    for (const response of siteMapResponses) {
+        const allUrls = parser.parse(response.data).urlset.url
             .map(url => url.loc.split("/reference-guide")[1])
             .filter(url => url !== "/")
-            .map(url => ({url, redirect: determineRedirect(url)}))
+            .map(url => ({url, redirect: determineRedirectUrlBasedOnMappings(url)}))
 
         let invalidUrls = []
         for (const url of allUrls) {
-            const status = await checkUrlValid(url.redirect);
+            const status = await checkUrlStatus(url.redirect);
             if (status !== 200) {
                 invalidUrls.push({...url, status})
             }
@@ -193,21 +200,23 @@ async function run() {
             }
           })
         })
+    }
 
-        latestDefinitions.forEach(definition => {
-            console.log("Generating latest urls for " + definition.baseFolder + " now")
-            fs.readdirSync(`build/site/${definition.baseFolder}/${definition.latestVersion}`, {recursive: true}).forEach(v => {
-                if(v.endsWith(".html")) {
-                    console.log("Generating latest redirect for " + v)
-                    fs.writeFileSync(`build/site/${definition.baseFolder}/latest/${v}`, redirectTemplate.replaceAll("__TARGET_FILE__", `/${definition.baseFolder}/${definition.latestVersion}/` + v.replaceAll("index.html", "")))
-                } else {
-                    fs.mkdirSync(`build/site/${definition.baseFolder}/latest/${v}`, {recursive: true})
-                }
-            })
+
+
+    latestDefinitions.forEach(definition => {
+        console.log("Generating latest urls for " + definition.baseFolder + " now")
+        fs.readdirSync(`build/site/${definition.baseFolder}/${definition.latestVersion}`, {recursive: true}).forEach(v => {
+            if(v.endsWith(".html")) {
+                console.log("Generating latest redirect for " + v)
+                fs.writeFileSync(`build/site/${definition.baseFolder}/latest/${v}`, redirectTemplate.replaceAll("__TARGET_FILE__", `/${definition.baseFolder}/${definition.latestVersion}/` + v.replaceAll("index.html", "")))
+            } else {
+                fs.mkdirSync(`build/site/${definition.baseFolder}/latest/${v}`, {recursive: true})
+            }
         })
-
-        server.close()
     })
+
+    server.close()
 
 }
 
