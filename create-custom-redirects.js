@@ -41,7 +41,7 @@ const rewriteMappings = {
     "/axon-server/": `/axon-server-reference/latest/axon-server/`,
     "/extensions/spring-amqp": "/amqp-extension-reference/latest",
     "/extensions/jgroups": "/jgroups-extension-reference/latest",
-    "/extensions/jobrunrpro": "/jobrunr-pro-extension-reference/main",
+    "/extensions/jobrunrpro": "/jobrunr-pro-extension-reference/latest",
     "/extensions/kafka": "/kafka-extension-reference",
     "/extensions/kotlin": "/kotlin-extension-reference",
     "/extensions/mongo": "/mongodb-extension-reference",
@@ -66,9 +66,10 @@ const fullReplaceMappings = {
     "/axon-server-introduction": "https://www.axoniq.io/products/axon-server",
     "/release-notes/rn-axon-framework": `https://docs.axoniq.io/axon-framework-reference/latest/release-notes`,
     "/release-notes/rn-axon-server": `/axon-server-reference/latest/release-notes/`,
-    // The release notes for the extensions are not available yet. Redirect to the extensions page for now
     "/release-notes/rn-extensions/rn-jgroups": "/jgroups-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-amqp": "/amqp-extension-reference/latest/release-notes/",
+    "/release-notes/rn-extensions/rn-jobrunrpro": "/jobrunr-pro-extension-reference/latest/release-notes/",
+    // Redirect any unknown release notes to extension overview
     "/release-notes/rn-extensions": "/axon-framework-extensions/",
     // The quickstart no longer exists, redirect to the demo
     "/getting-started/quick-start": "/bikerental-demo/main",
@@ -124,6 +125,10 @@ const latestDefinitions = [
     },
     {
         baseFolder: "jgroups-extension-reference",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "jobrunr-pro-extension-reference",
         latestVersion: "4.10"
     },
 ]
