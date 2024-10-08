@@ -42,7 +42,7 @@ const rewriteMappings = {
     "/extensions/spring-amqp": "/amqp-extension-reference/latest",
     "/extensions/jgroups": "/jgroups-extension-reference/latest",
     "/extensions/jobrunrpro": "/jobrunr-pro-extension-reference/latest",
-    "/extensions/kafka": "/kafka-extension-reference",
+    "/extensions/kafka": "/kafka-extension-reference/latest",
     "/extensions/kotlin": "/kotlin-extension-reference/latest/",
     "/extensions/mongo": "/mongodb-extension-reference",
     "/extensions/reactor/reactive-gateways": "/reactor-extension-reference/reactor-gateways",
@@ -71,6 +71,7 @@ const fullReplaceMappings = {
     "/release-notes/rn-extensions/rn-jobrunrpro": "/jobrunr-pro-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-multi-tenancy": "/multitenancy-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-kotlin": "/kotlin-extension-reference/latest/release-notes/",
+    "/release-notes/rn-extensions/rn-kafka": "/kafka-extension-reference/latest/release-notes/",
     // Redirect any unknown release notes to extension overview
     "/release-notes/rn-extensions": "/axon-framework-extensions/",
     // The quickstart no longer exists, redirect to the demo
@@ -139,6 +140,10 @@ const latestDefinitions = [
     },
     {
         baseFolder: "kotlin-extension-reference",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "kafka-extension-reference",
         latestVersion: "4.10"
     },
 ]
