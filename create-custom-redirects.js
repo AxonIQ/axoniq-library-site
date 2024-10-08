@@ -39,7 +39,7 @@ const rewriteMappings = {
     "/axon-framework/": `/axon-framework-reference/latest/`,
     "/axon-server/introduction": `/axon-server-reference/latest/`,
     "/axon-server/": `/axon-server-reference/latest/axon-server/`,
-    "/extensions/spring-amqp": "/amqp-extension-reference",
+    "/extensions/spring-amqp": "/amqp-extension-reference/latest",
     "/extensions/jgroups": "/jgroups-extension-reference",
     "/extensions/jobrunrpro": "/jobrunr-pro-extension-reference/main",
     "/extensions/kafka": "/kafka-extension-reference",
@@ -115,6 +115,10 @@ const latestDefinitions = [
     {
         baseFolder: "axon-server-reference",
         latestVersion: "v2024.1"
+    },
+    {
+        baseFolder: "amqp-extension-reference",
+        latestVersion: "4.10"
     }
 ]
 const app = express()
