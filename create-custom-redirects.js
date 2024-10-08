@@ -3,7 +3,7 @@ const {XMLParser, XMLBuilder, XMLValidator} = require("fast-xml-parser");
 const express = require('express');
 const childProcess = require('child_process');
 const fs = require('fs');
-const commander = require('commander');
+const { program } = require('commander');
 const {rimraf} = require("rimraf");
 
 
@@ -15,12 +15,12 @@ const {rimraf} = require("rimraf");
  */
 
 
-commander
+program
     .version('0.0.1', '-v, --version')
     .usage('[OPTIONS]...')
     .option('-b --build', 'Trigger Full Antora build')
     .parse(process.argv);
-const options = commander.opts()
+const options = program.opts()
 
 
 /**
