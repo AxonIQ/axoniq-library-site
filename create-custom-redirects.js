@@ -69,6 +69,7 @@ const fullReplaceMappings = {
     "/release-notes/rn-extensions/rn-jgroups": "/jgroups-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-amqp": "/amqp-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-jobrunrpro": "/jobrunr-pro-extension-reference/latest/release-notes/",
+    "/release-notes/rn-extensions/rn-multi-tenancy": "/multitenancy-extension-reference/latest/release-notes/",
     // Redirect any unknown release notes to extension overview
     "/release-notes/rn-extensions": "/axon-framework-extensions/",
     // The quickstart no longer exists, redirect to the demo
@@ -129,6 +130,10 @@ const latestDefinitions = [
     },
     {
         baseFolder: "jobrunr-pro-extension-reference",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "multitenancy-extension-reference",
         latestVersion: "4.10"
     },
 ]
