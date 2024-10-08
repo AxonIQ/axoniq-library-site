@@ -49,7 +49,7 @@ const rewriteMappings = {
     "/extensions/reactor": "/reactor-extension-reference/latest",
     "/extensions/spring-aot": "/spring-aot-extension-reference/latest",
     "/extensions/spring-cloud": "/spring-cloud-extension-reference/latest",
-    "/extensions/tracing": "/tracing-extension-reference",
+    "/extensions/tracing": "/tracing-extension-reference/latest",
     "/appendices/rdbms-tuning": "/relational-database-guide/latest",
     "/appendices/message-handler-tuning": "/message-handler-customization-guide/latest",
     "/appendices/meta-annotations": "/meta-annotations-guide/latest",
@@ -164,6 +164,10 @@ const latestDefinitions = [
     },
     {
         baseFolder: "spring-cloud-extension-reference",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "tracing-extension-reference",
         latestVersion: "4.10"
     },
 ]
