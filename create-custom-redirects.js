@@ -67,6 +67,7 @@ const fullReplaceMappings = {
     "/release-notes/rn-axon-framework": `https://docs.axoniq.io/axon-framework-reference/latest/release-notes`,
     "/release-notes/rn-axon-server": `/axon-server-reference/latest/release-notes/`,
     // The release notes for the extensions are not available yet. Redirect to the extensions page for now
+    "/release-notes/rn-extensions/rn-jgroups": "/jgroups-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-amqp": "/amqp-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions": "/axon-framework-extensions/",
     // The quickstart no longer exists, redirect to the demo
