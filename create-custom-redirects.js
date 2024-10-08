@@ -48,7 +48,7 @@ const rewriteMappings = {
     "/extensions/reactor/reactive-gateways": "/reactor-extension-reference/latest/reactor-gateways",
     "/extensions/reactor": "/reactor-extension-reference/latest",
     "/extensions/spring-aot": "/spring-aot-extension-reference/latest",
-    "/extensions/spring-cloud": "/spring-cloud-extension-reference",
+    "/extensions/spring-cloud": "/spring-cloud-extension-reference/latest",
     "/extensions/tracing": "/tracing-extension-reference",
     "/appendices/rdbms-tuning": "/relational-database-guide/latest",
     "/appendices/message-handler-tuning": "/message-handler-customization-guide/latest",
@@ -75,6 +75,7 @@ const fullReplaceMappings = {
     "/release-notes/rn-extensions/rn-mongo": "/mongodb-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-reactor": "/reactor-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-spring-aot": "/spring-aot-extension-reference/latest/release-notes/",
+    "/release-notes/rn-extensions/rn-springcloud": "/spring-cloud-extension-reference/latest/release-notes/",
     // Redirect any unknown release notes to extension overview
     "/release-notes/rn-extensions": "/axon-framework-extensions/",
     // The quickstart no longer exists, redirect to the demo
@@ -159,6 +160,10 @@ const latestDefinitions = [
     },
     {
         baseFolder: "spring-aot-extension-reference",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "spring-cloud-extension-reference",
         latestVersion: "4.10"
     },
 ]
