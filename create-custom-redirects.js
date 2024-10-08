@@ -45,8 +45,8 @@ const rewriteMappings = {
     "/extensions/kafka": "/kafka-extension-reference/latest",
     "/extensions/kotlin": "/kotlin-extension-reference/latest",
     "/extensions/mongo": "/mongodb-extension-reference/latest",
-    "/extensions/reactor/reactive-gateways": "/reactor-extension-reference/reactor-gateways",
-    "/extensions/reactor": "/reactor-extension-reference",
+    "/extensions/reactor/reactive-gateways": "/reactor-extension-reference/latest/reactor-gateways",
+    "/extensions/reactor": "/reactor-extension-reference/latest",
     "/extensions/spring-aot": "/spring-aot-extension-reference/main",
     "/extensions/spring-cloud": "/spring-cloud-extension-reference",
     "/extensions/tracing": "/tracing-extension-reference",
@@ -73,6 +73,7 @@ const fullReplaceMappings = {
     "/release-notes/rn-extensions/rn-kotlin": "/kotlin-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-kafka": "/kafka-extension-reference/latest/release-notes/",
     "/release-notes/rn-extensions/rn-mongo": "/mongodb-extension-reference/latest/release-notes/",
+    "/release-notes/rn-extensions/rn-reactor": "/reactor-extension-reference/latest/release-notes/",
     // Redirect any unknown release notes to extension overview
     "/release-notes/rn-extensions": "/axon-framework-extensions/",
     // The quickstart no longer exists, redirect to the demo
@@ -149,6 +150,10 @@ const latestDefinitions = [
     },
     {
         baseFolder: "mongodb-extension-reference",
+        latestVersion: "4.10"
+    },
+    {
+        baseFolder: "reactor-extension-reference",
         latestVersion: "4.10"
     },
 ]
