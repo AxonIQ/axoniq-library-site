@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Event Handlers</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/4.10/events/event-handlers/">
-    <link rel="prev" href="../event-dispatchers/">
-    <link rel="next" href="../event-processors/">
+    <link rel="prev" href="../">
+    <link rel="next" href="../event-dispatchers/">
     <meta name="generator" content="Antora 3.1.9">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -84,7 +84,7 @@
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
     <li><a href="../">Events</a></li>
-    <li><a href="./">Event Handlers</a></li>
+    <li><a href="./">Handling</a></li>
   </ul>
 </nav>
 <div class="page-actions">
@@ -153,12 +153,15 @@
     <a class="nav-link" href="../../axon-framework-commands/">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregate</a>
+    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../axon-framework-commands/modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -177,12 +180,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../axon-framework-commands/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -194,11 +191,11 @@
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../">Events</a>
 <ul class="nav-list">
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../event-dispatchers/">Event Dispatchers</a>
-  </li>
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="./">Event Handlers</a>
+    <a class="nav-link" href="./">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -210,10 +207,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../event-versioning/">Event Versioning</a>
@@ -439,8 +439,19 @@ Typically, an application will have a single <code>EventProcessingConfiguration<
 <div class="paragraph">
 <p>To register objects with <code>@EventHandler</code> methods, consider the following samples:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
 <div class="paragraph">
 <p>The <code>Configurer</code> exposes several options towards registering an Event Handling Component:</p>
 </div>
@@ -449,21 +460,26 @@ Typically, an application will have a single <code>EventProcessingConfiguration<
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
     public void configureEventHandler(Configurer configurer) {
-        configurer.registerEventHandler(config -&gt; new MyEventHandlingComponent());
+        configurer.registerEventHandler(
+                config -&gt; new MyEventHandlingComponent()
+        );
 
         // or, when the handling component contains several message handler types:
-        configurer.registerMessageHandler(config -&gt; new MyEventHandlingComponent());
+        configurer.registerMessageHandler(
+                config -&gt; new MyEventHandlingComponent()
+        );
 
         // or, directly on the EventProcessingConfigurer:
         configurer.eventProcessing()
-                  .registerEventHandler(config -&gt; new MyEventHandlingComponent());
+            .registerEventHandler(config -&gt;
+                new MyEventHandlingComponent()
+            );
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration"><a class="anchor" href="#_spring_boot_auto_configuration"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
 <div class="paragraph">
 <p>In a Spring Boot environment, simply adding the Event Handling Components to the Application Context is sufficient:</p>
 </div>
@@ -482,9 +498,11 @@ public class MyEventHandlingComponent {
 </div>
 </div>
 </div>
+</div>
+</div>
         <nav class="pagination">
-  <span class="prev"><a href="../event-dispatchers/">Event Dispatchers</a></span>
-  <span class="next"><a href="../event-processors/">Event Processors</a></span>
+  <span class="prev"><a href="../">Events</a></span>
+  <span class="next"><a href="../event-dispatchers/">Dispatching</a></span>
 </nav>
     </article>
   </div>

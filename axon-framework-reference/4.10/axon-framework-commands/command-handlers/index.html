@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Command Handlers</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/4.10/axon-framework-commands/command-handlers/">
-    <link rel="prev" href="../command-dispatchers/">
-    <link rel="next" href="../infrastructure/">
+    <link rel="prev" href="../">
+    <link rel="next" href="../command-dispatchers/">
     <meta name="generator" content="Antora 3.1.9">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -84,7 +84,7 @@
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
     <li><a href="../">Commands</a></li>
-    <li><a href="./">Command Handlers</a></li>
+    <li><a href="./">Handling</a></li>
   </ul>
 </nav>
 <div class="page-actions">
@@ -152,13 +152,16 @@
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../">Commands</a>
 <ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../command-dispatchers/">Dispatching</a>
+  </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
+    <a class="nav-link" href="../modeling/aggregate/">Aggregates</a>
 <ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../modeling/aggregate/">Aggregate</a>
-  </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -177,12 +180,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="./">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -195,10 +192,10 @@
     <a class="nav-link" href="../../events/">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../../events/event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -210,10 +207,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../events/event-versioning/">Event Versioning</a>
@@ -505,22 +505,27 @@ Failing to do so means the Aggregate would miss state changes when it is being s
 <p>The <a href="../../testing/commands-events/" class="xref page">Aggregate Test Fixture</a> will guard against unintentional state changes in Command Handling functions.
 It is thus advised to provide thorough test cases for <em>any</em> Aggregate implementation.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>When to handle an Event</strong></p>
-</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Only handle the necessary events</div>
 <div class="paragraph">
 <p>The only state an Aggregate requires is the state it needs to make a decision.
-Handling an Event published by the Aggregate is thus only required if the state change the Event resembles is needed to drive future validation.</p>
+Handling an Event published by the Aggregate is thus only required if the state change is necessary for future validation of other commands.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_applying_events_from_event_sourcing_handlers"><a class="anchor" href="#_applying_events_from_event_sourcing_handlers"></a>Applying events from event-sourcing handlers</h3>
 <div class="paragraph">
-<p>In some cases, especially when the Aggregate structure grows beyond just a couple of Entities, it is cleaner to react on events being published in other Entities of the same Aggregate (multi Entity Aggregates are explained in more detail <a href="../modeling/multi-entity-aggregates/" class="xref page">here</a>).
+<p>In some cases, especially when the Aggregate structure grows beyond just a couple of Entities, it is cleaner to react on events being published in other Entities of the same Aggregate (multi-entity Aggregates are explained in more detail <a href="../modeling/multi-entity-aggregates/" class="xref page">here</a>).
 However, since the Event Handling methods are also invoked when reconstructing Aggregate state, special precautions must be taken.</p>
 </div>
 <div class="paragraph">
@@ -529,20 +534,25 @@ This makes it possible for an Entity 'B' to apply an event in reaction to Entity
 Axon will ignore the <code>apply()`invocation when replaying historic events upon sourcing the given Aggregate. Do note that in the scenario where Event Messages are published from an Event Sourcing Handler, the Event of the inner `apply()</code> invocation is only published to the entities after all entities have received the first event.
 If more events need to be published, based on the state of an entity after applying an inner event, use <code>apply(&#8230;&#8203;).andThenApply(&#8230;&#8203;)</code>.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Reacting to other Events</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Reacting to external events</div>
 <div class="paragraph">
 <p>An Aggregate <strong>cannot</strong> handle events from other sources then itself.
 This is intentional as the Event Sourcing Handlers are used to recreate the state of the Aggregate.
-For this it only needs it&#8217;s own events as those represent it&#8217;s state changes.</p>
+For this, it only needs its own events as those represent its state changes.</p>
 </div>
 <div class="paragraph">
-<p>To make an Aggregate react on events from other Aggregate instances, <a href="../../sagas/" class="xref page">Sagas</a> or <a href="../../events/event-handlers/" class="xref page">Event Handling Components</a> should be leveraged</p>
+<p>To make an Aggregate react to events from other Aggregate instances, <a href="../../sagas/" class="xref page">Sagas</a> or <a href="../../events/event-handlers/" class="xref page">Event Handling Components</a> should be leveraged</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -600,17 +610,17 @@ This enumeration has the following options available:</p>
 <div class="ulist">
 <ul>
 <li>
-<p><code>ALWAYS</code> - A creation policy of "always" will expect to instantiate the aggregate.
+<p><code>ALWAYS</code>: Will expect to instantiate the aggregate.
 This effectively works like a command handler annotated constructor.
 Without defining a return type, the aggregate identifier used during the creation will be returned.
 Through this approach, it is possible to return other results next to the aggregate identifier.</p>
 </li>
 <li>
-<p><code>CREATE_IF_MISSING</code> - A creation policy of "create if missing" can either create an aggregate or act on an existing instance.
-This policy should be regarded as a create or update approach of an aggregate.</p>
+<p><code>CREATE_IF_MISSING</code>: Can either create an aggregate or act on an existing instance.
+This policy should be regarded as an upsert approach of an aggregate.</p>
 </li>
 <li>
-<p><code>NEVER</code> - A creation policy of "never" will be handled on an existing aggregate instance.
+<p><code>NEVER</code>: Will be handled on an existing aggregate instance.
 This effectively works like any regular command handler annotated method.</p>
 </li>
 </ul>
@@ -637,14 +647,12 @@ Unlike with Aggregates, there is only a <em>single</em> instance of a Command Ha
 import org.axonframework.modelling.command.Repository;
 
 public class GiftCardCommandHandler {
-
-    // 1.
-    private final Repository&lt;GiftCard&gt; giftCardRepository;
+    private final Repository&lt;GiftCard&gt; giftCardRepository; <i class="conum" data-value="1"></i><b>(1)</b>
 
     @CommandHandler
     public void handle(RedeemCardCommand cmd) {
-        giftCardRepository.load(cmd.getCardId()) // 2.
-                          .execute(giftCard -&gt; giftCard.handle(cmd)); // 3.
+        giftCardRepository.load(cmd.getCardId()) <i class="conum" data-value="2"></i><b>(2)</b>
+                          .execute(giftCard -&gt; giftCard.handle(cmd)); <i class="conum" data-value="3"></i><b>(3)</b>
     }
 
     // omitted constructor
@@ -655,28 +663,31 @@ public class GiftCardCommandHandler {
 <p>In the above snippet we have decided that the <code>RedeemCardCommand</code> should no longer be directly handled on the <code>GiftCard</code>.
 Instead, we load the <code>GiftCard</code> manually and execute the desired method on it:</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The <code>Repository</code> for the <code>GiftCard</code> Aggregate, used for retrieval and storage of an Aggregate.
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>Repository</code> for the <code>GiftCard</code> Aggregate, used for retrieval and storage of an Aggregate.
 If <code>@CommandHandler</code> methods are placed directly on the Aggregate, Axon will automatically know to call the <code>Repository</code> to load a given instance.
-It is thus <em>not</em> mandatory to directly access the <code>Repository</code>, but a design choice.</p>
-</li>
-<li>
-<p>To load the intended <code>GiftCard</code> Aggregate instance, the <code>Repository#load(String)</code> method is used.
-The provided parameter should be the Aggregate identifier.</p>
-</li>
-<li>
-<p>After that Aggregate has been loaded, the <code>Aggregate#execute(Consumer)</code> function should be invoked to perform an operation on the Aggregate.
-Using the <code>execute</code> function ensure that the Aggregate life cycle is correctly started.</p>
-</li>
-</ol>
+It is thus <em>not</em> mandatory to directly access the <code>Repository</code>, but a design choice.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>To load the intended <code>GiftCard</code> Aggregate instance, the <code>Repository#load(String)</code> method is used.
+The provided parameter should be the Aggregate identifier.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>After that Aggregate has been loaded, the <code>Aggregate#execute(Consumer)</code> function should be invoked to perform an operation on the Aggregate.
+Using the <code>execute</code> function ensure that the Aggregate life cycle is correctly started.</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../command-dispatchers/">Command Dispatchers</a></span>
-  <span class="next"><a href="../infrastructure/">Infrastructure</a></span>
+  <span class="prev"><a href="../">Commands</a></span>
+  <span class="next"><a href="../command-dispatchers/">Dispatching</a></span>
 </nav>
     </article>
   </div>

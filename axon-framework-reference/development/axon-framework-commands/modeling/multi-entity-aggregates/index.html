@@ -84,7 +84,7 @@
   <ul>
     <li><a href="../../../">Axon Framework Reference</a></li>
     <li><a href="../../">Commands</a></li>
-    <li>Modelling</li>
+    <li><a href="../aggregate/">Aggregates</a></li>
     <li><a href="./">Multi-Entity Aggregates</a></li>
   </ul>
 </nav>
@@ -154,12 +154,15 @@
     <a class="nav-link" href="../../">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../aggregate/">Aggregate</a>
+    <a class="nav-link" href="../../command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item is-current-page" data-depth="3">
     <a class="nav-link" href="./">Multi-Entity Aggregates</a>
   </li>
@@ -178,12 +181,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../command-handlers/">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -196,10 +193,10 @@
     <a class="nav-link" href="../../../events/">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../events/event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../../../events/event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../events/event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../../../events/event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -211,10 +208,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../../events/event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../events/event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../../../events/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../events/event-versioning/">Event Versioning</a>
@@ -387,7 +387,7 @@ public class GiftCard {
     @AggregateIdentifier
     private String id;
 
-    @AggregateMember // 1.
+    @AggregateMember <i class="conum" data-value="1"></i><b>(1)</b>
     private List&lt;GiftCardTransaction&gt; transactions = new ArrayList&lt;&gt;();
 
     private int remainingValue;
@@ -397,7 +397,7 @@ public class GiftCard {
 
 public class GiftCardTransaction {
 
-    @EntityId // 2.
+    @EntityId <i class="conum" data-value="2"></i><b>(2)</b>
     private String transactionId;
 
     private int transactionValue;
@@ -419,25 +419,27 @@ public class GiftCardTransaction {
 <div class="paragraph">
 <p>Entities are, just like the aggregate root, simple objects, as is shown with the new <code>GiftCardTransaction</code> entity. The snippet above shows two important concepts of multi-entity aggregates:</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The field that declares the child entity/entities must be annotated with <code>@AggregateMember</code>.
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The field that declares the child entity/entities must be annotated with <code>@AggregateMember</code>.
 This annotation tells Axon that the annotated field contains a class that should be inspected for message handlers.
 This example shows the annotation on an implementation of <code>Iterable</code>, but it can also be placed on a single Object or a <code>Map</code>.
 In the latter case, the values of the <code>Map</code> are expected to contain the entities, while the key contains a value that is used as their reference.
-Note that this annotation can be placed on a field and a method.</p>
-</li>
-<li>
-<p>The <code>@EntityId</code> annotation specifying the identifying field of an Entity.
+Note that this annotation can be placed on a field and a method.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>@EntityId</code> annotation specifying the identifying field of an Entity.
 Required to be able to route a command (or <a href="#_event_sourcing_handlers_in_entities">event</a>) message to the correct entity instance.
 The property on the payload that will be used to find the entity that the message should be routed to, defaults to the name of the <code>@EntityId</code> annotated field.
 For example, when annotating the field <code>transactionId</code>, the command must define a property with that same name, which means either a <code>transactionId</code> or a <code>getTransactionId()</code> method must be present.
 If the name of the field and the routing property differ, you may provide a value explicitly using <code>@EntityId(routingKey = &quot;customRoutingProperty&quot;)</code>.
 This annotation is <strong>mandatory</strong> on the Entity implementation if it will be part of a <code>Collection</code> or <code>Map</code> of child entities.
-Note that this annotation can be placed on a field and a method.</p>
-</li>
-</ol>
+Note that this annotation can be placed on a field and a method.</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -648,7 +650,7 @@ public class GiftCard {
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../aggregate/">Aggregate</a></span>
+  <span class="prev"><a href="../aggregate/">Aggregates</a></span>
   <span class="next"><a href="../state-stored-aggregates/">State Stored Aggregates</a></span>
 </nav>
     </article>

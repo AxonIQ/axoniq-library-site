@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Infrastructure</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/4.10/axon-framework-commands/infrastructure/">
-    <link rel="prev" href="../command-handlers/">
+    <link rel="prev" href="../modeling/conflict-resolution/">
     <link rel="next" href="../configuration/">
     <meta name="generator" content="Antora 3.1.9">
     <link rel="stylesheet" href="../../../../_/css/site.css">
@@ -153,12 +153,15 @@
     <a class="nav-link" href="../">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../modeling/aggregate/">Aggregate</a>
+    <a class="nav-link" href="../command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../modeling/aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -176,12 +179,6 @@
   </li>
 </ul>
   </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../command-handlers/">Command Handlers</a>
-  </li>
   <li class="nav-item is-current-page" data-depth="2">
     <a class="nav-link" href="./">Infrastructure</a>
   </li>
@@ -195,10 +192,10 @@
     <a class="nav-link" href="../../events/">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../../events/event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -210,10 +207,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../events/event-versioning/">Event Versioning</a>
@@ -579,7 +579,7 @@ public class AxonConfig {
 <div class="sectionbody">
 <div class="paragraph">
 <p>The local command bus is the mechanism that dispatches commands to their respective command handlers within an Axon application.
-Suggestions on how to use the <code>CommandBus</code> can be found <a href="../command-dispatchers/#the-command-bus" class="xref page">here</a>.
+Suggestions on how to use the <code>CommandBus</code> can be found <a href="../command-dispatchers/#command-bus" class="xref page">here</a>.
 Several flavors of the command bus, with differing characteristics, exist within the framework.</p>
 </div>
 <div class="sect2">
@@ -601,35 +601,43 @@ See <a href="../../messaging-concepts/message-intercepting/#command-interceptors
 The performance of this implementation is good, but not extraordinary.
 To cross JVM boundaries, or to get the most out of your CPU cycles, check out the other <code>CommandBus</code> implementations.</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
     public void configureSimpleCommandBus(Configurer configurer) {
-        configurer.configureCommandBus(
-                config -&gt; {
-                    CommandBus commandBus =
-                            SimpleCommandBus.builder()
-                                            .transactionManager(config.getComponent(TransactionManager.class))
-                                            .spanFactory(config.spanFactory())
-                                            .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
-                                            // ...
-                                            .build();
-                    commandBus.registerHandlerInterceptor(
-                            new CorrelationDataInterceptor&lt;&gt;(config.correlationDataProviders())
-                    );
-                return commandBus;
-              }
-        );
+        configurer.configureCommandBus(config -&gt; {
+              CommandBus commandBus = SimpleCommandBus
+                  .builder()
+                  .transactionManager(config.getComponent(TransactionManager.class))
+                  .spanFactory(config.spanFactory())
+                  .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
+                  // ...
+                  .build();
+              commandBus.registerHandlerInterceptor(
+                      new CorrelationDataInterceptor&lt;&gt;(config.correlationDataProviders())
+              );
+              return commandBus;
+        });
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration"><a class="anchor" href="#_spring_boot_auto_configuration"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -660,10 +668,12 @@ public class AxonConfig {
 </div>
 </div>
 </div>
+</div>
+</div>
 <div class="sect2">
 <h3 id="AsynchronousCommandBus"><a class="anchor" href="#AsynchronousCommandBus"></a><code>AsynchronousCommandBus</code></h3>
 <div class="paragraph">
-<p>As the name suggest, the <code>AsynchronousCommandBus</code> implementation executes commands asynchronously from the thread that dispatches them.
+<p>As the name suggests, the <code>AsynchronousCommandBus</code> implementation executes commands asynchronously from the thread that dispatches them.
 It uses an <code>Executor</code> to perform the actual handling logic on a different Thread.</p>
 </div>
 <div class="paragraph">
@@ -680,37 +690,45 @@ Threads are stopped if they have not processed a command for 60 seconds.</p>
 To shut down, call the <code>shutdown()</code> method.
 This will also shut down any provided <code>Executor</code> instance, if it implements the <code>ExecutorService</code> interface.</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_2"><a class="anchor" href="#_axon_configuration_api_2"></a>Axon Configuration API</h4>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
     public void configureAsynchronousCommandBus(Configurer configurer) {
-      configurer.configureCommandBus(
-              config -&gt; {
-                CommandBus commandBus =
-                        AsynchronousCommandBus.builder()
-                                              .transactionManager(config.getComponent(TransactionManager.class))
-                                              .spanFactory(config.spanFactory())
-                                              .messageMonitor(config.messageMonitor(
-                                                      AsynchronousCommandBus.class, "commandBus"
-                                              ))
-                                              // ...
-                                              .build();
-                commandBus.registerHandlerInterceptor(
-                        new CorrelationDataInterceptor&lt;&gt;(config.correlationDataProviders())
-                );
-                return commandBus;
-              }
-      );
+        configurer.configureCommandBus(config -&gt; {
+            CommandBus commandBus = AsynchronousCommandBus
+                .builder()
+                .transactionManager(config.getComponent(TransactionManager.class))
+                .spanFactory(config.spanFactory())
+                .messageMonitor(config.messageMonitor(
+                    AsynchronousCommandBus.class, "commandBus"
+                ))
+                // ...
+                .build();
+            commandBus.registerHandlerInterceptor(
+                    new CorrelationDataInterceptor&lt;&gt;(config.correlationDataProviders())
+            );
+            return commandBus;
+        });
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_2"><a class="anchor" href="#_spring_boot_auto_configuration_2"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -720,12 +738,13 @@ public class AxonConfig {
     public CommandBus asynchronousCommandBus(TransactionManager transactionManager,
                                              GlobalMetricRegistry metricRegistry,
                                              SpanFactory spanFactory) {
-        return AsynchronousCommandBus.builder()
-                                     .transactionManager(transactionManager)
-                                     .messageMonitor(metricRegistry.registerCommandBus("commandBus"))
-                                     .spanFactory(spanFactory)
-                                     // ...
-                                     .build();
+        return AsynchronousCommandBus
+            .builder()
+            .transactionManager(transactionManager)
+            .messageMonitor(metricRegistry.registerCommandBus("commandBus"))
+            .spanFactory(spanFactory)
+            // ...
+            .build();
     }
 
     @Bean
@@ -737,6 +756,8 @@ public class AxonConfig {
         );
     }
 }</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -787,7 +808,7 @@ It shouldn&#8217;t take more than a few milliseconds.</p>
 </div>
 <div class="paragraph">
 <p>To construct a <code>DisruptorCommandBus</code> instance, you need an <code>EventStore</code>.
-This component is explained in the <a href="../../events/event-bus-and-event-store/" class="xref page">Event Bus and Event Store</a> section.</p>
+This component is explained in the <a href="../../events/infrastructure/" class="xref page">Event Bus and Event Store</a> section.</p>
 </div>
 <div class="paragraph">
 <p>Optionally, you can provide a <code>DisruptorConfiguration</code> instance, which allows you to tweak the configuration to optimize performance for your specific environment:</p>
@@ -866,22 +887,34 @@ The serialized form of the payload and metadata is attached before they are publ
 </li>
 </ul>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_3"><a class="anchor" href="#_axon_configuration_api_3"></a>Axon Configuration API</h4>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_3_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
     public void configureDisruptorCommandBus(Configurer configurer) {
         configurer.configureCommandBus(config -&gt; {
-            CommandBus commandBus = DisruptorCommandBus.builder()
-                                                       .transactionManager(config.getComponent(TransactionManager.class))
-                                                       .messageMonitor(config.messageMonitor(
-                                                               DisruptorCommandBus.class, "commandBus"
-                                                       ))
-                                                       .bufferSize(4096)
-                                                       // ...
-                                                       .build();
+            CommandBus commandBus = DisruptorCommandBus
+                .builder()
+                    .transactionManager(config.getComponent(TransactionManager.class))
+                    .messageMonitor(config.messageMonitor(
+                            DisruptorCommandBus.class, "commandBus"
+                    ))
+                    .bufferSize(4096)
+                    // ...
+                    .build();
             commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor&lt;&gt;(config.correlationDataProviders()));
             return commandBus;
         });
@@ -890,8 +923,7 @@ The serialized form of the payload and metadata is attached before they are publ
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_3"><a class="anchor" href="#_spring_boot_auto_configuration_3"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -900,23 +932,26 @@ public class AxonConfig {
     @Bean
     public CommandBus disruptorCommandBus(TransactionManager transactionManager,
                                           GlobalMetricRegistry metricRegistry) {
-        return DisruptorCommandBus.builder()
-                                  .transactionManager(transactionManager)
-                                  .messageMonitor(metricRegistry.registerCommandBus("commandBus"))
-                                  .bufferSize(4096)
-                                  // ...
-                                  .build();
+        return DisruptorCommandBus
+            .builder()
+            .transactionManager(transactionManager)
+            .messageMonitor(metricRegistry.registerCommandBus("commandBus"))
+            .bufferSize(4096)
+            // ...
+            .build();
     }
 
     @Bean
     public ConfigurerModule commandBusCorrelationConfigurerModule() {
-        return configurer -&gt; configurer.onInitialize(
-                  config -&gt; config.commandBus().registerHandlerInterceptor(
-                            new CorrelationDataInterceptor&lt;&gt;(config.correlationDataProviders())
-                  )
+        return configurer -&gt; configurer.onInitialize(config -&gt; config
+            .commandBus().registerHandlerInterceptor(
+                new CorrelationDataInterceptor&lt;&gt;(config.correlationDataProviders())
+            )
         );
     }
 }</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -1004,8 +1039,19 @@ This policy routes all commands to the same segment, as long as the configuratio
 The <code>ERROR</code>, <code>RANDOM_KEY</code> and <code>STATIC_KEY</code> are <em>fallback routing strategies</em> that should be configured on the annotation or meta-data implementations.
 To get a grasp how these are constructed, consider the following sample:</p>
 </div>
-<div class="sect3">
-<h4 id="AnnotationRoutingStrategy"><a class="anchor" href="#AnnotationRoutingStrategy"></a><code>AnnotationRoutingStrategy</code></h4>
+<div id="_tabs_4" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_4_annotationroutingstrategy" class="tab">
+<p><code>AnnotationRoutingStrategy</code></p>
+</li>
+<li id="_tabs_4_metadataroutingstrategy" class="tab">
+<p><code>MetaDataRoutingStrategy</code></p>
+</li>
+</ul>
+</div>
+<div id="_tabs_4_annotationroutingstrategy--panel" class="tabpanel" aria-labelledby="_tabs_4_annotationroutingstrategy">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// A custom annotation can be used to drive the AnnotationRoutingStrategy
@@ -1015,37 +1061,51 @@ To get a grasp how these are constructed, consider the following sample:</p>
 public class AxonConfig {
     // omitting other configuration methods...
     public RoutingStrategy routingStrategy() {
-      return AnnotationRoutingStrategy.builder()
-                                      .annotationType(CustomRoutingAnnotation.class)
-                                      .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.STATIC_KEY)
-                                      .build();
+      return AnnotationRoutingStrategy
+          .builder()
+          .annotationType(CustomRoutingAnnotation.class)
+          .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.STATIC_KEY)
+          .build();
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="MetaDataRoutingStrategy"><a class="anchor" href="#MetaDataRoutingStrategy"></a><code>MetaDataRoutingStrategy</code></h4>
+<div id="_tabs_4_metadataroutingstrategy--panel" class="tabpanel" aria-labelledby="_tabs_4_metadataroutingstrategy">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
     public RoutingStrategy routingStrategy() {
-        return MetaDataRoutingStrategy.builder()
-                                      .metaDataKey("my-routing-key")
-                                      .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY)
-                                      .build();
+        return MetaDataRoutingStrategy
+            .builder()
+            .metaDataKey("my-routing-key")
+            .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY)
+            .build();
     }
 }</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="paragraph">
 <p>Of course, a custom implementation of the <code>RoutingStrategy</code> can also be provided when necessary.
 When we need to deviate from the default <code>AnnotationRoutingStrategy</code>, we should configure it like so:</p>
 </div>
+<div id="_tabs_5" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_5_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_5_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_4"><a class="anchor" href="#_axon_configuration_api_4"></a>Axon Configuration API</h4>
+<div id="_tabs_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_5_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -1057,8 +1117,7 @@ When we need to deviate from the default <code>AnnotationRoutingStrategy</code>,
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_4"><a class="anchor" href="#_spring_boot_auto_configuration_4"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_5_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -1073,6 +1132,8 @@ public class AxonConfig {
 </div>
 </div>
 </div>
+</div>
+</div>
 <div class="sect2">
 <h3 id="AxonServerCommandBus"><a class="anchor" href="#AxonServerCommandBus"></a><code>AxonServerCommandBus</code></h3>
 <div class="paragraph">
@@ -1082,14 +1143,25 @@ It connects to <a href="https://www.axoniq.io/products/axon-server" class="exter
 <div class="paragraph">
 <p>As it is the default, configuring it is relatively straightforward:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_5"><a class="anchor" href="#_axon_configuration_api_5"></a>Axon Configuration API</h4>
+<div id="_tabs_6" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_6_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_6_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_6_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_6_configuration_api">
 <div class="paragraph">
 <p>Declare dependencies:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">&lt;!-- somewhere in the POM file... --&gt;
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!-- somewhere in the POM file... --&gt;
 &lt;dependencyManagement&gt;
     &lt;!-- amongst the dependencies... --&gt;
     &lt;dependencies&gt;
@@ -1133,14 +1205,13 @@ It connects to <a href="https://www.axoniq.io/products/axon-server" class="exter
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_5"><a class="anchor" href="#_spring_boot_auto_configuration_5"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_6_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_6_spring_boot">
 <div class="paragraph">
 <p>By simply including the <code>axon-spring-boot-starter</code> dependency, Axon will automatically configure the <code>AxonServerCommandBus</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">&lt;!--somewhere in the POM file--&gt;
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--somewhere in the POM file--&gt;
 &lt;dependency&gt;
     &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
     &lt;artifactId&gt;axon-spring-boot-starter&lt;/artifactId&gt;
@@ -1148,12 +1219,18 @@ It connects to <a href="https://www.axoniq.io/products/axon-server" class="exter
 &lt;/dependency&gt;</code></pre>
 </div>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Disabling Axon Server</strong></p>
 </div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
 <div class="paragraph">
+<div class="title">Disabling Axon Server</div>
 <p>There are two options to disable Axon Framework&#8217;s default of using the <code>AxonServerCommandBus</code>:</p>
 </div>
 <div class="olist arabic">
@@ -1167,10 +1244,11 @@ It connects to <a href="https://www.axoniq.io/products/axon-server" class="exter
 </ol>
 </div>
 <div class="paragraph">
-<p>When doing any of these, Axon will fall back to the *un*distributed <a href="#SimpleCommandBus"><code>SimpleCommandBus</code></a>, unless configured otherwise.</p>
+<p>When doing any of these, Axon will fall back to the <a href="#SimpleCommandBus"><code>SimpleCommandBus</code></a> that dispatches commands in the local instance, unless configured otherwise.</p>
 </div>
-</blockquote>
-</div>
+</td>
+</tr>
+</table>
 </div>
 <div class="sect3">
 <h4 id="_local_segment_and_load_factor_configuration"><a class="anchor" href="#_local_segment_and_load_factor_configuration"></a>Local segment and load factor configuration</h4>
@@ -1182,27 +1260,39 @@ This might be useful if some commands are routed more often towards one instance
 <div class="paragraph">
 <p>The following should be done to configure a custom <a href="#_local_segment">local segment</a> and/or load factor:</p>
 </div>
+<div id="_tabs_7" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_7_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_7_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_6"><a class="anchor" href="#_axon_configuration_api_6"></a>Axon Configuration API</h4>
+<div id="_tabs_7_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_7_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
-    public CommandBus axonServerCommandBus(CommandBus localSegment,
-                                           CommandLoadFactorProvider loadFactorProvider) {
-        return AxonServerCommandBus.builder()
-                                   .localSegment(localSegment)
-                                   .targetContextResolver(targetContextResolver)
-                                   // All required configuration components are specified in the JavaDoc of the Builder
-                                   .build();
+    public CommandBus axonServerCommandBus(
+        CommandBus localSegment,
+        CommandLoadFactorProvider loadFactorProvider
+    ) {
+        return AxonServerCommandBus
+            .builder()
+            .localSegment(localSegment)
+            .targetContextResolver(targetContextResolver)
+            // All required configuration components are specified in the JavaDoc of the Builder
+            .build();
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_6"><a class="anchor" href="#_spring_boot_auto_configuration_6"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_7_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_7_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -1211,7 +1301,6 @@ public class AxonConfig {
     @Bean
     @Qualifier("localSegment")
     public CommandBus localSegment() {
-
         return /* construct your local segment */;
     }
 
@@ -1220,6 +1309,9 @@ public class AxonConfig {
       return /* construct your load factor provider */;
     }
 }</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -1268,17 +1360,17 @@ With that in place, a single property needs to be added to the application conte
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.distributed.enabled=true</code></pre>
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.distributed.enabled=true</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>It is recommended to visit the respective extension pages on how to configure JGroups or Spring Cloud for the <code>DistributedCommandBus</code>.</p>
+<p>It is recommended to visit the respective extension pages on how to configure <a href="../../../../jgroups-extension-reference/4.10/" class="xref page">JGroups</a> or <a href="../../../../spring-cloud-extension-reference/4.10/" class="xref page">Spring Cloud</a> for the <code>DistributedCommandBus</code>.</p>
 </div>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../command-handlers/">Command Handlers</a></span>
+  <span class="prev"><a href="../modeling/conflict-resolution/">Conflict Resolution</a></span>
   <span class="next"><a href="../configuration/">Configuration</a></span>
 </nav>
     </article>

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Command Dispatchers</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/4.10/axon-framework-commands/command-dispatchers/">
-    <link rel="prev" href="../modeling/conflict-resolution/">
-    <link rel="next" href="../command-handlers/">
+    <link rel="prev" href="../command-handlers/">
+    <link rel="next" href="../modeling/aggregate/">
     <meta name="generator" content="Antora 3.1.9">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -84,7 +84,7 @@
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
     <li><a href="../">Commands</a></li>
-    <li><a href="./">Command Dispatchers</a></li>
+    <li><a href="./">Dispatching</a></li>
   </ul>
 </nav>
 <div class="page-actions">
@@ -153,12 +153,15 @@
     <a class="nav-link" href="../">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../modeling/aggregate/">Aggregate</a>
+    <a class="nav-link" href="../command-handlers/">Handling</a>
   </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../modeling/aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -176,12 +179,6 @@
   </li>
 </ul>
   </li>
-  <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="./">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../command-handlers/">Command Handlers</a>
-  </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../infrastructure/">Infrastructure</a>
   </li>
@@ -195,10 +192,10 @@
     <a class="nav-link" href="../../events/">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../../events/event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -210,10 +207,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../events/event-versioning/">Event Versioning</a>
@@ -357,29 +357,19 @@
 <div class="paragraph">
 <p>The <a href="../command-handlers/" class="xref page">Command Handlers</a> pages provide the background on how to handle command messages in your application.
 The dispatching process is the starting point of such a command message.
-Axon provides two interfaces you can use to send the commands to your command handlers, being:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The Command Bus, and</p>
-</li>
-<li>
-<p>The Command Gateway</p>
-</li>
-</ol>
+Axon provides two interfaces you can use to send the commands to your command handlers, being the <a href="#command-bus">CommandBus</a> and the <a href="#command-gateway">CommandGateway</a>.</p>
 </div>
 <div class="paragraph">
 <p>This page will show how and when to use the command gateway and bus.
-How to configure and specifics on the command gateway and bus implementations are discussed in the <a href="../infrastructure/" class="xref page">infrastructure</a> section.</p>
+How to configure and specifics on the command gateway and bus implementations are discussed in the <a href="../infrastructure/" class="xref page">infrastructure section</a>.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="the-command-bus"><a class="anchor" href="#the-command-bus"></a>The <code>CommandBus</code></h2>
+<h2 id="command-bus"><a class="anchor" href="#command-bus"></a>The <code>CommandBus</code></h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The 'Command Bus' is the mechanism that dispatches commands to their respective command handlers.
+<p>The <code>CommandBus</code> is the mechanism that dispatches commands to their respective command handlers.
 As such, it is the infrastructure component that is aware of which component can handle which command.</p>
 </div>
 <div class="paragraph">
@@ -391,19 +381,19 @@ If no command handler is available for the dispatched command, a <code>NoHandler
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private CommandBus commandBus; // 1.
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private CommandBus commandBus; <i class="conum" data-value="1"></i><b>(1)</b>
 
 public void dispatchCommands() {
-    String cardId = UUID.randomUUID().toString(); // 2.
+    String cardId = UUID.randomUUID().toString(); <i class="conum" data-value="2"></i><b>(2)</b>
 
-    // 3. &amp; 4.
+    <i class="conum" data-value="3"></i><b>(3)</b> <i class="conum" data-value="4"></i><b>(4)</b>
     commandBus.dispatch(GenericCommandMessage.asCommandMessage(new IssueCardCommand(cardId, 100, "shopId")));
 
-    // 5. &amp; 6.
+    <i class="conum" data-value="5"></i><b>(5)</b> <i class="conum" data-value="6"></i><b>(6)</b>
     commandBus.dispatch(
             GenericCommandMessage.asCommandMessage(new IssueCardCommand(cardId, 100, "shopId")),
             (CommandCallback&lt;IssueCardCommand, String&gt;) (cmdMsg, cmdResultMsg) -&gt; {
-                // 7.
+                <i class="conum" data-value="7"></i><b>(7)</b>
                 if (cmdResultMsg.isExceptional()) {
                     Throwable throwable = cmdResultMsg.exceptionResult();
                 } else {
@@ -418,40 +408,47 @@ public void dispatchCommands() {
 <div class="paragraph">
 <p>The <code>CommandDispatcher</code> described above exemplifies a couple of important aspects and capabilities of the dispatching commands:</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The <code>CommandBus</code> interface providing the functionality to dispatch command messages.</p>
-</li>
-<li>
-<p>The aggregate identifier is, per best practice, initialized as the String of a random unique identifier.
-Typed identifier objects are also possible, as long as the object implements a sensible <code>toString()</code> function.</p>
-</li>
-<li>
-<p>The <code>GenericCommandMessage#asCommandMessage(Object)</code> method is used to create a <code>CommandMessage</code>.
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>CommandBus</code> interface providing the functionality to dispatch command messages.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The aggregate identifier is, per best practice, initialized as the String of a random unique identifier.
+Typed identifier objects are also possible, as long as the object implements a sensible <code>toString()</code> function.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The <code>GenericCommandMessage#asCommandMessage(Object)</code> method is used to create a <code>CommandMessage</code>.
 To be able to dispatch a command on the <code>CommandBus</code>, you are required to wrap your own command object (for example, the 'command message payload') in a <code>CommandMessage</code>.
-The <code>CommandMessage</code> also allows the addition of <a href="../../messaging-concepts/anatomy-message/#meta-data" class="xref page">MetaData</a> to the Command Message.</p>
-</li>
-<li>
-<p>The <code>CommandBus#dispatch(CommandMessage)</code> function will dispatch the provided <code>CommandMessage</code> on the bus, for delivery to a command handler.
-If an application isn&#8217;t directly interested in the outcome of a command, this method can be used.</p>
-</li>
-<li>
-<p>If the outcome of command handling is relevant for your application, the optional second parameter can be provided, the <code>CommandCallback</code>.
-The <code>CommandCallback</code> allows the dispatching component to be notified when command handling is completed.</p>
-</li>
-<li>
-<p>The Command Callback has one function, <code>onResult(CommandMessage, CommandResultMessage)</code>, which is called when command handling has finished.
+The <code>CommandMessage</code> also allows the addition of <a href="../../messaging-concepts/anatomy-message/#meta-data" class="xref page">MetaData</a> to the Command Message.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The <code>CommandBus#dispatch(CommandMessage)</code> function will dispatch the provided <code>CommandMessage</code> on the bus, for delivery to a command handler.
+If an application isn&#8217;t directly interested in the outcome of a command, this method can be used.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>If the outcome of command handling is relevant for your application, the optional second parameter can be provided, the <code>CommandCallback</code>.
+The <code>CommandCallback</code> allows the dispatching component to be notified when command handling is completed.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>The Command Callback has one function, <code>onResult(CommandMessage, CommandResultMessage)</code>, which is called when command handling has finished.
 The first parameter is the dispatched command, whilst the second is execution result of the dispatched command.
 Lastly, the <code>CommandCallback</code> is a 'functional interface' due to <code>onResult</code> being its only method.
-As such, <code>commandBus.dispatch(commandMessage, (cmdMsg, commandResultMessage) -&gt; { /* &#8230;&#8203; */ })</code> would also be possible.</p>
-</li>
-<li>
-<p>The <code>CommandResultMessage</code> provides the API to verify whether command execution was exceptional or successful.
+As such, <code>commandBus.dispatch(commandMessage, (cmdMsg, commandResultMessage) -&gt; { /* &#8230;&#8203; */ })</code> would also be possible.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="7"></i><b>7</b></td>
+<td>The <code>CommandResultMessage</code> provides the API to verify whether command execution was exceptional or successful.
 If <code>CommandResultMessage#isExceptional</code> returns true, you can assume that the <code>CommandResultMessage#exceptionResult</code> will return a <code>Throwable</code> instance containing the actual exception.
-Otherwise, the <code>CommandResultMessage#getPayload</code> method <em>may</em> provide you with an actual result or <code>null</code>, as further specified here.</p>
-</li>
-</ol>
+Otherwise, the <code>CommandResultMessage#getPayload</code> method <em>may</em> provide you with an actual result or <code>null</code>, as further specified here.</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -474,7 +471,7 @@ Alternatively, consider using a <code>CommandGateway</code>.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_the_commandgateway"><a class="anchor" href="#_the_commandgateway"></a>The <code>CommandGateway</code></h2>
+<h2 id="command-gateway"><a class="anchor" href="#command-gateway"></a>The <code>CommandGateway</code></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The 'Command Gateway' is a convenience approach towards dispatching commands.
@@ -487,12 +484,12 @@ While you are not required to use a gateway to dispatch commands, it is generall
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private CommandGateway commandGateway; // 1.
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private CommandGateway commandGateway; <i class="conum" data-value="1"></i><b>(1)</b>
 
 public void sendCommand() {
-    String cardId = UUID.randomUUID().toString(); // 2.
+    String cardId = UUID.randomUUID().toString(); <i class="conum" data-value="2"></i><b>(2)</b>
 
-    // 3.
+    <i class="conum" data-value="3"></i><b>(3)</b>
     CompletableFuture&lt;String&gt; futureResult = commandGateway.send(new IssueCardCommand(cardId, 100, "shopId"));
 }
 // omitted class, constructor and result usage</code></pre>
@@ -501,23 +498,26 @@ public void sendCommand() {
 <div class="paragraph">
 <p>The <code>send</code> API as shown above introduces a couple of concepts, marked with numbered comments:</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The <code>CommandGateway</code> interface providing the functionality to dispatch command messages.
-It does so by internally leveraging the <code>CommandBus</code> interface <a href="#the-command-bus">dispatch messages</a>.</p>
-</li>
-<li>
-<p>The aggregate identifier is, per best practice, initialized as the String of a random unique identifier.
-Typed identifier objects are also possible, as long as the object implements a sensible <code>toString()</code> function.</p>
-</li>
-<li>
-<p>The <code>send(Object)</code> function requires a single parameter, the command object.
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>CommandGateway</code> interface providing the functionality to dispatch command messages.
+It does so by internally leveraging the <code>CommandBus</code> interface <a href="#command-bus">dispatch messages</a>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The aggregate identifier is, per best practice, initialized as the String of a random unique identifier.
+Typed identifier objects are also possible, as long as the object implements a sensible <code>toString()</code> function.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The <code>send(Object)</code> function requires a single parameter, the command object.
 This is an asynchronous approach to dispatching commands.
 As such the response of the <code>send</code> method is a <code>CompletableFuture</code>.
-This allows for chaining of follow-up operations <em>after</em> the command <a href="#_command_dispatching_results">result</a> has been returned.</p>
-</li>
-</ol>
+This allows for chaining of follow-up operations <em>after</em> the command <a href="#_command_dispatching_results">result</a> has been returned.</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -543,29 +543,31 @@ This allows for chaining of follow-up operations <em>after</em> the command <a h
 
 public void sendCommandAndWaitOnResult() {
     IssueCardCommand commandPayload = new IssueCardCommand(UUID.randomUUID().toString(), 100, "shopId");
-    // 1.
+    <i class="conum" data-value="1"></i><b>(1)</b>
     String result = commandGateway.sendAndWait(commandPayload);
 
-    // 2.
+    <i class="conum" data-value="2"></i><b>(2)</b>
     result = commandGateway.sendAndWait(commandPayload, 1000, TimeUnit.MILLISECONDS);
 }
 // omitted class, constructor and result usage</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The <code>CommandGateway#sendAndWait(Object)</code> function takes in a single parameter, your command object.
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>CommandGateway#sendAndWait(Object)</code> function takes in a single parameter, your command object.
 It will wait indefinitely until the command dispatching and handling process has been resolved.
-The result returned by this method can either be successful or exceptional, as will be explained <a href="#_command_dispatching_results">here</a>.</p>
-</li>
-<li>
-<p>If waiting indefinitely is not desirable, a 'timeout' paired with the 'time unit' can be provided alongside the command object.
+The result returned by this method can either be successful or exceptional, as will be explained <a href="#_command_dispatching_results">here</a>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>If waiting indefinitely is not desirable, a 'timeout' paired with the 'time unit' can be provided alongside the command object.
 Doing so will ensure that the command dispatching thread will not wait longer than specified.
 If command dispatching/handling was interrupted or the timeout was reached whilst using this approach, the command result will be <code>null</code>.
-In all other scenarios, the result follows the <a href="#_command_dispatching_results">referenced</a> approach.</p>
-</li>
-</ol>
+In all other scenarios, the result follows the <a href="#_command_dispatching_results">referenced</a> approach.</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -601,13 +603,13 @@ The framework has one such exception build in, on the <code>@CommandHandler</cod
 In case the 'command handling constructor' has executed successfully, instead of the Aggregate itself, the value of the <code>@AggregateIdentifier</code> annotated field will be returned.</p>
 </div>
 <div class="paragraph">
-<p><a href="https://youtu.be/lxonQnu1txQ">Axon Coding Tutorial #5: - Connecting the UI</a></p>
+<p>site:https://youtu.be/lxonQnu1txQ[Axon Coding Tutorial #5: - Connecting the UI]</p>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../modeling/conflict-resolution/">Conflict Resolution</a></span>
-  <span class="next"><a href="../command-handlers/">Command Handlers</a></span>
+  <span class="prev"><a href="../command-handlers/">Handling</a></span>
+  <span class="next"><a href="../modeling/aggregate/">Aggregates</a></span>
 </nav>
     </article>
   </div>

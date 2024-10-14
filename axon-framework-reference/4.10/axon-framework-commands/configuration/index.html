@@ -153,12 +153,15 @@
     <a class="nav-link" href="../">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../modeling/aggregate/">Aggregate</a>
+    <a class="nav-link" href="../command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../modeling/aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -177,12 +180,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../command-handlers/">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item is-current-page" data-depth="2">
@@ -195,10 +192,10 @@
     <a class="nav-link" href="../../events/">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../../events/event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -210,10 +207,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../events/event-versioning/">Event Versioning</a>
@@ -355,7 +355,7 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>This page aims to describe the suite of options for configuring the Command Model.</p>
+<p>This page describes how you can configure your Aggregate model.</p>
 </div>
 </div>
 </div>
@@ -363,10 +363,22 @@
 <h2 id="_aggregate_configuration"><a class="anchor" href="#_aggregate_configuration"></a>Aggregate configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Core concepts within the Command Model are the <a href="../modeling/aggregate/" class="xref page">Aggregates</a> which are implemented. To instantiate a default Aggregate configuration you simply do the following:</p>
+<p>Core concepts within the Command Model are the <a href="../modeling/aggregate/" class="xref page">Aggregates</a> that are implemented.
+To instantiate a default Aggregate configuration, you do the following:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Configurer configurer = DefaultConfigurer.defaultConfiguration()
@@ -374,8 +386,7 @@
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration"><a class="anchor" href="#_spring_boot_auto_configuration"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
 <div class="paragraph">
 <p>The <code>@Aggregate</code> annotation (in the <code>org.axonframework.spring.stereotype</code> package) triggers auto configuration to set up the necessary components to use the annotated type as an aggregate. Note that only the aggregate root needs to be annotated.</p>
 </div>
@@ -402,17 +413,30 @@ public class GiftCard {
 </div>
 </div>
 </div>
+</div>
+</div>
 <div class="sect1">
 <h2 id="registering-a-command-handler"><a class="anchor" href="#registering-a-command-handler"></a>Registering a command handler</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Often times the command handler functions are placed directly on the <a href="../modeling/aggregate/" class="xref page">aggregate</a>. When this approach is taken, simply registering the Aggregate as described above is sufficient for all its command handler methods to be registered too.</p>
+<p>Often the command handler functions are placed directly on the <a href="../modeling/aggregate/" class="xref page">aggregate</a>. When this approach is taken, simply registering the Aggregate as described above is sufficient for all its command handler methods to be registered too.</p>
 </div>
 <div class="paragraph">
 <p><a href="../command-handlers/#external_command_handlers" class="xref page">External Command Handlers</a> however do require direct registration as being a command handler, which is shown in the following sample:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_2"><a class="anchor" href="#_axon_configuration_api_2"></a>Axon Configuration API</h4>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
 <div class="paragraph">
 <p>Given the existence of the following Command Handler:</p>
 </div>
@@ -450,8 +474,7 @@ public class GiftCard {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_2"><a class="anchor" href="#_spring_boot_auto_configuration_2"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
 <div class="paragraph">
 <p>When using Spring Boot, simply specifying the Command Handler as a bean is sufficient:</p>
 </div>
@@ -471,19 +494,26 @@ public class GiftCardCommandHandler {
 }</code></pre>
 </div>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Duplicate Command Handling Functions</strong></p>
 </div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
 <div class="paragraph">
+<div class="title">Duplicate Command Handlers</div>
 <p>As specified in the <a href="../../messaging-concepts/" class="xref page">Messaging Concepts</a> section, a command always has exactly one destination. That means there should only be a single Command Handler method for any given command.</p>
 </div>
 <div class="paragraph">
-<p>By default, when a duplicate Command Handler method is registered, the last registration will be kept and a warning is logged. This behaviour can be adjusted by specifying a different <code>DuplicateCommandHandlerResolver</code>, as is described in the <a href="../../tuning/" class="xref page">Runtime Tuning</a> section.</p>
+<p>By default, when a duplicate Command Handler method is registered, the last registration will be kept and a warning is logged. This behavior can be adjusted by specifying a different <code>DuplicateCommandHandlerResolver</code>, as is described in the <a href="../../tuning/" class="xref page">Runtime Tuning</a> section.</p>
 </div>
-</blockquote>
-</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -502,8 +532,19 @@ public class GiftCardCommandHandler {
 <div class="paragraph">
 <p>Note that the Repository interface does not prescribe a <code>delete(identifier)</code> method. Deleting aggregates is done by invoking the <code>AggregateLifecycle.markDeleted()</code> method from within an aggregate. Deleting an aggregate is a state migration like any other, with the only difference that it is irreversible in many cases. You should create your own meaningful method on your aggregate which sets the aggregate&#8217;s state to "deleted". This also allows you to register any events that you would like to have published.</p>
 </div>
-<div class="sect2">
-<h3 id="_axon_configuration_api_3"><a class="anchor" href="#_axon_configuration_api_3"></a>Axon Configuration API</h3>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_3_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Configurer configurer = DefaultConfigurer.defaultConfiguration()
@@ -516,8 +557,7 @@ public class GiftCardCommandHandler {
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_spring_boot_auto_configuration_3"><a class="anchor" href="#_spring_boot_auto_configuration_3"></a>Spring Boot auto configuration</h3>
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
 <div class="paragraph">
 <p>To fully customize the repository used, you can define one in the application context. For Axon Framework to use this repository for the intended aggregate, define the bean name of the repository in the <code>repository</code> attribute on <code>@Aggregate</code> Annotation. Alternatively, specify the bean name of the repository to be the aggregate&#8217;s name, (first character lowercase), suffixed with <code>Repository</code>. So on a class of type <code>GiftCard</code>, the default repository name is <code>giftCardRepository</code>. If no bean with that name is found, Axon will define an <code>EventSourcingRepository</code> (which fails if no <code>EventStore</code> is available).</p>
 </div>
@@ -534,6 +574,8 @@ public class GiftCard { /*...*/ }</code></pre>
 </div>
 <div class="paragraph">
 <p>Note that this requires full configuration of the Repository, including any <code>SnapshotTriggerDefinition</code> or <code>AggregateFactory</code> that may otherwise have been configured automatically.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -557,7 +599,7 @@ Based on these events, the state of an aggregate can be restored at any time.</p
 </div>
 <div class="paragraph">
 <p>The <code>EventSourcingRepository</code> implementation provides the basic functionality needed by any event sourcing repository in the Axon Framework.
-It depends on an <code>EventStore</code> (see <a href="../../events/event-bus-and-event-store/" class="xref page">Event store implementations</a>), which abstracts the actual storage mechanism for the events.</p>
+It depends on an <code>EventStore</code> (see <a href="../../events/infrastructure/" class="xref page">Event store implementations</a>), which abstracts the actual storage mechanism for the events.</p>
 </div>
 </div>
 </div>

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Event Dispatchers</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/4.10/events/event-dispatchers/">
-    <link rel="prev" href="../">
-    <link rel="next" href="../event-handlers/">
+    <link rel="prev" href="../event-handlers/">
+    <link rel="next" href="../event-processors/">
     <meta name="generator" content="Antora 3.1.9">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -84,7 +84,7 @@
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
     <li><a href="../">Events</a></li>
-    <li><a href="./">Event Dispatchers</a></li>
+    <li><a href="./">Dispatching</a></li>
   </ul>
 </nav>
 <div class="page-actions">
@@ -153,12 +153,15 @@
     <a class="nav-link" href="../../axon-framework-commands/">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregate</a>
+    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../axon-framework-commands/modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -177,12 +180,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../axon-framework-commands/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -194,11 +191,11 @@
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../">Events</a>
 <ul class="nav-list">
-  <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="./">Event Dispatchers</a>
-  </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -210,10 +207,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../event-versioning/">Event Versioning</a>
@@ -370,7 +370,7 @@ In general, these can be grouped in two major areas:</p>
 </div>
 <div class="paragraph">
 <p>This page will describe how to get an event message on the event bus from both locations.
-For more specifics regarding event publication and storage implementations in Axon Framework, read <a href="../event-bus-and-event-store/" class="xref page">this</a> section.</p>
+For more specifics regarding event publication and storage implementations in Axon Framework, read <a href="../infrastructure/" class="xref page">this</a> section.</p>
 </div>
 </div>
 </div>
@@ -378,7 +378,7 @@ For more specifics regarding event publication and storage implementations in Ax
 <h2 id="_dispatching_events_from_an_aggregate"><a class="anchor" href="#_dispatching_events_from_an_aggregate"></a>Dispatching events from an Aggregate</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <a href="../../axon-framework-commands/modeling/aggregate/" class="xref page">Aggregate</a> or it&#8217;s <a href="../../axon-framework-commands/modeling/multi-entity-aggregates/" class="xref page">Entities</a> are typically the starting point of all event messages.
+<p>The <a href="../../axon-framework-commands/modeling/aggregate/" class="xref page">Aggregate</a> or its <a href="../../axon-framework-commands/modeling/multi-entity-aggregates/" class="xref page">Entities</a> are typically the starting point of all event messages.
 The Event Message simply is the notification that a decision has been made; a successful resolution of handling a command message.</p>
 </div>
 <div class="paragraph">
@@ -398,7 +398,7 @@ public class GiftCard {
 
     @CommandHandler
     public GiftCard(IssueCardCommand cmd) {
-        AggregateLifecycle.apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
+        apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
     }
     // omitted state, command and event sourcing handlers
 }</code></pre>
@@ -429,16 +429,21 @@ This is necessary for Event Sourcing, to update the Aggregate&#8217;s state acco
 </li>
 </ol>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>MetaData in Aggregate Event Messages</strong></p>
-</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Adding Meta Data to an Event</div>
 <div class="paragraph">
 <p>The <code>AggregateLifecycle</code> also provides an <code>apply(Object, MetaData)</code> function.
 This can be used to attach command-handler specific MetaData.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>The <code>AggregateLifecycle#apply</code> method returns an implementation of the <code>ApplyMore</code> interface.
@@ -482,8 +487,8 @@ public void dispatchEvent() {
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../">Events</a></span>
-  <span class="next"><a href="../event-handlers/">Event Handlers</a></span>
+  <span class="prev"><a href="../event-handlers/">Handling</a></span>
+  <span class="next"><a href="../event-processors/">Event Processors</a></span>
 </nav>
     </article>
   </div>

@@ -153,12 +153,15 @@
     <a class="nav-link" href="../../axon-framework-commands/">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregate</a>
+    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../axon-framework-commands/modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -177,12 +180,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../axon-framework-commands/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -195,10 +192,10 @@
     <a class="nav-link" href="../../events/">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../../events/event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -210,10 +207,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../events/event-versioning/">Event Versioning</a>
@@ -373,13 +373,16 @@ Use <code>CurrentUnitOfWork.isStarted()</code> to find out if one is available.<
 <p>One reason to require access to the current unit of work is to attach resources that need to be reused several times during the course of message processing, or if created resources need to be cleaned up when the unit of work completes.
 In such case, the <code>unitOfWork.getOrComputeResource()</code> and the lifecycle callback methods, such as <code>onRollback()</code>, <code>afterCommit()</code> and <code>onCleanup()</code> allow you to register resources and declare actions to be taken during the processing of this unit of work.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Transaction guarantees with the Unit Of Work</div>
 <div class="paragraph">
-<p><strong>Using the Unit of Work</strong></p>
-</div>
-<div class="paragraph">
-<p>Note that the Unit of Work is merely a buffer of changes, not a replacement for transactions.
+<p>The Unit of Work is merely a buffer of changes, not a replacement for transactions.
 Although all staged changes are only committed when the Unit of Work is committed, its commit is not atomic.
 That means that when a commit fails, some changes might have been persisted, while others have not been.
 Best practices dictate that a command should never contain more than one action.
@@ -387,7 +390,9 @@ If you stick to that practice, a unit of work will contain a single action, maki
 If you have more actions in your unit of work, then you could consider attaching a transaction to the unit of work&#8217;s commit.
 Use <code>unitOfWork.onCommit(..)</code> to register actions that need to be taken when the unit of work is being committed.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Your handlers may throw an Exception as a result of processing a message.
@@ -443,18 +448,23 @@ try {
 }</code></pre>
 </div>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>The Unit of Works and its Message</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">The Unit Of Work is focused around a Message</div>
 <div class="paragraph">
 <p>The Unit of Work revolves around messages.
 It is always started with a message to be processed.
 As a result of a Unit-of-Work&#8217;s execution (<code>executeWithResult(&#8230;&#8203;)</code>) a <code>ResultMessage</code> will be returned and the actual execution result will be the payload of that <code>ResultMessage</code>.
 If problems arose during message processing, we get an exceptional <code>ResultMessage</code> - <code>isExceptional()</code> will return <code>true</code> and <code>exceptionResult()</code> will get us the actual <code>Throwable</code> indicating what went wrong.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>A <code>UnitOfWork</code> knows several phases.

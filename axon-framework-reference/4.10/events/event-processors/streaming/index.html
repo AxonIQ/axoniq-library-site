@@ -6,7 +6,7 @@
     <title>Streaming Event Processor</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/4.10/events/event-processors/streaming/">
     <link rel="prev" href="../subscribing/">
-    <link rel="next" href="../../event-bus-and-event-store/">
+    <link rel="next" href="../dead-letter-queue/">
     <meta name="generator" content="Antora 3.1.9">
     <link rel="stylesheet" href="../../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
@@ -154,12 +154,15 @@
     <a class="nav-link" href="../../../axon-framework-commands/">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../../../axon-framework-commands/modeling/aggregate/">Aggregate</a>
+    <a class="nav-link" href="../../../axon-framework-commands/command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../axon-framework-commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../axon-framework-commands/modeling/aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../../axon-framework-commands/modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -178,12 +181,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../axon-framework-commands/command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../axon-framework-commands/command-handlers/">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../axon-framework-commands/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -196,10 +193,10 @@
     <a class="nav-link" href="../../">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../../event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../../event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -211,10 +208,13 @@
   <li class="nav-item is-current-page" data-depth="3">
     <a class="nav-link" href="./">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../../infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../event-versioning/">Event Versioning</a>
@@ -363,7 +363,7 @@ As any Event Processor, it serves as the technical aspect to handle events by in
 <p>The Streaming Processor defines itself by receiving the events from a <code>StreamableMessageSource</code>.
 The <code>StreamableMessageSource</code> is an infrastructure component through which we can open a stream of events.
 The source can also specify positions on the event stream, so-called <a href="#tracking-tokens">Tracking Tokens</a>, used as start positions when opening an event stream.
-An example of a <code>StreamableMessageSource</code> is the <a href="../../event-bus-and-event-store/#event-store" class="xref page"><code>EventStore</code></a>, like for example Axon Server or an <a href="../../event-bus-and-event-store/#embedded-event-store" class="xref page">RDBMS</a>.</p>
+An example of a <code>StreamableMessageSource</code> is the <a href="../../infrastructure/#event-store" class="xref page"><code>EventStore</code></a>, like for example Axon Server or an <a href="../../infrastructure/#embedded-event-store" class="xref page">RDBMS</a>.</p>
 </div>
 <div class="paragraph">
 <p>Furthermore, Streaming Processors use separate threads to process the events retrieved from the <code>StreamableMessageSource</code>.
@@ -377,15 +377,20 @@ It keeps track of the event processing progress while traversing the stream.
 It does so by storing the Tracking Tokens, or <em>tokens</em> for short, accompanying the events.
 This solution works towards tracking the progress since the tokens specify the event&#8217;s position on the stream.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Head or Tail?</strong></p>
-</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Head or tail?</div>
 <div class="paragraph">
 <p>The oldest (the first) token is located at the tail of the stream, and the latest (newest) token is positioned at the head of the stream.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Maintaining the progress through tokens makes a Streaming Processor</p>
@@ -408,11 +413,14 @@ This solution works towards tracking the progress since the tokens specify the e
 It is these features that make the Streaming Processor the logical choice for the majority of applications.
 Due to this, the "Tracking Event Processor," a type of Streaming Processor, is the default Event Processor.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Default Event Processor</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Default Event Processor</div>
 <div class="paragraph">
 <p>Which <code>EventProcessor</code> type becomes the default processor depends on the event message source available in your application.
 In the majority of use cases, an Event Store is present.
@@ -423,7 +431,9 @@ As the Event Store is a type of <code>StreamableMessageSource</code>, the defaul
 It will fall back to the <a href="../subscribing/" class="xref page">Subscribing Event Processor</a> as the default in these scenarios.
 This implementation will use the configured <code>EventBus</code> as its <code>SubscribableMessageSource</code>.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>There are two implementations of Streaming Processor available in Axon Framework:</p>
@@ -458,8 +468,19 @@ This chapter will cover how to configure a <a href="#_configuring_a_tracking_pro
 <div class="paragraph">
 <p>Firstly, to specify that new event processors should default to a <code>TrackingEventProcessor</code>, you can invoke the <code>usingTrackingEventProcessors</code> method:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -471,8 +492,7 @@ This chapter will cover how to configure a <a href="#_configuring_a_tracking_pro
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration"><a class="anchor" href="#_spring_boot_auto_configuration"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -480,18 +500,34 @@ public class AxonConfig {
     // omitting other configuration methods...
     @Bean
     public ConfigurerModule processorDefaultConfigurerModule() {
-        return configurer -&gt; configurer.eventProcessing(EventProcessingConfigurer::usingTrackingEventProcessors);
+        return configurer -&gt; configurer
+            .eventProcessing(EventProcessingConfigurer::usingTrackingEventProcessors);
     }
 }</code></pre>
 </div>
 </div>
-<hr>
+</div>
+</div>
+</div>
 <div class="paragraph">
 <p>For a specific Event Processor to be a Tracking instance, <code>registerTrackingEventProcessor</code> is used:</p>
 </div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+<li id="_tabs_2_spring_boot_properties" class="tab">
+<p>Spring Boot properties</p>
+</li>
+</ul>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_2"><a class="anchor" href="#_axon_configuration_api_2"></a>Axon Configuration API</h4>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -502,23 +538,27 @@ public class AxonConfig {
               TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
 
         // To configure a processor to be tracking ...
-        processingConfigurer.registerTrackingEventProcessor("my-processor")
-                            // ... to define a specific StreamableMessageSource ...
-                            .registerTrackingEventProcessor(
-                                    "my-processor", conf -&gt; /* create/return StreamableMessageSource */
-                            )
-                            // ... to provide additional configuration ...
-                            .registerTrackingEventProcessor(
-                                    "my-processor", conf -&gt; /* create/return StreamableMessageSource */,
-                                    conf -&gt; tepConfig
-                            );
+        processingConfigurer
+            .registerTrackingEventProcessor("my-processor")
+                // ... to define a specific StreamableMessageSource ...
+                .registerTrackingEventProcessor(
+                        "my-processor", conf -&gt; {
+                            /* create/return StreamableMessageSource */
+                        }
+                )
+                // ... to provide additional configuration ...
+                .registerTrackingEventProcessor(
+                        "my-processor", conf -&gt; {
+                            /* create/return StreamableMessageSource */
+                        },
+                        conf -&gt; tepConfig
+                );
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_java"><a class="anchor" href="#_spring_boot_auto_configuration_java"></a>Spring Boot auto configuration - Java</h4>
+<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -530,35 +570,38 @@ public class AxonConfig {
         TrackingEventProcessorConfiguration tepConfig =
               TrackingEventProcessorConfiguration.forSingleThreadedProcessing();
 
-        return configurer -&gt; configurer.eventProcessing(
-              // To configure a processor to be tracking ...
-              processingConfigurer -&gt; processingConfigurer.registerTrackingEventProcessor("my-processor")
-                                                          // ... to define a specific StreamableMessageSource ...
-                                                          .registerTrackingEventProcessor(
-                                                                  "my-processor",
-                                                                  conf -&gt; /* create/return StreamableMessageSource */
-                                                          )
-                                                          // ... to provide additional configuration ...
-                                                          .registerTrackingEventProcessor(
-                                                                  "my-processor",
-                                                                  conf -&gt; /* create/return StreamableMessageSource */,
-                                                                  conf -&gt; tepConfig
-                                                          )
+        return configurer -&gt; configurer.eventProcessing(processingConfigurer -&gt; processingConfigurer
+            // To configure a processor to be tracking ...
+            .registerTrackingEventProcessor("my-processor")
+            // ... to define a specific StreamableMessageSource ...
+            .registerTrackingEventProcessor(
+                    "my-processor",
+                    conf -&gt; {
+                        /* create/return StreamableMessageSource */
+                    }
+            )
+            // ... to provide additional configuration ...
+            .registerTrackingEventProcessor(
+                    "my-processor",
+                    conf -&gt; {
+                        /* create/return StreamableMessageSource */
+                    },
+                    conf -&gt; tepConfig
+            )
         );
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_properties_file"><a class="anchor" href="#_spring_boot_auto_configuration_properties_file"></a>Spring Boot auto configuration - properties file</h4>
+<div id="_tabs_2_spring_boot_properties--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot_properties">
 <div class="paragraph">
 <p>A properties file allows the configuration of some fields on an Event Processor.
 Do note that the Java configuration provides more degrees of freedom.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors.my-processor.mode=tracking
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.mode=tracking
 axon.eventhandling.processors.my-processor.source=eventStore</code></pre>
 </div>
 </div>
@@ -567,18 +610,30 @@ axon.eventhandling.processors.my-processor.source=eventStore</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors[my.processor].mode=tracking
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors[my.processor].mode=tracking
 axon.eventhandling.processors[my.processor].source=eventStore</code></pre>
 </div>
 </div>
-<hr>
+</div>
+</div>
+</div>
 <div class="paragraph">
 <p>For more fine-grained control when Configuring a tracking processor, the <code>TrackingEventProcessorConfiguration</code> can be used.
 When invoking the <code>registerTrackingEventProcessor</code> method, you can provide a tracking processor configuration object, or you can register the configuration instance explicitly:</p>
 </div>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_3_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_3"><a class="anchor" href="#_axon_configuration_api_3"></a>Axon Configuration API</h4>
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -596,8 +651,7 @@ When invoking the <code>registerTrackingEventProcessor</code> method, you can pr
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_java_2"><a class="anchor" href="#_spring_boot_auto_configuration_java_2"></a>Spring Boot auto configuration - Java</h4>
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -622,13 +676,26 @@ public class AxonConfig {
 </div>
 </div>
 </div>
+</div>
+</div>
 <div class="sect2">
 <h3 id="_configuring_a_pooled_streaming_processor"><a class="anchor" href="#_configuring_a_pooled_streaming_processor"></a>Configuring a pooled streaming processor</h3>
 <div class="paragraph">
-<p>Firstly, to specify that every new processors should default to a <code>PooledStreamingEventProcessor</code>, you can invoke the <code>usingPooledStreamingEventProcessors</code> method:</p>
+<p>Firstly, to specify that every new processor should default to a <code>PooledStreamingEventProcessor</code>, you can invoke the <code>usingPooledStreamingEventProcessors</code> method:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_4"><a class="anchor" href="#_axon_configuration_api_4"></a>Axon Configuration API</h4>
+<div id="_tabs_4" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_4_axon_configuration_api" class="tab">
+<p>Axon Configuration API</p>
+</li>
+<li id="_tabs_4_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_4_axon_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_4_axon_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -640,8 +707,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_2"><a class="anchor" href="#_spring_boot_auto_configuration_2"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_4_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_4_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -654,13 +720,28 @@ public class AxonConfig {
 }</code></pre>
 </div>
 </div>
-<hr>
+</div>
+</div>
+</div>
 <div class="paragraph">
 <p>For a specific Event Processor to be a Pooled Streaming instance, <code>registerPooledStreamingProcessor</code> is used:</p>
 </div>
+<div id="_tabs_5" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_5_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_5_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+<li id="_tabs_5_spring_boot_properties" class="tab">
+<p>Spring Boot properties</p>
+</li>
+</ul>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_5"><a class="anchor" href="#_axon_configuration_api_5"></a>Axon Configuration API</h4>
+<div id="_tabs_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_5_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -674,19 +755,18 @@ public class AxonConfig {
         processingConfigurer.registerPooledStreamingEventProcessor("my-processor")
                             // ... to define a specific StreamableMessageSource ...
                             .registerPooledStreamingEventProcessor(
-                                    "my-processor", conf -&gt; /* create/return StreamableMessageSource */
+                                    "my-processor", conf -&gt; {}/* create/return StreamableMessageSource */
                             )
                             // ... to provide additional configuration ...
                             .registerPooledStreamingEventProcessor(
-                                    "my-processor", conf -&gt; /* create/return StreamableMessageSource */, psepConfig
+                                    "my-processor", conf -&gt; {} /* create/return StreamableMessageSource */, psepConfig
                             );
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_java_3"><a class="anchor" href="#_spring_boot_auto_configuration_java_3"></a>Spring Boot auto configuration - Java</h4>
+<div id="_tabs_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_5_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -704,12 +784,12 @@ public class AxonConfig {
                                                           // ... to define a specific StreamableMessageSource ...
                                                           .registerPooledStreamingEventProcessor(
                                                                   "my-processor",
-                                                                  conf -&gt; /* create/return StreamableMessageSource */
+                                                                  conf -&gt; {} /* create/return StreamableMessageSource */
                                                           )
                                                           // ... to provide additional configuration ...
                                                           .registerPooledStreamingEventProcessor(
                                                                   "my-processor",
-                                                                  conf -&gt; /* create/return StreamableMessageSource */,
+                                                                  conf -&gt; {} /* create/return StreamableMessageSource */,
                                                                   psepConfig
                                                           )
         );
@@ -718,15 +798,14 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_properties_file_2"><a class="anchor" href="#_spring_boot_auto_configuration_properties_file_2"></a>Spring Boot auto configuration - properties file</h4>
+<div id="_tabs_5_spring_boot_properties--panel" class="tabpanel" aria-labelledby="_tabs_5_spring_boot_properties">
 <div class="paragraph">
 <p>A properties file allows the configuration of some fields on an Event Processor.
 Do note that the Java configuration provides more degrees of freedom.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors.my-processor.mode=pooled
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.mode=pooled
 axon.eventhandling.processors.my-processor.source=eventStore</code></pre>
 </div>
 </div>
@@ -735,18 +814,30 @@ axon.eventhandling.processors.my-processor.source=eventStore</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors[my.processor].mode=pooled
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors[my.processor].mode=pooled
 axon.eventhandling.processors[my.processor].source=eventStore</code></pre>
 </div>
 </div>
-<hr>
+</div>
+</div>
+</div>
 <div class="paragraph">
 <p>For more fine-grained control when Configuring a pooled streaming processor, the <code>PooledStreamingProcessorConfiguration</code> can be used.
 When invoking the <code>registerPooledStreamingEventProcessor</code> method, you can provide a pooled streaming processor configuration object, or you can register the configuration instance explicitly:</p>
 </div>
+<div id="_tabs_6" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_6_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_6_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_6"><a class="anchor" href="#_axon_configuration_api_6"></a>Axon Configuration API</h4>
+<div id="_tabs_6_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_6_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -764,8 +855,7 @@ When invoking the <code>registerPooledStreamingEventProcessor</code> method, you
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_java_4"><a class="anchor" href="#_spring_boot_auto_configuration_java_4"></a>Spring Boot auto configuration - Java</h4>
+<div id="_tabs_6_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_6_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -792,6 +882,8 @@ public class AxonConfig {
 </div>
 </div>
 </div>
+</div>
+</div>
 <div class="sect1">
 <h2 id="error-mode"><a class="anchor" href="#error-mode"></a>Error mode</h2>
 <div class="sectionbody">
@@ -799,7 +891,7 @@ public class AxonConfig {
 <p>The error mode differs between the Tracking- and Pooled Streaming Event Processor.</p>
 </div>
 <div class="paragraph">
-<p>Whenever the <a href="../#event-processor&#8212;&#8203;error-handler" class="xref page">error handler</a> rethrows an exception, a <code>TrackingEventProcessor</code> will retry processing the event using an incremental back-off period.
+<p>Whenever the <a href="../#error-handling" class="xref page">error handler</a> rethrows an exception, a <code>TrackingEventProcessor</code> will retry processing the event using an incremental back-off period.
 It will start at 1 second and double after each attempt until it reaches the maximum wait time of 60 seconds per attempt.
 This back-off time ensures that in a distributed environment, when another node is able to process events, it will have the opportunity to claim the <a href="#tracking-tokens">token</a> required to process the event.</p>
 </div>
@@ -867,13 +959,16 @@ Hence, the Streaming Processors achieves collaboration among instances/threads t
 If a token claim is not extended for a configurable amount of time, other processor threads can <a href="#token-stealing">"steal"</a> the claim.
 Token stealing can, for example, happen if event processing is slow or encountered some exceptions.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Easy TrackingToken access</div>
 <div class="paragraph">
-<p><strong>Retrieving the current token inside an event handler</strong></p>
-</div>
-<div class="paragraph">
-<p>When processing an event it may be beneficial to retrieve the token belonging to that event.
+<p>When processing an event, it may be beneficial to retrieve the token belonging to that event.
 First, this can be achieved by adding a parameter of type <code>TrackingToken</code> to the event handler.
 This support is mentioned in the <a href="../../../messaging-concepts/supported-parameters-annotated-handlers/#supported-parameters-for-event-handlers" class="xref page">Supported Parameters for Event Handlers</a> section.</p>
 </div>
@@ -881,7 +976,9 @@ This support is mentioned in the <a href="../../../messaging-concepts/supported-
 <p>Additionally, you can retrieve the token from the resources collection of the <a href="../../../messaging-concepts/unit-of-work/" class="xref page">Unit of Work</a>.
 Both the Tracking and Pooled Streaming Event Processor add the current <code>TrackingToken</code> under the key <code>"Processor[{processor-name}]/Token"</code>.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_initial_tracking_token"><a class="anchor" href="#_initial_tracking_token"></a>Initial tracking token</h3>
@@ -893,21 +990,26 @@ However, if a Streaming Processor starts for the first time, there is no <code>T
 <div class="paragraph">
 <p>Whenever this situation occurs, a Streaming Processor will construct an "initial token." By default, the initial token will start at the tail of the event stream.
 Thus, the processor will begin at the start and handle every event present in the message source.
-This start position is configurable, as is described <a href="#_token_configuration">here</a>.</p>
+This start position is configurable, as is described <a href="#Token configuration">here</a>.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>A Saga&#8217;s Streaming Processor initial position</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Sagas and their initial token</div>
 <div class="paragraph">
 <p>A Streaming Processor dedicated to a <a href="../../../sagas/" class="xref page">Saga</a> will default the initial token to the head of the stream.
 The default initial token position ensures that the Saga does not react to events from the past, as in most cases, this would introduce unwanted side effects.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
-<p>Conceptually there are a couple of scenarios when a processor builds an initial token on application startup.
+<p>Conceptually, there are a couple of scenarios when a processor builds an initial token on application startup.
 The obvious one is already shared, namely when a processor starts for the first time.
 There are, however, also other situations when a token is built that might be unexpected, like:</p>
 </div>
@@ -932,14 +1034,17 @@ There are, however, also other situations when a token is built that might be un
 In those cases, we recommend to validate if any of the above situations occurred.</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_token_configuration"><a class="anchor" href="#_token_configuration"></a>Token configuration</h3>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>There are a couple of things we can configure when it comes to tokens.
 We can separate these options in "initial token" and "token claim" configuration, as described in the following sections:</p>
 </div>
-<div class="sect3">
-<h4 id="_initial_token"><a class="anchor" href="#_initial_token"></a>Initial token</h4>
+<div class="sect2">
+<h3 id="_initial_token"><a class="anchor" href="#_initial_token"></a>Initial token</h3>
 <div class="paragraph">
 <p>The <a href="#_initial_tracking_token">initial token</a> for a <code>StreamingEventProcessor</code> is configurable for every processor instance.
 When configuring the initial token builder function, the received input parameter is the <code>StreamableMessageSource</code>.
@@ -948,14 +1053,14 @@ The message source, in turn, gives three possibilities to build a token, namely:
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><code>createHeadToken()</code> - Creates a token from the head of the event stream.</p>
+<p><code>createHeadToken()</code>: Creates a token from the head of the event stream.</p>
 </li>
 <li>
-<p><code>createTailToken()</code> - Creates a token from the tail of the event stream.
+<p><code>createTailToken()</code>: Creates a token from the tail of the event stream.
 Creating tail tokens is the default value for most Streaming Processors.</p>
 </li>
 <li>
-<p><code>createTokenAt(Instant)</code> / <code>createTokenSince(Duration)</code> - Creates a token that tracks all events after a given time.
+<p><code>createTokenAt(Instant)</code> / <code>createTokenSince(Duration)</code>: Creates a token that tracks all events after a given time.
 If there is an event precisely at that given moment in time, it will also be taken into account.</p>
 </li>
 </ol>
@@ -964,8 +1069,25 @@ If there is an event precisely at that given moment in time, it will also be tak
 <p>Of course, you can completely disregard the <code>StreamableMessageSource</code> input parameter and create a token by yourself.
 Consider the following snippets if you want to configure a different initial token:</p>
 </div>
-<div class="sect4">
-<h5 id="_tracking_processor_axon_configuration_api"><a class="anchor" href="#_tracking_processor_axon_configuration_api"></a>Tracking processor - Axon Configuration API</h5>
+<div id="_tabs_7" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_7_tracking_configuration_api" class="tab">
+<p>Tracking: Configuration API</p>
+</li>
+<li id="_tabs_7_tracking_spring_boot" class="tab">
+<p>Tracking: Spring Boot</p>
+</li>
+<li id="_tabs_7_pooled_streaming_configuration_api" class="tab">
+<p>Pooled streaming: Configuration API</p>
+</li>
+<li id="_tabs_7_pooled_streaming_spring_boot" class="tab">
+<p>Pooled streaming: Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_7_tracking_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_7_tracking_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -981,8 +1103,7 @@ Consider the following snippets if you want to configure a different initial tok
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_tracking_processor_spring_boot_auto_configuration"><a class="anchor" href="#_tracking_processor_spring_boot_auto_configuration"></a>Tracking processor -  Spring Boot auto configuration</h5>
+<div id="_tabs_7_tracking_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_7_tracking_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -1004,8 +1125,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_pooled_streaming_processor_axon_configuration_api"><a class="anchor" href="#_pooled_streaming_processor_axon_configuration_api"></a>Pooled streaming processor - Axon Configuration API</h5>
+<div id="_tabs_7_pooled_streaming_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_7_pooled_streaming_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -1022,8 +1142,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_pooled_streaming_processor_spring_boot_auto_configuration"><a class="anchor" href="#_pooled_streaming_processor_spring_boot_auto_configuration"></a>Pooled streaming processor - Spring Boot auto configuration</h5>
+<div id="_tabs_7_pooled_streaming_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_7_pooled_streaming_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -1047,8 +1166,10 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_token_claims"><a class="anchor" href="#_token_claims"></a>Token claims</h4>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_token_claims"><a class="anchor" href="#_token_claims"></a>Token claims</h3>
 <div class="paragraph">
 <p>As described <a href="#tracking-tokens">here</a>, a streaming processor should claim a token before it is allowed to perform any processing work.
 There are several scenarios where a processor may keep the claim for too long.
@@ -1061,17 +1182,17 @@ There are a couple of configurable values that influence this process:</p>
 <div class="ulist">
 <ul>
 <li>
-<p><code>tokenClaimInterval</code> - Defines how long to wait between attempts to claim a segment.
+<p><code>tokenClaimInterval</code>: Defines how long to wait between attempts to claim a segment.
 A processor uses this value to steal token claims from other processor threads.
 This value defaults to 5000 milliseconds.</p>
 </li>
 <li>
-<p><code>eventAvailabilityTimeout</code> - Defines the time to "wait for events" before extending the claim.
+<p><code>eventAvailabilityTimeout</code>: Defines the time to "wait for events" before extending the claim.
 Only the Tracking Event Processor uses this.
 The value defaults to 1000 milliseconds.</p>
 </li>
 <li>
-<p><code>claimExtensionThreshold</code> - Threshold to extend the claim in the absence of events.
+<p><code>claimExtensionThreshold</code>: Threshold to extend the claim in the absence of events.
 Only the Pooled Streaming Event Processor uses this.
 The value defaults 5000 milliseconds.</p>
 </li>
@@ -1080,8 +1201,25 @@ The value defaults 5000 milliseconds.</p>
 <div class="paragraph">
 <p>Consider the following snippets if you want to configure any of these values:</p>
 </div>
-<div class="sect4">
-<h5 id="_tracking_processor_axon_configuration_api_2"><a class="anchor" href="#_tracking_processor_axon_configuration_api_2"></a>Tracking processor - Axon Configuration API</h5>
+<div id="_tabs_8" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_8_tracking_configuration_api" class="tab">
+<p>Tracking: Configuration API</p>
+</li>
+<li id="_tabs_8_tracking_spring_boot" class="tab">
+<p>Tracking: Spring Boot</p>
+</li>
+<li id="_tabs_8_pooled_streaming_configuration_api" class="tab">
+<p>Pooled streaming: Configuration API</p>
+</li>
+<li id="_tabs_8_pooled_streaming_spring_boot" class="tab">
+<p>Pooled streaming: Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_8_tracking_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_8_tracking_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -1098,8 +1236,7 @@ The value defaults 5000 milliseconds.</p>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_tracking_processor_spring_boot_auto_configuration_2"><a class="anchor" href="#_tracking_processor_spring_boot_auto_configuration_2"></a>Tracking processor -  Spring Boot auto configuration</h5>
+<div id="_tabs_8_tracking_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_8_tracking_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -1122,8 +1259,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_pooled_streaming_processor_axon_configuration_api_2"><a class="anchor" href="#_pooled_streaming_processor_axon_configuration_api_2"></a>Pooled streaming processor - Axon Configuration API</h5>
+<div id="_tabs_8_pooled_streaming_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_8_pooled_streaming_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -1139,8 +1275,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_pooled_streaming_processor_spring_boot_auto_configuration_2"><a class="anchor" href="#_pooled_streaming_processor_spring_boot_auto_configuration_2"></a>Pooled streaming processor -  Spring Boot auto configuration</h5>
+<div id="_tabs_8_pooled_streaming_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_8_pooled_streaming_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -1163,8 +1298,10 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="token-stealing"><a class="anchor" href="#token-stealing"></a>Token stealing</h4>
+</div>
+</div>
+<div class="sect2">
+<h3 id="token-stealing"><a class="anchor" href="#token-stealing"></a>Token stealing</h3>
 <div class="paragraph">
 <p>As described at the <a href="#tracking-tokens">start</a>, streaming processor threads can "steal" tokens from one another.
 A token is "stolen" when a thread loses a <a href="#_token_claims">token claim</a>.
@@ -1179,8 +1316,8 @@ Examples may include literal slow processing, blocking exceptional scenarios, an
 <p>However, token stealing may occur as a surprise for some applications, making it an unwanted side effect.
 As such, it is good to be aware of why tokens get stolen (as described above), but also when this happens and what the consequences are.</p>
 </div>
-<div class="sect4">
-<h5 id="_when_is_a_token_stolen"><a class="anchor" href="#_when_is_a_token_stolen"></a>When is a token stolen?</h5>
+<div class="sect3">
+<h4 id="_when_is_a_token_stolen"><a class="anchor" href="#_when_is_a_token_stolen"></a>When is a token stolen?</h4>
 <div class="paragraph">
 <p>In practical terms, a token is stolen whenever the <em>claim timeout</em> is exceeded.</p>
 </div>
@@ -1206,8 +1343,8 @@ Hence, a staling processor thread will, one way or another, eventually lose the 
 - Overall slow event handling - Too large event batch size - Blocking operations inside event handlers - Blocking exceptions inside event handlers</p>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_what_are_the_consequences_of_token_stealing"><a class="anchor" href="#_what_are_the_consequences_of_token_stealing"></a>What are the consequences of token stealing?</h5>
+<div class="sect3">
+<h4 id="_what_are_the_consequences_of_token_stealing"><a class="anchor" href="#_what_are_the_consequences_of_token_stealing"></a>What are the consequences of token stealing?</h4>
 <div class="paragraph">
 <p>The consequence of token stealing is that an event may be handled twice (or more).</p>
 </div>
@@ -1250,7 +1387,6 @@ In this case, the only consequence is wasted processor cycles.
 </div>
 </div>
 </div>
-</div>
 <div class="sect2">
 <h3 id="token-store"><a class="anchor" href="#token-store"></a>Token store</h3>
 <div class="paragraph">
@@ -1286,23 +1422,39 @@ Several <code>TokenTableFactory</code> can be chosen here, like the <code>Generi
 </li>
 </ul>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Where to store Tokens?</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Keep your tokens close</div>
 <div class="paragraph">
 <p>Where possible, we recommend using a token store that stores tokens in the same database as to where the event handlers update the view models.
 This way, changes to the view model can be stored atomically with the changed tokens.
 Furthermore, it guarantees <strong>exactly once</strong> processing semantics.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Note that you can configure the token store to use for a streaming processor in the <code>EventProcessingConfigurer</code>:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_7"><a class="anchor" href="#_axon_configuration_api_7"></a>Axon Configuration API</h4>
+<div id="_tabs_9" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_9_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_9_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_9_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_9_configuration_api">
 <div class="paragraph">
 <p>To configure a <code>TokenStore</code> for all processors:</p>
 </div>
@@ -1338,8 +1490,7 @@ Furthermore, it guarantees <strong>exactly once</strong> processing semantics.</
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_3"><a class="anchor" href="#_spring_boot_auto_configuration_3"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_9_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_9_spring_boot">
 <div class="paragraph">
 <p>The default <code>TokenStore</code> implementation is defined base dependencies available in Spring Boot, in the following order:</p>
 </div>
@@ -1400,6 +1551,8 @@ public class AxonConfig {
 </div>
 </div>
 </div>
+</div>
+</div>
 <div class="sect3">
 <h4 id="_retrieving_the_token_store_identifier"><a class="anchor" href="#_retrieving_the_token_store_identifier"></a>Retrieving the token store identifier</h4>
 <div class="paragraph">
@@ -1441,10 +1594,30 @@ Tokens, in turn, can only be initialized if they are not present yet, as is expl
 <p>Whenever the number of segments should be adjusted during runtime, you can use the <a href="#splitting-and-merging-segments">split and merge</a> functionality.
 To adjust the number of initial segments, consider the following sample:</p>
 </div>
-<div class="sect3">
-<h4 id="_tracking_processor_axon_configuration_api_3"><a class="anchor" href="#_tracking_processor_axon_configuration_api_3"></a>Tracking processor - Axon Configuration API</h4>
+<div id="_tabs_10" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_10_tracking_configuration_api" class="tab">
+<p>Tracking: Configuration API</p>
+</li>
+<li id="_tabs_10_tracking_spring_boot" class="tab">
+<p>Tracking: Spring Boot</p>
+</li>
+<li id="_tabs_10_pooled_streaming_configuration_api" class="tab">
+<p>Pooled streaming: Configuration API</p>
+</li>
+<li id="_tabs_10_pooled_streaming_spring_boot" class="tab">
+<p>Pooled streaming: Spring Boot</p>
+</li>
+<li id="_tabs_10_spring_boot_properties" class="tab">
+<p>Spring Boot properties</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_10_tracking_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_10_tracking_configuration_api">
 <div class="paragraph">
-<p>The default number of segments f <code>TrackingEventProcessor</code> is one.</p>
+<p>The default number of segments of a <code>TrackingEventProcessor</code> is one.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1461,8 +1634,7 @@ To adjust the number of initial segments, consider the following sample:</p>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_tracking_processor_spring_boot_auto_configuration_3"><a class="anchor" href="#_tracking_processor_spring_boot_auto_configuration_3"></a>Tracking processor - Spring Boot auto configuration</h4>
+<div id="_tabs_10_tracking_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_10_tracking_spring_boot">
 <div class="paragraph">
 <p>The default number of segments for the <code>TrackingEventProcessor</code> is one.</p>
 </div>
@@ -1487,8 +1659,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_pooled_streaming_processor_axon_configuration_api_3"><a class="anchor" href="#_pooled_streaming_processor_axon_configuration_api_3"></a>Pooled streaming processor - Axon Configuration API</h4>
+<div id="_tabs_10_pooled_streaming_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_10_pooled_streaming_configuration_api">
 <div class="paragraph">
 <p>The default number of segments for the <code>PooledStreamingEventProcessor</code> is sixteen.</p>
 </div>
@@ -1506,8 +1677,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_pooled_streaming_processor_spring_boot_auto_configuration_3"><a class="anchor" href="#_pooled_streaming_processor_spring_boot_auto_configuration_3"></a>Pooled streaming processor -  Spring Boot auto configuration</h4>
+<div id="_tabs_10_pooled_streaming_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_10_pooled_streaming_spring_boot">
 <div class="paragraph">
 <p>The default number of segments for the <code>PooledStreamingEventProcessor</code> is sixteen.</p>
 </div>
@@ -1531,30 +1701,36 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_properties_file_3"><a class="anchor" href="#_spring_boot_auto_configuration_properties_file_3"></a>Spring Boot auto configuration - properties file</h4>
+<div id="_tabs_10_spring_boot_properties--panel" class="tabpanel" aria-labelledby="_tabs_10_spring_boot_properties">
 <div class="paragraph">
 <p>The default number of segments for a <code>TrackingEventProcessor</code> and <code>PooledStreamingEventProcessor</code> is one and sixteen, respectively.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors.my-processor.mode=pooled
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.mode=pooled
 # Sets the initial number of segments
 axon.eventhandling.processors.my-processor.initialSegmentCount=32</code></pre>
 </div>
 </div>
-<hr>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Parallel Processing and Subscribing Event Processors</strong></p>
 </div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Parallel Processing and Subscribing Event Processors</div>
 <div class="paragraph">
-<p>Note that <a href="../subscribing/" class="xref page">Subscribing Event Processor</a> don&#8217;t manage their own threads.
+<p>Note that <a href="../subscribing/" class="xref page">Subscribing Event Processors</a> don&#8217;t manage their own threads.
 Therefore, it is not possible to configure how they should receive their events.
 Effectively, they will always work on a sequential-per-aggregate basis, as that is generally the level of concurrency in the command handling component.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>The Event Handling Components a processor is in charge of may have specific expectations on the event order.
@@ -1575,7 +1751,6 @@ The number of segments that a single thread can claim differ between the Trackin
 A tracking processor can only claim a single segment per thread, whereas the pooled streaming processor can claim any amount of segments per thread.
 These approaches provide different pros and cons for each implementation, which <a href="#_differences_between_tracking_and_pooled_streaming">this</a> section explains further.</p>
 </div>
-</div>
 <div class="sect2">
 <h3 id="sequential-processing"><a class="anchor" href="#sequential-processing"></a>Sequential processing</h3>
 <div class="paragraph">
@@ -1589,17 +1764,22 @@ Policies return a sequence identifier of a given event.</p>
 Thus, if the <code>SequencingPolicy</code> returns a <em>different</em> value for two events, they may be processed concurrently.
 Note that if the policy returns a <code>null</code> sequence identifier, the event may be processed in parallel with <em>any</em> other events.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Parallel Processing and Sagas</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Parallel Processing and Sagas</div>
 <div class="paragraph">
 <p>A <a href="../../../sagas/" class="xref page">saga</a> instance is <strong>never</strong> invoked concurrently by multiple threads.
 Therefore, the <code>SequencingPolicy</code> is irrelevant for a saga.
 Axon will ensure each saga instance receives the events it needs to process in the order they have been published on the event bus.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div id="sequencing-policies" class="paragraph">
 <p>Conceptually, the <code>SequencingPolicy</code> decides whether an event belongs to a given <a href="#parallel-processing">segment</a>.
@@ -1611,26 +1791,26 @@ Furthermore, Axon guarantees that Events that are part of the same segment are p
 <div class="ulist">
 <ul>
 <li>
-<p><code>SequentialPerAggregatePolicy</code> - The default policy.
+<p><code>SequentialPerAggregatePolicy</code>: The default policy.
 It will force domain events that were raised from the same aggregate to be handled sequentially.
 Thus, events from different aggregates may be handled concurrently.
 This policy is typically suitable for Event Handling Components that update details from aggregates in databases.</p>
 </li>
 <li>
-<p><code>FullConcurrencyPolicy</code> - This policy will tell Axon that this Event Processor may handle all events concurrently.
+<p><code>FullConcurrencyPolicy</code>: This policy will tell Axon that this Event Processor may handle all events concurrently.
 This means that there is no relationship between the events that require them to be processed in a particular order.</p>
 </li>
 <li>
-<p><code>SequentialPolicy</code> - This policy tells Axon that it can process all events sequentially.
+<p><code>SequentialPolicy</code>: This policy tells Axon that it can process all events sequentially.
 Handling of an event will start when the handling of a previous event has finished.</p>
 </li>
 <li>
-<p><code>PropertySequencingPolicy</code> - When configuring this policy, the user is required to provide a property name or property extractor function.
+<p><code>PropertySequencingPolicy</code>: When configuring this policy, the user is required to provide a property name or property extractor function.
 This implementation provides a flexible solution to set up a custom sequencing policy based on a standard value present in your events.
 Note that this policy only reacts to properties present in the event class.</p>
 </li>
 <li>
-<p><code>MetaDataSequencingPolicy</code> - When configuring this policy, the user is required to provide a <code>metaDataKey</code> to be used.
+<p><code>MetaDataSequencingPolicy</code>: When configuring this policy, the user is required to provide a <code>metaDataKey</code> to be used.
 This implementation provides a flexible solution to set up a custom sequencing policy based on a standard value present in your events' metadata.</p>
 </li>
 </ul>
@@ -1638,8 +1818,22 @@ This implementation provides a flexible solution to set up a custom sequencing p
 <div class="paragraph">
 <p>Consider the following snippets when configuring a (custom) <code>SequencingPolicy</code>:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_8"><a class="anchor" href="#_axon_configuration_api_8"></a>Axon Configuration API</h4>
+<div id="_tabs_11" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_11_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_11_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+<li id="_tabs_11_spring_boot_properties" class="tab">
+<p>Spring Boot properties</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_11_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_11_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -1658,8 +1852,7 @@ This implementation provides a flexible solution to set up a custom sequencing p
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_4"><a class="anchor" href="#_spring_boot_auto_configuration_4"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_11_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_11_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -1682,14 +1875,13 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_properties_file_4"><a class="anchor" href="#_spring_boot_auto_configuration_properties_file_4"></a>Spring Boot auto configuration - properties file</h4>
+<div id="_tabs_11_spring_boot_properties--panel" class="tabpanel" aria-labelledby="_tabs_11_spring_boot_properties">
 <div class="paragraph">
 <p>When we want to configure the <code>SequencingPolicy</code> in a properties file, we should provide a bean name:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors.my-processor.mode=tracking
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.mode=tracking
 axon.eventhandling.processors.my-processor.sequencing-policy=mySequencingPolicy</code></pre>
 </div>
 </div>
@@ -1708,7 +1900,9 @@ public class AxonConfig {
 }</code></pre>
 </div>
 </div>
-<hr>
+</div>
+</div>
+</div>
 <div class="paragraph">
 <p>If the available policies do not suffice, you can define your own.
 To that end, we should implement the <code>SequencingPolicy</code> interface.
@@ -1723,7 +1917,6 @@ This interface defines a single method, <code>getSequenceIdentifierFor(T)</code>
 </div>
 </div>
 </div>
-</div>
 <div class="sect2">
 <h3 id="_thread_configuration"><a class="anchor" href="#_thread_configuration"></a>Thread configuration</h3>
 <div class="paragraph">
@@ -1733,17 +1926,22 @@ Or by configuring a <code>StreamingEventProcessor</code> to use several threads.
 The following section describes the threading differences between the Tracking- and Pooled Streaming Event Processor.
 These sections are followed up with samples on configuring multiple threads for the TEP and PSEP, respectively.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Thread and Segment Count</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Thread and Segment Count</div>
 <div class="paragraph">
 <p>Adjusting the number of threads will not automatically parallelize a Streaming Processor.
 A segment claim <a href="#parallel-processing">is required</a> to let a thread process any events.
 Hence, increasing the thread count should be paired with adjusting the segment count.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="sect3">
 <h4 id="_tracking_processor_threading"><a class="anchor" href="#_tracking_processor_threading"></a>Tracking processor threading</h4>
@@ -1761,8 +1959,22 @@ Hence, we recommend setting the number of threads (on every node) higher than or
 <p>To increase event handling throughput, we recommend changing the number of threads.
 How to do this is shown in the following sample:</p>
 </div>
-<div class="sect4">
-<h5 id="_axon_configuration_api_9"><a class="anchor" href="#_axon_configuration_api_9"></a>Axon Configuration API</h5>
+<div id="_tabs_12" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_12_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_12_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+<li id="_tabs_12_spring_boot_properties" class="tab">
+<p>Spring Boot properties</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_12_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_12_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -1778,8 +1990,7 @@ How to do this is shown in the following sample:</p>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_spring_boot_auto_configuration_5"><a class="anchor" href="#_spring_boot_auto_configuration_5"></a>Spring Boot auto configuration</h5>
+<div id="_tabs_12_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_12_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -1801,13 +2012,14 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_spring_boot_auto_configuration_properties_file_5"><a class="anchor" href="#_spring_boot_auto_configuration_properties_file_5"></a>Spring Boot auto configuration - properties file</h5>
+<div id="_tabs_12_spring_boot_properties--panel" class="tabpanel" aria-labelledby="_tabs_12_spring_boot_properties">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors.my-processor.mode=tracking
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.mode=tracking
 axon.eventhandling.processors.my-processor.thread-count=4
 axon.eventhandling.processors.my-processor.initial-segment-count=4</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -1835,8 +2047,22 @@ The worker-pool also defaults to <code>ScheduledExecutorService</code> with a si
 <p>When you want to increase event handling throughput, we recommend changing the number of threads for the worker thread pool.
 How to do this is shown in the following sample:</p>
 </div>
-<div class="sect4">
-<h5 id="_axon_configuration_api_10"><a class="anchor" href="#_axon_configuration_api_10"></a>Axon Configuration API</h5>
+<div id="_tabs_13" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_13_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_13_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+<li id="_tabs_13_spring_boot_properties" class="tab">
+<p>Spring Boot properties</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_13_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_13_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -1860,8 +2086,7 @@ How to do this is shown in the following sample:</p>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_spring_boot_auto_configuration_6"><a class="anchor" href="#_spring_boot_auto_configuration_6"></a>Spring Boot auto configuration</h5>
+<div id="_tabs_13_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_13_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -1891,14 +2116,15 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_spring_boot_auto_configuration_properties_file_6"><a class="anchor" href="#_spring_boot_auto_configuration_properties_file_6"></a>Spring Boot auto configuration - properties file</h5>
+<div id="_tabs_13_spring_boot_properties--panel" class="tabpanel" aria-labelledby="_tabs_13_spring_boot_properties">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors.my-processor.mode=pooled
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.mode=pooled
 # Only the thread count of the Worker can be influenced through a properties file!
 axon.eventhandling.processors.my-processor.thread-count=16
 axon.eventhandling.processors.my-processor.initial-segment-count=32</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -1935,11 +2161,14 @@ The freedom in thread pool configuration is helpful when, for example, the numbe
 </li>
 </ul>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Which Streaming Processor should I use?</strong></p>
-</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Which Streaming Processor should I use?</div>
 <div class="paragraph">
 <p>In most scenarios, the <code>PooledStreamingEventProcessor</code> is the recommended processor implementation.
 We conclude this based on the segment-to-thread-count ratio, its ability to share thread pools, and the lower amount of opened event streams.</p>
@@ -1948,7 +2177,9 @@ We conclude this based on the segment-to-thread-count ratio, its ability to shar
 <p>The <code>TrackingEventProcessor</code> will still be ideal if you anticipate the processing speed between segments to differ significantly.
 Also, if the application does not have too many processor instances, the need to share thread pools is loosened.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect3">
@@ -2034,25 +2265,28 @@ However, only changing the number of threads is insufficient since the paralleli
 <p>When there is a high event load, ideally, we increase the number of segments.
 In turn, we can reduce the number of segments again if the load on the streaming processor decreases.
 To change the number of segments at runtime, the <em>split and merge</em> operations should be used.
-Splitting and merging allow you to control the number of segments dynamically.</p>
+Splitting and merging allow you to control the number of segments dynamically.
+There are roughly three approaches to do this.</p>
+</div>
+<div class="sect3">
+<h4 id="_1_axoniq_console"><a class="anchor" href="#_1_axoniq_console"></a>1. AxonIQ Console</h4>
+<div class="paragraph">
+<p>Through <a href="../../../../../axoniq-console-reference/" class="xref page">AxonIQ Console</a>'s processor detail page, where you can scale the segments manually, or configure your segments to scale automatically with the number of your application&#8217;s replicas. It&#8217;s the easiest to set up and use.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_2_axon_server"><a class="anchor" href="#_2_axon_server"></a>2. Axon Server</h4>
+<div class="paragraph">
+<p>The <a href="../../../../../axon-server-reference/v2024.1/" class="xref page">Axon Server</a> Dashboard contains split and merge buttons to adjust the number of segments. While it&#8217;s straightforward to use as well, it does not support automatic scaling based on the number of replicas.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_3_manual_programming"><a class="anchor" href="#_3_manual_programming"></a>3. Manual programming</h4>
+<div class="paragraph">
+<p>If none of the other two options are available, you can adjust the number of segments through the Axon Framework API. The <code>StreamingEventProcessor</code> exposes the <code>splitSegment(int segmentId)</code> and <code>mergeSegment(int segmentId)</code> methods. To obtain the <code>StreamingEventProcessor</code>, you can use the <code>EventProcessingConfiguration</code> to retrieve the processor by name.</p>
 </div>
 <div class="paragraph">
-<p>There are roughly two approaches to adjust the number of segments for a streaming processor:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Through the <a href="../../../../../axon-server-reference/v2024.1/" class="xref page">Axon Server</a> Dashboard with the split and merge buttons</p>
-</li>
-<li>
-<p>Directly on a <code>StreamingEventProcessor</code>, with the <code>splitSegment(int segmentId)</code> and <code>mergeSegment(int segmentId)</code> methods</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>When Axon Server is in place, we recommend using option one since it is easiest to use.
-Whenever Axon Server is not used, and you want to adjust the number of segments, the split and merge methods should be accessible from within your application.
-For those required to take the second approach, consider the following snippet as a form of guidance:</p>
+<p>For those taking this approach, consider the following snippet as a form of guidance:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2099,13 +2333,16 @@ This guides which processor to invoke the split or merge on.</p>
 <p>When doing a merge, the streaming processor should be in charge of <strong>both</strong> the provided <code>segmentId</code> and the segment the framework will merge it with.
 We can calculate the segment identifier the provided <code>segmentId will be merged with through the`Segment#mergeableSegmentId</code> method.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Segment Selection Considerations</div>
 <div class="paragraph">
-<p><strong>Segment Selection Considerations</strong></p>
-</div>
-<div class="paragraph">
-<p>When splitting or merging through Axon Server, it chooses the most appropriate segment to split or merge for you.
+<p>When splitting or merging through AxonIQ Console and Axon Server, it chooses the most appropriate segment to split or merge for you.
 When using the Axon Framework API directly, the developer should deduce the segment to split or segments to merge by themselves:</p>
 </div>
 <div class="ulist">
@@ -2118,7 +2355,10 @@ When using the Axon Framework API directly, the developer should deduce the segm
 </li>
 </ul>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
@@ -2130,58 +2370,69 @@ When using the Axon Framework API directly, the developer should deduce the segm
 <p>A benefit of streaming events is that we can reopen the stream at any point in time.
 Whenever some event handling components misbehaved, and the view models they update or actions they triggered should happen again, starting anew can be useful.
 Handling events again by adjusting the position on the stream is what&#8217;s called "a replay," a feature supported by the <code>StreamingEventProcessor</code>.
-The following sections describe how to <a href="#_triggering_a_reset">initiate a replay</a> and what <a href="#_replay_api">replay API</a> the framework provides.</p>
+You can trigger a reset using <a href="../../../../../axoniq-console-reference/" class="xref page">AxonIQ Console</a>, or programmatically through the Axon Framework API.</p>
 </div>
 <div class="sect2">
-<h3 id="_triggering_a_reset"><a class="anchor" href="#_triggering_a_reset"></a>Triggering a reset</h3>
+<h3 id="reset-console"><a class="anchor" href="#reset-console"></a>Triggering a reset with Console</h3>
 <div class="paragraph">
-<p>The reset API revolves around the <code>resetTokens()</code> method and provides a couple of options:</p>
+<p>Triggering a reset through the <a href="../../../../../axoniq-console-reference/" class="xref page">AxonIQ Console</a> is straightforward.
+It will make sure all processors are stopped, the tokens reset, and the replay is started, without any need for manual intervention.</p>
+</div>
+<div class="paragraph">
+<p>Go to the detail page of the processor you would like to reset. On the left side, under the configuration details, is a "Reset Processor" button.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../_images/console-processor-detail-page-reset.png" alt="AxonIQ Console processor detail page with underlined 'Reset Processor' button">
+</div>
+</div>
+<div class="paragraph">
+<p>Clicking this button will open a dialog in which you can choose the desired position in the event store to replay from. You can choose of resetting to the tail, head, or a custom date.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="../../_images/console-processor-reset-dialog.png" alt="AxonIQ Console reset dialog" width="65%">
+</div>
+</div>
+<div class="paragraph">
+<p>After resetting the processor, the replay will start immediately. You can track its progress under the "Segments" tab. During a replay, each segment has its own pace.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../_images/console-processor-replaying-segments.png" alt="AxonIQ Console segments view during a replay">
+</div>
+</div>
+<div class="paragraph">
+<p>During this time, it&#8217;s normal to see the latency of the processor at a high value, because it&#8217;s processing events from a long time ago. This will slowly decrease until it&#8217;s back at the head position.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="reset-programmatically"><a class="anchor" href="#reset-programmatically"></a>Triggering a reset programmatically</h3>
+<div class="paragraph">
+<p>You can also trigger a reset using the Axon Framework API.
+This API revolves around the <code>resetTokens()</code> method and provides a couple of options:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>resetTokens()</code> - Simple reset, adjusting the <code>TrackingToken</code> to the configured <a href="#_initial_tracking_token">initial tracking token</a></p>
+<p><code>resetTokens()</code>: Simple reset, adjusting the <code>TrackingToken</code> to the configured <a href="#_initial_tracking_token">initial tracking token</a></p>
 </li>
 <li>
-<p><code>resetTokens(R resetContext)</code> - Resets the <code>TrackingToken</code> to the configured <a href="#_initial_tracking_token">initial tracking token</a>, providing the <code>resetContext</code> to the <a href="#_replay_api"><code>ResetHandlers</code></a></p>
+<p><code>resetTokens(R resetContext)</code>: Resets the <code>TrackingToken</code> to the configured <a href="#_initial_tracking_token">initial tracking token</a>, providing the <code>resetContext</code> to the <a href="#_replay_api"><code>ResetHandlers</code></a></p>
 </li>
 <li>
-<p><code>resetTokens(Function&lt;StreamableMessageSource&lt;TrackedEventMessage&lt;?&gt;&gt;, TrackingToken&gt; initialTrackingTokenSupplier)</code> - Resets the <code>TrackingToken</code> to the results of the <code>initialTrackingTokenSupplier</code></p>
+<p><code>resetTokens(Function&lt;StreamableMessageSource&lt;TrackedEventMessage&lt;?&gt;&gt;, TrackingToken&gt; initialTrackingTokenSupplier)</code>: Resets the <code>TrackingToken</code> to the results of the <code>initialTrackingTokenSupplier</code></p>
 </li>
 <li>
-<p><code>resetTokens(Function&lt;StreamableMessageSource&lt;TrackedEventMessage&lt;?&gt;&gt;, TrackingToken&gt; initialTrackingTokenSupplier, R resetContext)</code> - Resets the <code>TrackingToken</code> to the results of the <code>initialTrackingTokenSupplier</code>, providing the <code>resetContext</code> to the <a href="#_replay_api"><code>ResetHandlers</code></a></p>
+<p><code>resetTokens(Function&lt;StreamableMessageSource&lt;TrackedEventMessage&lt;?&gt;&gt;, TrackingToken&gt; initialTrackingTokenSupplier, R resetContext)</code>: Resets the <code>TrackingToken</code> to the results of the <code>initialTrackingTokenSupplier</code>, providing the <code>resetContext</code> to the <a href="#_replay_api"><code>ResetHandlers</code></a></p>
 </li>
 <li>
-<p><code>resetTokens(TrackingToken startPosition)</code> - Resets the <code>TrackingToken</code> to the provided <code>startPosition</code></p>
+<p><code>resetTokens(TrackingToken startPosition)</code>: Resets the <code>TrackingToken</code> to the provided <code>startPosition</code></p>
 </li>
 <li>
-<p><code>resetTokens(TrackingToken startPosition, R resetContext)</code> - Resets the <code>TrackingToken</code> to the provided <code>startPosition</code>, providing the <code>resetContext</code> to the <a href="#_replay_api"><code>ResetHandlers</code></a></p>
+<p><code>resetTokens(TrackingToken startPosition, R resetContext)</code>: Resets the <code>TrackingToken</code> to the provided <code>startPosition</code>, providing the <code>resetContext</code> to the <a href="#_replay_api"><code>ResetHandlers</code></a></p>
 </li>
 </ul>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Partial Replays</strong></p>
-</div>
-<div class="paragraph">
-<p>A replay does not always have to start "from the beginning of time." Partially replaying the event stream suffices for a lot of applications.</p>
-</div>
-<div class="paragraph">
-<p>To perform a so-called "partial replay," you should provide the token at a specific point in time.
-The <code>StreamableMessageSource&#8217;s <a href="#_initial_tracking_token">`createTokenAt(Instant)</code> and <code>createTokenSince(Duration)</code></a> can be used for this.</p>
-</div>
-<div class="paragraph">
-<p>If creating tokens based on time is not sufficient, but creating tokens based on the exact position is something that is more convenient, you could create a <code>TrackingToken</code> providing the position and give it to <code>resetTokens(TrackingToken startPosition)</code> or
-<code>resetTokens(TrackingToken startPosition, R resetContext)</code> methods.
-The concrete implementation of <code>TrackingToken</code> to provide depends on the <code>Token Store</code> being used.</p>
-</div>
-<div class="paragraph">
-<p>Be mindful that when initiating a partial replay, the event handlers may handle an event in the middle of model construction.
-Hence, event handlers need to be "aware" that some events might not have been handled at all.
-Making the event handlers lenient (for example, deal with missing data) or performing ad-hoc manual replays would help in that area.</p>
-</div>
-</blockquote>
 </div>
 <div class="paragraph">
 <p>As the method name suggests, the reset adjusts the <a href="#tracking-tokens">tracking token</a> to a new position.
@@ -2196,8 +2447,19 @@ Once the reset was successful, the processor can be started up again.</p>
 <div class="paragraph">
 <p>Consider the following sample on how to trigger a reset within an application:</p>
 </div>
-<div class="sect3">
-<h4 id="_reset_without_reset_context"><a class="anchor" href="#_reset_without_reset_context"></a>Reset without reset context</h4>
+<div id="_tabs_14" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_14_reset_without_reset_context" class="tab">
+<p>Reset without reset context</p>
+</li>
+<li id="_tabs_14_reset_with_reset_context" class="tab">
+<p>Reset with reset context</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_14_reset_without_reset_context--panel" class="tabpanel" aria-labelledby="_tabs_14_reset_without_reset_context">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class StreamingProcessorController {
@@ -2221,8 +2483,7 @@ Once the reset was successful, the processor can be started up again.</p>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_reset_with_reset_context"><a class="anchor" href="#_reset_with_reset_context"></a>Reset with reset context</h4>
+<div id="_tabs_14_reset_with_reset_context--panel" class="tabpanel" aria-labelledby="_tabs_14_reset_with_reset_context">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class StreamingProcessorController {
@@ -2245,24 +2506,51 @@ Once the reset was successful, the processor can be started up again.</p>
 }</code></pre>
 </div>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Resets in multi-node environments</strong></p>
 </div>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">Resets in multi-node environments</div>
 <div class="paragraph">
 <p>If you are in a <a href="#_multi_node_processing">multi-node</a> scenario, that means <em>all</em> nodes should shut down the <code>StreamingEventProcessor</code>.
 Otherwise, another node will pick up the segments released by the inactive processor instance.</p>
 </div>
 <div class="paragraph">
-<p>Being able to shut down or start up all streaming processor instances is most easily achieved through the <a href="../../../../../axon-server-reference/v2024.1/" class="xref page">Axon Server</a> Dashboard.
-The application&#8217;s dashboard provides a "start" and "stop" button, which will start/stop the processor on every node.</p>
+<p>Being able to shut down or start up all streaming processor instances is most easily achieved through the <a href="../../../../../axon-server-reference/v2024.1/" class="xref page">Axon Server</a> Dashboard or <a href="../../../../../axoniq-console-reference/" class="xref page">AxonIQ Console</a>.
+They both provide a "start" and "stop" button, which will start/stop the processor on every node. With AxonIQ Console you can also reset the processor.</p>
 </div>
 <div class="paragraph">
 <p>When Axon Server is not used, you should construct a custom endpoint in your application.
 The <code>StreamingProcessorService</code> sample shared above would be ideal for adding a start and stop method.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_partial_replays"><a class="anchor" href="#_partial_replays"></a>Partial replays</h4>
+<div class="paragraph">
+<p>A replay does not always have to start "from the beginning of time." Partially replaying the event stream suffices for a lot of applications.</p>
+</div>
+<div class="paragraph">
+<p>To perform a so-called "partial replay," you should provide the token at a specific point in time.
+The <code>StreamableMessageSource&#8217;s <a href="#_initial_tracking_token">`createTokenAt(Instant)</code> and <code>createTokenSince(Duration)</code></a> can be used for this.</p>
+</div>
+<div class="paragraph">
+<p>If creating tokens based on time is not sufficient, but creating tokens based on the exact position is something that is more convenient, you could create a <code>TrackingToken</code> providing the position and give it to <code>resetTokens(TrackingToken startPosition)</code> or
+<code>resetTokens(TrackingToken startPosition, R resetContext)</code> methods.
+The concrete implementation of <code>TrackingToken</code> to provide depends on the <code>Token Store</code> being used.</p>
+</div>
+<div class="paragraph">
+<p>Be mindful that when initiating a partial replay, the event handlers may handle an event in the middle of model construction.
+Hence, event handlers need to be "aware" that some events might not have been handled at all.
+Making the event handlers lenient (for example, deal with missing data) or performing ad-hoc manual replays would help in that area.</p>
 </div>
 </div>
 </div>
@@ -2283,12 +2571,12 @@ This context can, for the duration of the replay, be accessed using the <code>Re
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@AllowReplay // 1.
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@AllowReplay <i class="conum" data-value="1"></i><b>(1)</b>
 @ProcessingGroup("card-summary")
 public class CardSummaryProjection {
     //...
     @EventHandler
-    @DisallowReplay // 2. - It is possible to prevent some handlers from being replayed
+    @DisallowReplay <i class="conum" data-value="2"></i><b>(2)</b>
     public void on(CardIssuedEvent event) {
         // This event handler performs a "side effect",
         //  like sending an e-mail or a sms.
@@ -2298,14 +2586,14 @@ public class CardSummaryProjection {
     }
 
     @EventHandler
-    public void on(CardRedeemedEvent event, ReplayStatus replayStatus /* 3. */) {
+    public void on(CardRedeemedEvent event, ReplayStatus replayStatus) { <i class="conum" data-value="3"></i><b>(3)</b>
         // We can wire a ReplayStatus here so we can see whether this
         // event is delivered to our handler as a 'REGULAR' event or
         // a 'REPLAY' event
         // Perform event handling
     }
 
-    @ResetHandler // 4. - This method will be called before replay starts
+    @ResetHandler <i class="conum" data-value="4"></i><b>(4)</b>
     public void onReset(ResetContext resetContext) {
         // Do pre-reset logic, like clearing out the projection table for a
         // clean slate. The given resetContext is [optional], allowing the
@@ -2313,7 +2601,7 @@ public class CardSummaryProjection {
     }
 
     @EventHandler
-    public void on(CardCancelledEvent event, @ReplayContext CardReplayContext context /* 5. */) {
+    public void on(CardCancelledEvent event, @ReplayContext CardReplayContext context) { <i class="conum" data-value="5"></i><b>(5)</b>
         // During replays, this method will get the CardReplayContext injected that was providing during the reset call.
         // If there is no replay, no context was supplied or the context type does not match, the parameter is null.
     }
@@ -2324,35 +2612,40 @@ public class CardSummaryProjection {
 <div class="paragraph">
 <p>The <code>CardSummaryProjection</code> shows a couple of interesting things to take note of when it comes to "being aware" of a replay in progress:</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>An <code>@AllowReplay</code> can be used, situated either on an entire class or an <code>@EventHandler</code> annotated method.
-It defines whether the processor should invoke the given class or method when a replay is in transit.</p>
-</li>
-<li>
-<p>In addition to allowing a replay, <code>@DisallowReplay</code> can also be used.
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>An <code>@AllowReplay</code> can be used, situated either on an entire class or an <code>@EventHandler</code> annotated method.
+It defines whether the processor should invoke the given class or method when a replay is in transit.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>In addition to allowing a replay, <code>@DisallowReplay</code> can also be used.
 Similar to <code>@AllowReplay</code>, you can place it on class level and methods.
-It serves to define whether a processor should <strong>not</strong> invoke the class or method when a replay is in transit.</p>
-</li>
-<li>
-<p>To have more fine-grained control on what (not) to do during a replay, we can use the <code>ReplayStatus</code> parameter.
+It serves to define whether a processor should <strong>not</strong> invoke the class or method when a replay is in transit.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>To have more fine-grained control on what (not) to do during a replay, we can use the <code>ReplayStatus</code> parameter.
 The <code>ReplayStatus</code> is an additional parameter that we can add to <code>@EventHandler</code> annotated methods.
-It allows conditional operations in the event handlers based on whether a replay is taking place.</p>
-</li>
-<li>
-<p>If it is necessary to perform certain pre-replay logic, such as clearing out a projection table, we can use the <code>@ResetHandler</code> annotation.
+It allows conditional operations in the event handlers based on whether a replay is taking place.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>If it is necessary to perform certain pre-replay logic, such as clearing out a projection table, we can use the <code>@ResetHandler</code> annotation.
 It allows adding a "reset context" to provide more information on why the reset is taking place.
 To include a <code>resetContext</code> the <code>resetTokens(R resetContext)</code> method (or other methods containing the <code>resetContext</code> parameter) should be invoked.
-The type of the <code>resetContext</code> is up to the user.</p>
-</li>
-<li>
-<p>If it is necessary to use information that was available at time of calling <code>resetTokens(R resetContext)</code> in your event handlers during a replay, you can use the <code>@ReplayContext</code> annotation to get access to this information.
+The type of the <code>resetContext</code> is up to the user.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>If it is necessary to use information that was available at time of calling <code>resetTokens(R resetContext)</code> in your event handlers during a replay, you can use the <code>@ReplayContext</code> annotation to get access to this information.
 This information is stored in the <code>ReplayToken</code> and will be available until the end of the replay.
-The type of the <code>resetContext</code> is up to the user and is the same context as is used for the <code>@ResetHandler</code> (see 4.).
-The type of the <code>resetContext</code> has to match the parameter&#8217;s, or it will be null.</p>
-</li>
-</ol>
+The type of the <code>resetContext</code> is up to the user and is the same context as is used for the <code>@ResetHandler</code> (see 4).
+The type of the <code>resetContext</code> has to match the parameter&#8217;s, or it will be null.</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -2415,8 +2708,28 @@ The <code>MultiStreamableMessageSource</code> defaults the <code>longPollingSour
 <div class="paragraph">
 <p>Assuming a <code>buildMultiStreamableMessageSource(&#8230;&#8203;)</code> method is present, we can use the outcome to register a processor with the configuring <code>EventProcessingConfigurer</code>:</p>
 </div>
-<div class="sect3">
-<h4 id="_tracking_processor_axon_configuration_api_4"><a class="anchor" href="#_tracking_processor_axon_configuration_api_4"></a>Tracking processor - Axon Configuration API</h4>
+<div id="_tabs_15" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_15_tracking_configuration_api" class="tab">
+<p>Tracking: Configuration API</p>
+</li>
+<li id="_tabs_15_tracking_spring_boot" class="tab">
+<p>Tracking: Spring Boot</p>
+</li>
+<li id="_tabs_15_pooled_streaming_configuration_api" class="tab">
+<p>Pooled streaming: Configuration API</p>
+</li>
+<li id="_tabs_15_pooled_streaming_spring_boot" class="tab">
+<p>Pooled streaming: Spring Boot</p>
+</li>
+<li id="_tabs_15_spring_boot_properties" class="tab">
+<p>Spring Boot properties</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_15_tracking_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_15_tracking_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -2430,8 +2743,7 @@ The <code>MultiStreamableMessageSource</code> defaults the <code>longPollingSour
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_tracking_processor_spring_boot_auto_configuration_4"><a class="anchor" href="#_tracking_processor_spring_boot_auto_configuration_4"></a>Tracking processor -  Spring Boot auto configuration</h4>
+<div id="_tabs_15_tracking_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_15_tracking_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -2449,8 +2761,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_pooled_streaming_processor_axon_configuration_api_4"><a class="anchor" href="#_pooled_streaming_processor_axon_configuration_api_4"></a>Pooled streaming processor - Axon Configuration API</h4>
+<div id="_tabs_15_pooled_streaming_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_15_pooled_streaming_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -2464,8 +2775,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_pooled_streaming_processor_spring_boot_auto_configuration_4"><a class="anchor" href="#_pooled_streaming_processor_spring_boot_auto_configuration_4"></a>Pooled streaming processor -  Spring Boot auto configuration</h4>
+<div id="_tabs_15_pooled_streaming_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_15_pooled_streaming_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -2483,14 +2793,13 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_properties_file_7"><a class="anchor" href="#_spring_boot_auto_configuration_properties_file_7"></a>Spring Boot auto configuration - properties file</h4>
+<div id="_tabs_15_spring_boot_properties--panel" class="tabpanel" aria-labelledby="_tabs_15_spring_boot_properties">
 <div class="paragraph">
 <p>When we want to configure the <code>StreamableMessageSource</code> in a properties file, we should provide a bean name:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors.my-processor.mode=pooled
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.mode=pooled
 axon.eventhandling.processors.my-processor.source=multiStreamableMessageSource</code></pre>
 </div>
 </div>
@@ -2521,9 +2830,11 @@ public class AxonConfig {
 </div>
 </div>
 </div>
+</div>
+</div>
         <nav class="pagination">
   <span class="prev"><a href="../subscribing/">Subscribing Event Processor</a></span>
-  <span class="next"><a href="../../event-bus-and-event-store/">Event Bus &amp; Event Store</a></span>
+  <span class="next"><a href="../dead-letter-queue/">Dead-Letter Queue</a></span>
 </nav>
     </article>
   </div>

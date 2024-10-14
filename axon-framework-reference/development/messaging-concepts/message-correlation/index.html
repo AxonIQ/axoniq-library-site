@@ -153,12 +153,15 @@
     <a class="nav-link" href="../../axon-framework-commands/">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregate</a>
+    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../axon-framework-commands/modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -177,12 +180,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../axon-framework-commands/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -195,10 +192,10 @@
     <a class="nav-link" href="../../events/">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../../events/event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -210,10 +207,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../events/event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../events/event-versioning/">Event Versioning</a>
@@ -365,10 +365,10 @@ Usually, correlation is implemented using a specific message property, a so-call
 <h2 id="_correlation_data_provider"><a class="anchor" href="#_correlation_data_provider"></a>Correlation data provider</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Messages in Axon Framework use the <a href="../anatomy-message/#meta-data" class="xref page"><code>MetaData</code></a> property to transport meta information about the message.
+<p>Messages in Axon Framework use the <a href="../anatomy-message/#meta-data" class="xref page"><code>MetaData</code></a> property to transport meta-information about the message.
 The <code>MetaData</code> object is of type <code>Map&lt;String, Object&gt;</code> and is passed around with the message.
-In order to fill the <code>MetaData</code> of a new message produced within a <a href="../unit-of-work/" class="xref page">Unit of Work</a>, a so called <code>CorrelationDataProvider</code> can be used.
-It is the Unit of Work which is in charge of populating the <code>MetaData</code> of a new message based on this <code>CorrelationDataProvider</code>.
+To fill the <code>MetaData</code> of a new message produced within a <a href="../unit-of-work/" class="xref page">Unit of Work</a>, a so called <code>CorrelationDataProvider</code> can be used.
+It is the Unit of Work that is in charge of populating the <code>MetaData</code> of a new message based on this <code>CorrelationDataProvider</code>.
 Axon Framework currently provides a couple of implementations of this functional interface:</p>
 </div>
 <div class="sect2">
@@ -378,7 +378,7 @@ Axon Framework currently provides a couple of implementations of this functional
 It is responsible for two values to be passed around from one <code>Message</code> to another, namely the <code>correlationId</code> and <code>traceId</code>.
 The <code>correlationId</code> of a message always references the identifier of the message it originates from (that is, the parent message).
 The <code>traceId</code> on the other hand references to the message identifier which started the chain of messages (that is, the root message).
-When neither of these fields are present in the parent message when a new message is created, the message identifier will be used for both.
+When neither of these fields is present in the parent message when a new message is created, the message identifier will be used for both.
 To place this in an example, if you would handle a <code>Command</code> message which in turn publishes an <code>Event</code> message, the <code>Event</code> message&#8217;s <code>MetaData</code> will be populated based on:</p>
 </div>
 <div class="ulist">
@@ -472,38 +472,38 @@ The class must implement the <code>CorrelationDataProvider</code> interface, as 
 <p>When the default <code>MessageOriginProvider</code> isn&#8217;t sufficient for your use case, the (custom) correlation data providers need to be registered inside you application.
 If you are using the Axon Configuration API, make sure to call <code>Configuration#configureCorrelationDataProviders</code> method to register the correlated data providers.
 If you are relying on Spring Boot Autoconfiguration, just provide a factory method exposing the Spring Bean, or multiple if you need more than one provider.
-The following snippets shows some possible approaches of registration:</p>
+The following snippets show some possible approaches of registration:</p>
 </div>
 <div id="_tabs_1" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
 <ul>
-<li id="_tabs_1_axon_configuration_api" class="tab">
-<p>Axon Configuration API</p>
+<li id="_tabs_1_configuration_api" class="tab">
+<p>Configuration API</p>
 </li>
-<li id="_tabs_1_spring_boot_auto_configuration" class="tab">
-<p>Spring Boot auto configuration</p>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_1_axon_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_configuration_api">
+<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class Configuration {
 
     public void configuring() {
-        Configurer configurer =
-            DefaultConfigurer.defaultConfiguration()
-                             .configureCorrelationDataProviders(config -&gt; Arrays.asList(
-                                new SimpleCorrelationDataProvider("someKey"),
-                                new MessageOriginProvider()
-                             ));
+        Configurer configurer = DefaultConfigurer
+            .defaultConfiguration()
+            .configureCorrelationDataProviders(config -&gt; Arrays.asList(
+               new SimpleCorrelationDataProvider("someKey"),
+               new MessageOriginProvider()
+            ));
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div id="_tabs_1_spring_boot_auto_configuration--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot_auto_configuration">
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration

@@ -84,7 +84,7 @@
   <ul>
     <li><a href="../../../">Axon Framework Reference</a></li>
     <li><a href="../../">Commands</a></li>
-    <li>Modelling</li>
+    <li><a href="../aggregate/">Aggregates</a></li>
     <li><a href="./">State Stored Aggregates</a></li>
   </ul>
 </nav>
@@ -154,12 +154,15 @@
     <a class="nav-link" href="../../">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../aggregate/">Aggregate</a>
+    <a class="nav-link" href="../../command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -178,12 +181,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../command-handlers/">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -196,10 +193,10 @@
     <a class="nav-link" href="../../../events/">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../events/event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../../../events/event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../events/event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../../../events/event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -211,10 +208,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../../events/event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../events/event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../../../events/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../events/event-versioning/">Event Versioning</a>
@@ -376,14 +376,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 
-@Entity // 1.
+@Entity <i class="conum" data-value="1"></i><b>(1)</b>
 public class GiftCard {
 
-    @Id // 2.
+    @Id <i class="conum" data-value="2"></i><b>(2)</b>
     @AggregateIdentifier
     private String id;
 
-    // 3.
+    <i class="conum" data-value="3"></i><b>(3)</b>
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "giftCardId")
     @AggregateMember
@@ -391,7 +391,7 @@ public class GiftCard {
 
     private int remainingValue;
 
-    @CommandHandler  // 4.
+    @CommandHandler  <i class="conum" data-value="4"></i><b>(4)</b>
     public GiftCard(IssueCardCommand cmd) {
         if (cmd.getAmount() &lt;= 0) {
             throw new IllegalArgumentException("amount &lt;= 0");
@@ -399,13 +399,13 @@ public class GiftCard {
         id = cmd.getCardId();
         remainingValue = cmd.getAmount();
 
-         // 5.
+         <i class="conum" data-value="5"></i><b>(5)</b>
         apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
     }
 
     @CommandHandler
     public void handle(RedeemCardCommand cmd) {
-         // 6.
+         <i class="conum" data-value="6"></i><b>(6)</b>
         if (cmd.getAmount() &lt;= 0) {
             throw new IllegalArgumentException("amount &lt;= 0");
         }
@@ -416,19 +416,19 @@ public class GiftCard {
             throw new IllegalStateException("TransactionId must be unique");
         }
 
-         // 7.
+         <i class="conum" data-value="7"></i><b>(7)</b>
         remainingValue -= cmd.getAmount();
         transactions.add(new GiftCardTransaction(id, cmd.getTransactionId(), cmd.getAmount()));
 
         apply(new CardRedeemedEvent(id, cmd.getTransactionId(), cmd.getAmount()));
     }
 
-    @EventHandler  // 8.
+    @EventHandler  <i class="conum" data-value="8"></i><b>(8)</b>
     protected void on(CardReimbursedEvent event) {
         this.remainingValue += event.getAmount();
     }
 
-    protected GiftCard() { }  // 9.
+    protected GiftCard() { }  <i class="conum" data-value="9"></i><b>(9)</b>
 }</code></pre>
 </div>
 </div>
@@ -436,45 +436,54 @@ public class GiftCard {
 <p>The above code shows a state-stored Aggregate from a 'Gift Card Service'.
 The numbered comments in the snippet point out Axon specifics which are explained here:</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>As the Aggregate is stored in a JPA repository, it is required to annotated the class with <code>@Entity</code>.</p>
-</li>
-<li>
-<p>An Aggregate Root must declare a field that contains the Aggregate Identifier.
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>As the Aggregate is stored in a JPA repository, it is required to annotated the class with <code>@Entity</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>An Aggregate Root must declare a field that contains the Aggregate Identifier.
 This identifier must be initialized at the latest when the first event is published.
 This identifier field must be annotated by the <code>@AggregateIdentifier</code> annotation.
 When using JPA to store the Aggregate, Axon knows to use the <code>@Id</code> annotation provided by JPA.
-Since the Aggregate is an entity, the <code>@Id</code> annotation is a hard requirement.</p>
-</li>
-<li>
-<p>This Aggregate has several '<a href="../multi-entity-aggregates/" class="xref page">Aggregate Members</a>'.
-Since the Aggregate is stored as is, the correct mapping of the entities should be taken into account.</p>
-</li>
-<li>
-<p>A <code>@CommandHandler</code> annotated constructor, or differently put the 'command handling constructor'.
-This annotation tells the framework that the given constructor is capable of handling the <code>IssueCardCommand</code>.</p>
-</li>
-<li>
-<p>The static <code>AggregateLifecycle#apply(Object&#8230;&#8203;)</code> may be used to publish an Event Message.
-Upon calling this function the provided `Object`s will be published as `EventMessage`s within the scope of the Aggregate they are applied in.</p>
-</li>
-<li>
-<p>The Command Handling method will first decide whether the incoming Command is valid to handle at this point.</p>
-</li>
-<li>
-<p>After the business logic has been validated, the state of the Aggregate may be adjusted</p>
-</li>
-<li>
-<p>Entities within an Aggregate can listen to the events the Aggregate publishes, by defining an <code>@EventHandler</code> annotated method.
-These methods will be invoked when an Event Message is published prior to being handled by any external handlers.</p>
-</li>
-<li>
-<p>A no-arg constructor, which is required by JPA.
-Failure to provide this constructor will result in an exception when loading the Aggregate.</p>
-</li>
-</ol>
+Since the Aggregate is an entity, the <code>@Id</code> annotation is a hard requirement.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>This Aggregate has several '<a href="../multi-entity-aggregates/" class="xref page">Aggregate Members</a>'.
+Since the Aggregate is stored as is, the correct mapping of the entities should be taken into account.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>A <code>@CommandHandler</code> annotated constructor, or differently put the 'command handling constructor'.
+This annotation tells the framework that the given constructor is capable of handling the <code>IssueCardCommand</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>The static <code>AggregateLifecycle#apply(Object&#8230;&#8203;)</code> may be used to publish an Event Message.
+Upon calling this function the provided `Object`s will be published as `EventMessage`s within the scope of the Aggregate they are applied in.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>The Command Handling method will first decide whether the incoming Command is valid to handle at this point.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="7"></i><b>7</b></td>
+<td>After the business logic has been validated, the state of the Aggregate may be adjusted</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="8"></i><b>8</b></td>
+<td>Entities within an Aggregate can listen to the events the Aggregate publishes, by defining an <code>@EventHandler</code> annotated method.
+These methods will be invoked when an Event Message is published prior to being handled by any external handlers.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="9"></i><b>9</b></td>
+<td>A no-arg constructor, which is required by JPA.
+Failure to provide this constructor will result in an exception when loading the Aggregate.</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock note">
 <table>

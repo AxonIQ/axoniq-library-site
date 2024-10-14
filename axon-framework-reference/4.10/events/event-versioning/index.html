@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Event Versioning</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/4.10/events/event-versioning/">
-    <link rel="prev" href="../event-bus-and-event-store/">
+    <link rel="prev" href="../infrastructure/">
     <link rel="next" href="../../queries/">
     <meta name="generator" content="Antora 3.1.9">
     <link rel="stylesheet" href="../../../../_/css/site.css">
@@ -153,12 +153,15 @@
     <a class="nav-link" href="../../axon-framework-commands/">Commands</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Modelling</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregate</a>
+    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Handling</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../axon-framework-commands/modeling/aggregate/">Aggregates</a>
+<ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../axon-framework-commands/modeling/multi-entity-aggregates/">Multi-Entity Aggregates</a>
   </li>
@@ -177,12 +180,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-dispatchers/">Command Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../axon-framework-commands/command-handlers/">Command Handlers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../axon-framework-commands/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -195,10 +192,10 @@
     <a class="nav-link" href="../">Events</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../event-dispatchers/">Event Dispatchers</a>
+    <a class="nav-link" href="../event-handlers/">Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../event-handlers/">Event Handlers</a>
+    <a class="nav-link" href="../event-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
@@ -210,10 +207,13 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../event-processors/streaming/">Streaming Event Processor</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../event-bus-and-event-store/">Event Bus &amp; Event Store</a>
+    <a class="nav-link" href="../infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item is-current-page" data-depth="2">
     <a class="nav-link" href="./">Event Versioning</a>
@@ -355,8 +355,8 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>In the lifecycle of an Axon application events <em>will</em> typically change their format.
-As events are stored indefinitely the application should be able to cope with several versions of an event.
+<p>In the lifecycle of an Axon application, their events <em>will</em> typically change their format.
+As events are stored indefinitely, the application should be able to cope with several versions of an event.
 This chapter will discuss what to keep in mind when creating your events, for backwards (and forwards) compatibility.
 It will also explain the upcasting process.</p>
 </div>
@@ -366,7 +366,7 @@ It will also explain the upcasting process.</p>
 <h2 id="event-upcasting"><a class="anchor" href="#event-upcasting"></a>Event Upcasting</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Due to the ever-changing nature of software applications it is likely that event definitions will also change over time.
+<p>Due to the ever-changing nature of software applications, it is likely that event definitions will also change over time.
 Since the Event Store is considered a read and append-only data source, your application must be able to read all events, regardless of when they were added.
 This is where upcasting comes in.</p>
 </div>
@@ -381,16 +381,21 @@ Manually written upcasters have to be provided to specify how to upcast the old 
 Moreover, upcasters are processed in a chain, meaning that the output of one upcaster is sent to the input of the next.
 This allows you to update events in an incremental manner, writing an upcaster for each new event revision, making them small, isolated, and easy to understand.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Upcasting Benefit</strong></p>
-</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Benefits if Upcasters</div>
 <div class="paragraph">
 <p>Perhaps the greatest benefit of upcasting is that it allows you to do non-destructive refactoring.
 In other words, the complete event history remains intact.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>In this section we&#8217;ll explain how to write an upcaster, describe the different (abstract) implementations of the Upcaster that come with Axon, and explain how the serialized representations of events affects how upcasters are written.</p>
@@ -435,11 +440,14 @@ As such, those options are not provided by the provided <code>IntermediateEventR
 The upcasting process thus does not directly return the end result of the introduced upcast functions, but chains every upcasting function from one revision to another together by stacking <code>IntermediateEventRepresentations</code>.
 Once this process has taken place and the end result is pulled from them, that is when the actual upcasting function is performed on the serialized event.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Conversion Notice</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Different serialization formats</div>
 <div class="paragraph">
 <p>Sometimes the event store can contain events in different serialized formats, since differing <code>Serializer</code> implementations where used.</p>
 </div>
@@ -447,7 +455,9 @@ Once this process has taken place and the end result is pulled from them, that i
 <p>During upcasting it is important to note what the format is of the <code>IntermediateEventRepresentation</code>, as it influences the upcaster solution provided.
 To validate if the intermediate representation supports a given type, you can invoke <code>IntermediateEventRepresentation#canConvertDataTo(Class&lt;?&gt;)</code>.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_provided_abstract_upcaster_implementations"><a class="anchor" href="#_provided_abstract_upcaster_implementations"></a>Provided abstract Upcaster implementations</h3>
@@ -491,22 +501,27 @@ To create an <code>EventTypeUpcaster</code>, it is recommended to use the <code>
 </li>
 </ul>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>What&#8217;s a part of the context in a Context-Aware Upcasters?</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">What&#8217;s part of the context in a Context-Aware Upcasters?</div>
 <div class="paragraph">
 <p>A context-aware upcaster allows you to collect state from previous events.
-As upcasters work on a stream of events, all that can ever belong to the context, is the state from that stream.</p>
+As upcasters work on a stream of events, all that can ever belong to the context is the state of that stream.</p>
 </div>
 <div class="paragraph">
 <p>However, this "stream of events" is not identical at all times.
 For example, when an aggregate is event-sourced, the event stream consists of aggregate instance-specific events.
 Furthermore, the stream of events starts from the <a href="../event-processors/streaming/#tracking-tokens" class="xref page">tracking token&#8217;s</a> position for a <a href="../event-processors/streaming/" class="xref page">Streaming Event Processor</a>.
-Hence, the context contains different state depending on what&#8217;s included in the event stream.</p>
+Hence, the context contains different states depending on what&#8217;s included in the event stream.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -546,8 +561,19 @@ public class ComplaintEvent {
 <div class="paragraph">
 <p>Upcaster from 1.0 revision to 2.0 revision:</p>
 </div>
-<div class="sect3">
-<h4 id="_event_serialized_with_xstream"><a class="anchor" href="#_event_serialized_with_xstream"></a>Event serialized with XStream</h4>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_event_with_xstream" class="tab">
+<p>Event with XStream</p>
+</li>
+<li id="_tabs_1_event_with_jackson" class="tab">
+<p>Event with Jackson</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_event_with_xstream--panel" class="tabpanel" aria-labelledby="_tabs_1_event_with_xstream">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class ComplaintEvent1_to_2Upcaster extends SingleEventUpcaster {
@@ -579,8 +605,7 @@ public class ComplaintEvent {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_event_serialized_with_jackson"><a class="anchor" href="#_event_serialized_with_jackson"></a>Event serialized with Jackson</h4>
+<div id="_tabs_1_event_with_jackson--panel" class="tabpanel" aria-labelledby="_tabs_1_event_with_jackson">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class ComplaintEvent1_to_2Upcaster extends SingleEventUpcaster {
@@ -612,6 +637,8 @@ public class ComplaintEvent {
 </div>
 </div>
 </div>
+</div>
+</div>
 <div class="sect2">
 <h3 id="_configuring_an_upcaster"><a class="anchor" href="#_configuring_an_upcaster"></a>Configuring an Upcaster</h3>
 <div class="paragraph">
@@ -626,8 +653,22 @@ The upcaster chain is what the <code>EventStore</code> uses to attach all the up
 When configuring your upcasters, most scenarios will not require you to touch the <code>EventUpcasterChain</code> directly.
 Instead, consider the following snippets when it comes to registering upcasters:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot_with_order_annotation" class="tab">
+<p>Spring Boot with <code>@Order</code> annotation</p>
+</li>
+<li id="_tabs_2_spring_boot_with_eventupcasterchain_bean" class="tab">
+<p>Spring Boot with <code>EventUpcasterChain</code> bean</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -642,8 +683,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_order_annotation"><a class="anchor" href="#_spring_boot_auto_configuration_order_annotation"></a>Spring Boot auto configuration - <code>@Order</code> annotation</h4>
+<div id="_tabs_2_spring_boot_with_order_annotation--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot_with_order_annotation">
 <div class="paragraph">
 <p>Axon honors Spring&#8217;s <code>Order</code> annotation on upcasters.
 The numbers used in the annotation will dictate the ordering.
@@ -689,8 +729,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_eventupcasterchain_bean"><a class="anchor" href="#_spring_boot_auto_configuration_eventupcasterchain_bean"></a>Spring Boot auto configuration - <code>EventUpcasterChain</code> bean</h4>
+<div id="_tabs_2_spring_boot_with_eventupcasterchain_bean--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot_with_eventupcasterchain_bean">
 <div class="paragraph">
 <p>Adding an <code>EventUpcasterChain</code> bean to the Application Context will tell Axon to configure it for your event source:</p>
 </div>
@@ -713,8 +752,10 @@ public class AxonConfig {
 </div>
 </div>
 </div>
+</div>
+</div>
         <nav class="pagination">
-  <span class="prev"><a href="../event-bus-and-event-store/">Event Bus &amp; Event Store</a></span>
+  <span class="prev"><a href="../infrastructure/">Infrastructure</a></span>
   <span class="next"><a href="../../queries/">Queries</a></span>
 </nav>
     </article>
