@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Query Dispatchers</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/4.10/queries/query-dispatchers/">
-    <link rel="prev" href="../query-processing/">
-    <link rel="next" href="../query-handlers/">
+    <link rel="prev" href="../query-handlers/">
+    <link rel="next" href="../implementations/">
     <meta name="generator" content="Antora 3.1.9">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -84,7 +84,7 @@
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
     <li><a href="../">Queries</a></li>
-    <li><a href="./">Query Dispatchers</a></li>
+    <li><a href="./">Dispatching</a></li>
   </ul>
 </nav>
 <div class="page-actions">
@@ -225,13 +225,10 @@
     <a class="nav-link" href="../">Queries</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../query-processing/">Query Processing</a>
+    <a class="nav-link" href="../query-handlers/">Handling</a>
   </li>
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="./">Query Dispatchers</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../query-handlers/">Query Handlers</a>
+    <a class="nav-link" href="./">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../implementations/">Implementations</a>
@@ -407,18 +404,19 @@
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler // 1.
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler <i class="conum" data-value="1"></i><b>(1)</b>
 public List&lt;String&gt; query(String criteria) {
     // return the query result based on given criteria
 }</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>By default the name of the query is fully qualified class name of query payload (<code>java.lang.String</code> in our case).</p>
-</li>
-</ol>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>By default the name of the query is fully qualified class name of query payload (<code>java.lang.String</code> in our case).</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>However, this behavior can be overridden by stating the <code>queryName</code> attribute of the <code>@QueryHandler</code> annotation.</p>
@@ -428,29 +426,31 @@ public List&lt;String&gt; query(String criteria) {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 1.
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><i class="conum" data-value="1"></i><b>(1)</b>
 GenericQueryMessage&lt;String, List&lt;String&gt;&gt; query =
         new GenericQueryMessage&lt;&gt;("criteria", ResponseTypes.multipleInstancesOf(String.class));
-// 2. send a query message and print query response
+// &lt;2&gt; send a query message and print query response
 queryBus.query(query).thenAccept(System.out::println);</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>It is also possible to state the query name when we are building the query message,</p>
-</li>
-</ol>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>It is also possible to state the query name when we are building the query message,</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>by default this is the fully qualified class name of the query payload.</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The response of sending a query is a Java <code>CompletableFuture</code>,</p>
-</li>
-</ol>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The response of sending a query is a Java <code>CompletableFuture</code>,</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>which depending on the type of the query bus may be resolved immediately.</p>
@@ -530,191 +530,120 @@ public List&lt;CardSummary&gt; handle(FetchCardSummariesQuery query) {
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
 public void on(RedeemedEvt event) {
-    // 1.
+    <i class="conum" data-value="1"></i><b>(1)</b>
     CardSummary summary = entityManager.find(CardSummary.class, event.getId());
     summary.setRemainingValue(summary.getRemainingValue() - event.getAmount());
-    // 2.
-    queryUpdateEmitter.emit(FetchCardSummariesQuery.class,
-                            query -&gt; event.getId().startsWith(query.getFilter().getIdStartsWith()),
-                            summary);
+    <i class="conum" data-value="2"></i><b>(2)</b>
+    queryUpdateEmitter.emit(
+            FetchCardSummariesQuery.class, <i class="conum" data-value="3"></i><b>(3)</b>
+            query -&gt; event.getId().startsWith(query.getFilter().getIdStartsWith()), <i class="conum" data-value="4"></i><b>(4)</b>
+            summary <i class="conum" data-value="5"></i><b>(5)</b>
+    );
 }</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>First, we update our view model by updating the existing card.</p>
-</li>
-<li>
-<p>If there is a subscription query interested in updates about this specific GiftCard we emit an update.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>The first parameter of the emission is the type of the query (<code>FetchCardSummariesQuery</code> in our case)</p>
-</div>
-<div class="paragraph">
-<p>which corresponds to the query type in a previously defined query handler.</p>
-</div>
-<div class="paragraph">
-<p>The second parameter is a predicate which will select the subscription query to be updated.</p>
-</div>
-<div class="paragraph">
-<p>In our case we will only update subscription queries interested in the GiftCard which has been updated.</p>
-</div>
-<div class="paragraph">
-<p>The third parameter is the actual update, which in our case is the card summary.</p>
-</div>
-<div class="paragraph">
-<p>There are several overloads of the emit method present, feel free to take a look at JavaDoc for more specifics on that.</p>
-</div>
-<div class="paragraph">
-<p>The important thing to underline here is that an update is a message and that some overloads take</p>
-</div>
-<div class="paragraph">
-<p>the update message as a parameter (in our case we just sent the payload which was wrapped in the message)</p>
-</div>
-<div class="paragraph">
-<p>which enables us to attach meta-data for example.</p>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>First, we update our view model by updating the existing card.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>If there is a subscription query interested in updates about this specific GiftCard we emit an update.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The first parameter of the emission is the type of the query (<code>FetchCardSummariesQuery</code> in our case) which corresponds to the query type in a previously defined query handler.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The second parameter is a predicate that will select the subscription query to be updated. In our case, we will only update subscription queries interested in the GiftCard which has been updated.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>The third parameter is the actual update, which in our case is the card summary.
+There are several overloads of the emit method present, feel free to take a look at Javadoc for more specifics on that.</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Once we have the query handling and the emitting side implemented, we can issue a subscription query to get the initial state of the GiftCard and be updated once this GiftCard is redeemed:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 1.
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><i class="conum" data-value="1"></i><b>(1)</b>
 commandGateway.sendAndWait(new IssueCmd("gc1", amount));
-// 2.
+<i class="conum" data-value="2"></i><b>(2)</b>
 FetchCardSummariesQuery fetchCardSummariesQuery =
                 new FetchCardSummariesQuery(offset, limit, filter);
-// 3.
+<i class="conum" data-value="3"></i><b>(3)</b>
 SubscriptionQueryResult&lt;List&lt;CardSummary&gt;, CardSummary&gt; fetchQueryResult = queryGateway.subscriptionQuery(
                 fetchCardSummariesQuery,
                 ResponseTypes.multipleInstancesOf(CardSummary.class),
                 ResponseTypes.instanceOf(CardSummary.class));
 
 fetchQueryResult
-//4.
+<i class="conum" data-value="4"></i><b>(4)</b>
                 .handle(cs -&gt; cs.forEach(System.out::println), System.out::println)
-//5.
+<i class="conum" data-value="5"></i><b>(5)</b>
                 .doFinally(it -&gt; fetchQueryResult.close());
 
-// 6.
+<i class="conum" data-value="6"></i><b>(6)</b>
 commandGateway.sendAndWait(new RedeemCmd("gc1", amount));</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Issuing a GiftCard with <code>gc1</code> id and initial value of <code>amount</code>.</p>
-</li>
-<li>
-<p>Creating a subscription query message to get the list of GiftCards</p>
-</li>
-</ol>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Issuing a GiftCard with <code>gc1</code> id and initial value of <code>amount</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Creating a subscription query message to get the list of GiftCards (this initial state is multiple instances of <code>CardSummary</code>)
+and to be updated once the state of GiftCard with id <code>gc1</code> is changed (in our case an update means the card is redeemed).
+The type of the update is a single instance of <code>CardSummary</code>.
+Do note that the type of the update must match the type of the emission side.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Once the message is created, we are sending it via the <code>QueryGateway</code>.
+We receive a query result which contains two components: one is <code>initialResult</code> and the other is <code>updates</code>.
+In order to achieve 'reactiveness' we use <a href="https://projectreactor.io/">Project Reactor</a>'s <code>Mono</code> for <code>initialResult</code> and <code>Flux</code> for <code>updates</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The <code>SubscriptionQueryResult#handle(Consumer&lt;? super I&gt;, Consumer&lt;? super U&gt;)</code> method gives us the possibility to subscribe to the <code>initialResult</code> and the <code>updates</code> in one go. If we want more granular control over the results, we can use the <code>initialResult()</code> and <code>updates()</code> methods on the query result.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>As the <code>queryUpdateEmitter</code> will continue to emit updates even when there are no subscribers, we need to notify the emitting side once we are no longer interested in receiving updates.
+Failing to do so can result in hanging infinitive streams and eventually a memory leak.
+Once we are done with using the subscription query, we need to close the used resource.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>When we issue a <code>RedeemCmd</code>, our event handler in the projection will eventually be triggered,
+which will result in the emission of an update.
+Since we subscribed to updates with the <code>println()</code> method, the update will be printed out once it is received.</td>
+</tr>
+</table>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Mandatory dependency</div>
 <div class="paragraph">
-<p>(this initial state is multiple instances of <code>CardSummary</code>)</p>
+<p>The <code>reactor-core</code> dependency is mandatory for usage of subscription queries. However, it is a compile time dependency, and it is not required for other Axon features.</p>
 </div>
-<div class="paragraph">
-<p>and to be updated once the state of GiftCard with id <code>gc1</code> is changed (in our case an update means the card is redeemed).</p>
-</div>
-<div class="paragraph">
-<p>The type of the update is a single instance of <code>CardSummary</code>.</p>
-</div>
-<div class="paragraph">
-<p>Do note that the type of the update must match the type of the emission side.</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Once the message is created, we are sending it via the <code>QueryGateway</code>.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>We receive a query result which contains two components: one is <code>initialResult</code> and the other is <code>updates</code>.</p>
-</div>
-<div class="paragraph">
-<p>In order to achieve 'reactiveness' we use <a href="https://projectreactor.io/">Project Reactor</a>'s <code>Mono</code> for <code>initialResult</code></p>
-</div>
-<div class="paragraph">
-<p>and <code>Flux</code> for <code>updates</code>.</p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Note</strong></p>
-</div>
-<div class="paragraph">
-<p>Once the subscription query is issued, all updates are queued until the subscription to the <code>Flux</code> of <code>updates</code> is done. This behavior prevents the losing of updates.</p>
-</div>
-<div class="paragraph">
-<p><strong>Note</strong></p>
-</div>
-<div class="paragraph">
-<p>The Framework prevents issuing more than one query message with the same id. If it is necessary to be updated in several different places, create a new query message.</p>
-</div>
-<div class="paragraph">
-<p><strong>Note</strong></p>
-</div>
-<div class="paragraph">
-<p>The <code>reactor-core</code> dependency is mandatory for usage of subscription queries. However, it is a compile time dependency and it is not required for other Axon features.</p>
-</div>
-</blockquote>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The <code>SubscriptionQueryResult#handle(Consumer&lt;? super I&gt;, Consumer&lt;? super U&gt;)</code></p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>method gives us the possibility to subscribe to the <code>initialResult</code> and the <code>updates</code> in one go.</p>
-</div>
-<div class="paragraph">
-<p>If we want more granular control over the results, we can use the <code>initialResult()</code> and <code>updates()</code> methods on the query result.</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>As the <code>queryUpdateEmitter</code> will continue to emit updates even when there are no subscribers, we need to notify the emitting side once we are no longer interested in receiving updates.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>Failing to do so can result in hanging infinitive streams and eventually a memory leak.</p>
-</div>
-<div class="paragraph">
-<p>Once we are done with using subscription query, we need to close the used resource. We can do that in <code>doFinally</code> hook.</p>
-</div>
-<div class="paragraph">
-<p>As an alternative to the <code>doFinally</code> hook, there is the <code>Flux#using</code> API. This is synonymous</p>
-</div>
-<div class="paragraph">
-<p>to the try-with-resource Java API:</p>
-</div>
-<div class="paragraph">
-<p>`text
-   Flux.using( () -&gt; fetchQueryResult,
-            queryResult -&gt; queryResult.handle(&#8230;&#8203;, &#8230;&#8203;),
-            SubscriptionQueryResult::close
-        );
-`</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>When we issue a <code>RedeemCmd</code>, our event handler in the projection will eventually be triggered,</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>which will result in the emission of an update.</p>
-</div>
-<div class="paragraph">
-<p>Since we subscribed to updates with the <code>println()</code> method, the update will be printed out once it is received.</p>
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -741,29 +670,31 @@ Note that the <code>streamingQuery</code> method <strong>is lazy</strong>, meani
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler
 public List&lt;CardSummary&gt; handle(FetchCardSummariesQuery query) {
         ...
-    return cardRepository.findAll(); //1
+    return cardRepository.findAll(); <i class="conum" data-value="1"></i><b>(1)</b>
 }
         ...
 
 public Publisher&lt;CardSummary&gt; consumer() {
-        return queryGateway.streamingQuery(query, CardSummary.class); //2
+        return queryGateway.streamingQuery(query, CardSummary.class); <i class="conum" data-value="2"></i><b>(2)</b>
 }</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>We are querying the <code>cardRepository</code> for all the cards. The repository can potentially return a result set containing
-thousands of items.</p>
-</li>
-<li>
-<p>We are using the <code>queryGateway</code> to issue the streaming query. If we used a point-to-point query with
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>We are querying the <code>cardRepository</code> for all the cards. The repository can potentially return a result set containing
+thousands of items.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>We are using the <code>queryGateway</code> to issue the streaming query. If we used a point-to-point query with
 <code>multipleInstanceOf(CardSummary.class)</code> response type, we would get an extensive list transferred as a single result
 message over the network. This result can potentially cause a buffer overflow or maximum message size violation.
 Instead of the multiple-instance-of approach, we use the <code>streamingQuery(query, CardSummary.class)</code>. This method will
-convert our response to a stream and chunk the result into smaller messages containing the <code>CardSummary</code> instances.</p>
-</li>
-</ol>
+convert our response to a stream and chunk the result into smaller messages containing the <code>CardSummary</code> instances.</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Natively, if we want fine-grained control of the producing stream, we can use for example Project Reactor&#8217;s <code>Flux</code> as the return type:</p>
@@ -781,11 +712,14 @@ public Flux&lt;CardSummary&gt; handle(FetchCardSummariesQuery query) {
 <p>When using a <code>Flux</code> as the return type, we can control backpressure, stream cancellation and implement more complex
 features like pagination.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Transaction Leaking Concerns</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Transaction Leaking Concerns</div>
 <div class="paragraph">
 <p>Once a consumer of the streaming query receives the <code>Publisher</code> to subscribe to, the transaction will be considered
 completed successfully. That means that any subsequent messages on the stream will not be part of the transaction,
@@ -794,7 +728,9 @@ invoke any rollback method. This has the implication that the streaming query sh
 (within message handlers or any other transactional methods) to chain other transactional actions (like sending a
 command or query).</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="sect3">
 <h4 id="_streaming_back_pressure"><a class="anchor" href="#_streaming_back_pressure"></a>Streaming back-pressure</h4>
@@ -857,16 +793,21 @@ public Flux&lt;CardSummary&gt; handle(FetchCardSummariesQuery query) {
 <p>The example above shows how the <code>timeout</code> operator is used to cancel a request if no responses have been observed during
 a five-second timespan.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Reactor dependency</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Mandatory dependency</div>
 <div class="paragraph">
 <p>The <code>reactor-core</code> dependency is mandatory for usage of streaming queries. However, it is a compile time dependency
 and it is not required for other Axon features.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p><a href="https://youtu.be/lxonQnu1txQ">Axon Coding Tutorial #5: - Connecting the UI</a></p>
@@ -876,8 +817,8 @@ and it is not required for other Axon features.</p>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../query-processing/">Query Processing</a></span>
-  <span class="next"><a href="../query-handlers/">Query Handlers</a></span>
+  <span class="prev"><a href="../query-handlers/">Handling</a></span>
+  <span class="next"><a href="../implementations/">Implementations</a></span>
 </nav>
     </article>
   </div>
