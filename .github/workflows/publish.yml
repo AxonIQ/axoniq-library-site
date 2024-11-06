@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Install Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v4
       with:
         node-version: '20'
     - name: Install Antora
@@ -25,6 +25,8 @@ jobs:
       run: |
         wget https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz
         sudo tar -xvzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz -C /usr/local/bin vale
+    - name: Start Kroki
+      uses: hoverkraft-tech/compose-action@v2.0.2
     - name: Generate Site
       run: |
         export GIT_CREDENTIALS='https://axoniq-devops:${{ secrets.LIBRARY_DEVBOT_TOKEN }}@github.com'
@@ -32,12 +34,14 @@ jobs:
         npx antora playbook.yaml --log-level debug
     - name: Check broken link
       run: node check-broken-links.js
+    - name: Create custom redirects
+      run: node create-custom-redirects.js
     - name: Create `.nojekyll`
       run: touch build/site/.nojekyll
     - name: Create `CNAME` to serve github pages from our own domain
       run: echo "docs.axoniq.io" > build/site/CNAME
     - name: Publish to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: build/site

@@ -29,7 +29,7 @@ cloneOrPullMaster "extension-springcloud" "https://github.com/AxonFramework/exte
 cloneOrPullMaster "extension-tracing" "https://github.com/AxonFramework/extension-tracing.git" "master"
 cloneOrPullMaster "axon-server" "https://github.com/AxonIQ/axon-server.git" "master"
 cloneOrPullMaster "axon-server-image-build" "https://github.com/AxonIQ/axon-server-image-build.git" "main"
-cloneOrPullMaster "axon-synapse" "https://github.com/AxonIQ/axon-synapse.git" "master"
+cloneOrPullMaster "axon-synapse" "https://github.com/AxonIQ/axon-synapse.git" "synapse-0.11"
 cloneOrPullMaster "console-web" "https://github.com/AxonIQ/console-web.git" "main"
 cloneOrPullMaster "giftcard-demo" "https://github.com/AxonIQ/giftcard-demo.git" "master"
 cloneOrPullMaster "bike-rental-quick-start" "https://github.com/AxonIQ/bike-rental-quick-start.git" "main"
