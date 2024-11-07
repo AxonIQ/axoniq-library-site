@@ -22,14 +22,13 @@ program
     .parse(process.argv);
 const options = program.opts()
 
-
 /**
  * The site maps to check for redirects. It will have two kind of mappings:
  * - Full replace mappings, which will replace the URL with the target URL
  * - Rewrite mappings, which will rebase the url to a different location
  */
-const siteMaps = [
-    "https://legacydocs.axoniq.io/reference-guide/sitemap.xml",
+const sitemaps = [
+    fs.readFileSync("old-sitemap.xml", "utf-8"),
 ]
 /**
  * The mappings for the redirects, in which each url that starts with the key will be rewritten.
@@ -37,8 +36,6 @@ const siteMaps = [
  */
 const rewriteMappings = {
     "/axon-framework/": `/axon-framework-reference/latest/`,
-    "/axon-server/introduction": `/axon-server-reference/latest/`,
-    "/axon-server/": `/axon-server-reference/latest/axon-server/`,
     "/extensions/spring-amqp": "/amqp-extension-reference/latest",
     "/extensions/jgroups": "/jgroups-extension-reference/latest",
     "/extensions/jobrunrpro": "/jobrunr-pro-extension-reference/latest",
@@ -64,6 +61,7 @@ const rewriteMappings = {
 const fullReplaceMappings = {
     "/architecture-overview": "https://www.axoniq.io/concepts/cqrs-and-event-sourcing",
     "/axon-server-introduction": "https://www.axoniq.io/products/axon-server",
+    "/axon-server/": `/axon-server-reference/latest/`,
     "/release-notes/rn-axon-framework": `https://docs.axoniq.io/axon-framework-reference/latest/release-notes`,
     "/release-notes/rn-axon-server": `/axon-server-reference/latest/release-notes/`,
     "/release-notes/rn-extensions/rn-jgroups": "/jgroups-extension-reference/latest/release-notes/",
@@ -249,9 +247,8 @@ async function run() {
         return redirectFallback
     }
 
-    const siteMapResponses = await Promise.all(siteMaps.map(url => axios.get(url)))
-    for (const response of siteMapResponses) {
-        const allUrls = parser.parse(response.data).urlset.url
+    for (const sitemap of sitemaps) {
+        const allUrls = parser.parse(sitemap).urlset.url
             .map(url => url.loc.split("/reference-guide")[1])
             .filter(url => url !== "/")
             .map(url => ({url, redirect: determineRedirectUrlBasedOnMappings(url)}))
