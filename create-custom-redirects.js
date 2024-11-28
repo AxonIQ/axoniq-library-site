@@ -52,6 +52,7 @@ const rewriteMappings = {
     "/appendices/meta-annotations": "/meta-annotations-guide/latest",
     "/appendices/identifier-generation": "/identifier-generation-guide/latest",
     "/appendices/query-reference": "/axon-server-query-language-guide",
+    "/axoniq-playbook-main/main" : "/playbook",
 }
 
 /**
