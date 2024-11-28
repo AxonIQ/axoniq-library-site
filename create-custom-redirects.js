@@ -3,7 +3,7 @@ const {XMLParser, XMLBuilder, XMLValidator} = require("fast-xml-parser");
 const express = require('express');
 const childProcess = require('child_process');
 const fs = require('fs');
-const { program } = require('commander');
+const {program} = require('commander');
 const {rimraf} = require("rimraf");
 
 
@@ -30,6 +30,10 @@ const options = program.opts()
 const sitemaps = [
     fs.readFileSync("old-sitemap.xml", "utf-8"),
 ]
+
+const additionalOverrides = {
+    "/axoniq-playbook-main/main/": "/playbook/"
+}
 /**
  * The mappings for the redirects, in which each url that starts with the key will be rewritten.
  * For example, "/axon-framework/modeling" will be rewritten to "/axon-framework-reference/latest/modeling"
@@ -52,7 +56,6 @@ const rewriteMappings = {
     "/appendices/meta-annotations": "/meta-annotations-guide/latest",
     "/appendices/identifier-generation": "/identifier-generation-guide/latest",
     "/appendices/query-reference": "/axon-server-query-language-guide",
-    "/axoniq-playbook-main/main" : "/playbook",
 }
 
 /**
@@ -197,10 +200,11 @@ String.prototype.padRight = function (len) {
 
 
 const parser = new XMLParser();
+
 async function run() {
 
     const baseUrlForChecks = "http://localhost:3001"
-    if(options.build) {
+    if (options.build) {
         await rimraf("build")
         childProcess.execSync("npx antora playbook.yaml", {stdio: 'inherit'})
     }
@@ -208,7 +212,7 @@ async function run() {
     latestDefinitions.forEach(definition => {
         console.log("Generating latest urls for " + definition.baseFolder + " now")
         fs.readdirSync(`build/site/${definition.baseFolder}/${definition.latestVersion}`, {recursive: true}).forEach(v => {
-            if(v.endsWith(".html")) {
+            if (v.endsWith(".html")) {
                 console.log("Generating latest redirect for " + v)
                 const folderName = v.replaceAll("index.html", "");
                 fs.mkdirSync(`build/site/${definition.baseFolder}/latest/${folderName}`, {recursive: true})
@@ -248,6 +252,24 @@ async function run() {
         return redirectFallback
     }
 
+    const createRedirect = (oldUrl, newUrl) => {
+        const fileContent = redirectTemplate.replaceAll("__TARGET_FILE__", newUrl)
+        const path = "build/site" + oldUrl;
+        const fileName = path + "/index.html";
+        if (fs.existsSync(fileName)) {
+            console.log("no need to create redirect for " + oldUrl + " => " + newUrl + " in " + path)
+            return
+        }
+        fs.mkdir(path, {recursive: true}, (err) => {
+            if (err) {
+                console.error("Error creating directory: ", err)
+            } else {
+                fs.writeFileSync(fileName, fileContent)
+                console.log("Created redirect for " + oldUrl + " => " + newUrl + " in " + path)
+            }
+        })
+    }
+
     for (const sitemap of sitemaps) {
         const allUrls = parser.parse(sitemap).urlset.url
             .map(url => url.loc.split("/reference-guide")[1])
@@ -274,23 +296,13 @@ async function run() {
 
         console.log("All urls are valid")
         allUrls.forEach(url => {
-            const fileContent = redirectTemplate.replaceAll("__TARGET_FILE__", url.redirect)
-            const path = "build/site/reference-guide" + url.url;
-            const fileName = path + "/index.html";
-            if(fs.existsSync(fileName)) {
-                console.log("no need to create redirect for " + url.url + " => " + url.redirect + " in " + path)
-                return
-            }
-            fs.mkdir(path, {recursive: true}, (err) => {
-            if (err) {
-              console.error("Error creating directory: ", err)
-            } else {
-                fs.writeFileSync(fileName, fileContent)
-                console.log("Created redirect for " + url.url + " => " + url.redirect + " in " + path)
-            }
-          })
+            createRedirect("/reference-guide" + url.url, url.redirect)
         })
     }
+
+    Object.keys(additionalOverrides).forEach(oldUrl => {
+        createRedirect(oldUrl, additionalOverrides[oldUrl])
+    })
 
     server.close()
 
