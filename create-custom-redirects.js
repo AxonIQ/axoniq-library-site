@@ -121,10 +121,6 @@ const latestDefinitions = [
         latestVersion: "4.10"
     },
     {
-        baseFolder: "relational-database-guide",
-        latestVersion: "4.10"
-    },
-    {
         baseFolder: "axon-server-reference",
         latestVersion: "v2024.1"
     },
