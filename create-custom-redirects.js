@@ -51,7 +51,7 @@ const rewriteMappings = {
     "/extensions/spring-aot": "/spring-aot-extension-reference/latest",
     "/extensions/spring-cloud": "/spring-cloud-extension-reference/latest",
     "/extensions/tracing": "/tracing-extension-reference/latest",
-    "/appendices/rdbms-tuning": "/tuning/rdbms-tuning/latest",
+    // "/appendices/rdbms-tuning": "/tuning/rdbms-tuning/latest",
     "/appendices/message-handler-tuning": "/message-handler-customization-guide/latest",
     "/appendices/meta-annotations": "/meta-annotations-guide/latest",
     "/appendices/identifier-generation": "/identifier-generation-guide/latest",
