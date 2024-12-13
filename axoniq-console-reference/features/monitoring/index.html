@@ -129,18 +129,15 @@
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="../../workspaces/">Workspaces</a>
+    <a class="nav-link" href="../../environments/">Workspaces and Environments</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../workspaces/team-management/">Team Management</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../workspaces/roles/">AxonIQ Console Roles</a>
+    <a class="nav-link" href="../../environments/roles/">AxonIQ Console Roles</a>
   </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../../billing/">Billing</a>
+    <a class="nav-link" href="../../subscriptions/">Subscriptions</a>
   </li>
 </ul>
   </li>
@@ -160,29 +157,21 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>AxonIQ Console provides a comprehensive monitoring solution for your Axon Framework applications.
-By defining conditions based on <a href="../metrics/" class="xref page">Framework Metrics</a>, you can get notified when something goes wrong in your application.
+<p>AxonIQ Console provides a comprehensive monitoring solution for your Axon Server cluster and Axon Framework applications.
+By defining conditions based on the <a href="../axon-server/" class="xref page">Axon Server health status</a> or <a href="../metrics/" class="xref page">Axon Framework metrics</a>, you can get notified when something goes wrong.
 This way, you can take action before it becomes a problem.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>Currently, monitoring is only available for Axon Framework applications.
-Monitoring for Axon Server instances is planned for a future release.</p>
 </div>
-</td>
-</tr>
-</table>
 </div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How it works</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>You can set up conditions for any metrics available in AxonIQ Console, which are collected by the <a href="../../connectors/axon-framework/" class="xref page">Axon Framework Client for AxonIQ Console</a> automatically.
-These conditions are checked once per minute by AxonIQ Console.
-If thresholds are exceeded, an alert is created.</p>
+<p>The conditions of the workspace, and individual resources, are checked once per minute against
+the metrics and health collected by AxonIQ Console.
+When a condition is met, a pending alert is created of the defined level by the condition.
+If the condition is met for the duration specified in the condition,
+the alert will no longer be pending and be sent to the configured <a href="#integrations">integrations</a>.</p>
 </div>
 </div>
 </div>
@@ -190,8 +179,24 @@ If thresholds are exceeded, an alert is created.</p>
 <h2 id="_conditions"><a class="anchor" href="#_conditions"></a>Conditions</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>In the Monitoring tab, you can set up conditions for all instances of those resources at once.
-This way, you can for example set up a condition that triggers an alert when the ingest latency of any event processor in any application exceeds a certain threshold.</p>
+<p>You can set up conditions for all monitored resources in your environment.
+For an overview of all the possible metrics to monitor, see <a href="#available_metrics">available metrics</a>.
+To provide a good starting point, AxonIQ Console sets up some conditions by default.</p>
+</div>
+<div class="paragraph">
+<p>You can set up a condition for the entire environment at once.
+So, for example, you can set up a condition that triggers an alert
+when the ingest latency of any event processor in any application exceeds a certain threshold.</p>
+</div>
+<div class="paragraph">
+<p>However, sometimes there is a subset of resources that have different requirements. For example, you have a specific event processor that calls a slow legacy system, and can be slower than normal.
+You can then define a condition for the ingest latency of that specific event processor, overriding the
+environment-wide condition for that specific processor alone.</p>
+</div>
+<div class="sect2">
+<h3 id="_environment_wide_conditions"><a class="anchor" href="#_environment_wide_conditions"></a>Environment-wide conditions</h3>
+<div class="paragraph">
+<p>On the Monitoring page, you can set up the environment-wide conditions.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -199,7 +204,7 @@ This way, you can for example set up a condition that triggers an alert when the
 </div>
 </div>
 <div class="paragraph">
-<p>You can add a condition to any resource type by clicking the "Add new condition" button.
+<p>You can add a condition to any resource type by clicking "Add new condition".
 This adds a new condition to the list that you can configure and then save.
 The formula has the following parts:</p>
 </div>
@@ -264,10 +269,12 @@ This makes the entire row editable.
 You can change any field, except the level and metric.
 If you want to change the level or metric, you need to delete the condition and add a new one.</p>
 </div>
+</div>
 <div class="sect2">
-<h3 id="_specific_instances"><a class="anchor" href="#_specific_instances"></a>Specific instances</h3>
+<h3 id="_resource_specific_conditions"><a class="anchor" href="#_resource_specific_conditions"></a>Resource-specific conditions</h3>
 <div class="paragraph">
-<p>If you want to set up conditions for a specific instance of a resource, you can do so by navigating to the resource in the application and clicking "Configure" next to the Alerts header in the top right corner.
+<p>If you want to set up conditions for a specific resource,
+you can do so by navigating to the resource and clicking "Configure" next to the Alerts header in the top right corner.
 This opens a dialog where you can add a new condition for that specific instance.</p>
 </div>
 <div class="imageblock">
@@ -278,20 +285,15 @@ This opens a dialog where you can add a new condition for that specific instance
 <div class="paragraph">
 <p>Setting up conditions for a specific instance works similar to setting up conditions for all instances.
 You can <a href="#available_metrics">find a list of all available metrics and their defaults below</a>.
-After adding a specific condition, it can be found in the resource itself, and in the Overrides section of the Monitoring tab.
-This way you can easily see which resources have specific conditions set up.</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="../../_images/monitoring-override-section.png" alt="Override page of the monitoring section showing a handler override" width="100%">
-</div>
+After adding a specific condition, it can be found in the resource itself.</p>
 </div>
 <div class="paragraph">
-<p>In addition, the Conditions section of the Monitoring tab will show "x override(s)" when a resource has specific conditions set up.</p>
+<p>Conditions with an override are shown on the Monitoring page by a clickable text on the
+condition&#8217;s row that will open a dialog with the overrides defined.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="../../_images/monitoring-override-in-conditions.png" alt="Screenshot of the Monitoring Conditions screen in AxonIQ Console with an override shown" width="100%">
+<img src="../../_images/monitoring-override-dialog.png" alt="Override page of the monitoring section showing a handler override" width="100%">
 </div>
 </div>
 </div>
@@ -302,7 +304,7 @@ This way you can easily see which resources have specific conditions set up.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>When a condition is met, an alert is created.
-You can see all alerts in the Alerts section of the Monitoring tab.
+You can see all alerts in the "Current alerts" section on the Monitoring page.
 Each resource page also has an Alerts section where you can see all alerts for that specific resource.
 You can also see a badge in all tables where resources are listed with the number of alerts, like in the example below.</p>
 </div>
@@ -321,8 +323,8 @@ You can also see a badge in all tables where resources are listed with the numbe
 <div class="sectionbody">
 <div class="paragraph">
 <p>AxonIQ Console can send alerts to various integrations.
-Currently, only Slack is supported.
-More integrations are planned for a future release.</p>
+This feature is only available in the AxonIQ Professional plan. You can get started by going to the
+Integrations page.</p>
 </div>
 <div class="sect2">
 <h3 id="_slack"><a class="anchor" href="#_slack"></a>Slack</h3>
@@ -343,18 +345,24 @@ More integrations are planned for a future release.</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>Due to the dynamic nature of Slack, we cannot provide a step-by-step guide here.
-However, we can provide you with the information you need to set up the integration.
-You can find this information in the Integrations section of the Monitoring tab.</p>
+<p>Due to the dynamic nature of set-up instructions, we cannot provide a step-by-step guide here.
+However, you can find this information on the Integrations page.</p>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="../../_images/monitoring-integrations.png" alt="Screenshot of the Integrations section in the Monitoring tab in AxonIQ Console" width="100%">
 </div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_email"><a class="anchor" href="#_email"></a>Email</h3>
 <div class="paragraph">
-<p>The IDs and codes in the above image are unique to your workspace, and the codes in the image are not valid.
-You can find the correct codes in your workspace.</p>
+<p>Setting up email integration is easy. Just enter the email address, the level of the alerts you want to receive, and click "Add integration".</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../_images/monitoring-email-integration.png" alt="monitoring email integration">
+</div>
 </div>
 </div>
 </div>
@@ -387,13 +395,13 @@ Some of these are automatically set up for you when you start using AxonIQ Conso
 <td class="tableblock halign-left valign-top"><p class="tableblock">Message Handler</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Error Rate</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 1%</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Critical</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Message Handler</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Latency (P90)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 200 ms</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Critical</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Message Handler</p></td>
@@ -405,31 +413,31 @@ Some of these are automatically set up for you when you start using AxonIQ Conso
 <td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Error Rate</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 1%</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Critical</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Latency (P90)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 200 ms</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Critical</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Lock Time (P90)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 25 ms</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Load Time (P90)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 100 ms</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Event Commit Time (P90)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 300 ms</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Event Processor</p></td>
@@ -441,43 +449,43 @@ Some of these are automatically set up for you when you start using AxonIQ Conso
 <td class="tableblock halign-left valign-top"><p class="tableblock">Event Processor</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Ingest latency</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 100 ms</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Event Processor</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Commit latency</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 300 ms</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Event Processor</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">DLQ Size</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Critical</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Application</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Replica Count</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&lt; 1</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Critical</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Application</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">CPU Usage</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 80%</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Application</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Host CPU Usage</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 80%</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Application</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Heap Usage</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 80%</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Application</p></td>
@@ -489,13 +497,91 @@ Some of these are automatically set up for you when you start using AxonIQ Conso
 <td class="tableblock halign-left valign-top"><p class="tableblock">Application</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Query Bus Usage</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 80%</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Application</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Command Bus Usage</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 80%</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, Major</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Used connections count</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Used connections percentage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 80%</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Free connections percentage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&#8656; 2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Free connections percentage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt; 20%</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Used connections count</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Used connections percentage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 80%</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Free connections percentage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&#8656; 2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Free connections percentage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt; 20%</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server instance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unhealthy connections</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server instance disk</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Free space in MB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt; 1000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server replication group</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Healthy replicas</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt; 1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server replication group</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unhealthy replicas</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">!= 0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server replication group</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unapplied entries</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt; 100</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
 </tr>
 </tbody>
 </table>
