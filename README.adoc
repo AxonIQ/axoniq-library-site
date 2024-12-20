@@ -1,11 +1,70 @@
-= AxonIQ Library
+= AxonIQ Documentation
 
-This repository contains the code for the https://library.axoniq.io[AxonIQ Library site].
-
-The https://library.axoniq.io/meta[contribution guide] contains information about the intention, design consideration, structure, build process, etc. Please refer to it if you would like to contribute.
+This repository contains the code for the https://docs.axoniq.io[AxonIQ Documentation site].
 
 Some notable resources:
 
-* https://library.axoniq.io/meta/design/doc-system.html[Explanation of the documentation system]
-* https://library.axoniq.io/meta/overview/build.html[Instructions how to build the library]
-* https://library.axoniq.io/meta/reference/improvements.html[List of pages needing improvements]
+* https://docs.axoniq.io/meta/design/doc-system.html[Explanation of the documentation system]
+* https://docs.axoniq.io/meta/overview/build.html[Instructions how to build the documentation]
+* https://docs.axoniq.io/meta/reference/improvements.html[List of pages needing improvements]
+
+== Building and serving the documentation
+
+To build the documentation, first install the requirements:
+[source,shell]
+----
+npm install
+VALE_VERSION=3.3.0
+wget https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz
+sudo tar -xvzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz -C /usr/local/bin vale
+----
+
+Then run te following to download all repositories locally
+[source,shell]
+----
+cd localLinks
+sh update.sh
+cd ../
+----
+
+Now you can build the documentation:
+
+[source,shell]
+----
+npm run build:dev
+----
+
+And serve it locally on port 3000 (http://localhost:3000/)
+
+[source,shell]
+----
+npm run serve
+----
+
+== Checking links
+
+A script has been written that crawls the documentation and checks all links. To run it, execute the following command after you have built the documentation
+
+[source,shell]
+----
+npm run check-links
+----
+
+[TIP]
+This script also runs during the build process, and will prevent the build from succeeding if it finds any broken links.
+
+== Redirects
+
+As Antora does not support everything, the `create-custom-redirects.js` script will be used during the build to generate two types of redirects:
+
+1. Redirects for `latest` of Axon Framework and Axon Server reference documentations to the actual version.
+2. Redirects for the old reference guide to the new reference guide, based on the sitemap.xml.
+
+You can run the script manually by executing the following command:
+
+[source,shell]
+----
+node create-custom-redirects.js --build
+----
+
+The `--build` flag will clear out the build directory and rebuild the documentation before generating the redirects.
