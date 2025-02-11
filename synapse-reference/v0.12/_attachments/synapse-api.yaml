@@ -1,0 +1,1954 @@
+openapi: 3.0.3
+info:
+  title: Axon Synapse API
+  description: API for Axon Synapse http services
+  version: 1.0.0
+security:
+  - ApiKeyAuth: []
+paths:
+  /v1/handlers/commands/endpointTypes:
+    get:
+      operationId: commandEndpointTypes
+      summary: Returns a list of all endpoint types for commands
+      tags:
+        - command-handlers
+      responses:
+        '200':
+          description: A list of executor type names and descriptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointTypes'
+        '500':
+          $ref: '#/components/responses/500'
+  /v1/handlers/queries/endpointTypes:
+    get:
+      operationId: queryEndpointTypes
+      summary: Returns a list of all endpoint types for queries
+      tags:
+        - query-handlers
+      responses:
+        '200':
+          description: A list of executor type names and descriptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointTypes'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /v1/handlers/events/endpointTypes:
+    get:
+      operationId: eventEndpointTypes
+      summary: Returns a list of all endpoint types for events
+      tags:
+        - event-handlers
+      responses:
+        '200':
+          description: A list of executor type names and descriptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointTypes'
+        '500':
+          $ref: '#/components/responses/500'
+  /v1/handlers/commands:
+    get:
+      operationId: listCommandHandlersAllContexts
+      summary: Returns a list of command handlers of all contexts
+      tags:
+        - command-handlers
+      responses:
+        '200':
+          description: An object containing an array of command handlers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfCommandHandlers'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /v1/contexts/{context}/handlers/commands:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+    get:
+      operationId: listCommandHandlers
+      summary: Returns a list of command handlers
+      tags:
+        - command-handlers
+      responses:
+        '200':
+          description: An object containing an array of command handlers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfCommandHandlers'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    post:
+      operationId: registerCommandHandler
+      summary: Registers a new command handler
+      tags:
+        - command-handlers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandHandlerRegistration'
+      responses:
+        '201':
+          description: An object containing the command handler
+          headers:
+            Location:
+              schema:
+                $ref: '#/components/schemas/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandHandler'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      callbacks:
+        Command:
+          $ref: '#/components/callbacks/Command'
+        CommandMessage:
+          $ref: '#/components/callbacks/CommandMessage'
+  /v1/contexts/{context}/handlers/commands/{commandHandlerId}:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+      - in: path
+        name: commandHandlerId
+        description: Command handler id
+        schema:
+          $ref: '#/components/schemas/CommandHandlerId'
+        required: true
+    get:
+      operationId: getCommandHandler
+      summary: Returns the command handler
+      tags:
+        - command-handlers
+      responses:
+        '200':
+          description: An object containing the command handler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandHandler'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    put:
+      operationId: replaceCommandHandler
+      summary: Creates or replaces the command handler
+      tags:
+        - command-handlers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandHandlerRegistration'
+      responses:
+        '200':
+          description: An object containing the command handler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandHandler'
+        '201':
+          description: An object containing the command handler
+          headers:
+            Location:
+              schema:
+                $ref: '#/components/schemas/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandHandler'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      callbacks:
+        Command:
+          $ref: '#/components/callbacks/Command'
+        CommandMessage:
+          $ref: '#/components/callbacks/CommandMessage'
+    delete:
+      operationId: unregisterCommandHandler
+      summary: Unregisters the command handler
+      tags:
+        - command-handlers
+      responses:
+        '204':
+          description: Command handler has been unregistered
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
+    patch:
+      operationId: enableCommandHandler
+      summary: Enables/disables the command handler
+      tags:
+        - command-handlers
+      parameters:
+        - $ref: '#/components/parameters/Enabled'
+      responses:
+        '200':
+          description: Command handler has been enabled/disabled
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /v1/contexts/{context}/commands:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+    post:
+      operationId: sendCommandMessage
+      summary: Sends the command message
+      tags:
+        - commands
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandMessage'
+      responses:
+        '200':
+          description: The command response message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResponseMessage'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '502':
+          $ref: '#/components/responses/502'
+        '504':
+          $ref: '#/components/responses/504'
+  /v1/contexts/{context}/commands/{commandName}:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+      - $ref: '#/components/parameters/MessageId'
+      - $ref: '#/components/parameters/PayloadType'
+      - $ref: '#/components/parameters/PayloadRevision'
+      - $ref: '#/components/parameters/Priority'
+      - $ref: '#/components/parameters/RoutingKey'
+      - in: path
+        name: commandName
+        description: Command name
+        schema:
+          $ref: '#/components/schemas/CommandName'
+        required: true
+    post:
+      operationId: sendCommand
+      summary: Sends the command
+      tags:
+        - commands
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/AnyPayload'
+      responses:
+        '200':
+          description: The command response
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AnyPayload'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '502':
+          $ref: '#/components/responses/502'
+        '504':
+          $ref: '#/components/responses/504'
+  /v1/handlers/queries:
+    get:
+      operationId: listQueryHandlersAllContexts
+      summary: Returns a list of query handlers of all contexts
+      tags:
+        - query-handlers
+      responses:
+        '200':
+          description: An object containing an array of query handlers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfQueryHandlers'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /v1/contexts/{context}/handlers/queries:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+    get:
+      operationId: listQueryHandlers
+      summary: Returns a list of query handlers
+      tags:
+        - query-handlers
+      responses:
+        '200':
+          description: An object containing an array of query handlers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfQueryHandlers'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    post:
+      operationId: registerQueryHandler
+      summary: Registers a new query handler
+      tags:
+        - query-handlers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryHandlerRegistration'
+      responses:
+        '201':
+          description: An object containing the query handler
+          headers:
+            Location:
+              schema:
+                $ref: '#/components/schemas/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryHandler'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      callbacks:
+        Query:
+          $ref: '#/components/callbacks/Query'
+        QueryMessage:
+          $ref: '#/components/callbacks/QueryMessage'
+  /v1/contexts/{context}/handlers/queries/{queryHandlerId}:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+      - in: path
+        name: queryHandlerId
+        description: Query handler id
+        schema:
+          $ref: '#/components/schemas/QueryHandlerId'
+        required: true
+    get:
+      operationId: getQueryHandler
+      summary: Returns the query handler
+      tags:
+        - query-handlers
+      responses:
+        '200':
+          description: An object containing the query handler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryHandler'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    put:
+      operationId: replaceQueryHandler
+      summary: Creates or replaces the query handler
+      tags:
+        - query-handlers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryHandlerRegistration'
+      responses:
+        '200':
+          description: An object containing the query handler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryHandler'
+        '201':
+          description: An object containing the query handler
+          headers:
+            Location:
+              schema:
+                $ref: '#/components/schemas/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryHandler'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      callbacks:
+        Query:
+          $ref: '#/components/callbacks/Query'
+        QueryMessage:
+          $ref: '#/components/callbacks/QueryMessage'
+    delete:
+      operationId: unregisterQueryHandler
+      summary: Unregisters the query handler
+      tags:
+        - query-handlers
+      responses:
+        '204':
+          description: Query handler has been unregistered
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    patch:
+      operationId: enableQueryHandler
+      summary: Enables/disables the query handler
+      tags:
+        - query-handlers
+      parameters:
+        - $ref: '#/components/parameters/Enabled'
+      responses:
+        '200':
+          description: Query handler has been enabled/disabled
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /v1/contexts/{context}/queries:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+    post:
+      operationId: queryMessage
+      summary: Issues the query message
+      tags:
+        - queries
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryMessage'
+      responses:
+        '200':
+          description: The query response message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponseMessage'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '502':
+          $ref: '#/components/responses/502'
+        '504':
+          $ref: '#/components/responses/504'
+  /v1/contexts/{context}/queries/{queryName}:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+      - $ref: '#/components/parameters/MessageId'
+      - $ref: '#/components/parameters/PayloadType'
+      - $ref: '#/components/parameters/PayloadRevision'
+      - $ref: '#/components/parameters/ResponseType'
+      - $ref: '#/components/parameters/ResponseTypeEncoding'
+      - $ref: '#/components/parameters/ResponseCardinality'
+      - $ref: '#/components/parameters/NumberOfResponders'
+      - in: path
+        name: queryName
+        description: Query name
+        schema:
+          $ref: '#/components/schemas/QueryName'
+        required: true
+    post:
+      operationId: query
+      summary: Issues the query
+      tags:
+        - queries
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/AnyPayload'
+      responses:
+        '200':
+          description: The query response
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AnyPayload'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '502':
+          $ref: '#/components/responses/502'
+        '504':
+          $ref: '#/components/responses/504'
+  /v1/handlers/events:
+    get:
+      operationId: listEventHandlersOfAllContexts
+      summary: Returns a list of event handlers of all contexts
+      tags:
+        - event-handlers
+      responses:
+        '200':
+          description: An object containing an array of event handlers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfEventHandlers'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /v1/contexts/{context}/handlers/events:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+    get:
+      operationId: listEventHandlers
+      summary: Returns a list of event handlers
+      tags:
+        - event-handlers
+      responses:
+        '200':
+          description: An object containing an array of event handlers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfEventHandlers'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    post:
+      operationId: registerEventHandler
+      summary: Registers a new event handler
+      tags:
+        - event-handlers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventHandlerRegistration'
+      responses:
+        '201':
+          description: An object containing the event handler
+          headers:
+            Location:
+              schema:
+                $ref: '#/components/schemas/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventHandler'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      callbacks:
+        Event:
+          $ref: '#/components/callbacks/Event'
+        EventMessage:
+          $ref: '#/components/callbacks/EventMessage'
+        ListOfEventMessages:
+          $ref: '#/components/callbacks/ListOfEventMessages'
+  /v1/contexts/{context}/handlers/events/{eventHandlerId}:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+      - in: path
+        name: eventHandlerId
+        description: Event handler id
+        schema:
+          $ref: '#/components/schemas/EventHandlerId'
+        required: true
+    get:
+      operationId: getEventHandler
+      summary: Returns the event handler
+      tags:
+        - event-handlers
+      responses:
+        '200':
+          description: An object containing the event handler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventHandler'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    put:
+      operationId: replaceEventHandler
+      summary: Created or replaces the event handler
+      tags:
+        - event-handlers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventHandlerRegistration'
+      responses:
+        '200':
+          description: An object containing the event handler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventHandler'
+        '201':
+          description: An object containing the event handler
+          headers:
+            Location:
+              schema:
+                $ref: '#/components/schemas/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventHandler'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      callbacks:
+        Event:
+          $ref: '#/components/callbacks/Event'
+        EventMessage:
+          $ref: '#/components/callbacks/EventMessage'
+        ListOfEventMessages:
+          $ref: '#/components/callbacks/ListOfEventMessages'
+    delete:
+      operationId: unregisterEventHandler
+      summary: Unregisters the event handler
+      tags:
+        - event-handlers
+      responses:
+        '204':
+          description: Event handler has been unregistered
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    patch:
+      operationId: enableEventHandler
+      summary: Enables/disables the event handler
+      tags:
+        - event-handlers
+      parameters:
+        - $ref: '#/components/parameters/Enabled'
+      responses:
+        '200':
+          description: Event handler has been enabled/disabled
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /v1/contexts/{context}/events:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+    get:
+      operationId: information
+      summary: Returns information about the event store
+      tags:
+        - events
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventStoreInformation'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+    post:
+      operationId: publishEventMessage
+      summary: Publishes the event message
+      tags:
+        - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishableEventMessage'
+          application/vnd.axoniq.event.list+json:
+            schema:
+              $ref: '#/components/schemas/ListOfPublishableEventMessages'
+      responses:
+        '200':
+          description: Event has been published
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '409':
+          $ref: '#/components/responses/409'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+  /v1/contexts/{context}/events/{eventName}:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+      - $ref: '#/components/parameters/MessageId'
+      - $ref: '#/components/parameters/PayloadRevision'
+      - in: path
+        name: eventName
+        description: Event name
+        schema:
+          $ref: '#/components/schemas/EventName'
+        required: true
+      - in: header
+        name: AxonIQ-AggregateId
+        description: Aggregate identifier
+        schema:
+          $ref: '#/components/schemas/AggregateId'
+        required: false
+      - in: header
+        name: AxonIQ-AggregateType
+        description: Aggregate type
+        schema:
+          $ref: '#/components/schemas/AggregateType'
+        required: false
+      - in: header
+        name: AxonIQ-SequenceNumber
+        description: Sequence number
+        schema:
+          $ref: '#/components/schemas/SequenceNumber'
+        required: false
+      - in: header
+        name: AxonIQ-DateTime
+        description: Date and time of the event
+        schema:
+          $ref: '#/components/schemas/DateTime'
+        required: false
+    post:
+      operationId: publishEvent
+      summary: Publishes the event
+      tags:
+        - events
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/AnyPayload'
+      responses:
+        '200':
+          description: Event has been published
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '409':
+          $ref: '#/components/responses/409'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+  /v1/contexts/{context}/aggregate/{aggregateId}/events:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+      - name: aggregateId
+        in: path
+        description: 'The id of the aggregate'
+        required: true
+        schema:
+          $ref: '#/components/schemas/AggregateId'
+    get:
+      operationId: readAggregateEvents
+      summary: Returns all events for the aggregate
+      tags:
+        - aggregate
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfEventMessages'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+
+  /v1/contexts/{context}/aggregate/{aggregateId}/eventsPaged:
+    parameters:
+      - $ref: '#/components/parameters/Context'
+      - name: aggregateId
+        in: path
+        description: 'The id of the aggregate'
+        required: true
+        schema:
+          $ref: '#/components/schemas/AggregateId'
+      - $ref: '#/components/parameters/PageOffset'
+      - $ref: '#/components/parameters/PageSize'
+    get:
+      operationId: readAggregateEventsPaged
+      summary: Returns the events for the aggregate that fit on this page
+      tags:
+        - aggregate
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AggregatePage'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '504':
+          $ref: '#/components/responses/504'
+
+  /v1/authentications/client/tokens:
+    get:
+      operationId: listClientAuthenticationToken
+      summary: Returns a list of client authentication tokens
+      tags:
+        - authentication
+      responses:
+        '200':
+          description: An object containing an array of client authentication tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfClientAuthentication'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    post:
+      operationId: createClientAuthenticationToken
+      summary: Creates the provided client authentication token
+      tags:
+        - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientAuthenticationTokenPrototype'
+      responses:
+        '200':
+          description: The registered client authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientAuthentication'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /v1/authentications/client/tokens/{authId}:
+    parameters:
+      - in: path
+        name: authId
+        description: Authentication id
+        schema:
+          $ref: '#/components/schemas/AuthId'
+        required: true
+    get:
+      operationId: getClientAuthenticationToken
+      summary: Returns a single client authentication token
+      tags:
+        - authentication
+      responses:
+        '200':
+          description: The requested client authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientAuthentication'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    put:
+      operationId: updateClientAuthenticationToken
+      summary: Updates the provided client authentication token
+      tags:
+        - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientAuthenticationTokenPrototype'
+      responses:
+        '200':
+          description: The updated client authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientAuthentication'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    delete:
+      operationId: deleteClientAuthenticationToken
+      summary: Deletes the provided client authentication token
+      tags:
+        - authentication
+      responses:
+        '204':
+          description: Authentication object has been deleted
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+
+  /v1/authentications/server/tokens:
+    get:
+      operationId: listServerAuthenticationToken
+      summary: Returns a list of server authentication tokens
+      tags:
+        - authentication
+      responses:
+        '200':
+          description: An object containing an array of server authentication tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfServerAuthentication'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    post:
+      operationId: createServerAuthenticationToken
+      summary: Creates the provided server authentication token
+      tags:
+        - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerAuthenticationTokenPrototype'
+      responses:
+        '200':
+          description: The registered server authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerAuthentication'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /v1/authentications/server/tokens/{authId}:
+    parameters:
+      - in: path
+        name: authId
+        description: Authentication id
+        schema:
+          $ref: '#/components/schemas/AuthId'
+        required: true
+    get:
+      operationId: getServerAuthenticationToken
+      summary: Returns a single server authentication token
+      tags:
+        - authentication
+      responses:
+        '200':
+          description: The requested server authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerAuthentication'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    put:
+      operationId: updateServerAuthenticationToken
+      summary: Updates the provided server authentication token
+      tags:
+        - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerAuthenticationTokenPrototype'
+      responses:
+        '200':
+          description: The updated server authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerAuthentication'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    delete:
+      operationId: deleteServerAuthenticationToken
+      summary: Deletes the provided server authentication token
+      tags:
+        - authentication
+      responses:
+        '204':
+          description: Authentication object has been deleted
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /v1/authentications:
+    get:
+      operationId: listAuthentication
+      summary: Returns a list of all authentications (client and server) of all types (token, etc.)
+      tags:
+        - authentication
+      responses:
+        '200':
+          description: An object containing an array of authentication objects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfAuthenticationObjects'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  parameters:
+    MessageId:
+      in: header
+      name: AxonIQ-MessageId
+      description: Message identifier
+      schema:
+        $ref: '#/components/schemas/MessageId'
+      required: false
+    AuthId:
+      in: path
+      name: AuthId
+      description: Authentication id
+      schema:
+        $ref: '#/components/schemas/AuthId'
+      required: true
+    Enabled:
+      in: query
+      name: enabled
+      schema:
+        type: boolean
+      description: true to enable the handler, false to disable the handler
+      required: true
+    Context:
+      in: path
+      name: context
+      description: Context name
+      schema:
+        $ref: '#/components/schemas/ContextName'
+      required: true
+    PageOffset:
+      in: query
+      name: pageOffset
+      schema:
+        type: integer
+        format: int64
+    PageSize:
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+        format: int64
+    PayloadType:
+      in: header
+      name: AxonIQ-PayloadType
+      description: Payload type
+      schema:
+        $ref: '#/components/schemas/PayloadType'
+      required: false
+    PayloadRevision:
+      in: header
+      name: AxonIQ-PayloadRevision
+      description: Payload revision
+      schema:
+        $ref: '#/components/schemas/PayloadRevision'
+      required: false
+    ResponseCardinality:
+      in: header
+      name: AxonIQ-ResponseCardinality
+      description: Query response type
+      schema:
+        $ref: '#/components/schemas/QueryResponseCardinalityHeader'
+      required: false
+    NumberOfResponders:
+      in: header
+      name: AxonIQ-NumberOfResponders
+      description: Query response type
+      schema:
+        $ref: '#/components/schemas/QueryNumberOfResponders'
+      required: false
+    ResponseType:
+      in: header
+      name: AxonIQ-ResponseType
+      description: Query response type
+      schema:
+        $ref: '#/components/schemas/QueryResponseType'
+      required: false
+    ResponseTypeEncoding:
+      in: header
+      name: AxonIQ-ResponseTypeEncoding
+      description: Query response type encoding
+      schema:
+        $ref: '#/components/schemas/QueryResponseTypeEncoding'
+      required: false
+    Priority:
+      in: header
+      name: AxonIQ-Priority
+      description: Command priority
+      schema:
+        $ref: '#/components/schemas/CommandPriority'
+      required: false
+    RoutingKey:
+      in: header
+      name: AxonIQ-RoutingKey
+      description: Command routing key
+      schema:
+        $ref: '#/components/schemas/CommandRoutingKey'
+      required: false
+    AggregateType:
+      in: header
+      name: AxonIQ-AggregateType
+      description: Aggregate type
+      schema:
+        $ref: '#/components/schemas/AggregateType'
+      required: false
+    AggregateId:
+      in: header
+      name: AxonIQ-AggregateId
+      description: Aggregate identifier
+      schema:
+        $ref: '#/components/schemas/AggregateId'
+      required: false
+  schemas:
+    Location:
+      type: string
+      description: Location of the resource
+      format: uri
+      example: https://axon.synapse.local/v1/contexts/default/handlers/commands/102a92fe-ed76-46d3-a1c8-3bd17e6e23f4
+    DateTime:
+      type: string
+      description: Date and time
+      format: date-time
+      example: 2022-09-22T21:37:00.000+00:00
+    ContextName:
+      type: string
+      description: Context name
+      default: default
+      example: default
+    LastError:
+      type: string
+      description: The last error occuring with this handler
+      example: Something went wrong
+    Serializer:
+      type: string
+      description: Serializer to use to serialize the event payload in the surrounding message. Valid values are BASE64 and TEXT.
+    MaxConcurrency:
+      type: integer
+      description: |
+        Maximum number of concurrent command requests Synapse will forward to your registration.
+        Note that this is set to 1 by default so client applications can easily maintain the strong invariants expected by Axon application.
+        If you change this value, make sure you read up on the implications of processing mutliple commands concurrently.
+        Note that Synapse nonetheless sequences commands of a single routing key for you.
+      default: 1
+    MessageId:
+      type: string
+      description: Unique message identifier
+      example: 59eed54e-ccb4-48ac-af01-144f0ca68f67
+    AuthId:
+      type: string
+      description: Unique identifier for an authentication object
+      example: 59eed54e-ccb4-48ac-af01-144f0ca68f67
+    PayloadType:
+      type: string
+      description: Type of the payload. To integrate with Axon Framework based application use fully-qualified class name
+      example: local.application.client.Payload
+    PayloadRevision:
+      type: string
+      description: Revision of the payload.
+      example: 1.0
+    Message:
+      type: object
+      description: Generic message
+      properties:
+        id:
+          $ref: '#/components/schemas/MessageId'
+        metaData:
+          $ref: '#/components/schemas/MetaData'
+        payload:
+          $ref: '#/components/schemas/Payload'
+        payloadType:
+          $ref: '#/components/schemas/PayloadType'
+        payloadRevision:
+          $ref: '#/components/schemas/PayloadRevision'
+    EndpointOption:
+      type: object
+      description: additional property for a handler
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+    MetaData:
+      type: object
+      description: Key-value map with message meta data
+      additionalProperties:
+        type: string
+      example:
+        some key: some value
+        another key: another value
+    AnyPayload:
+      type: string
+      description: Raw payload. Accepts JSON, XML, UTF-8 Text, Binary data
+      format: binary
+      example:
+        some: payload
+    Payload:
+      description: Text payload. Accepts JSON, XML, UTF-8 Text, Base64 encoded binary data
+      x-render-as-json-node: true
+      example:
+        some: payload
+    Endpoint:
+      type: string
+      description: Message-handling client application endpoint
+      format: uri
+      example: https://client.application.local/v1/message
+    CommandName:
+      type: string
+      description: Command name. To integrate with Axon Framework based application use fully-qualified class name
+      example: local.application.client.Command
+    ClientId:
+      type: string
+      description: Unique client application identifier
+      example: application-name-7c78946494-p86ts
+    ComponentName:
+      type: string
+      description: Client application name
+      example: application-name
+    LoadFactor:
+      type: integer
+      description: |
+        The amount of load an Axon application would carry compared to other instances. 
+        For example, if you have a two command handlers set up, each with a load factor of 100, 
+        they will both carry an equal amount of load
+      default: 100
+      example: 100
+    Concurrency:
+      deprecated: true
+      type: integer
+      description: DEPRECATED, use `maxConcurrency` instead.
+      default: 1
+      minimum: 1
+      example: 1
+    Enabled:
+      type: boolean
+      description: Is this command handler enabled?
+      default: true
+    AggregateId:
+      type: string
+      description: Unique aggregate identifier
+      example: 901aa5ce-b281-4788-97f2-2be7f236dde6
+    AggregateType:
+      type: string
+      description: Aggregate type. To integrate with Axon Framework based application use simple class name
+      example: Aggregate
+    SequenceNumber:
+      type: integer
+      description: Sequence number
+      format: int64
+      example: 0
+    CommandRoutingKey:
+      type: string
+      description: Key used for consistent command routing among command handling instances.
+      example: fa797f82-24e8-459f-9d30-b004af411c13
+    CommandPriority:
+      type: integer
+      description: Relative priority of the command
+      example: 100
+    CommandHandlerId:
+      type: string
+      description: Unique command handler identifier
+      example: a59a3c63-f293-42e1-87f9-0c0ab1bb4446
+    CommandEndpointType:
+      type: string
+      description: |
+        Type of client application endpoint
+        - `http-raw` endpoint type is served with single raw command payload
+        - `http-message` endpoint type is served with single command message
+      default: http-raw
+      example: http-raw
+    CommandMessage:
+      type: object
+      description: Command message
+      required:
+        - name
+      properties:
+        name:
+          $ref: '#/components/schemas/CommandName'
+        routingKey:
+          $ref: '#/components/schemas/CommandRoutingKey'
+        priority:
+          $ref: '#/components/schemas/CommandPriority'
+      allOf:
+        - $ref: '#/components/schemas/Message'
+    CommandResponseMessage:
+      type: object
+      description: Command response message
+      allOf:
+        - $ref: '#/components/schemas/Message'
+    CommandHandlerRegistration:
+      type: object
+      description: Command handler registration
+      required:
+        - names
+        - endpoint
+      properties:
+        names:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CommandName'
+        endpoint:
+          $ref: '#/components/schemas/Endpoint'
+        endpointType:
+          $ref: '#/components/schemas/CommandEndpointType'
+        endpointOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndpointOption'
+        clientId:
+          $ref: '#/components/schemas/ClientId'
+        componentName:
+          $ref: '#/components/schemas/ComponentName'
+        loadFactor:
+          $ref: '#/components/schemas/LoadFactor'
+        concurrency:
+          $ref: '#/components/schemas/Concurrency'
+        enabled:
+          $ref: '#/components/schemas/Enabled'
+        context:
+          $ref: '#/components/schemas/ContextName'
+        clientAuthenticationId:
+          $ref: '#/components/schemas/ClientAuthenticationId'
+        serverAuthenticationId:
+          $ref: '#/components/schemas/ServerAuthenticationId'
+        lastError:
+          $ref: '#/components/schemas/LastError'
+        maxConcurrency:
+          $ref: '#/components/schemas/MaxConcurrency'
+    CommandHandler:
+      type: object
+      description: Command handler
+      required:
+        - id
+      properties:
+        id:
+          $ref: '#/components/schemas/CommandHandlerId'
+      allOf:
+        - $ref: '#/components/schemas/CommandHandlerRegistration'
+    EndpointTypes:
+      type: array
+      description: List of endpoint types
+      items:
+        $ref: '#/components/schemas/EndpointType'
+    EndpointType:
+      type: object
+      description: Endpoint Type
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    ListOfCommandHandlers:
+      type: object
+      description: List of command handlers
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommandHandler'
+    QueryName:
+      type: string
+      description: Query name. To integrate with Axon Framework based application use fully-qualified class name
+      example: local.application.client.Query
+    QueryHandlerId:
+      type: string
+      description: Unique query handler identifier
+      example: d79c7bbb-b4d6-4b31-bb04-aff8de088dac
+    QueryNumberOfResponders:
+      type: integer
+      description: The number of query handlers that should answer the query. For direct query set to `1`
+      default: 1
+      minimum: 1
+      example: 1
+    QueryResponseCardinality:
+      type: string
+      description: Do I expect the query handler return a single item in the response or a list of items
+      default: single
+      enum: [ single,multiple ]
+    QueryResponseCardinalityHeader:
+      type: string
+      description: Do I expect the query handler return a single item in the response or a list of items
+      default: single
+    QueryEndpointType:
+      type: string
+      description: |
+        Type of client application endpoint
+        - `http-raw` endpoint type is served with single raw query payload
+        - `http-message` endpoint type is served with single query message
+      default: http-raw
+      example: http-raw
+    QueryMessage:
+      type: object
+      description: Query message
+      required:
+        - name
+      properties:
+        name:
+          $ref: '#/components/schemas/QueryName'
+        numberOfResponses:
+          $ref: '#/components/schemas/QueryNumberOfResponders'
+        responseCardinality:
+          $ref: '#/components/schemas/QueryResponseCardinality'
+        responseType:
+          $ref: '#/components/schemas/QueryResponseType'
+        responseTypeEncoding:
+          $ref: '#/components/schemas/QueryResponseTypeEncoding'
+      allOf:
+        - $ref: '#/components/schemas/Message'
+    QueryResponseMessage:
+      type: object
+      description: Query response message
+      allOf:
+        - $ref: '#/components/schemas/Message'
+    QueryResponseType:
+      type: string
+      description: |
+        Expected response type required when performing a query. Specific for queries that are 
+        handled by Axon Framework applications.
+      default: java.lang.Object
+      example: local.application.client.QueryResponse
+      nullable: true
+    QueryResponseTypeEncoding:
+      type: string
+      description: |
+        Specifies the way that the Axon Framework application expects the response type to be 
+        serialized. Values `application/json` and `application/xml` are valid for Axon Framework.
+      example: application/json
+    QueryHandlerRegistration:
+      type: object
+      description: Query handler registration
+      required:
+        - names
+        - endpoint
+      properties:
+        names:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/QueryName'
+        endpoint:
+          $ref: '#/components/schemas/Endpoint'
+        endpointType:
+          $ref: '#/components/schemas/QueryEndpointType'
+        endpointOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndpointOption'
+        clientId:
+          $ref: '#/components/schemas/ClientId'
+        componentName:
+          $ref: '#/components/schemas/ComponentName'
+        enabled:
+          $ref: '#/components/schemas/Enabled'
+        context:
+          $ref: '#/components/schemas/ContextName'
+        clientAuthenticationId:
+          $ref: '#/components/schemas/ClientAuthenticationId'
+        serverAuthenticationId:
+          $ref: '#/components/schemas/ServerAuthenticationId'
+        lastError:
+          $ref: '#/components/schemas/LastError'
+    QueryHandler:
+      type: object
+      description: Query handler
+      properties:
+        id:
+          $ref: '#/components/schemas/QueryHandlerId'
+      allOf:
+        - $ref: '#/components/schemas/QueryHandlerRegistration'
+    ListOfQueryHandlers:
+      type: object
+      description: List of query handlers
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryHandler'
+    EventName:
+      type: string
+      description: Event name. Alias for PayloadType. To integrate with Axon Framework based application use fully-qualified class name
+      example: local.application.client.Event
+    SynapseInstanceId:
+      type: string
+      description: Unique identifier of a synapse instance
+      example: eu-north-2-007-codename-james-bond
+    EventHandlerId:
+      type: string
+      description: Unique event handler identifier
+      example: 18f46677-b913-46e5-a200-218be91382fc
+    GlobalIndex:
+      description: Global index of an event in the event store
+      type: integer
+      format: int64
+      example: 0
+    InitialToken:
+      description: |
+        Position in the event stream from which the event handler receives event
+        - `0` indicates the oldest (very first) position (tail of the stream)
+        - `-1` indicates the latest (newest) position (head of the stream)
+      type: integer
+      format: int64
+      default: 0
+      example: 0
+    BatchSize:
+      description: |
+        Number of events to send
+      type: integer
+      default: 1
+      minimum: 1
+      example: 1
+    EventEndpointType:
+      type: string
+      description: |
+        Type of client application endpoint
+        - `http-raw` endpoint type is served with single raw event payload
+        - `http-message` endpoint type is served with single event message
+        - `http-list-of-messages` endpoint type is served with batched event messages
+      default: http-raw
+      example: http-raw
+    EventMessage:
+      type: object
+      description: Event message
+      required:
+        - name
+      properties:
+        name:
+          $ref: '#/components/schemas/EventName'
+        aggregateId:
+          $ref: '#/components/schemas/AggregateId'
+        aggregateType:
+          $ref: '#/components/schemas/AggregateType'
+        sequenceNumber:
+          $ref: '#/components/schemas/SequenceNumber'
+        dateTime:
+          $ref: '#/components/schemas/DateTime'
+        index:
+          $ref: '#/components/schemas/GlobalIndex'
+      allOf:
+        - $ref: '#/components/schemas/Message'
+    PublishableEventMessage:
+      type: object
+      description: Publishable event message
+      required:
+        - name
+      properties:
+        payloadType:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/PayloadType'
+        name:
+          $ref: '#/components/schemas/EventName'
+        aggregateId:
+          $ref: '#/components/schemas/AggregateId'
+        aggregateType:
+          $ref: '#/components/schemas/AggregateType'
+        sequenceNumber:
+          $ref: '#/components/schemas/SequenceNumber'
+        dateTime:
+          $ref: '#/components/schemas/DateTime'
+        index:
+          $ref: '#/components/schemas/GlobalIndex'
+      allOf:
+        - $ref: '#/components/schemas/Message'
+    AggregatePage:
+      type: object
+      description: Page of event messages belonging to an aggregate
+      required:
+        - messages
+      properties:
+        numberOfPage:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int64
+        isLast:
+          type: boolean
+        elements:
+          $ref: '#/components/schemas/ListOfEventMessages'
+    ListOfEventMessages:
+      type: object
+      description: List of event messages
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/EventMessage'
+    ListOfPublishableEventMessages:
+      type: object
+      description: List of event messages
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PublishableEventMessage'
+    EventHandlerRegistration:
+      type: object
+      description: Event handler registration
+      required:
+        - names
+        - endpoint
+      properties:
+        names:
+          type: array
+          minItems: 0
+          items:
+            $ref: '#/components/schemas/EventName'
+        endpoint:
+          $ref: '#/components/schemas/Endpoint'
+        endpointType:
+          $ref: '#/components/schemas/EventEndpointType'
+        endpointOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndpointOption'
+        clientId:
+          $ref: '#/components/schemas/ClientId'
+        componentName:
+          $ref: '#/components/schemas/ComponentName'
+        batchSize:
+          $ref: '#/components/schemas/BatchSize'
+        start:
+          $ref: '#/components/schemas/InitialToken'
+        enabled:
+          $ref: '#/components/schemas/Enabled'
+        context:
+          $ref: '#/components/schemas/ContextName'
+        clientAuthenticationId:
+          $ref: '#/components/schemas/ClientAuthenticationId'
+        serverAuthenticationId:
+          $ref: '#/components/schemas/ServerAuthenticationId'
+        lastError:
+          $ref: '#/components/schemas/LastError'
+        serializer:
+          $ref: '#/components/schemas/Serializer'
+    EventHandler:
+      type: object
+      description: Event handler
+      required:
+        - id
+      properties:
+        id:
+          $ref: '#/components/schemas/EventHandlerId'
+        synapseInstanceId:
+          $ref: '#/components/schemas/SynapseInstanceId'
+      allOf:
+        - $ref: '#/components/schemas/EventHandlerRegistration'
+    ListOfEventHandlers:
+      type: object
+      description: List of event handlers
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventHandler'
+    ErrorCode:
+      type: string
+      description: Error code
+      example: AXONIQ-1302
+    ErrorMessage:
+      type: string
+      description: Descriptive error message
+      example: Context not found
+    ErrorDetails:
+      type: object
+      description: Key-value map with error details
+      additionalProperties:
+        type: string
+      example:
+        context: default
+    Error:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          $ref: '#/components/schemas/ErrorMessage'
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    ClientAuthenticationId:
+      type: string
+      description: Id of the stored authentication used by synapse to call the registered handler
+      example: 833f41e0-85a3-4a57-b066-7d8579f139c1
+    ServerAuthenticationId:
+      type: string
+      description: Id of the stored authentication used by synapse to contact axon server for this registration
+      example: 833f41e0-85a3-4a57-b066-7d8579f139c1
+    ClientAuthenticationTokenPrototype:
+      type: object
+      description: Authentication used by synapse to call the registered handler
+      required:
+        - name
+        - token
+      properties:
+        name:
+          type: string
+          description: Name to recognize this stored authentication
+        token:
+          type: string
+          description: secret token used in authentication
+    ClientAuthentication:
+      type: object
+      description: Authentication used by synapse to call the registered handler with sensitive data stripped
+      required:
+        - name
+        - id
+      properties:
+        name:
+          type: string
+          description: Name to recognize this stored authentication
+        id:
+          $ref: '#/components/schemas/ClientAuthenticationId'
+    EventStoreInformation:
+      type: object
+      description: information about the event store
+      properties:
+        firstEventToken:
+          type: integer
+          format: int64
+        lastEventToken:
+          type: integer
+          format: int64
+    ListOfClientAuthentication:
+      type: object
+      description: List of Client Authentication objects
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClientAuthentication'
+    ServerAuthenticationTokenPrototype:
+      type: object
+      description: Authentication used by synapse to contact axon server on behalf of another application
+      required:
+        - name
+        - token
+      properties:
+        name:
+          type: string
+          description: Name to recognize this stored authentication
+        token:
+          type: string
+          description: secret token used in authentication
+    ServerAuthentication:
+      type: object
+      description: Authentication used by synapse to contact axon server on behalf of another application
+      required:
+        - name
+        - id
+      properties:
+        name:
+          type: string
+          description: Name to recognize this stored authentication
+        id:
+          $ref: '#/components/schemas/ServerAuthenticationId'
+    ListOfServerAuthentication:
+      type: object
+      description: List of Server Authentication objects
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerAuthentication'
+    AuthenticationObject:
+      type: object
+      description: Authentication used by synapse to contact axon server on behalf of another application
+      required:
+        - name
+        - id
+        - type
+        - audience
+      properties:
+        audience:
+          type: string
+          description: Intended audience of this authentication object (client/server)
+        type:
+          type: string
+          description: Type of this authentication object
+        name:
+          type: string
+          description: Name to recognize this stored authentication
+        id:
+          type: string
+          description: Unique ID of the authentication object
+        readable:
+          type: boolean
+          description: Indicates whether this authentication object is readable
+    ListOfAuthenticationObjects:
+      type: object
+      description: List of authentication objects
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthenticationObject'
+  callbacks:
+    Command:
+      '{$request.body#/endpoint}':
+        $ref: 'client-raw-api.yaml#/paths/~1v1~1commands'
+    CommandMessage:
+      '{$request.body#/endpoint}':
+        $ref: 'client-message-api.yaml#/paths/~1v1~1commands'
+    Query:
+      '{$request.body#/endpoint}':
+        $ref: 'client-raw-api.yaml#/paths/~1v1~1queries'
+    QueryMessage:
+      '{$request.body#/endpoint}':
+        $ref: 'client-message-api.yaml#/paths/~1v1~1queries'
+    Event:
+      '{$request.body#/endpoint}':
+        $ref: 'client-raw-api.yaml#/paths/~1v1~1events'
+    EventMessage:
+      '{$request.body#/endpoint}':
+        $ref: 'client-message-api.yaml#/paths/~1v1~1events'
+    ListOfEventMessages:
+      '{$request.body#/endpoint}':
+        post:
+          operationId: handleListOfEventMessages
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListOfEventMessages'
+          responses:
+            '200':
+              description: The acknowledge of the event list processing
+  responses:
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: AXONIQ-0001
+            message: Endpoint is not a valid URI
+            details:
+              endpoint: ://client.application.local/v1/message
+    '404':
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: AXONIQ-1302
+            message: Context not found
+            details:
+              context: default
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: AXONIQ-2000
+            message: > 
+              OUT_OF_RANGE: [AXONIQ-2000] Invalid sequence number 0 for aggregate 901aa5ce-b281-4788-97f2-2be7f236dde6, expected 1
+    '500':
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: AXONIQ-1302
+            message: Internal server error
+    '502':
+      description: Bad gateway
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: AXONIQ-4002
+            message: Command handler error
+    '504':
+      description: Gateway timeout
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: AXONIQ-1302
+            message: Command handler timed out
+            details:
+              messageId: 316c09d9-577f-4095-9dac-56cbe2786584
