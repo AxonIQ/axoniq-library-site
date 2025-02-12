@@ -500,6 +500,88 @@ public class SubQueryHandler extends QueryHandler {
 </div>
 </div>
 <div class="sect1">
+<h2 id="_query_handler_chaining"><a class="anchor" href="#_query_handler_chaining"></a>Query handler chaining</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When you need information from another query to complete your query,
+you might call the <code>QueryGateway</code> or <code>QueryBus</code> from your query handler.
+This needs to be done with caution, as we create a dependency between two query handlers.</p>
+</div>
+<div class="sect2">
+<h3 id="chaining-local"><a class="anchor" href="#chaining-local"></a>Local query handler</h3>
+<div class="paragraph">
+<p>When the secondary query handler is located in the same application,
+you can still use
+the <code>QueryGateway</code> or <code>QueryBus</code> to retrieve the information you need and keep the two components decoupled.
+This gives you the freedom to move the other query handler to a different application in the future.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">Projection dependency</div>
+<div class="paragraph">
+<p>When a query handler depends on another query in the same application, this can indicate a design issue.
+Each projection processes events at their own pace, so two projections might not have the data in sync.
+This can lead to unexpected behavior.</p>
+</div>
+<div class="paragraph">
+<p>The proper solution is to create independent projections that contain all the data needed
+to function correctly.
+By duplicating data to the event processor locally,
+you are guaranteed to have up-to-date data when handling a query, as well as the flexibility to change it.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>When using a distributed query bus, such as the <code>AxonServerQueryBus</code>, this secondary query will use a second thread to process in. If both queries block the thread, this could potentially lead to a deadlock.</p>
+</div>
+<div class="paragraph">
+<p>Example: You have configured the <code>AxonServerQueryBus</code> to have 1 thread, and you have query A and B in the same application.
+Query A calls query B. Because query A is waiting on a response of query B, and query B is waiting for a thread to free up, this has now caused a deadlock.</p>
+</div>
+<div class="paragraph">
+<p>You can take different routes to remedy this:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Not chaining queries in this way, and instead duplicating the data locally based on the events.</p>
+</li>
+<li>
+<p>Returning a <code>CompletableFuture</code> from your query handlers, and using <code>thenCompose</code> to chain the queries. This will free up the thread to process other queries.</p>
+</li>
+<li>
+<p>Using the <code>localSegmentShortcut</code> configuration in the <code>AxonServerQueryBus</code> to prevent the second query from being sent over the network, and thus process it in the same thread.</p>
+</li>
+<li>
+<p>Configure your distributed query bus to have more threads available. This will reduce the chance of a deadlock, but it will not prevent it.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_remote_query_handler"><a class="anchor" href="#_remote_query_handler"></a>Remote query handler</h3>
+<div class="paragraph">
+<p>When calling a remote query handler from your query handler before Axon Framework 4.11,
+a thread deadlock could occur in the same manner,
+as processing the response of a query also required a thread.
+This was resolved in Axon Framework 4.11 by using a different thread pool to process the response of a query.</p>
+</div>
+<div class="paragraph">
+<p>If you use an older version of Axon Framework,
+you can still use the <code>QueryGateway</code> to retrieve the information you need,
+taking the same measures outlined in the previous section for the <a href="#chaining-local">local query handlers</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_query_handler_return_values"><a class="anchor" href="#_query_handler_return_values"></a>Query handler return values</h2>
 <div class="sectionbody">
 <div class="paragraph">
