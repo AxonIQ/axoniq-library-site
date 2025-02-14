@@ -1,0 +1,116 @@
+= Docker Compose
+
+Docker has become a standard method of running software on your computer.
+Docker is a containerization platform that allows you to run applications in isolated environments.
+This makes it easy to run Axon Server on any machine that supports Docker.
+
+== Step 1: Verify installation
+
+Make sure you have Docker and Docker Compose installed on your machine.
+You can verify this by running the following command:
+
+[source,bash]
+----
+docker --version
+docker compose --version
+----
+
+You should see an output like:
+
+[source,text]
+----
+Docker version 24.0.2, build cb74dfc
+Docker Compose version v2.19.1
+----
+
+[NOTE]
+====
+Older versions of docker uses a separate executable, called `docker-compose`. If you have an older version, you can use the `docker-compose` command instead of `docker compose`. You can check this by running `docker-compose --version`.
+====
+
+If you cannot execute the commands successfully, we recommend following the link:https://docs.docker.com/get-docker/[docker setup guide].
+
+== Step 2: AxonIQ Console (optional)
+
+By connecting your Axon Server to AxonIQ Console, you can unlock additional functionality.
+
+.Why connect to AxonIQ Console?
+[%collapsible]
+====
+include::partial$console-additional-functionality.adoc[]
+====
+
+.Obtaining AxonIQ Console access token
+[%collapsible]
+====
+include::partial$obtain-console-access-token.adoc[]
+====
+
+== Step 3: Choose your image (optional)
+
+include::partial$choose-your-docker-image.adoc[]
+
+
+== Step 4: Create the file
+
+We can now define the `docker-compose.yaml` that specifies how docker containers should be created.
+
+Create a new folder, and put the following content in the `docker-compose.yaml` file:
+
+[tabs]
+====
+With AxonIQ Console::
++
+--
+
+Please replace the `YOUR_ACCESS_TOKEN` text with the access key acquired in Step 2.
+
+[source,yaml]
+----
+include::example$developer/docker-compose.yaml[tags=**,console]
+----
+--
+
+Without AxonIQ Console::
++
+--
+[source,yaml]
+----
+include::example$developer/docker-compose.yaml[tags=!console]
+----
+--
+====
+
+[WARNING]
+====
+This docker-compose file is for demonstration purposes only. It is not suitable for production use.
+For example, the volumes are not persistent. You will lose data after running `docker compose down`.
+For more information, see the xref:extra/persistent-docker-compose-data.adoc[persistent Docker Compose data guide].
+====
+
+
+[TIP]
+======
+We set the `hostname` to `localhost` and the `internal_hostname` to `axonserver-1`.
+The `hostname` is communicated to clients to connect. Setting this to `localhost` ensures your applications running
+on your computer can easily connect. The `internal_hostname` is used to communicate between Axon Servers and to name itself.
+
+For more information, see the xref:extra/hosts-and-connections.adoc[hosts and connections guide].
+======
+
+
+== Step 5: Initialize
+
+include::partial$initialize-standalone.adoc[tags=!property-note]
+
+[NOTE]
+====
+To initialize Axon Server as standalone node without a UI action, you can add  `-e AXONIQ_AXONSERVER_STANDALONE=true`
+to the Docker command.
+====
+
+== Next
+
+include::partial$step-configure-axon-framework-single.adoc[]
+
+

@@ -1,0 +1,89 @@
+= Ubuntu
+
+You can install Axon Server through the APT package manager integrated into Ubuntu.
+Using this method will make it simple to update using commands as well.
+
+[NOTE]
+====
+The package currently only supports Ubuntu 22 (Jammy) and 24 (Focal).
+More distributions will be supported in the future.
+====
+
+== Step 1: Install requirements
+
+Before we can install Axon Server, we need to make sure that your system has the required dependencies.
+The following command will install the required dependencies.
+
+[source,bash]
+----
+sudo apt install ca-certificates lsb-release curl
+----
+
+== Step 2: Add the signing key
+
+All artifacts are signed with a private key, that the package manager will verify upon installation.
+It does this for you, so you can be sure the software you install is trusted.
+
+The following command imports our public key for this verification.
+
+[source,bash]
+----
+sudo curl https://pkg.axoniq.io/axoniq.pub -o /etc/apt/trusted.gpg.d/axoniq.asc
+----
+
+== Step 3: Add the repository
+
+Next, we have to add the repository that houses our artifacts.
+
+[source,bash]
+----
+echo "deb [arch=all signed-by=/etc/apt/trusted.gpg.d/axoniq.asc] https://pkg.axoniq.io/apt $(. /etc/os-release && echo "$VERSION_CODENAME") main" | sudo tee /etc/apt/sources.list.d/axoniq.list > /dev/null
+----
+
+== Step 4: Install
+
+We are ready for the installation!
+Let's get apt to install it:
+
+[source,bash]
+----
+sudo apt-get update
+sudo apt-get install axonserver
+----
+
+== Step 5: Configure
+
+Axon Server runs with adequate defaults.
+However, you can customize it by editing the `/etc/axonserver/axonserver.propertie` file that was just installed on your machine.
+
+include::partial$step-configure.adoc[]
+
+== Step 6: AxonIQ Console (optional)
+
+include::partial$step-axoniq-console.adoc[]
+
+== Step 7: Run Axon Server
+
+You can now start Axon Server!
+You can use Systemd if your system uses it:
+
+[source,bash]
+----
+sudo systemctl start axonserver
+----
+
+Or, alternatively, you can run it manually:
+
+[source,bash]
+----
+sudo -i -u axonserver
+cd /var/lib/axonserver/
+sh start-axonserver.sh
+----
+
+== Step 8: Initialize
+
+include::partial$initialize-standalone.adoc[]
+
+== Next
+include::partial$step-configure-axon-framework-single.adoc[]
