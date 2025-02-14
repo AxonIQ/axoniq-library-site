@@ -380,6 +380,9 @@ It produces a more compact serialized form, while requiring those classes to sti
 The compact format makes it ideal for events, commands, and queries, as it minimizes the storage space and package size.</p>
 </div>
 <div class="paragraph">
+<p>The third option provided by the AxonFramework is the <code>AvroServializer</code>. The <code>Serializer</code> uses <a href="https://avro.apache.org/">Apache Avro</a> to serialize objects into and deserialize from <a href="https://avro.apache.org/docs/1.12.0/specification/#binary-encoding">binary single-object-encoded format</a>. The format is compact, is based on the <a href="https://avro.apache.org/docs/1.12.0/specification/">Avro Schema Specification</a> and is ideal for messaging (serialization of commands, events and queries) and event storage. This serializer is designed to serve as payload <code>event</code>/<code>message</code> serializer and requires a <code>delegate</code> serializer to serialize everything else (here the best choice is <code>JacksonSerializer</code>). Since the entire serialization process is based on Apache Avro schema, a schema store is required. The framework provides a local <code>SchemaStore</code> which can be pre-filled manually or uses SpringBoot class path scanning to detect  schemas located on the class path.</p>
+</div>
+<div class="paragraph">
 <p>You may also implement your own serializer simply by creating a class that implements <code>Serializer</code> and setting it within Axon&#8217;s configuration for the desired infrastructure components.</p>
 </div>
 </div>
@@ -389,7 +392,7 @@ The compact format makes it ideal for events, commands, and queries, as it minim
 <div class="sectionbody">
 <div class="paragraph">
 <p><code>Serializers</code> come in several flavors in Axon Framework and are used for various things.
-Currently, you can choose between the <code>XStreamSerializer</code> and <code>JacksonSerializer</code> to serialize messages (commands/queries/events), tokens, snapshots, deadlines and sagas in an Axon application.</p>
+Currently, you can choose between the <code>XStreamSerializer</code>, <code>JacksonSerializer</code> and <code>AvroSerializer</code> to serialize messages (commands/queries/events), tokens, snapshots, deadlines and sagas in an Axon application.</p>
 </div>
 <div class="paragraph">
 <p>As there are several objects to be serialized, it is typically desired to chose which serializer handles which object.
@@ -450,7 +453,7 @@ In turn, if no message <code>Serializer</code> is configured, the default <code>
 <p>See the following example on how to configure each serializer specifically, were we use the <code>XStreamSerializer</code> as the default and the <code>JacksonSerializer</code> for all our messages:</p>
 </div>
 <div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
+<h4 id="_axon_configuration_api_using_xstreamjacksonserializer"><a class="anchor" href="#_axon_configuration_api_using_xstreamjacksonserializer"></a>Axon Configuration API using XStream/JacksonSerializer</h4>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SerializerConfiguration {
@@ -473,8 +476,36 @@ In turn, if no message <code>Serializer</code> is configured, the default <code>
 }</code></pre>
 </div>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_axon_configuration_api_using_xstreamavroserializer"><a class="anchor" href="#_axon_configuration_api_using_xstreamavroserializer"></a>Axon Configuration API using XStream/AvroSerializer</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SerializerConfiguration {
+
+    public void serializerConfiguration(Configurer configurer, SchemaStore schemaStore) {
+        // By default, we want the XStreamSerializer
+        XStream xStream = new XStream();
+        // Set the secure types on the xStream instance
+        XStreamSerializer defaultSerializer = XStreamSerializer.builder()
+                                                               .xStream(xStream)
+                                                               .build();
+
+        // But for all our messages we'd prefer the AvroSerializer due to Avro's smaller format
+        AvroSerializer messageSerializer = AvroSerializer.builder()
+                                                         .serializerDelegate(JacksonSerializer.defaultSerializer())
+                                                         .schemaStore(schemaStore)
+                                                         .build();
+
+        configurer.configureSerializer(configuration -&gt; defaultSerializer)
+                  .configureMessageSerializer(configuration -&gt; messageSerializer)
+                  .configureEventSerializer(configuration -&gt; messageSerializer);
+    }
+}</code></pre>
+</div>
+</div>
 <div class="sect4">
-<h5 id="_spring_boot_configuration_class"><a class="anchor" href="#_spring_boot_configuration_class"></a>Spring Boot - configuration class</h5>
+<h5 id="_spring_boot_configuration_class_using_xstreamjacksonserializer"><a class="anchor" href="#_spring_boot_configuration_class_using_xstreamjacksonserializer"></a>Spring Boot - configuration class using XStream/JacksonSerializer</h5>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
@@ -501,10 +532,40 @@ public class SerializerConfiguration {
 </div>
 </div>
 <div class="sect4">
+<h5 id="_spring_boot_configuration_class_using_xstreamavroserializer"><a class="anchor" href="#_spring_boot_configuration_class_using_xstreamavroserializer"></a>Spring Boot - configuration class using XStream/AvroSerializer</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
+public class SerializerConfiguration {
+
+   // By default, we want the XStreamSerializer
+   @Bean
+   public Serializer defaultSerializer() {
+      // Set the secure types on the xStream instance
+      XStream xStream = new XStream();
+      return XStreamSerializer.builder()
+                              .xStream(xStream)
+                              .build();
+   }
+
+   // But for all our messages we'd prefer the AvroSerializer due to Avro's smaller format
+   @Bean
+   @Qualifier("messageSerializer")
+   public Serializer messageSerializer(SchemaStore schemaStore) {
+      return AvroSerializer.builder()
+                           .delegateSerializer(JacksonSerializer.defaultSerializer())
+                           .schemaStore(schemaStore)
+                           .build();
+   }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
 <h5 id="_spring_boot_properties_file"><a class="anchor" href="#_spring_boot_properties_file"></a>Spring Boot - properties file</h5>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text"># Possible values for these keys are `default`, `xstream`, `java`, and `jackson`.
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text"># Possible values for these keys are `default`, `xstream`, `java`, and `jackson`. `avro` can be used for `events` and `messages` only.
 axon.serializer.general
 axon.serializer.events
 axon.serializer.messages</code></pre>
@@ -515,7 +576,7 @@ axon.serializer.messages</code></pre>
 <h5 id="_spring_boot_yaml_file"><a class="anchor" href="#_spring_boot_yaml_file"></a>Spring Boot - YAML file</h5>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml"># Possible values for these keys are `default`, `xstream`, `java`, and `jackson`.
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml"># Possible values for these keys are `default`, `xstream`, `java`, and `jackson`. `avro` can be used for `events` and `messages` only.
 axon:
     serializer:
         general:
@@ -566,6 +627,21 @@ The <code>ByteArrayOutputStream</code> and <code>ByteArrayInputStream</code> all
 </div>
 </div>
 <div class="sect2">
+<h3 id="_avroserializer"><a class="anchor" href="#_avroserializer"></a>AvroSerializer</h3>
+<div class="paragraph">
+<p>The Avro Serializer requires a <code>SchemaStore</code> to operate, which must be able to resolve schemas of all messages being processed. By default, you can use the <code>org.apache.avro.message.SchemaStore.Cache</code> and add Avro schemas to it manually. If you are using
+Spring Boot, the auto-configuration will create a <code>SchemaStore</code> instance for you. This Schema Store can be pre-filled with Avro Schemas extracted from Avro <code>SpecificRecordBase</code> instances. These are in turn generated by the <code>avro-maven-plugin</code> that should then be located on your classpath. For this purpose,
+a special annotation <code>@AvroSchemaScan</code> should be put to any SpringBoot configuration class (similar to SpringData <code>@EntityScan</code>) in a package hierarchy including the <code>SpecificRecordBase</code> classes.</p>
+</div>
+<div class="paragraph">
+<p>In case you want to use a central Schema Registry in your application landscape, you should provide your own <code>SchemaStore</code>
+implementation, accessing this remote registry. Just implement the corresponding interface and wire it into the configuration of the <code>AvroSerrializer</code>. When doing this, do consider to implement a caching strategy in your implementation. The <code>AvroSerializer</code> will check the Avro Schemas by their fingerprints on any serialization / deserialization operation, making fast and local in-memory resolution important to keep up the performance.</p>
+</div>
+<div class="paragraph">
+<p>The <code>AvroSerializer</code> is extendable and delegates to <code>AvroSerializerStrategy</code> to support different flavors of source classes. The default strategy is the <code>SpecificRecordBaseSerializerStrategy</code> that is capable to work with Java classes generated by <code>avro-maven-plugin</code>. If you use different representation of Avro classes in your project, you might want to supply a different <code>AvroSerializerStrategy</code> in order to deal with the specifics of your implementation. For example, to support KotlinX serialization of data classes, implemented by <a href="https://github.com/avro-kotlin/avro4k">avro4k</a>, there is a community project, delivering the corresponding <code>AvroSerializerStrategy</code>.</p>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_preventing_duplicate_serialization"><a class="anchor" href="#_preventing_duplicate_serialization"></a>Preventing duplicate serialization</h3>
 <div class="paragraph">
 <p>Especially in distributed systems, event messages need to be serialized on multiple occasions.
@@ -585,7 +661,7 @@ See the JavaDoc of the <code>MessageSerializer</code> for more details.</p>
 <p>When using event sourcing, serialized events can stick around for a long time.
 Therefore, consider the format to which they are serialized, carefully.
 Consider configuring a separate serializer for events, carefully optimized for the way they are stored.
-The JSON format generated by Jackson is generally more suitable for the long term than XStream&#8217;s XML format.</p>
+The JSON format generated by Jackson or Avro binary format is generally more suitable for the long term than XStream&#8217;s XML format. If you want to enforce the structural definition of the events, the Apache Avro is the best choice.</p>
 </div>
 </div>
 <div class="sect2">
@@ -604,8 +680,8 @@ A scenario when you would hit this is when going for a rolling upgrade pattern t
 <p>To accommodate more closely with the desire to ignore unknown fields, both the <code>XStreamSerializer</code> and <code>JacksonSerializer</code> can be enabled as such.
 How to achieve this is shown in the following snippet:</p>
 </div>
-<div class="sect4">
-<h5 id="_xstreamserializer_2"><a class="anchor" href="#_xstreamserializer_2"></a><code>XStreamSerializer</code></h5>
+<div class="sect3">
+<h4 id="_xstreamserializer_2"><a class="anchor" href="#_xstreamserializer_2"></a><code>XStreamSerializer</code></h4>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SerializerConfiguration {
@@ -619,8 +695,8 @@ How to achieve this is shown in the following snippet:</p>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_jacksonserializer"><a class="anchor" href="#_jacksonserializer"></a><code>JacksonSerializer</code></h5>
+<div class="sect3">
+<h4 id="_jacksonserializer"><a class="anchor" href="#_jacksonserializer"></a><code>JacksonSerializer</code></h4>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SerializerConfiguration {
@@ -632,6 +708,13 @@ How to achieve this is shown in the following snippet:</p>
     }
 }</code></pre>
 </div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_avroserializer_2"><a class="anchor" href="#_avroserializer_2"></a><code>AvroSerializer</code></h4>
+<div class="paragraph">
+<p>Apache Avro addresses the issue of reading of old messages by checking compatibility between the reader and writer Avro Schema. By its nature,
+Apache Avro binary format is designed to be highly permissive to schema additions, so no additional overhead is required to allow lenient deserialization.</p>
 </div>
 </div>
 </div>
@@ -700,7 +783,8 @@ That means if you use a JSON based serializer, you would be able to convert to a
 </div>
 <div class="paragraph">
 <p>The <code>XStreamSerializer</code> supports dom4j as well as XOM as XML document representations.
-The <code>JacksonSerializer</code> supports Jackson&#8217;s <code>JsonNode</code> and <code>ObjectNode</code>.</p>
+The <code>JacksonSerializer</code> supports Jackson&#8217;s <code>JsonNode</code> and <code>ObjectNode</code>.
+The <code>AvroSerializer</code> supports <code>GenericRecord</code> as intermediate format suitable for upcasting.</p>
 </div>
 </div>
 </div>
