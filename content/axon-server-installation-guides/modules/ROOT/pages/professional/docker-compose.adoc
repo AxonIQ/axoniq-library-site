@@ -1,3 +1,76 @@
 = Docker Compose
 
+Axon Server can be run using Docker Compose. This guide will show you how to set up an Axon Server cluster
+using Docker Compose.
 
+== Step 1: Verify installation
+
+include::partial$verify-docker-compose.adoc[]
+
+== Step 2: AxonIQ Console
+
+include::partial$obtain-console-access-token.adoc[]
+
+== Step 3: Choose your image (optional)
+
+include::partial$choose-your-docker-image.adoc[]
+
+
+== Step 4: Create the file
+
+We can now define the `docker-compose.yaml` that specifies how docker containers should be created.
+
+Create a new folder, and put the following content in the `docker-compose.yaml` file:
+
+[sources,yml]
+----
+include::example$developer/docker-compose-cluster.yaml[tags=!enterprise,console]
+----
+
+Both the `name` and `internal-hostname` are set to `axonserver-1`, `axonserver-2`, and `axonserver-3` respectively.
+However, the `hostname` is set to `localhost`, so framework applications can connect to the Axon Server nodes without running in Docker.
+If you decide to add Axon Framework services to the Docker Compose file, set the `hostname` to the same value as the `internal-hostname`.
+For more information, see the xref:extra/hosts-and-connections.adoc[hosts and connections guide].
+
+
+This docker-compose will create three Axon Server nodes, each with a different port exposed for the dashboard, client, and cluster ports.
+
+[WARNING]
+====
+This docker-compose file is for demonstration purposes only. It is not suitable for production use.
+For example, the volumes are not persistent. You will lose data after running `docker compose down`.
+For more information, see the xref:extra/persistent-docker-compose-data.adoc[persistent Docker Compose data guide].
+====
+
+== Step 5: Run
+
+To run the Axon Server cluster, execute the following command in the directory where the `docker-compose.yaml` file is located:
+
+[source,bash]
+----
+docker compose up
+----
+
+As you are starting three Axon Server nodes, this might take a bit of time. Once the nodes are up and running, you can access the Axon Server dashboard by navigating to port 8024, 8025 and 8026 of the machine in your browser for the first, second and third node respectively.
+
+
+== Next Steps
+
+The steps in this guide do not take into account any security, authentication or authorization.
+If you would like to set this up, please follow the xref::extra/securing-axon-server.adoc[Securing Axon Server] guide.
+
+
+== Ready to connect
+
+Now that you have your Axon Servers running, you can start using it with your Axon Framework applications.
+
+Your Axon Framework applications should list all nodes of Axon Server in their properties file,
+so that if one node goes down, the application can still connect to the other nodes initially.
+
+[source,properties]
+----
+axon.axonserver.servers=localhost:8124,localhost:8125,localhost:8126
+----
+
+If you are running your Axon Framework applications in Docker, you should replace `localhost` with the `internal-hostname` of the Axon Server nodes,
+and configure the `hostname` of the Axon Server nodes to the same value as the `internal-hostname` (see step 4, or the xref:extra/hosts-and-connections.adoc[hosts and connections guide]).
