@@ -1,1 +1,130 @@
 = Ubuntu
+
+This guide will walk you through the steps to run Axon Server Enterprise as a cluster of multiple nodes, while using the
+APT package manager built into Ubuntu.
+
+[NOTE]
+====
+The package currently only supports Ubuntu 22 (Jammy) and 24 (Focal).
+More distributions will be supported in the future.
+====
+
+== Step 1: Install the package
+
+
+On each of the machines you want to install Axon Server on, execute the commands outlined in this step.
+
+
+include::partial$ubuntu-install-steps.adoc[]
+
+== Step 2: Configure
+
+Axon Server runs with adequate defaults.
+However, you can customize it by editing the `/etc/axonserver/axonserver.propertie` file that was just installed on your machine.
+
+include::partial$step-configure.adoc[]
+
+[NOTE]
+If you want your Axon Server to be accessible from other machines, you need to add additional settings so machines know
+where to find each other. For more information, see the xref:axon-server-installation::extra/hosts-and-connections.adoc[hosts and connections].
+
+
+== Step 3: Choose a clustering method
+
+include::partial$clustering-methods.adoc[]
+
+[tabs]
+====
+Auto-clustering::
++
+--
+Setting up auto-clustering is straightforward. You define the node allowed to be the first to form the cluster,
+by defining it in the properties of all nodes. The first node will then create the cluster, and the other
+nodes will join it automatically.
+
+Add the following properties to the `axonserver.properties` file of all nodes:
+
+[source,properties]
+----
+axoniq.axonserver.autocluster.first=axonserver-1:8224   # The hostname and port of the first node
+axoniq.axonserver.autocluster.contexts=_admin,default   # The contexts that are automatically created
+----
+
+--
+Cluster Template::
++
+--
+By putting a `/etc/axonserver/cluster-template.yml` file on your nodes, they will automatically form
+a cluster based on that template.
+
+include::partial$cluster-template-example-and-reference.adoc[]
+
+--
+Axon Server Dashboard::
++
+--
+
+When accessing the Axon Server dashboard for the first time, you will be prompted to complete installation.
+
+On the first node, choose "Start node and initialize multi-node cluster", and click "Complete".
+
+image::axon-server-complete-installation-start-node-and-initialize.png[width=400,alt="Complete installation prompt of Axon Server"]
+
+On the other nodes, choose "Join existing cluster", fill in the host address and port of the first node, and click "Complete".
+
+image::axon-server-complete-installation-join-existing.png[width=400,alt="Complete installation prompt of Axon Server"]
+
+Repeating this for all nodes will form a cluster.
+
+--
+
+AxonIQ Console::
++
+--
+Please ask your AxonIQ representative to add your Enterprise license to AxonIQ Console. Once you have done that, you can acquire the access token from the console and add it to the properties file of all nodes, as such:
+
+[source,properties]
+----
+axoniq.console.authentication=YOUR_ACCESS_TOKEN
+----
+
+.Obtaining AxonIQ Console access token
+[%collapsible]
+======
+include::partial$obtain-console-access-token.adoc[]
+======
+
+--
+
+====
+
+
+== Step 5: Run Axon Server
+
+You can now start Axon Server!
+You can use Systemd if your system uses it:
+
+[source,bash]
+----
+sudo systemctl start axonserver
+----
+
+Or, alternatively, you can run it manually:
+
+[source,bash]
+----
+sudo -i -u axonserver
+cd /var/lib/axonserver/
+sh start-axonserver.sh
+----
+
+[NOTE]
+====
+Depending on your cloud environment or machine configuration, you might need to open the ports in the firewall.
+Please refer to the documentation of your cloud provider or operating system for more information.
+====
+
+
+== Next
+
+include::partial$step-configure-axon-framework-multiple.adoc[]
