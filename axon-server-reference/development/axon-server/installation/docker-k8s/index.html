@@ -180,12 +180,6 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../administration/clustering/">Clusters</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../administration/replication-groups/">Replication Groups</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../administration/multi-context/">Multi-Context</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -196,9 +190,6 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../administration/tagging/">Tagging</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../administration/backup-and-messaging-only-nodes/">Backup and Messaging-Only Nodes</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../administration/backups/">Backups</a>
@@ -220,6 +211,24 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../administration/error-codes/">Error Codes</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../clustering/">Clustering</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../clustering/cluster-basics/">Cluster Basics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../clustering/node-roles/">Node Roles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../clustering/replication-groups/">Replication Groups</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../clustering/replication-logs/">Replication Logs</a>
   </li>
 </ul>
   </li>
@@ -271,10 +280,18 @@
   </li>
 </ul>
   </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../architecture/">Architecture</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../architecture/config-database/">Config Database</a>
+  </li>
 </ul>
   </li>
-  <li class="nav-item" data-depth="0">
-<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../troubleshooting/">Troubleshooting</a>
+  </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../../release-notes/">Release Notes</a>
@@ -338,19 +355,19 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>AxonIQ provides ready to use <a href="https://hub.docker.com/r/axoniq/axonserver">Axon Server images</a>.
-There are two types of images available: one with Axon Server running as the user &#8220;root&#8221; and one with Axon Server running as user &#8220;axonserver&#8221;.
-Both images are based on <a href="https://hub.docker.com/_/eclipse-temurin">Eclipse Temurin</a>, which means they include a (limited) shell that allows you to connect "into" the running image and perform some commands.</p>
+There are two types of images available: one with Axon Server running as the user <code>root</code> and one with Axon Server running as user <code>axonserver</code>.
+Both images are based on <a href="https://hub.docker.com/_/eclipse-temurin">Eclipse Temurin</a>.</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>The &#8220;root&#8221; image of version 2023.1 is available as &#8220;axoniq/axonserver:2023.1&#8221; and is based on &#8220;eclipse-temurin:11-focal&#8221;.
-This image is particularly useful for running in Docker Desktop, as it will not have any trouble creating files and directories as user &#8220;root&#8221;.</p>
+<p>The <code>root</code> image of version 2024.2.3 is available as <code>axoniq/axonserver:2024.2.3</code> and is based on <code>eclipse-temurin:17-focal</code>.
+This image is particularly useful for running in Docker Desktop, as it will not have any trouble creating files and directories as user <code>root</code>.</p>
 </li>
 <li>
-<p>The &#8220;axonserver&#8221; image of version 2023.1 is available as &#8220;axoniq/axonserver:2023.1-nonroot&#8221; and is based on the same Eclipse Temurin image.
+<p>The <code>axonserver</code> image of version 2024.2.3 is available as <code>axoniq/axonserver:2024.2.3-nonroot</code> and is based on the same Eclipse Temurin image.
 This image is more secure and useful in Kubernetes and OpenShift clusters.
-You should take care to declare the user- and group-id, both of which are <code>1001</code> and are named &#8220;axonserver&#8221;.
+You should take care to declare the user- and group-id, both of which are <code>1001</code> and are named <code>axonserver</code>.
 Doing this will ensure that any mounted volumes will be writable by the user running Axon Server.</p>
 </li>
 </ul>
@@ -361,99 +378,32 @@ Doing this will ensure that any mounted volumes will be writable by the user run
 <div class="ulist">
 <ul>
 <li>
-<p>&#8220;/axonserver/config&#8221;</p>
+<p><code>/axonserver/config</code>
+This is where you can add configuration files, such as an additional <code>axonserver.properties</code> and the license file.
+However, you can also opt to use, for instance, Kubernetes, or Docker-compose secrets.
+Note that Axon Server assumes it can write to the directory configured with <code>axoniq.axonserver.enterprise.licenseDirectory</code>, so you don&#8217;t have to put the license on all nodes.</p>
+</li>
+<li>
+<p><code>/axonserver/data</code>
+This is where the ControlDB, the PID file, and a copy of the application logs are written to.</p>
+</li>
+<li>
+<p><code>/axonserver/events</code>
+In this volume the Event Store is created, with a single directory per context.</p>
+</li>
+<li>
+<p><code>/axonserver/log</code>
+In this volume the Replication Logs are created, with a single directory per Replication Group.</p>
+</li>
+<li>
+<p><code>/axonserver/exts</code>
+In this volume you can place Extension JAR-files, such as the LDAP and OAuth2 extensions.</p>
+</li>
+<li>
+<p><code>/axonserver/plugins</code>
+In this volume Axon Server will place all uploaded plugins.</p>
 </li>
 </ul>
-</div>
-<div class="paragraph">
-<p>This is where you can add configuration files, such as an additional <code>axonserver.properties</code> and the license file.
-However, you can also opt to use, for instance, Kubernetes, or Docker-compose secrets.
-Note that Axon Server assumes it can write to the directory configured with &#8220;axoniq.axonserver.enterprise.licenseDirectory&#8221;, so you don&#8217;t have to put the license on all nodes.
-* &#8220;/axonserver/data&#8221;</p>
-</div>
-<div class="paragraph">
-<p>This is where the ControlDB, the PID file, and a copy of the application logs are written to.
-* &#8220;/axonserver/events&#8221;</p>
-</div>
-<div class="paragraph">
-<p>In this volume the Event Store is created, with a single directory per context.
-* &#8220;/axonserver/log&#8221;</p>
-</div>
-<div class="paragraph">
-<p>In this volume the Replication Logs are created, with a single directory per Replication Group.
-* &#8220;/axonserver/exts&#8221;</p>
-</div>
-<div class="paragraph">
-<p>In this volume you can place Extension JAR-files, such as the LDAP and OAuth2 extensions.
-* &#8220;/axonserver/plugins&#8221;</p>
-</div>
-<div class="paragraph">
-<p>In this volume Axon Server will place all uploaded plugins.</p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><em>Using the axoniq/axonserver:latest image</em> &lt;a name="docker-latest"&gt;&lt;/a&gt;</p>
-</div>
-<div class="paragraph">
-<p>Up to release 2023.2.0 the default Axon Server image (axoniq/axonserver:latest) was using Axon Server Standard Edition version 4.6.11. There is a difference in the directory structure between version 4.6.11 and the current version.
-One change is that the working directory has changed from <code>/</code> to <code>/axonserver</code>.
-All files and directories created by Axon Server are stored in this directory (or subdirectories).</p>
-</div>
-<div class="paragraph">
-<p>The following locations have new default values:</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Property</th>
-<th class="tableblock halign-left valign-top">Axon Server SE 4.6.11</th>
-<th class="tableblock halign-left valign-top">Axon Server 2023.2</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.event.storage</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/eventdata</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/axonserver/events</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.snapshot.storage</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/eventdata</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/axonserver/events</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.controldb-path</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/data</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/axonserver/data</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.plugin-package-directory</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/data/plugins/bundles</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/axonserver/plugins/bundles</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.plugin-cache-directory</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/data/plugins/cache</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/axonserver/plugins/cache</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">logging.file</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/data/axonserver.log</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">/axonserver/data/axonserver.log</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>As these locations have changed you need to update the volume mappings that you use in the container.
-The mapping for /eventdata must be changed to /axonserver/events, and the mapping for /data must be changed to /axonserver/data.</p>
-</div>
-</blockquote>
 </div>
 </div>
 </div>
@@ -461,7 +411,7 @@ The mapping for /eventdata must be changed to /axonserver/events, and the mappin
 <h2 id="build-image"><a class="anchor" href="#build-image"></a>Building you own image</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A starter Dockerfile is included below which can be tailored as per your requirements.</p>
+<p>A starter <code>Dockerfile</code> is included below which can be tailored as per your requirements.</p>
 </div>
 <div class="paragraph">
 <p>The starter file helps create the image in multiple stages,</p>
@@ -469,11 +419,10 @@ The mapping for /eventdata must be changed to /axonserver/events, and the mappin
 <div class="ulist">
 <ul>
 <li>
-<p>The image will be based on a compact image from Google’s “distroless” base images at the gcr.io repository, in this case “gcr.io/distroless/java:11”.</p>
+<p>The image will be based on <code>eclipse-temurin:17-focal</code>.</p>
 </li>
 <li>
-<p>The first stage creates the directories that will become our volumes.
-This step cannot be performed in the Distroless image, because that image does not provide a shell.</p>
+<p>The first stage creates the directories that will become our volumes.</p>
 </li>
 <li>
 <p>The second stage begins by copying the home directory with its volume mount points, carefully keeping ownership set to the new user.</p>
@@ -486,13 +435,9 @@ It marks the volume mounting points and exposed ports and finally specifies the 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">FROM busybox as source
-
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">FROM eclipse-temurin:17-focal
 RUN mkdir -p /axonserver/config /axonserver/data /axonserver/events /axonserver/log /axonserver/exts
 
-FROM gcr.io/distroless/java:11
-
-COPY --from=source /axonserver /axonserver
 COPY axonserver.jar axonserver.properties /axonserver/
 
 WORKDIR /axonserver
@@ -504,38 +449,7 @@ ENTRYPOINT [ "java", "-jar", "./axonserver.jar" ]</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>If you want to build a "nonroot" version, you need to adjust this as follows:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">FROM busybox as source
-RUN addgroup -S -g 1001 axonserver \
-    &amp;&amp; adduser -S -u 1001 -G axonserver -h /axonserver -D axonserver \
-    &amp;&amp; mkdir -p /axonserver/config /axonserver/data /axonserver/events /axonserver/log /axonserver/exts \
-    &amp;&amp; chown -R axonserver:axonserver /axonserver
-
-FROM gcr.io/distroless/java:11
-
-COPY --from=source /etc/passwd /etc/group /etc/
-COPY --from=source --chown=axonserver /axonserver /axonserver
-
-COPY --chown=axonserver axonserver.jar axonserver.properties /axonserver/
-
-USER axonserver
-WORKDIR /axonserver
-
-VOLUME [ "/axonserver/config", "/axonserver/data", "/axonserver/events", "/axonserver/log", "/axonserver/exts", "/axonserver/plugins" ]
-EXPOSE 8024/tcp 8124/tcp 8224/tcp
-
-ENTRYPOINT [ "java", "-jar", "./axonserver.jar" ]</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>As you can see this will start by creating the user &#8220;axonserver&#8221; belonging to a group with the same name.
-When copying the directory, we now have to ensure that ownership transfers correctly and specify the user to run as, but otherwise it looks pretty similar.</p>
-</div>
-<div class="paragraph">
-<p>For the common properties (axonserver.properties), the minimum set can be added to ensure that the volumes get mounted and logs generated.
+<p>For the common properties (<code>axonserver.properties</code>), the minimum set can be added to ensure that the volumes get mounted and logs generated.
 Again these can be tailored as per the deployment requirements.</p>
 </div>
 <div class="listingblock">
@@ -545,7 +459,6 @@ axoniq.axonserver.snapshot.storage=./events
 axoniq.axonserver.replication.log-storage-folder=./log
 
 axoniq.axonserver.enterprise.licenseDirectory=./config
-#axoniq.axonserver.accesscontrol.systemtokenfile=./config/axonserver.token
 
 axoniq.axonserver.controldb-path=./data
 axoniq.axonserver.pid-file-location=./data
@@ -556,12 +469,12 @@ logging.file.max-size=10MB</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Place the Dockerfile, the Axon Server jar file (axonserver.jar), the Axon Server client jar file (axonserver-cli.jar) and the axonserver.properties in the current directory.
-Assuming we are building version 2023.1.1, the image can be constructed using the following command:</p>
+<p>Place the Dockerfile, the Axon Server jar file (<code>axonserver.jar</code>) and the <code>axonserver.properties</code> in the current directory.
+Assuming we are building version 2024.2.3, the image can be constructed using the following command:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ docker build --tag my-repository/axonserver:2023.1.1.</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ docker build --tag my-repository/axonserver:2024.2.3</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -570,11 +483,27 @@ The image can pushed to your local repository or you could keep it local if you 
 The next step is to run it either using <a href="#docker-compose">Docker Compose</a> or <a href="#kubernetes">Kubernetes</a>.</p>
 </div>
 <div class="paragraph">
-<p>If you want to run the docker image for a standalone instance of Axon Server and have it initialized automatically, you can start it with the "axoniq.axonserver.standalone" property set through the environment, for instance:</p>
+<p>If you want to run the docker image for a standalone instance of Axon Server and have it initialized automatically, you can start it with the <code>axoniq.axonserver.standalone</code> property set through the environment, for instance:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ docker run -dit -e axoniq.axonserver.standalone=true -p 8024:8024 -p 8124:8124 my-repository/axonserver:2023.1.1</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ docker run -dit -e axoniq.axonserver.standalone=true -p 8024:8024 -p 8124:8124 my-repository/axonserver:2024.2.3</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_production_considerations"><a class="anchor" href="#_production_considerations"></a>Production considerations</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Security</strong> Please consider enabling <a href="../../security/ssl/" class="xref page">TLS</a> and <a href="../../security/access-control/" class="xref page">Access Control</a> to secure your setup.</p>
+</li>
+<li>
+<p><strong>root vs nonroot</strong> The image above runs axonserver as the root user. This might be not desirable and you might want to change it to a different user.</p>
+</li>
+<li>
+<p><strong>axonserver-cli</strong> The <code>axonserver-cli</code> provides useful functionality to interact with a running axonserver. We recommend to include it in the docker image, so it is available in case you need to troubleshoot issues in production.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -588,7 +517,8 @@ The next step is to run it either using <a href="#docker-compose">Docker Compose
 <div class="paragraph">
 <p>The installation process assumes that Docker Compose will be used to run a 3-node Axon Server cluster, that is running 3 services of the same container image we built above.
 Let us designate these services as "<em>axonserver-1</em>", "<em>axonserver-2</em>" and "<em>axonserver-3</em>".
-We will also give a tag to the image that we constructed above as "<em>my-repository/axonserver:2023.1</em>".</p>
+The default docker compose uses the docker image provided by AxonIQ on DockerHub at axoniq/axonserver:2024.2.3.
+If you wish to use your own docker image, you can replace each occurrence of "axoniq/axonserver:2024.2.3" with your own Docker image and tag.</p>
 </div>
 <div class="paragraph">
 <p>Each container instance will use separate volumes for “data”, “events”, and “log”.
@@ -603,7 +533,7 @@ We will use "secrets" to inject the license file, tokens as well as the cluster/
 <pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">version: '3.3'
 services:
   axonserver-1:
-    image: my-repository/axonserver:2023.1
+    image: axoniq/axonserver:2024.2.3
     hostname: axonserver-1
     volumes:
       - axonserver-data1:/axonserver/data
@@ -614,8 +544,6 @@ services:
         target: /axonserver/config/axoniq.license
       - source: axonserver-properties
         target: /axonserver/config/axonserver.properties
-      - source: axonserver-token
-        target: /axonserver/config/axonserver.token
     environment:
       - AXONIQ_LICENSE=/axonserver/config/axoniq.license
     ports:
@@ -625,7 +553,7 @@ services:
       - axon-demo
 
   axonserver-2:
-    image: my-repository/axonserver:2023.1
+    image: axoniq/axonserver:2024.2.3
     hostname: axonserver-2
     volumes:
       - axonserver-data2:/axonserver/data
@@ -636,8 +564,6 @@ services:
         target: /axonserver/config/axoniq.license
       - source: axonserver-properties
         target: /axonserver/config/axonserver.properties
-      - source: axonserver-token
-        target: /axonserver/config/axonserver.token
     environment:
       - AXONIQ_LICENSE=/axonserver/config/axoniq.license
     ports:
@@ -647,7 +573,7 @@ services:
       - axon-demo
 
   axonserver-3:
-    image: my-repository/axonserver:2023.1
+    image: axoniq/axonserver:2024.2.3
     hostname: axonserver-3
     volumes:
       - axonserver-data3:/axonserver/data
@@ -658,8 +584,6 @@ services:
         target: /axonserver/config/axoniq.license
       - source: axonserver-properties
         target: /axonserver/config/axonserver.properties
-      - source: axonserver-token
-        target: /axonserver/config/axonserver.token
     environment:
       - AXONIQ_LICENSE=/axonserver/config/axoniq.license
     ports:
@@ -670,59 +594,14 @@ services:
 
 volumes:
   axonserver-data1:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data1
-      o: bind
   axonserver-events1:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/events1
-      o: bind
   axonserver-log1:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/log1
-      o: bind
   axonserver-data2:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data2
-      o: bind
   axonserver-events2:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/events2
-      o: bind
   axonserver-log2:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/log2
-      o: bind
   axonserver-data3:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data3
-      o: bind
   axonserver-events3:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/events3
-      o: bind
   axonserver-log3:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/log3
-      o: bind
 
 networks:
   axon-demo:
@@ -731,28 +610,17 @@ secrets:
   axonserver-properties:
     file: ./axonserver.properties
   axoniq-license:
-    file: ./axoniq.license
-  axonserver-token:
-    file: ./axonserver.token</code></pre>
+    file: ./axoniq.license</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The “axonserver-token” secret is used to allow the CLI to talk with nodes.
-The access control section details the generation of these tokens.
-A similar approach can be used to configure more secrets for the certificates, and so enable SSL.</p>
-</div>
-<div class="paragraph">
-<p>The "axonserver.properties" properties file referred to in the secrets’ definition section is depicted below.</p>
+<p>The <code>axonserver.properties</code> properties file referred to in the secrets’ definition section is depicted below.
+It uses <code>autocluster</code> to set up the cluster on startup, contacting the first node to initialize the procedure.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axoniq.axonserver.autocluster.first=axonserver-1
-axoniq.axonserver.autocluster.contexts=_admin,default
-# We highly recommend protecting your installations at all time, hence why access control is enabled here.
-# For quick testing, you can disable this, but be sure to switch it big with high priority.
-axoniq.axonserver.accesscontrol.enabled=true
-axoniq.axonserver.accesscontrol.internal-token=${generated_token}
-axoniq.axonserver.accesscontrol.systemtokenfile=/axonserver/config/axonserver.tok</code></pre>
+axoniq.axonserver.autocluster.contexts=_admin,default</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -789,7 +657,7 @@ The context can be specified, but only through the user or group’s ID, and not
 So we have to adjust the first stage to specify a specific numeric value <em>(here we have given 1001)</em> , and then use that value in the security context of the Stateful set which we shall see below.</p>
 </div>
 <div class="paragraph">
-<p>We would need to supply a licence/token file (for client applications) and cluster/context definitions via an axonserver.properties file.
+<p>We would need to supply a license/token file (for client applications) and cluster/context definitions via an axonserver.properties file.
 Unlike Docker Compose, Kubernetes mounts Secrets and ConfigMaps as directories rather than files, so we need to split license and configuration to two separate locations.
 For the license secret we can use a new location “/axonserver/license/axoniq.license” and adjust the environment variable to match.
 For the system token we’ll use “/axonserver/security/token.txt”, and for the properties file we’ll use a ConfigMap that we mount on top of the “/axonserver/config” directory.</p>
