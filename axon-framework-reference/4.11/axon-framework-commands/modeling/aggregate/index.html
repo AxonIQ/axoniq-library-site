@@ -29,7 +29,7 @@
   </head>
   <body class="article">
     <div class="banner">
-    <a href="https://console.axoniq.io">Gain deep insights into Axon Framework applications with AxonIQ console. <span class="banner_button">Start now</span></a>
+    <a href="https://console.axoniq.io">Manage and monitor your Axon Framework applications and Axon Server environments. <span class="banner_button" target="_blank">Try AxonIQ Console</span></a>
 </div>    
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
@@ -373,6 +373,46 @@ ensuring changes to one part don’t mess up others.</p>
 <div class="paragraph">
 <p>Aggregates are commonly used to model the core business entities in a system based on <a href="https://www.axoniq.io/concepts/domain-driven-design">Domain-Driven Design</a> and <a href="https://www.axoniq.io/concepts/cqrs-and-event-sourcing">CQRS</a>.
 This chapter will cover the basics on how to implement one in Axon Framework.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_aggregate_identifiers"><a class="anchor" href="#_aggregate_identifiers"></a>Aggregate identifiers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each aggregate has an identifier that uniquely identifies it within the context.
+Events published from this aggregate will contain this identifier,
+so that Axon Framework can later load the aggregate from its event stream.</p>
+</div>
+<div class="paragraph">
+<p>Commands that target aggregates contain a reference to this identifier.
+Axon Framework will load the events for the aggregate with this identifier,
+replay the events on an empty instance, and invoke the command. This is how the aggregate&#8217;s state is reconstructed to support Event-Sourcing.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The aggregate identifier has to be globally unique in your event store.
+This means that events are loaded based only on the identifier, and nothing else.
+Henceforth, the aggregate&#8217;s type does not influence uniqueness at all.
+This means that if you have two aggregate types with the same identifier, Axon will
+load the events for both aggregates when handling a command.
+Mixing these events might lead to unexpected behavior, so we strongly recommend to design
+your aggregate identifiers with uniqueness in mind.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Note that commands that construct a new aggregate (via a constructor) do not need an identifier.
+However, your <code>@AggregateIdentifier</code> field needs to have a value after the first command,
+or Axon Framework will not know which aggregate identifier to publish the events for.</p>
 </div>
 </div>
 </div>
