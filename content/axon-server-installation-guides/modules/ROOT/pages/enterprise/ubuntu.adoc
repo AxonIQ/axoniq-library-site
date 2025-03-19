@@ -9,27 +9,28 @@ The package currently only supports Ubuntu 22 (Jammy) and 24 (Focal).
 More distributions will be supported in the future.
 ====
 
-== Step 1: Install the package
+== Step 1: Pick a node
 
+As we are installing a multi-node cluster, you need to pick one of the nodes to be the first node.
+Please follow the steps completely for this node first, and then repeat step 2 to 7 for the other nodes.
 
-On each of the machines you want to install Axon Server on, execute the commands outlined in this step.
-
+== Step 2: Installation
 
 include::partial$ubuntu-install-steps.adoc[]
 
-== Step 2: Configure
+== Step 3: Configure
 
-Axon Server runs with adequate defaults.
-However, you can customize it by editing the `/etc/axonserver/axonserver.propertie` file that was just installed on your machine.
+Axon Server runs with adequate defaults, where it will assume the hostname of the machine it is running on and run on the default ports.
+However, you can customize it by editing the `/etc/axonserver/axonserver.properties` file that was just installed on your machine.
 
 include::partial$step-configure.adoc[]
 
 [NOTE]
-If you want your Axon Server to be accessible from other machines, you need to add additional settings so machines know
-where to find each other. For more information, see the xref:axon-server-installation::extra/hosts-and-connections.adoc[hosts and connections].
+If you want your Axon Server to be accessible from other machines, you might need to add additional settings so machines know where to find each other.
+For more information, see the xref:axon-server-installation::extra/hosts-and-connections.adoc[hosts and connections].
 
 
-== Step 3: Choose a clustering method
+== Step 4: Define clustering
 
 include::partial$clustering-methods.adoc[]
 
@@ -93,7 +94,6 @@ include::partial$obtain-console-access-token.adoc[]
 
 include::partial$step-configure-ports.adoc[]
 
-
 == Step 6: Run Axon Server
 
 You can now start Axon Server!
@@ -113,10 +113,18 @@ cd /var/lib/axonserver/
 sh start-axonserver.sh
 ----
 
-[NOTE]
-====
-Depending on your cloud environment or machine configuration, you might need to open the ports in the firewall.
-Please refer to the documentation of your cloud provider or operating system for more information.
-====
+== Step 7: Verify installation
+
+Once the Axon Server instance has booted up, you should be able to access the dashboard by navigating to `http://HOSTNAME:8024` in your browser, provided the firewall allows it.
+You can also verify that Axon Server started up correctly by checking AxonIQ console.
+You can see an example of a healthy cluster in the image below.
+
+image::axon-server-cluster-healhy-in-axoniq-console.png[width=600,alt="Axon Server cluster healthy in AxonIQ console"]
+
+If this is only the first node you are connecting, you will only see one node in the cluster.
+
+== Step 8: Repeat for remaining nodes
+
+To connect the other nodes to the cluster, repeat steps 2 to 6 for each node until all nodes are correctly up and running.
 
 include::partial$step-configure-axon-framework-multiple.adoc[]
