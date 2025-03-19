@@ -1,0 +1,98 @@
+= Migrating to Axon Server
+
+Are you currently using an RDMS, NoSQL, or other database to store your events and are you considering migrating to Axon Server? This guide will help you with the migration process.
+
+Axon Server packages a migration tool in every downloaded package from link:https://axoniq.io/download[the AxonIQ website].
+The tool is called `axonserver-migration.jar` and is located in the root of the downloaded package.
+
+image::download-package-content-migration-tool.png[alt="Download package content with migration tool", width=300]
+
+You can also see the source code of the migration tool on GitHub: link:
+
+== How the tool works
+
+The tool allows you define a source and a target. It will read events and snapshots from the source,
+and write them to the target. By default, it will stop when reaching the end of the source event store,
+but it can be configured to continuously keep reading events from the source when they come in.
+
+The tool currently supports the following sources:
+
+- RDBMS (any database that has a JDBC driver)
+- MongoDB
+
+As a target, only Axon Server is currently supported.
+
+== Configuration
+
+The tool is configured using properties, such as an `application.properties` file. It has the potential to configure the following properies:
+
+[listing,properties]
+----
+axoniq.migration.migrateEvents=true            # Set to false to only migrate snapshots
+axoniq.migration.migrateSnapshot=true          # Set to false to only migrate snapshots
+axoniq.migration.ignoredEvents=                # A comma-separated list of event types to ignore
+axoniq.migration.continuous=false              # Set to true to keep reading events from the source after reaching the end
+axoniq.migration.continuousTimeout=100ms       # The time to wait before checking for new events
+axoniq.migration.recentMillis=10000            # What is considered a safe period for database commit consistency, defaults to 10 seconds
+axoniq.migration.reorderSequenceNumbers=false  # Set to true if you have deleted events in your database in the past. This will leave gaps in aggregate sequence numbers and should be corrected during the migration.
+axon.serializer.events=XSTREAM                 # Which serializer to use for Metadata. XStream by default, can also be JACKSON or DEFAULT. Note that the events will be migrated as-is.
+----
+
+
+=== Configuration of relational database source
+
+When using an RDBMS as a source, you need to configure the following properties:
+
+[listing,properties]
+----
+axoniq.migration.source=RDBMS
+axoniq.datasource.eventstore.url=jdbc:postgresql://localhost:5432/your-database
+axoniq.datasource.eventstore.username=your-username
+axoniq.datasource.eventstore.password=your-password
+spring.jpa.properties.hibernate.dialect= # OPTIONAL. If you want to use a specific dialect, define this property. You can attach your own Jars containing a dialect in the libs folder. This will be automatically loaded
+----
+
+[NOTE]
+.Drivers
+====
+The application should be supplied a JDBC driver for the configured origin database. This driver should be put in the libs folder.
+====
+
+=== Configuration of MongoDB source
+
+When using MongoDB as a source, you need to configure the following properties:
+
+[listing,properties]
+----
+axoniq.migration.source=MONGO
+spring.data.mongodb.uri=mongodb://localhost:27017/your-database
+spring.data.mongodb.username=your-username
+spring.data.mongodb.password=your-password
+----
+
+Other options for the Spring Mongo library can be used as well.
+
+=== Configuration of Axon Server target
+
+When using Axon Server as a target, you need to configure the following properties:
+
+[listing,properties]
+----
+axoniq.migration.destination=AXONSERVER
+axoniq.axonserver.servers=localhost:8124    # Comma separated list of hostnames and ports for the Axon Server cluster.
+axoniq.axonserver.context=default           # The context to use in Axon Server
+axoniq.axonserver.token=                    # The token to use for authentication
+----
+
+Any other Axon Framework properties for Axon Server can be used as well. This can be useful to configure certificates, access control tokens or other settings.
+
+== How to run
+
+Provided you have network access to both the source and the destination, you can now
+
+[listing,bash]
+----
+java -jar axonserver-migration.jar
+----
+
+The tool will start running, and provide progress updates along the way.
