@@ -1,0 +1,85 @@
+= Docker
+
+Docker has become a standard method of running software on your computer.
+Docker is a containerization platform that allows you to run applications in isolated environments.
+This makes it easy to run Axon Server on any machine that supports Docker.
+
+[NOTE]
+====
+Want to use Docker Compose? Use the xref:developer/docker-compose.adoc[Docker Compose guide] instead.
+====
+
+== Step 1: Verify installation
+
+Make sure you have Docker installed on your machine.
+You can verify this by running the following command:
+
+include::partial$docker-verification.adoc[]
+
+== Step 2: Choose your image (optional)
+
+include::partial$choose-your-docker-image.adoc[]
+
+== Step 4: Run
+
+It's now time to run your docker image.
+The command depends a little bit on whether you choose to use AxonIQ Console or not (from Step 2).
+
+[tabs]
+====
+With AxonIQ Console::
++
+--
+
+Please replace the `YOUR_ACCESS_TOKEN` text with the access key acquired in Step 2.
+
+[source,bash]
+----
+docker run \
+    --name axon-server \
+    -e axoniq_console_authentication="YOUR_CONSOLE_ACCESS_TOKEN" \
+    -p 8024:8024 -p 8124:8124 -p 8224:8224 \
+    axoniq/axonserver:latest-jdk-17-nonroot
+----
+--
+
+
+Without AxonIQ Console::
++
+--
+[source,bash]
+----
+docker run \
+    --name axon-server \
+    -p 8024:8024 -p 8124:8124 -p 8224:8224 \
+    axoniq/axonserver:latest-jdk-17-nonroot
+----
+--
+====
+
+[NOTE]
+====
+In the commands, you can tweak the exposed ports of the Docker image, so the Axon Server dashboard runs on another port.
+For example, you can replace `-p 8024:8024` with `-p 8025:8024` to get access the dashboard on `localhost:8025`.
+====
+
+
+
+== Step 5: Initialize
+
+When you go to the dashboard for the first time, you will be prompted to initialize Axon Server.
+
+image::axon-server-complete-installation-start-node-and-initialize.png[width=400,alt="Complete installation prompt of Axon Server"]
+
+Please choose the `Start standalone node` edition and click `Complete`. You are now ready to use Axon Server.
+
+[NOTE]
+====
+To initialize Axon Server as standalone node without a UI action, you can add  `-e AXONIQ_AXONSERVER_STANDALONE=true`
+to the Docker command.
+====
+
+
+include::partial$step-configure-axon-framework-single.adoc[]
+
+
