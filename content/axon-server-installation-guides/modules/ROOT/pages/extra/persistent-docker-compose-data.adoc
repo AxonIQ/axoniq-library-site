@@ -1,1 +1,104 @@
 = Persistent Docker Compose Volumes
+
+When you run with Docker Compose, you can use volumes to persist data across container restarts.
+To do this, we need to define volumes in the `docker-compose.yml` file.
+
+Axon Server needs 3 different volumes:
+
+. Data: This is where the ControlDB, the PID file, and a copy of the application logs are written to.
+. Events: Contains the event store, with a single directory per context.
+. Log: Contains the replication logs, used for recovery from failures.
+
+
+So to give all Axon Server nodes (if 3) their own data, events, and log directories in the folder of the Docker Compose, you can define the following volumes in the `docker-compose.yml` file:
+
+[source,yaml]
+----
+
+volumes:
+  axonserver-1-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/axonserver-1-data
+      o: bind
+  axonserver-1-events:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/axonserver-1-events
+      o: bind
+  axonserver-1-log:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/axonserver-1-logs
+      o: bind
+  axonserver-2-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/axonserver-2-data
+      o: bind
+  axonserver-2-events:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/axonserver-2-events
+      o: bind
+  axonserver-2-log:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/axonserver-2-logs
+      o: bind
+  axonserver-3-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/axonserver-3-data
+      o: bind
+  axonserver-3-events:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/axonserver-3-events
+      o: bind
+  axonserver-3-log:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/log3
+      o: bind
+----
+
+If you are running a non-clustered version of Axon Server, you can remove the volumes for the second and third node.
+
+Of course, you can choose another location for the volumes, or even another storage driver. See the link:https://docs.docker.com/engine/storage/volumes/[Docker documentation] for more information.
+
+Now we need to mount these volumes that are created. We can do this by adding the following to each service in the `docker-compose.yml` file:
+
+[source,yaml]
+----
+services:
+  axonserver-1:
+    image: my-repository/axonserver:my-image-tag
+    volumes:
+      - axonserver-1-data:/axonserver/data
+      - axonserver-1-events:/axonserver/events
+      - axonserver-1-log:/axonserver/log
+  axonserver-2:
+    image: my-repository/axonserver:my-image-tag
+    volumes:
+      - axonserver-2-data:/axonserver/data
+      - axonserver-2-events:/axonserver/events
+      - axonserver-2-log:/axonserver/log
+  axonserver-3:
+    image: my-repository/axonserver:my-image-tag
+    volumes:
+      - axonserver-3-data:/axonserver/data
+      - axonserver-3-events:/axonserver/events
+      - axonserver-3-log:/axonserver/log
+----
+
+And that's it! Your data will now be persisted across container restarts.

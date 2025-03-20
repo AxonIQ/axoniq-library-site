@@ -1,1 +1,168 @@
 = Choosing Docker Image
+
+
+AxonIQ provides ready-to-use https://hub.docker.com/r/axoniq/axonserver[Axon Server images].
+These images are all based on https://hub.docker.com/_/eclipse-temurin[Eclipse Temurin], which means they include a (limited) shell that allows you to connect "into" the running image and perform some commands.
+
+There are two variants available:
+
+* The regular images, for example, tagged `2024.2.4` or `2024.2.4-jdk-17` run Axon Server as the `root` user inside the container.
+This image is particularly useful for running in Docker Desktop, as it will not have any trouble creating files and directories.
+* The `nonroot` images, for example, tagged `2024.2.4-nonroot` or `2024.2.4-jdk-17-nonroot` runs Axon Server as the `axonserver` user.
+This image is more secure  in Kubernetes and OpenShift clusters.
+
+[NOTE]
+====
+When using a `nonroot` image, you have to run the container with `user` and `group` id `1001`. In Kubernetes, this would mean adding a link:https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[security context] to the pod definition:
+
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: StatefulSet
+spec:
+  serviceName: axonserver
+  replicas: 1
+  template:
+    spec:
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: axonserver
+        image: axoniq/axonserver:latest-jdk-17-nonroot
+        # Rest of file omitted for brevity
+----
+
+Doing this will ensure that any mounted volumes will be writable by the user running Axon Server.
+====
+
+== Exported volumes
+
+The pre-built images export the following volumes:
+
+=== `/axonserver/config`
+
+This is where you can add configuration files, such as an additional `axonserver.properties` and the license file.
+However, you can also opt to use, for instance, Kubernetes, or Docker-compose secrets.
+Note that Axon Server assumes it can write to the directory configured with `axoniq.axonserver.enterprise.licenseDirectory`, so you don't have to put the license on all nodes.
+
+=== `/axonserver/data`
+
+This is where the ControlDB, the PID file, and a copy of the application logs are written to.
+
+=== `/axonserver/events`
+
+Contains the event store, with a single directory per context. Be sure to size this volume correctly, as it will grow over time.
+
+=== `/axonserver/log`
+
+Contains the replication logs. This needs to be big enough to hold the data of the past hour to ensure Axon Server can recover from failures correctly.
+
+=== `/axonserver/plugins`
+
+You can place plugins in this volume. The plugins are loaded at startup and can be used to extend Axon Server with additional functionality.
+
+== Building your own image [[build-image]]
+
+You can, of course, build your own container per your own requirements.
+A starter Dockerfile is included below which can be tailored as per your requirements.
+
+The starter file helps create the image in multiple stages:
+
+* The image will be based on a compact image from Google’s `distroless` base images at the gcr.io repository, in this case `gcr.io/distroless/java:11`.
+* The first stage creates the directories that will become our volumes.
+This step cannot be performed in the Distroless image, because that image does not provide a shell.
+* The second stage begins by copying the home directory with its volume mount points, carefully keeping ownership set to the new user.
+* The last steps copy the executable jar named axonserver.jar and a common set of properties.
+It marks the volume mounting points and exposed ports and finally specifies the command to start Axon Server.
+
+[source,docker]
+----
+FROM busybox as source
+
+RUN mkdir -p /axonserver/config /axonserver/data /axonserver/events /axonserver/log /axonserver/exts
+
+FROM gcr.io/distroless/java:11
+
+COPY --from=source /axonserver /axonserver
+COPY axonserver.jar axonserver.properties /axonserver/
+
+WORKDIR /axonserver
+
+VOLUME [ "/axonserver/config", "/axonserver/data", "/axonserver/events", "/axonserver/log", "/axonserver/exts", "/axonserver/plugins"  ]
+EXPOSE 8024/tcp 8124/tcp 8224/tcp
+
+ENTRYPOINT [ "java", "-jar", "./axonserver.jar" ]
+
+----
+
+If you want to build a "nonroot" version, you need to adjust this as follows:
+
+[source,docker]
+----
+FROM busybox as source
+RUN addgroup -S -g 1001 axonserver \
+    && adduser -S -u 1001 -G axonserver -h /axonserver -D axonserver \
+    && mkdir -p /axonserver/config /axonserver/data /axonserver/events /axonserver/log /axonserver/exts \
+    && chown -R axonserver:axonserver /axonserver
+
+FROM gcr.io/distroless/java:11
+
+COPY --from=source /etc/passwd /etc/group /etc/
+COPY --from=source --chown=axonserver /axonserver /axonserver
+
+COPY --chown=axonserver axonserver.jar axonserver.properties /axonserver/
+
+USER axonserver
+WORKDIR /axonserver
+
+VOLUME [ "/axonserver/config", "/axonserver/data", "/axonserver/events", "/axonserver/log", "/axonserver/exts", "/axonserver/plugins" ]
+EXPOSE 8024/tcp 8124/tcp 8224/tcp
+
+ENTRYPOINT [ "java", "-jar", "./axonserver.jar" ]
+
+----
+
+As you can see, this will start by creating the user `axonserver` belonging to a group with the same name.
+When copying the directory, we now have to ensure that ownership transfers correctly and specify the user to run as, but otherwise it looks pretty similar.
+
+For the common properties (`axonserver.properties`), the minimum set can be added to ensure that the volumes get mounted and logs generated.
+Again these can be tailored as per the deployment requirements.
+
+[source,properties]
+----
+axoniq.axonserver.event.storage=./events
+axoniq.axonserver.snapshot.storage=./events
+axoniq.axonserver.replication.log-storage-folder=./log
+
+axoniq.axonserver.enterprise.licenseDirectory=./config
+#axoniq.axonserver.accesscontrol.systemtokenfile=./config/axonserver.token
+
+axoniq.axonserver.controldb-path=./data
+axoniq.axonserver.pid-file-location=./data
+
+logging.file=./data/axonserver.log
+logging.file.max-history=10
+logging.file.max-size=10MB
+
+----
+
+Place the Dockerfile, the Axon Server jar file (`axonserver.jar`), the Axon Server client jar file (`axonserver-cli.jar`) and the `axonserver.properties` in the current directory.
+Then build the image using the following command:
+
+[source,console]
+----
+$ docker build --tag my-repository/axonserver:my-axon-server-tag.
+
+----
+
+This completes the construction of the Docker image.
+The image us built and saved your local repository.
+However, if you want to share it with others, you need to push it to a repository that others can access.
+
+== Running the image
+
+Whether you built your own image or are using the AxonIQ provided images, you can now use this image in the installation guides where appropriate.
+Make sure to replace the image name with the one you built, or the one you want to use from AxonIQ, in the relevant guide's commands and files.
