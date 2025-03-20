@@ -531,38 +531,51 @@ Providing the exception to the event publisher allows the publishing component t
 </div>
 </div>
 <div class="paragraph">
-<p>A Subscribing Processor can use a Persistent Stream as its message source. By using a persistent stream we allow a Subscribing Processor to process events in parallel and to replay events.</p>
+<p>A Subscribing Processor can use a Persistent Stream as its message source.
+By using a persistent stream we allow a Subscribing Processor to process events in parallel and to replay events.</p>
 </div>
 <div class="paragraph">
-<p>When a processor uses a persistent stream, it receives events from Axon Server. After processing (a batch of) events, it sends an acknowledgment back to Axon Server.</p>
+<p>When a processor uses a persistent stream, it receives events from Axon Server.
+After processing (a batch of) events, it sends an acknowledgment back to Axon Server.</p>
 </div>
 <div class="paragraph">
-<p>The persistent stream can be split in segments to allow for parallel processing within a single client or across multiple instances of the client. The number of segments can be changed dynamically. Axon Server distributes the segments across the subscribers to ensure that all segments are connected.</p>
+<p>The persistent stream can be split in segments to allow for parallel processing within a single client or across multiple instances of the client.
+The number of segments can be changed dynamically.
+Axon Server distributes the segments across the subscribers to ensure that all segments are connected.</p>
 </div>
 <div class="paragraph">
-<p>Events are assigned to a specific segment based on the sequencing policy for the persistent stream. Persistent streams support all the standard sequencing policies that also can be used for <a href="../streaming/#sequencing-policies" class="xref page">streaming processors</a>.</p>
+<p>Events are assigned to a specific segment based on the sequencing policy for the persistent stream.
+Persistent streams support all the standard sequencing policies that also can be used for <a href="../streaming/#sequencing-policies" class="xref page">streaming processors</a>.</p>
 </div>
 <div class="paragraph">
-<p>Clients can provide a filter in the persistent stream definition. This reduces the number of events that the client receives from Axon Server. The expression used to filter events are the same as expressions used in the ad-hoc query option in Axon Server.</p>
+<p>Clients can provide a filter in the persistent stream definition.
+This reduces the number of events that the client receives from Axon Server.
+The expression used to filter events are the same as expressions used in the ad-hoc query option in Axon Server.</p>
 </div>
 <div class="paragraph">
-<p>Persistent streams do not require a token store in the client. The state of the stream is maintained in Axon Server.</p>
+<p>Persistent streams do not require a token store in the client.
+The state of the stream is maintained in Axon Server.</p>
 </div>
 <div class="sect2">
 <h3 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h3>
 <div class="paragraph">
-<p>For a specific Event Processor to be a Subscribing instance using a persistent stream, <code>registerSubscribingEventProcessor</code> is used. The message source for the event processor must be a <code>PersistentStreamMessageSource</code>.</p>
+<p>For a specific Event Processor to be a Subscribing instance using a persistent stream, <code>registerSubscribingEventProcessor</code> is used.
+The message source for the event processor must be a <code>PersistentStreamMessageSource</code>.</p>
 </div>
 <div class="paragraph">
-<p>Each persistent stream must be identified by a unique name within your Axon Server environment. This name serves as the stream&#8217;s identifier, and it&#8217;s crucial to understand that creating a new stream with an existing name will overwrite the previous stream connection.</p>
+<p>Each persistent stream must be identified by a unique name within your Axon Server environment.
+This name serves as the stream&#8217;s identifier, and it&#8217;s crucial to understand that creating a new stream with an existing name will overwrite the previous stream connection.</p>
 </div>
 <div class="paragraph">
-<p>The <code>PersistentStreamMessageSource</code> requires a <code>PersistentStreamProperties</code> to set the initial properties to create the persistent stream. The properties contain:</p>
+<p>The <code>PersistentStreamMessageSource</code> requires a <code>PersistentStreamProperties</code> to set the initial properties to create the persistent stream.
+The properties contain:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>streamName</code>: The name of the persistent stream. It&#8217;s a unique identifier of the connection with Axon Sever. Usage of the same name will overwrite the existing connection.</p>
+<p><code>streamName</code>: The name of the persistent stream.
+It&#8217;s a unique identifier of the connection with Axon Sever.
+Usage of the same name will overwrite the existing connection.</p>
 </li>
 <li>
 <p><code>segments</code>: The initial number of segments.</p>
@@ -585,7 +598,8 @@ Providing the exception to the event publisher allows the publishing component t
 <p>The <code>sequencingPolicyParameters</code> must be set if the sequencing policy is <code>PropertySequencingPolicy</code> or <code>MetaDataSequencingPolicy</code>.</p>
 </div>
 <div class="paragraph">
-<p>For the <code>MetaDataSequencingPolicy</code>, the <code>sequencingPolicyParameters</code> must contain the name of one or more of the event&#8217;s metadata fields. Events with the same value for these fields are passed in the same segment.</p>
+<p>For the <code>MetaDataSequencingPolicy</code>, the <code>sequencingPolicyParameters</code> must contain the name of one or more of the event&#8217;s metadata fields.
+Events with the same value for these fields are passed in the same segment.</p>
 </div>
 <div class="paragraph">
 <p>The <code>PropertySequencingPolicy</code> requires 4 values in the <code>sequencingPolicyParameters</code> list.</p>
@@ -593,16 +607,21 @@ Providing the exception to the event publisher allows the publishing component t
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>The serialization type for the events. Supported values are <code>JSON</code> or <code>XML</code>.</p>
+<p>The serialization type for the events.
+Supported values are <code>JSON</code> or <code>XML</code>.</p>
 </li>
 <li>
 <p>The payload type to apply the policy on.</p>
 </li>
 <li>
-<p>An expression to extract the property value from the event payload. If the serialization type is <code>JSON</code> this must be a <code>JsonPath</code> expression. For <code>XML</code> this must be an <code>Xpath</code> expression.</p>
+<p>An expression to extract the property value from the event payload.
+If the serialization type is <code>JSON</code> this must be a <code>JsonPath</code> expression.
+For <code>XML</code> this must be an <code>Xpath</code> expression.</p>
 </li>
 <li>
-<p>A fallback policy, the name of a sequencing policy to use if the payload type does not match the type specified in the second parameter. This may be <code>PropertySequencingPolicy</code> to specify an expression for another payload type. In this case add the serialization type, payload type, expression and fallback policy parameters for the alternative payload type.</p>
+<p>A fallback policy, the name of a sequencing policy to use if the payload type does not match the type specified in the second parameter.
+This may be <code>PropertySequencingPolicy</code> to specify an expression for another payload type.
+In this case add the serialization type, payload type, expression and fallback policy parameters for the alternative payload type.</p>
 </li>
 </ol>
 </div>
@@ -648,7 +667,8 @@ public class AxonConfig {
 Do note that the Java configuration provides more degrees of freedom.</p>
 </div>
 <div class="paragraph">
-<p>The source property for the processor must point to a Spring Bean which is a PersistentStreamMessageSource or a PersistentStreamMessageSourceDefinition. This bean can also be defined in the properties file.</p>
+<p>The source property for the processor must point to a Spring Bean which is a PersistentStreamMessageSource or a PersistentStreamMessageSourceDefinition.
+This bean can also be defined in the properties file.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -658,6 +678,33 @@ axon.eventhandling.processors.my-processor.source=my-persistent-stream
 axon.axonserver.persistent-streams.my-persistent-stream.name=My Persistent Stream
 axon.axonserver.persistent-streams.my-persistent-stream.batch-size=100
 axon.axonserver.persistent-streams.my-persistent-stream.initial-segment-count=4</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To simplify configuration, if you want to apply persistent streams to all processing groups all you have to do is set property:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.axonserver.auto-persistent-streams-enable=true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will configure persistent streams automatically for all processing groups with default settings.
+Each persistent stream will be named according to the following pattern:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">processingGroupName + "-stream"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also override default persistent stream settings</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.axonserver.auto-persistent-streams-settings.batch-size=5
+axon.axonserver.auto-persistent-streams-settings.thread-count=10
+axon.axonserver.auto-persistent-streams-settings.initial-segment-count=10</code></pre>
 </div>
 </div>
 </div>
