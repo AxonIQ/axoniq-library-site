@@ -3,10 +3,9 @@
   <head>
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Import External State</title>
-    <link rel="canonical" href="https://docs.axoniq.io/playbook/import_external_state/">
-    <link rel="prev" href="../state_views_via_projections/">
-    <link rel="next" href="../reservation/">
+    <title>Claim Check</title>
+    <link rel="canonical" href="https://docs.axoniq.io/playbook/claim_check/">
+    <link rel="prev" href="../async_task/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../_/css/site.css">
     <link rel="stylesheet" href="../../_/css/vendor/tabs.css">
@@ -85,15 +84,15 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../">AxonIQ Playbook </a></li>
-    <li><a href="./">Import External State</a></li>
+    <li><a href="./">Claim Check</a></li>
   </ul>
 </nav>
 <div class="page-actions">
   <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
   <div class="actions-menu toolbar_dropdown_menu card">
 
-    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Import%20External%20State" target="discuss_search">View Discussions</a>
-    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Import%20External%20State%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BImport%20External%20State%5D(https%3A%2F%2Fdocs.axoniq.io%2Fplaybook%2Fimport_external_state%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Claim%20Check" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Claim%20Check%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BClaim%20Check%5D(https%3A%2F%2Fdocs.axoniq.io%2Fplaybook%2Fclaim_check%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
   </div>
 </div>
 
@@ -117,8 +116,8 @@
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../state_views_via_projections/">Read Model Projections</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="./">Import External State</a>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../import_external_state/">Import External State</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../reservation/">Reservation</a>
@@ -126,8 +125,8 @@
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../async_task/">Asynchronous Task</a>
   </li>
-  <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../claim_check/">Claim Check</a>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="./">Claim Check</a>
   </li>
   <li class="nav-item" data-depth="1">
     <span class="nav-text">-</span>
@@ -152,11 +151,11 @@
   <div class="toc-menu"></div>
 </aside>
           <article class="doc">
-            <h1 class="page">Import External State</h1>
+            <h1 class="page">Claim Check</h1>
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>React to events in a foreign bounded context in order to trigger a state transition in the current bounded context.</p>
+<p>Capture time-variant data as snapshots for subsequent use.</p>
 </div>
 </div>
 </div>
@@ -164,10 +163,21 @@
 <h2 id="_problem"><a class="anchor" href="#_problem"></a>Problem</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>One part of a business domain - a <em>bounded context</em>, needs to inform another bounded context about internal state changes that have occurred, in order for the latter to trigger its own internal state changes.</p>
+<p>Consider the event model in <strong>figure 1</strong>, where a <em>MessageProcessor</em> is consuming pending messages from an external system and translates them into internal requests. In doing so the <em>MessageProcessor</em> fetches "reference data" that is to be used later in the business flow:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/claim_check/figure_1.png" alt="figure 1">
+</div>
+</div>
+<div class="paragraph text-center">
+<p><em>Figure 1 - Fetch time-variant data for later use</em></p>
 </div>
 <div class="paragraph">
-<p>Let&#8217;s envision two bounded contexts A and B; internal events in A should not be published externally (to B), and it&#8217;s not desirable to let A explicitly trigger a state change in B via a command (that decision resides with B).</p>
+<p>There is a requirement that the data is "freezed" immediately upon retrieval, as subsequent processing is dependent on the time-specific values.</p>
+</div>
+<div class="paragraph">
+<p>If the captured data needs to be part of the historical record it&#8217;ll typically be included in an event, for example <em>RequestInitiated</em>. However, if it&#8217;s <em>only</em> used by Processors to make a decision about the next command and its inputs, <em>or</em> the payload size is exceedingly large, another approach is needed, especially to avoid passing the reference data via commands and events throughout the business flow.</p>
 </div>
 </div>
 </div>
@@ -175,90 +185,76 @@
 <h2 id="_solution"><a class="anchor" href="#_solution"></a>Solution</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Let the foreign context (A in the aforementioned example) publish an <em>external</em> event that is consumed by the current context (B), and translate the external event into an internal event via a command.</p>
+<p>Explicitly store a snapshot of fetched reference data and access it via a read model:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/claim_check/figure_2.png" alt="figure 2">
+</div>
+</div>
+<div class="paragraph text-center">
+<p><em>Figure 2 - Fetch, store, and access a snapshot of time-variant data</em></p>
 </div>
 <div class="sect2">
 <h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
 <div class="paragraph">
-<p>In a bike rental domain, there exists two bounded contexts - <em>Inventory</em> and <em>Rental</em>. As new bikes are registered with Inventory, Rental must be informed about their availability to allow them to be rented.</p>
-</div>
-<div class="paragraph">
-<p>The event model is shown in <strong>figure 1</strong>:</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="../_images/p3_1.png" alt="p3 1">
-</div>
-</div>
-<div class="paragraph text-center">
-<p><em>Figure 1 - Reacting to foreign events via an automation</em></p>
-</div>
-<div class="paragraph">
-<p>The <code>RegistrationUpdates</code> read model is realized as a transformation from an internal event (<code>BikeRegisteredEvent</code>) in the Inventory context to an external event (called <code>BikeCreatedEvent</code> in the implementation below); implied in the read model is the use of an event broker to publish the external event.</p>
-</div>
-<div class="paragraph">
-<p>The <code>Processor</code> is a background component that consumes <code>BikeCreatedEvent</code> and translates it into a suitable <code>UpdateAvailabilityCommand</code>, yielding an internal <code>AvailabilityUpdatedEvent</code> in the Rental context.</p>
-</div>
-<div class="paragraph">
-<p>In <strong>Listing 1</strong> the internal BikeRegisteredEvent is transformed to the external BikeCreatedEvent for publishing to the Rental context.</p>
+<p>In <strong>listing 1</strong> the <em>MessageProcessor</em> calls an API endpoint that performs the fetching and snapshotting of reference data before sending the <em>InitiateRequest</em> command:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Component
-public class BikeEventPublisher {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// implementation of the snapshot state change/view slices in the API 
+// endpoint for initiating a request:
 
-    @Autowired
-    private EventGateway eventGateway;
+// use the generated request ID as a claim check token.
+var requestId = "&lt;UUID&gt;";
 
-    @EventHandler
-    public void on(BikeRegisteredEvent event) {
-        eventGateway.publish(new BikeCreatedEvent(event.bikeId()));
-    }
-}</code></pre>
+externalService.fetchData()
+    .thenCompose(referenceData -&gt;
+        snapshotService.storeSnapshot(
+            requestId,
+            referenceData
+        )
+    )
+    .thenRun(() -&gt;
+        commandGateway.send(
+            new InitiateRequestCommand(requestId)
+        )
+    )</code></pre>
 </div>
 </div>
 <div class="paragraph text-center">
-<p><em>Listing 1 - Internal event to external event transformation</em></p>
+<p><em>Listing 1 - Fetch and storing a snapshot of reference data</em></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_a_note_about_the_role_of_a_processor"><a class="anchor" href="#_a_note_about_the_role_of_a_processor"></a>A note about the role of a Processor</h3>
+<div class="paragraph">
+<p>There&#8217;s occassionally a bit of confusion about the responsibilities a Processor has in Event Modeling; for the purposes of this playbook a Processor has the following role:</p>
 </div>
 <div class="paragraph">
-<p><strong>Listing 2</strong> demonstrates the translation from the <code>BikeCreatedEvent</code> to a matching <code>UpdateAvailabilityCommand</code>.</p>
+<p><code><strong><em>Make a determination about what the next command to send should be (and therefore the potential next state transition), and collect the requisite inputs for that command</em></strong>.</code></p>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Component
-public class Processor {
-
-    @Autowired
-    private CommandGateway commandGateway;
-
-    @EventHandler
-    public void on(BikeCreatedEvent event) {
-        commandGateway.send(new UpdateAvailabilityCommand(event.bikeId()));
-    }
-}</code></pre>
+<div class="paragraph">
+<p>The data that the Processor can gather for its decision-making and command inputs are:</p>
 </div>
-</div>
-<div class="paragraph text-center">
-<p><em>Listing 1 - Translating the external event to trigger an internal state change in Rental</em></p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-In this example, an <code>EventGateway</code> and a so-called <code>integration context</code> supported by Axon Server is used for context-to-context event publish and subscribe. Other event brokers such as Kafka are of course suitable as well.
-</td>
-</tr>
-</table>
+<div class="ulist">
+<ul>
+<li>
+<p>Results from querying one or more read models, such as the <em>PendingRequests</em> and <em>Snapshots</em> read models above.</p>
+</li>
+<li>
+<p>External reference data that is <em>time-invariant</em>.</p>
+</li>
+<li>
+<p>Any internal static values.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../state_views_via_projections/">Read Model Projections</a></span>
-  <span class="next"><a href="../reservation/">Reservation</a></span>
+  <span class="prev"><a href="../async_task/">Asynchronous Task</a></span>
 </nav>
     </article>
   </div>

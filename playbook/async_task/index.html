@@ -6,6 +6,7 @@
     <title>Asynchronous Task</title>
     <link rel="canonical" href="https://docs.axoniq.io/playbook/async_task/">
     <link rel="prev" href="../reservation/">
+    <link rel="next" href="../claim_check/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../_/css/site.css">
     <link rel="stylesheet" href="../../_/css/vendor/tabs.css">
@@ -126,6 +127,9 @@
     <a class="nav-link" href="./">Asynchronous Task</a>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../claim_check/">Claim Check</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <span class="nav-text">-</span>
   </li>
   <li class="nav-item" data-depth="1">
@@ -197,6 +201,9 @@
 <p>The particulars of the onboarding workflow are not modeled in this example (only its commencement and completion is shown); typically those details are modeled as a distinct business flow elsewhere in the event model.</p>
 </div>
 <div class="paragraph">
+<p>Awaiting the completion of an asynchronous task or process is outside the scope of this pattern; typically any interested components have to listen for a suitable event, such as <em>OnboardingCompleted</em> in <strong>figure 1</strong>.</p>
+</div>
+<div class="paragraph">
 <p>This example uses <a href="https://restate.dev">Restate</a> for defining and running external workflows. Other options include Temporal and Dapr Workflow.</p>
 </div>
 </td>
@@ -232,9 +239,9 @@ public class OnboardingWorkflow {
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
 public void on(RenterRegistered evt) {
-    WorkflowEngine engine = WorkflowEngine.connect("&lt;Workflow Engine Server URL&gt;");
+    Client workflowEngine = Client.connect("&lt;Workflow Engine Server URL&gt;");
     OnboardingWorkflowClient.fromClient(
-        engine, 
+        workflowEngine, 
         evt.renterId
     ).submit(renterDetailsFrom(evt));
 }</code></pre>
@@ -260,6 +267,7 @@ Ensure that the hand-off is <em>idempotent</em>; in listing 2 the launch and exe
 </div>
         <nav class="pagination">
   <span class="prev"><a href="../reservation/">Reservation</a></span>
+  <span class="next"><a href="../claim_check/">Claim Check</a></span>
 </nav>
     </article>
   </div>
