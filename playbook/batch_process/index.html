@@ -236,7 +236,8 @@ var batchId = batchService.createBatch(noBikes);
 
 // register requested number of bikes in parallel.
 //
-// Note: The aggregate / command handler does not have to be changed to accommodate batch processing.
+// Note: The aggregate / command handler does not have to be 
+// changed to accommodate batch processing.
 for (var i = 0; i &lt; noBikes; i++) {
     commandGateway.send(
         new RegisterBikeCommand(bikeIds[i]),
@@ -250,7 +251,7 @@ for (var i = 0; i &lt; noBikes; i++) {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// register a SimpleCorrelationProvider in Axon.
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// register a SimpleCorrelationDataProvider in Axon.
 @Bean
 public CorrelationDataProvider customCorrelationDataProvider() {
     return new SimpleCorrelationDataProvider("batchId");
@@ -279,12 +280,19 @@ public CorrelationDataProvider customCorrelationDataProvider() {
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
-public void handle(BikeRegisteredEvent evt, @MetaDataValue("batchId") String batchId) {
-// retrieve the batch identifier from event metadata and increment the number of processed events.
-var status = batchService.updateBatch(batchId);
+public void handle(
+    BikeRegisteredEvent evt, 
+    @MetaDataValue("batchId") String batchId
+) {
+    // update the RegisteredBikes read model...
+
+    // retrieve the batch identifier from event metadata and 
+    // increment the number of processed events.
+    var status = batchService.updateBatch(batchId);
         
-if (status.noProcessed == status.expected) {
-    // all events in this batch have been processed.
+    if (status.noProcessed == status.expected) {
+        // all events in this batch have been processed.
+    }
 }</code></pre>
 </div>
 </div>
