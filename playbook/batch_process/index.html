@@ -169,7 +169,7 @@
 <p>In a bike rental domain a shipment of bikes has been delivered, with the bikes requiring registration in the rental service. The bikes need to be processed as one batch after which subsequent operations can commence.</p>
 </div>
 <div class="paragraph">
-<p>There is thus a requirement to track the state transition - the <em>BikeRegistered</em> event - for each bike and determine when all events have been successfully handled. Tracking should be amenable to both sequential and parallel processing.</p>
+<p>There is thus a requirement to track the state transition - the "bike registered" event - for each bike and determine when all events have been successfully handled. Tracking should be amenable to both sequential and parallel processing.</p>
 </div>
 </div>
 </div>
@@ -177,7 +177,7 @@
 <h2 id="_solution"><a class="anchor" href="#_solution"></a>Solution</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>Figure 1</strong> shows how to initiate a batch process for bike registration:</p>
+<p>The event model in <strong>Figure 1</strong> shows a batch process for bike registration:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -212,7 +212,7 @@
 <p><em>BatchService</em> allows for creating, updating, and retrieving the status of a batch.</p>
 </div>
 <div class="paragraph">
-<p>The command message&#8217;s metadata is populated with the batch identifier, allowing it to be transparently passed to the subsequent event message. In Axon this may be enabled via the <em>SimpleCorrelationProvider</em> (<strong>listing 2</strong>).</p>
+<p>The command message&#8217;s metadata is populated with the batch identifier, allowing it to be transparently passed to the subsequent event message. In Axon this may be enabled via the <a href="https://docs.axoniq.io/axon-framework-reference/4.11/messaging-concepts/message-correlation/#SimpleCorrelationDataProvider">SimpleCorrelationDataProvider</a> (<strong>listing 2</strong>).</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -231,14 +231,15 @@
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// create a new batch for registering a set of bikes.
-String batchId = batchService.createBatch(noBikes);
+var noBikes = bikeIds.length;
+var batchId = batchService.createBatch(noBikes);
 
 // register requested number of bikes in parallel.
 //
 // Note: The aggregate / command handler does not have to be changed to accommodate batch processing.
-for (int i = 0; i &lt; noBikes; i++) {
+for (var i = 0; i &lt; noBikes; i++) {
     commandGateway.send(
-        new RegisterBikeCommand(UUID.randomUUID().toString()),
+        new RegisterBikeCommand(bikeIds[i]),
         MetaData.with("batchId", batchId)
     );
 }</code></pre>
@@ -271,7 +272,7 @@ public CorrelationDataProvider customCorrelationDataProvider() {
 <p>Update the batch status.</p>
 </li>
 <li>
-<p>If all events that are part of the batch have been processed, continue with next part of this flow.</p>
+<p>If all events that are part of the batch have been processed, continue with the next part of the flow.</p>
 </li>
 </ul>
 </div>
@@ -280,7 +281,7 @@ public CorrelationDataProvider customCorrelationDataProvider() {
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
 public void handle(BikeRegisteredEvent evt, @MetaDataValue("batchId") String batchId) {
 // retrieve the batch identifier from event metadata and increment the number of processed events.
-BatchStatus status = batchService.updateBatch(batchId);
+var status = batchService.updateBatch(batchId);
         
 if (status.noProcessed == status.expected) {
     // all events in this batch have been processed.
