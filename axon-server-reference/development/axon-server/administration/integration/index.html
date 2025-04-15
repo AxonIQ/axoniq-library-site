@@ -200,6 +200,9 @@
     <a class="nav-link" href="../plugins/">Axon Server Plugins</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../persistent-streams/">Persistent Streams</a>
+  </li>
+  <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../logging/">Logging</a>
 <ul class="nav-list">
@@ -488,7 +491,77 @@ For <code>application/xml</code> or <code>text/*</code> content types it adds th
 <div class="sect2">
 <h3 id="_rsocket"><a class="anchor" href="#_rsocket"></a><code>RSocket</code></h3>
 <div class="paragraph">
-<p>The URL for RSocket endpoints is &lt;hostname&gt;:&lt;port&gt;. Axon Server adds the custom properties defined on the endpoint as metadata on the RSocket connection. All messages are request/reply messages.</p>
+<p>The URL for RSocket endpoints is &lt;hostname&gt;:&lt;port&gt;. The command, query, and event URL represent the routing key in the RSocket message.</p>
+</div>
+<div class="paragraph">
+<p>Axon Server adds the custom properties defined on the endpoint as metadata on the RSocket connection.
+Note that the keys for the custom properties must be media types.</p>
+</div>
+<div class="paragraph">
+<p>For <code>Raw</code> messages the following additional metadata keys are included:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">axonserver/x-PayloadType</dt>
+<dd>
+<p>The payload type for the <code>Raw</code> message.</p>
+</dd>
+<dt class="hdlist1">axonserver/x-PayloadRevision</dt>
+<dd>
+<p>The payload revision for the <code>Raw</code> message.</p>
+</dd>
+<dt class="hdlist1">axonserver/x-MessageId</dt>
+<dd>
+<p>A unique identifier for the message.</p>
+</dd>
+<dt class="hdlist1">axonserver/x-Metadata</dt>
+<dd>
+<p>Optional metadata for the message.</p>
+</dd>
+<dt class="hdlist1">axonserver/x-Priority</dt>
+<dd>
+<p>Priority of the request (commands and queries only).</p>
+</dd>
+<dt class="hdlist1">axonserver/x-QueryName</dt>
+<dd>
+<p>The name of the query.</p>
+</dd>
+<dt class="hdlist1">axonserver/x-CommandName</dt>
+<dd>
+<p>The name of the command.</p>
+</dd>
+<dt class="hdlist1">axonserver/x-RoutingKey</dt>
+<dd>
+<p>Routing key for the command.</p>
+</dd>
+<dt class="hdlist1">axonserver/x-EventName</dt>
+<dd>
+<p>The name of the event.</p>
+</dd>
+<dt class="hdlist1">axonserver/x-DateTime</dt>
+<dd>
+<p>The date/time that the event was created (event only).</p>
+</dd>
+<dt class="hdlist1">axonserver/x-Index</dt>
+<dd>
+<p>The global index of the event in the event store (event only).</p>
+</dd>
+<dt class="hdlist1">axonserver/x-AggregateId</dt>
+<dd>
+<p>The aggregate identifier of the event (optional).</p>
+</dd>
+<dt class="hdlist1">axonserver/x-AggregateType</dt>
+<dd>
+<p>The aggregate type of the event (optional).</p>
+</dd>
+<dt class="hdlist1">axonserver/x-SequenceNumber</dt>
+<dd>
+<p>The sequence number of the event within the aggregate (optional).</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>All messages are request/reply messages.</p>
 </div>
 </div>
 </div>
@@ -676,10 +749,13 @@ using Axon Server&#8217;s Web interface or through the Axon Server HTTP API.</p>
 </dd>
 </dl>
 </div>
+<div class="paragraph">
+<p>Event handlers are backed by persistent streams. To modify the number of segments, change the number of segments for the related persistent stream.</p>
+</div>
 <div class="sect2">
 <h3 id="_endpoint_types_3"><a class="anchor" href="#_endpoint_types_3"></a>Endpoint types</h3>
 <div class="paragraph">
-<p>Axon Synapse can send HTTP requests containing events in three different ways. Each endpoint that registers as an event handler must support one of them.</p>
+<p>Axon Server can send HTTP requests containing events in two different ways. Each endpoint that registers as an event handler must support one of them.</p>
 </div>
 <div class="sect3">
 <h4 id="_raw_3"><a class="anchor" href="#_raw_3"></a><code>Raw</code></h4>
@@ -728,6 +804,46 @@ Please refer to the <a href="../../../openapi/integration-outbound-api/#tag/Requ
 <p>Please refer to the <a href="../../../openapi/integration-outbound-api/#tag/Request-handler/operation/handleWrappedEvents" class="xref page">API documentation</a> for detailed information about the HTTP request structure.</p>
 </div>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_integration_configuration"><a class="anchor" href="#_integration_configuration"></a>Integration configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Administrators can configure the following properties for integrations:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">axoniq.axonserver.integration.command-attempts</dt>
+<dd>
+<p>Sending commands to an endpoint is retried command-attempts times. Default value is 1.</p>
+</dd>
+<dt class="hdlist1">axoniq.axonserver.integration.command-retry-backoff</dt>
+<dd>
+<p>The command-retry-backoff property defines the initial waiting time before retrying in milliseconds. After the first retry the retry time is increased exponentially. Default value is 10 milliseconds.</p>
+</dd>
+<dt class="hdlist1">axoniq.axonserver.integration.query-attempts</dt>
+<dd>
+<p>Sending queries to an endpoint is retried query-attempts times. Default value is 1.</p>
+</dd>
+<dt class="hdlist1">axoniq.axonserver.integration.query-retry-backoff</dt>
+<dd>
+<p>The query-retry-backoff property defines the initial waiting time before retrying in milliseconds. After the first retry the retry time is increased exponentially. Default value is 10 milliseconds.</p>
+</dd>
+<dt class="hdlist1">axoniq.axonserver.integration.event-retry-backoff</dt>
+<dd>
+<p>Publishing events to an endpoint is retried as long as the endpoint is healthy and the event handler is registered. The event-retry-backoff property defines the initial waiting time before retrying in milliseconds. After the first retry the retry time is increased exponentially up to a maximum of 30 seconds. Default value is 10 milliseconds.</p>
+</dd>
+<dt class="hdlist1">axoniq.axonserver.integration.trust-manager-files</dt>
+<dd>
+<p>Comma separated list of files of trusted certificate authorities.</p>
+</dd>
+<dt class="hdlist1">axoniq.axonserver.integration.allow-insecure-trust-manager</dt>
+<dd>
+<p>Option to allow all insecure events when connecting to an HTTPS endpoint (default false).</p>
+</dd>
+</dl>
 </div>
 </div>
 </div>
