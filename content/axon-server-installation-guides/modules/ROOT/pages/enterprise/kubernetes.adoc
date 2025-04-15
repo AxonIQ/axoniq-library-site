@@ -1,3 +1,4 @@
+pass:[<!-- vale AxonIQ.Headings = NO -->]
 = Kubernetes
 
 Kubernetes has become an industry standard when it comes to deploying Software.
@@ -18,6 +19,7 @@ The Kubernetes setup works with a variety of individual parts:
 These are included in the StatefulSet configuration.
 . *Network Service*: For applications to be able to reach Axon Server and communication between nodes, Kubernetes requires a network service that resolves to the pod created by the stateful set.
 . *Config Map*: A config map with the properties for Axon Server's configuration.
+. *Secrets*: A kubernetes secret that safely store your license file (otpional).
 
 == Step 1: Create a namespace
 
@@ -42,14 +44,24 @@ However, if you modify this, make sure you modify commands later in this tutoria
 
 include::partial$choose-your-docker-image.adoc[]
 
-== Step 2: Obtaining Axon Server License file
-In order to run a cluster of nodes, you need to provide your configration with an axoniq.license Axon Server License file.
+== Step 2: Obtaining Axon Server License File
+In order to run a cluster of nodes, you need to provide your configration with an axoniq.license Axon Server license file.
 You can obtain it contacting our sales department or through AxonIQ Console.
 
-=== AxonIQ Console (optional)
+=== AxonIQ Console
 
 By connecting your Axon Server to AxonIQ Console you can unlock additional functionality.
 AxonIQ Console can also provide a license for your cluster.
+
+=== License File 
+
+If you decided to handle your license manually and you have a license file, we suggest to save this in a secure place, such as kubernetes secrets or the vault of your choice. 
+In this guide we will store as kubernetes secret, but if you selected to form the cluster manually, you can also upload it directly to axonserver using the UI after the first node has been started.
+
+[source,bash]
+----
+kubectl create secret generic axoniq-license -n axonserver --from-file=axoniq.license
+----
 
 .Why connect to AxonIQ Console?
 [%collapsible]
@@ -70,17 +82,9 @@ There are 3 methods:
 
 . *AxonIQ Console*: when connecting to AxonIQ Console, your server will receive all information automatically
 . *Auto-clustering*: By defining which node is in charge of forming the cluster, it will automatically form
-. *Initializing in the Axon Server dashboard*: By going into the Axon Server dashboard after Step 6, you can initialize the cluster manually
+. *Initializing in the Axon Server dashboard*: By going into the Axon Server dashboard after Step 6, you can initialize the cluster manually and upload your file license here.
 
 Based on which method you choose, different `axonserver-1.properties` `axonserver-2.properties` and `axonserver-3.properties` have to be put into the properties file:
-
-If you decided to handle your license manually, you should also save this in a secure place, such as kubernetes secrets or the vault of your choice.
-In this guide we will store as kubernetes secret.
-
-[source,bash]
-----
-kubectl create secret generic axoniq-license -n axonserver --from-file=axoniq.license
-----
 
 [tabs]
 ======
