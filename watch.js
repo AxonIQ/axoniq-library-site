@@ -3,7 +3,10 @@ const app = express()
 const chokidar = require('chokidar');
 const childProcess = require("child_process");
 
-const watcher = chokidar.watch('localLinks', {ignored: /^\./, persistent: true});
+const createWatcher = (dir) => chokidar.watch(dir, {ignored: /^\./, persistent: true})
+        .on('change', rebuild)
+        .on('unlink', rebuild)
+        .on('error', rebuild);
 
 let building = false
 let triggeredDuringBuild = false
@@ -30,10 +33,8 @@ const rebuild = (path) => {
     })
 }
 
-watcher
-    .on('change', rebuild)
-    .on('unlink', rebuild)
-    .on('error', rebuild)
+createWatcher("localLinks")
+createWatcher("content")
 
 app.use(express.static('build/site'))
 

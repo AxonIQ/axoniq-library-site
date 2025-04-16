@@ -1,0 +1,48 @@
+= Migrating from Axon Server
+
+We hope that you enjoy using Axon Server. However, if you are looking to migrate from Axon Server to another database, you can still use Axon Framework to continue your project by using an RDBMS or NoSQL database.
+
+== Considerations
+
+When migrating from Axon Server to another database, you should consider the following:
+
+- You will no longer have a distributed command bus or query bus. You will need to implement your own solution for this, or configure an xref:axon-framework-extensions:ROOT:index.adoc[extension] to handle this.
+- You will no longer be able to use multi-context to logically separate your event store. You will need to create different `EventStore` instances for each context, backed by different databases.
+- Due to the indexing differences, you may encounter a slower performance of sourcing aggregates. Test your application thoroughly to ensure that the performance is acceptable.
+
+== Step 1: Migrate event store
+
+While we do not have a tool to migrate from Axon Server to another database, you do this in your own Java application. While the application is still configured for Axon Server, we can create an event processor that pushes the events to the new database.
+
+[source,java]
+----
+@Service
+@ProcessingGroup("my-event-migrator")
+class MyEventMigrator {
+
+    private final EventStore secondaryEventStore;
+
+    public MyEventMigrator(EventStore secondaryEventStore) {
+        this.secondaryEventStore = secondaryEventStore;
+    }
+
+    @EventHandler
+    public void on(TrackedEventMessage<?> event) {
+        secondaryEventStore.publish(event);
+    }
+}
+----
+
+How the secondary `EventStore` is constructed depends on the database you are using. Please use the xref:axon-framework-reference:events:infrastructure.adoc[reference guide] to find the correct configuration.
+
+Your application will keep running while doing the migration.
+
+== Step 2: Switch over
+You can now adjust your configuration to switch over to the new database. Make sure to test your application thoroughly to ensure that everything is working as expected.
+
+Note that the tokens used by the tracking processors will be different. You will need to change the type and structure. You will need downtime for this.
+
+== Step 3: Decommission Axon Server
+Once you have switched over to the new database, you can decommission Axon Server. You can keep the data for a while in case you need to switch back, but you can also remove it if you are sure that you will not need it anymore.
+
+We would love to hear your thoughts on why you are migrating from Axon Server. Please let us know by sending an email to link:mailto:info@axoniq.io[info@axoniq.io]

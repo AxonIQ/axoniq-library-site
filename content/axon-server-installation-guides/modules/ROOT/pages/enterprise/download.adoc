@@ -1,0 +1,144 @@
+= Download
+
+This guide will walk you through the steps to run Axon Server Enterprise as a cluster of multiple nodes.
+
+[NOTE]
+====
+You can also use this guide to run all separate instances on a single machine for testing purposes.
+In that case, make sure you use different ports for each instance in step 2.
+====
+
+== Prerequisites
+
+Make sure you have the Java Runtime Environment (JRE) installed on the machines you want to install Axon Server.
+Axon Server requires at least Java 17.
+
+If the following command returns a version number, you have Java installed:
+
+[source,bash]
+----
+java -version
+----
+
+Make sure the version of this command is at least 17.
+
+
+== Step 1: Download
+
+Download Axon Server from our link:https://www.axoniq.io/download[Download Page].
+After filling in your email address, you will receive the link in your email.
+If you would like, you can also receive notifications about future trainings.
+
+== Step 2: Extract
+Extract the downloaded ZIP in the installation directory of your choice.
+
+
+== Step 2: Configure
+
+Axon Server runs with adequate defaults. You can tweak this by editing the properties file that you extracted from the ZIP.
+
+It's recommended to configure at least the following:
+
+[source,properties]
+----
+server.port=8024                       # Dashboard port
+axoniq.axonserver.port=8124            # gRPC port for Axon Framework clients
+axoniq.axonserver.internal-port=8224   # gRPC port for cluster communication
+
+axoniq.axonserver.hostname=myhost      # The hostname of the machine, which needs to be reachable from other machines
+----
+
+== Step 3: Choose a clustering method
+
+include::partial$clustering-methods.adoc[]
+
+[tabs]
+====
+Auto-clustering::
++
+--
+Setting up auto-clustering is straightforward. You define the node that is allowed to be the first to form the cluster,
+by defining it in the properties of all nodes. The first node will then create the cluster, and the other
+nodes will join it automatically.
+
+Add the following properties to the `axonserver.properties` file of all nodes:
+
+[source,properties]
+----
+axoniq.axonserver.autocluster.first=axonserver-1:8224   # The hostname and port of the first node
+axoniq.axonserver.autocluster.contexts=_admin,default   # The contexts that are automatically created
+----
+
+You can find more information on the xref:axon-server-reference:ROOT:axon-server/administration/admin-configuration/cluster-template.adoc[Cluster Template page of the reference guide].
+--
+Axon Server Dashboard::
++
+--
+
+When accessing the Axon Server dashboard for the first time, you will be prompted to complete installation.
+
+On the first node, choose "Start node and initialize multi-node cluster", and click "Complete".
+
+
+image::axon-server-complete-installation-start-node-and-initialize.png[width=400,alt="Complete installation prompt of Axon Server"]
+
+On the other nodes, choose "Join existing cluster", fill in the host address and port of the first node, and click "Complete".
+
+image::axon-server-complete-installation-join-existing.png[width=400,alt="Complete installation prompt of Axon Server"]
+
+Repeating this for all nodes will form a cluster.
+
+--
+
+AxonIQ Console::
++
+--
+Please ask your AxonIQ representative to add your Enterprise license to AxonIQ Console. Once you have done that, you can acquite the access token from the console and add it to the properties file of all nodes, as such:
+
+
+[source,properties]
+----
+axoniq.console.authentication=YOUR_ACCESS_TOKEN
+----
+
+
+.Obtaining AxonIQ Console access token
+[%collapsible]
+======
+include::partial$obtain-console-access-token.adoc[]
+======
+
+--
+====
+
+
+== Step 5: Configure ports
+
+include::partial$step-configure-ports.adoc[]
+
+== Step 6: Run
+
+To run Axon Server, execute the following command in the installation directory of every node:
+
+[source,bash]
+----
+java -jar axonserver.jar
+----
+
+Once you see the following log line, Axon Server is up and running:
+
+[source]
+----
+io.axoniq.axonserver.AxonServer: Started AxonServer in 29.056 seconds
+----
+
+You can now access the Axon Server dashboard by navigating to link:http://hostname:8024[hostname:8024] in your browser.
+If you customized the port, use the custom port instead.
+
+== Step 7: Daemon
+
+Usually, you want to run Axon Server as a service on the host machine, so it starts on boot automatically.
+How this is done depends on the operating system you are using. Please refer to the documentation of your operating system for more information.
+
+
+include::partial$step-configure-axon-framework-multiple.adoc[]
