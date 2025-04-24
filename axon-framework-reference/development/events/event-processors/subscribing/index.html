@@ -632,8 +632,34 @@ In this case add the serialization type, payload type, expression and fallback p
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
     public void configureSubscribingProcessors(EventProcessingConfigurer processingConfigurer) {
-        // To configure a processor to be subscribing ...
-        processingConfigurer.registerSubscribingEventProcessor("my-processor", conf -&gt; /* create/return PersistentStreamMessageSource */);
+        String streamName = "my-persistent-stream-name";
+        int segmentCount = 4;
+        // Not required for sequential per aggregate policy.
+        // See PersistentStreamSequencingPolicyProvider JavaDoc for other policies.
+        List&lt;String&gt; sequencingPolicyParameters = new ArrayList&lt;&gt;();
+        // Optional parameter to filter events on Axon Server's side.
+        String filter = null;
+        int batchsize = 1024;
+
+        PersistentStreamProperties persistentStreamProperties = new PersistentStreamProperties(
+                streamName,
+                segmentCount,
+                PersistentStreamSequencingPolicyProvider.SEQUENTIAL_PER_AGGREGATE_POLICY,
+                sequencingPolicyParameters,
+                PersistentStreamProperties.HEAD_POSITION,
+                filter
+        );
+
+        processingConfigurer.registerSubscribingEventProcessor(
+                "my-processor",
+                config -&gt; new PersistentStreamMessageSource(
+                        streamName,
+                        config,
+                        persistentStreamProperties,
+                        Executors.newScheduledThreadPool(4),
+                        batchsize
+                )
+        );
     }
 }</code></pre>
 </div>
@@ -648,12 +674,36 @@ public class AxonConfig {
     // omitting other configuration methods...
     @Bean
     public ConfigurerModule subscribingProcessorsConfigurerModule() {
+        String streamName = "my-persistent-stream-name";
+        int segmentCount = 4;
+        // Not required for sequential per aggregate policy.
+        // See PersistentStreamSequencingPolicyProvider JavaDoc for other policies.
+        List&lt;String&gt; sequencingPolicyParameters = new ArrayList&lt;&gt;();
+        // Optional parameter to filter events on Axon Server's side.
+        String filter = null;
+        int batchsize = 1024;
+
+        PersistentStreamProperties persistentStreamProperties = new PersistentStreamProperties(
+                streamName,
+                segmentCount,
+                PersistentStreamSequencingPolicyProvider.SEQUENTIAL_PER_AGGREGATE_POLICY,
+                sequencingPolicyParameters,
+                PersistentStreamProperties.HEAD_POSITION,
+                filter
+        );
+
         return configurer -&gt; configurer.eventProcessing(
                 // To configure a processor to be subscribing ...
                 processingConfigurer -&gt; processingConfigurer.registerSubscribingEventProcessor(
-                                                                    "my-processor",
-                                                                    conf -&gt; /* create/return PersistentStreamMessageSource */
-                                                            )
+                        "my-processor",
+                        config -&gt; new PersistentStreamMessageSource(
+                                streamName,
+                                config,
+                                persistentStreamProperties,
+                                Executors.newScheduledThreadPool(4),
+                                batchsize
+                        )
+                )
         );
     }
 }</code></pre>

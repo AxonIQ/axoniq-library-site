@@ -504,6 +504,11 @@ That is because Axon Framework uses default settings for the <code>@GeneratedVal
 This change, in combination with, for example, the <a href="../../../../multitenancy-extension-reference/4.11/" class="xref page">multitenancy</a> extension, may lead to uniqueness issues.
 Hence, it is strongly recommended to define a custom sequence generator, as described below.</p>
 </div>
+<div class="paragraph">
+<p>Furthermore, if you use Hibernate&#8217;s <a href="#https://vladmihalcea.com/hibernate-hidden-gem-the-pooled-lo-optimizer/">pooled optimizer</a>, we suggest to set the <code>allocation-size</code> to <strong>1</strong>.
+If this setting is left unchanged, Hibernate will prepare 50 (as per the default) sequences, increasing the change of <code>globalIndex</code> gaps when running several application instances.
+Note that this does not resolve the chance of gaps entirely! However, it does make the window of opportunity a lot smaller.</p>
+</div>
 </td>
 </tr>
 </table>
@@ -519,7 +524,7 @@ Hence, it is strongly recommended to define a custom sequence generator, as desc
         &lt;attributes&gt;
             &lt;id name="globalIndex"&gt;
                 &lt;generated-value strategy="SEQUENCE" generator="myGenerator"/&gt;
-                &lt;sequence-generator name="myGenerator" sequence-name="mySequence"/&gt;
+                &lt;sequence-generator name="myGenerator" sequence-name="mySequence" allocation-size="1"/&gt;
             &lt;/id&gt;
         &lt;/attributes&gt;
     &lt;/mapped-superclass&gt;

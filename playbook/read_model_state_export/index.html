@@ -3,10 +3,10 @@
   <head>
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>State Views via Projections</title>
-    <link rel="canonical" href="https://docs.axoniq.io/playbook/state_views_via_projections/">
-    <link rel="prev" href="../state_transitions_via_commands/">
-    <link rel="next" href="../read_model_state_export/">
+    <title>Read Model State Export</title>
+    <link rel="canonical" href="https://docs.axoniq.io/playbook/read_model_state_export/">
+    <link rel="prev" href="../state_views_via_projections/">
+    <link rel="next" href="../import_external_state/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../_/css/site.css">
     <link rel="stylesheet" href="../../_/css/vendor/tabs.css">
@@ -85,15 +85,15 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../">AxonIQ Playbook </a></li>
-    <li><a href="./">Read Model Projection</a></li>
+    <li><a href="./">Read Model State Export</a></li>
   </ul>
 </nav>
 <div class="page-actions">
   <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
   <div class="actions-menu toolbar_dropdown_menu card">
 
-    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;State%20Views%20via%20Projections" target="discuss_search">View Discussions</a>
-    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22State%20Views%20via%20Projections%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BState%20Views%20via%20Projections%5D(https%3A%2F%2Fdocs.axoniq.io%2Fplaybook%2Fstate_views_via_projections%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Read%20Model%20State%20Export" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Read%20Model%20State%20Export%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BRead%20Model%20State%20Export%5D(https%3A%2F%2Fdocs.axoniq.io%2Fplaybook%2Fread_model_state_export%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
   </div>
 </div>
 
@@ -114,11 +114,11 @@
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../state_transitions_via_commands/">State Transitions via Commands</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="./">Read Model Projection</a>
-  </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../read_model_state_export/">Read Model State Export</a>
+    <a class="nav-link" href="../state_views_via_projections/">Read Model Projection</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="./">Read Model State Export</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../import_external_state/">Import External State</a>
@@ -158,11 +158,11 @@
   <div class="toc-menu"></div>
 </aside>
           <article class="doc">
-            <h1 class="page">State Views via Projections</h1>
+            <h1 class="page">Read Model State Export</h1>
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Observe system state changes via projected read models.</p>
+<p>Let a read model export its current state via events to downstream consumers to avoid querying for possibly stale state.</p>
 </div>
 </div>
 </div>
@@ -170,7 +170,28 @@
 <h2 id="_problem"><a class="anchor" href="#_problem"></a>Problem</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>State transitions via events represent the system&#8217;s <em>source of truth</em>, but this "raw material" doesn&#8217;t itself provide a direct view of the system&#8217;s current state, only its history; observing the result of a state change requires one to establish and update such views.</p>
+<p>In the flow depicted in <strong>figure 1</strong> a <em>StockDecreased</em> event within the <em>Inventory</em> context updates two separate read models:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Items</em> stores details of available items, including the current quantity for a given item.</p>
+</li>
+<li>
+<p><em>ItemUpdates</em> triggers automations via an external event when the quantity of an item changes. One such automation is the purchase order processor (<em>POProcessor</em>) which will invoke the <em>Procurement</em> capability to create an purchase order for an item if it needs to be restocked.</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/read_model_state_export/figure_1.png" alt="figure 1">
+</div>
+</div>
+<div class="paragraph text-center">
+<p><em>Figure 1 - A processor queries a read model upon consuming an external event</em></p>
+</div>
+<div class="paragraph">
+<p>When the <em>POProcessor</em> - a component that resides within the boundary of the <em>Procurement</em> context - is triggered it will query the <em>Items</em> read model for item details, including the current quantity. However at the time the query is made there is no guarantee that <em>Items</em> has yet been updated to reflect the current quantity, thus possibly stale state causes the <em>POProcessor</em> to not execute the creation of a purchase order.</p>
 </div>
 </div>
 </div>
@@ -178,20 +199,10 @@
 <h2 id="_solution"><a class="anchor" href="#_solution"></a>Solution</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>In an event model, so-called <strong>read models</strong> represent the "outputs" of the system after state transitions have occurred. A common type of read model is the <em>projection</em>, whereby events are consumed to update a durable or transient data model, typically de-normalized to allow for swift information retrieval via specific queries.</p>
+<p>While the information flow is accurately modeled in <strong>figure 1</strong> it does not resolve the eventual consistency issue that yields possibly stale results when the <em>POProcessor</em> queries the <em>Items</em> read model.</p>
 </div>
-<div class="sect2">
-<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
 <div class="paragraph">
-<p><strong>Figure 1</strong> depicts a state view slice that is part of a business flow to register new bikes.</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="../_images/p2_1.png" alt="p2 1">
-</div>
-</div>
-<div class="paragraph text-center">
-<p><em>Figure 1 - State view slice for bike registration</em></p>
+<p>An alternative approach is to avoid the need to query ("pull") read model state at all and rather <strong>export</strong> ("push") the latest read model update as part of the external event payload that is the <em>ItemUpdates</em> trigger.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -200,81 +211,95 @@
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-This projection exposes its data to "public" clients, but projections may also be solely for "internal" use.
+<div class="paragraph">
+<p>This pattern can be considered a specialization of the <a href="../import_external_state/" class="xref page">Import External State</a> pattern.</p>
+</div>
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>The state view slice is implemented as a projection in the sections below.</p>
+<p>Two potential solutions are therefore:</p>
 </div>
-<div class="sect3">
-<h4 id="_updating_the_read_model"><a class="anchor" href="#_updating_the_read_model"></a>Updating the read model</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Co-locate the <em>Items</em> and <em>ItemUpdates</em> read models at the implementation level.</p>
 <div class="paragraph">
-<p>In <strong>listing 1</strong>, a component is set up to listen for the <code>BikeRegisteredEvent</code> to add a newly registered bike to a list.</p>
+<p>In <strong>figure 2</strong> the information flow remains the same, but an ordering on <em>StockDecreased</em> event processing is imposed to ensure that <em>Items</em> is updated <em>before</em> <em>ItemUpdates</em>. The external event will then be populated with the latest item details update and published.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/read_model_state_export/figure_2.png" alt="figure 2">
+</div>
+</div>
+<div class="paragraph text-center">
+<p><em>Figure 2 - Co-locate read model updates</em></p>
+</div>
+</li>
+<li>
+<p>Introduce an <strong>internal</strong> processor (the <em>ItemProcessor</em> that is part of the <em>Inventory</em> context in <strong>figure 3</strong>) that facilitates an intermediate state transition to prepare an item update.</p>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/read_model_state_export/figure_3.png" alt="figure 3">
+</div>
+</div>
+<div class="paragraph text-center">
+<p><em>Figure 3 - Segregate read model updates via intermediate state transition</em></p>
+</div>
+<div class="paragraph">
+<p>The advantage of this option is that rather than relying on an implementation detail - ordered event handling - the model <em>itself</em> guarantees that an item update always will carry the expected state.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The internal <em>ItemProcessor</em> could utilize a <a href="https://docs.axoniq.io/axon-framework-reference/4.11/queries/query-dispatchers/#subscription-queries">subscription query</a> to listen for read model updates.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>The co-location solution is shown in <strong>listing 1</strong>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Component
-public class BikeProjection {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void handle(StockDecreased evt) {
+    // Items read model.
+    // 
+    // Update the current quantity of the item.
+    items.getItemDetails(evt.itemId()).decreaseQuantity();
 
-    private final List&lt;BikeStatus&gt; bikes = new ArrayList&lt;&gt;();
-
-    @EventHandler
-    public void on(BikeRegisteredEvent event) {
-        bikes.add(new BikeStatus(event.bikeId()));
-    }
-
-    @QueryHandler
-    public List&lt;BikeStatus&gt; handle(GetBikesQuery query) {
-        return bikes.stream().toList();
-    }
+    // ItemUpdates read model.
+    //
+    // Populate and publish an external event - ItemUpdated - with 
+    // item details, including updated current quantity.
+    eventGateway.publish(
+        new ItemUpdated(items.getItemDetails(evt.itemId))
+    );
 }</code></pre>
 </div>
 </div>
 <div class="paragraph text-center">
-<p><em>Listing 1 - Handling a `BikeRegisteredEvent`</em></p>
-</div>
-<div class="paragraph">
-<p>The projection also contains a <code>QueryHandler</code>, which returns the bike list in response to a (typed) <code>GetBikesQuery</code> (see below).</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_querying_the_read_model"><a class="anchor" href="#_querying_the_read_model"></a>Querying the read model</h4>
-<div class="paragraph">
-<p>In <strong>listing 2</strong>, the <code>GetBikesQuery</code> is sent to the aforementioned <code>QueryHandler</code> in order to retrieve the bike list.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record GetBikesQuery() {}
-
-@RestController
-@RequestMapping("/inventory")
-public class InventoryController {
-
-    @Autowired
-    private QueryGateway queryGateway;
-
-    @GetMapping("/bikes")
-    public CompletableFuture&lt;List&lt;BikeStatus&gt;&gt; getBikes() {
-        return queryGateway.query(
-                new GetBikesQuery(),
-                ResponseTypes.multipleInstancesOf(BikeStatus.class)
-        );
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph text-center">
-<p><em>Listing 2 - Sending a query to retrieve bike list</em></p>
-</div>
+<p><em>Listing 1 - Co-located and ordered event processing</em></p>
 </div>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../state_transitions_via_commands/">State Transitions via Commands</a></span>
-  <span class="next"><a href="../read_model_state_export/">Read Model State Export</a></span>
+  <span class="prev"><a href="../state_views_via_projections/">Read Model Projection</a></span>
+  <span class="next"><a href="../import_external_state/">Import External State</a></span>
 </nav>
     </article>
   </div>
