@@ -2,7 +2,7 @@ pass:[<!-- vale AxonIQ.Headings = NO -->]
 = Kubernetes
 
 Kubernetes has become an industry standard when it comes to deploying Software.
-While we recommend installing Axon Server on virtual machines due to the better stability they provide, this guide will help you in installing Axon Server Cluster on Kubernetes.
+While we recommend installing Axon Server on virtual machines due to their better stability, this guide will help you install Axon Server Cluster on Kubernetes.
 
 [NOTE]
 ====
@@ -14,10 +14,10 @@ You can adapt the instruction in this guide for your specific situation.
 
 The Kubernetes setup works with a variety of individual parts:
 
-. *Stateful set*: The stateful set for each node runs Axon Server with a stable hostname, necessary for the headless services.
-. *Persistent Volume Claims*: As Axon Server needs to store data, there are several PVC's necessary.
+. *Stateful set*: The stateful set for each node runs an Axon Server with a stable hostname, which is necessary for headless services.
+. *Persistent Volume Claims*: As Axon Server needs to store data, there are several PVCs necessary.
 These are included in the StatefulSet configuration.
-. *Network Service*: For applications to be able to reach Axon Server and communication between nodes, Kubernetes requires a network service that resolves to the pod created by the stateful set.
+. *Network Service*: For applications to reach Axon Server and communication between nodes, Kubernetes requires a network service that resolves to the pods created by the stateful sets.
 . *Config Map*: A config map with the properties for Axon Server's configuration.
 
 == Step 1: Create a namespace
@@ -44,7 +44,7 @@ However, if you modify this, make sure you modify commands and properties later 
 include::partial$choose-your-docker-image.adoc[]
 
 == Step 2: AxonIQ Console
-In order to run a cluster of Professional nodes, you need to connect it to AxonIQ Console, after enabling your subscription.
+In order to run a cluster of Professional nodes, you need to buy a license on link:https://console.axoniq.io[AxonIQ Console]. The nodes will connect to AxonIQ Console, automatically retrieve the license and form the cluster.
 
 By connecting your Axon Server Professional to AxonIQ Console you will unlock additional functionality.
 
@@ -62,9 +62,10 @@ include::partial$obtain-console-access-token.adoc[]
 
 == Step 3: Configure properties
 
-When connecting to AxonIQ Console, your server will receive all information automatically.
+When connecting to AxonIQ Console, your server will automatically receive information to form the cluster. This does require the hostname information to be set correctly; otherwise the nodes won't be able to find each other.
 
-Here below some example of `axonserver-1.properties` `axonserver-2.properties` and `axonserver-3.properties` have to be put into the properties file:
+So, in addition to the access token to AxonIQ Console from Step 2, you need to set the proper information.
+For a normal setup, we recommend the following property files for the three nodes:
 
 [tabs]
 ======
@@ -115,7 +116,7 @@ See xref::extra/securing-axon-server.adoc[securing Axon Server] for more informa
 
 == Step 4: Network services
 
-We want Axon Server to be reachable on port 8024 for the Axon Server Dashboard, and on port 8124 for your Axon Framework applications.
+We want Axon Server to be reachable on port 8024 for the Axon Server Dashboard and port 8124 for your Axon Framework applications.
 
 First, we will need to create the proper services.
 These provide stable DNS names in Kubernetes.
@@ -149,12 +150,6 @@ include::example$kubernetes/axonserver-sts-3.yaml[tags=services]
 --
 ======
 
-[NOTE]
-====
-The above service definition also includes an internal port for Axon Server and properties related to networking to communicate with other Axon Servers.
-While not strictly necessary now, this is useful for if you later decide to use a multi-node setup.
-====
-
 Now, we can create the network services:
 
 [source,bash]
@@ -168,7 +163,7 @@ kubectl apply -f axonserver-3-service.yaml -n axonserver
 == Step 5: Creating the StatefulSet
 
 Now it's time to run the StatefulSet.
-The YAML below contains everything needed to run your Axon Server instances cluster nodes.
+The YAML below contains everything needed to run your Axon Server instances' cluster nodes.
 Please save it to `axonserver-sts-1.yaml` `axonserver-sts-2.yaml` `axonserver-sts-3.yaml`.
 
 [tabs]
@@ -214,7 +209,7 @@ Kubernetes takes some time after a Pod is started to update internal DNS entries
 In our experience this can goes up to ~5 minutes. You will observe some initial warning with `Unable to resolve host`: this is normal, and it will solve as soon as DNS is ready.
 ====
 
-You can now wait until Axon Server has started up, by following the logging using the following command:
+You can now wait until Axon Server has started up by following the logging using the following command:
 
 [source,bash]
 ----
@@ -239,7 +234,7 @@ io.axoniq.axonserver.AxonServer: Started AxonServer in 29.056 seconds
 == Step 6: Ingresses (optional)
 
 The network services are only reachable from within the Kubernetes cluster.
-From here, there are two ways to access the defined ports: either by port-forwarding or by setting up an Ingress.
+From here, there are two ways to access the defined ports: port-forwarding or setting up an Ingress.
 
 === Port-forwarding
 
@@ -307,7 +302,7 @@ kubectl apply -f axonserver-3-ingress.yaml -n axonserver
 
 [NOTE]
 ====
-If you want to change the name of the Axon Server from `axonserver-1` to any other name, please take into account to synchronize this:
+If you want to change the name of the Axon Server from `axonserver-1` to any other name, be sure to synchronize the following:
 
 . In the `axonserver-1.properties` file (both context-path and hostname)
 . In the StatefulSet (name, app labels, hostname, and probe urls)
@@ -346,5 +341,5 @@ Now your Axon Framework applications will automatically to this port `8124` on y
 
 When you go to production, you need to consider the following:
 
-. *Security*: Make sure your Axon Server is secure using TLS and authentication.
+. *Security*: Ensure your Axon Server is secure using TLS and authentication.
 See xref::extra/securing-axon-server.adoc[securing Axon Server] for more information.
