@@ -192,7 +192,7 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>Kubernetes has become an industry standard when it comes to deploying Software.
-While we recommend installing Axon Server on virtual machines due to the better stability they provide, this guide will help you in installing Axon Server on Kubernetes.</p>
+While we recommend installing Axon Server on virtual machines due to their better stability, this guide will help you install Axon Server Cluster on Kubernetes.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -223,11 +223,11 @@ You can adapt the instruction in this guide for your specific situation.</p>
 <p><strong>Stateful set</strong>: The stateful set runs Axon Server with a stable hostname, necessary for the headless services.</p>
 </li>
 <li>
-<p><strong>Persistent Volume Claims</strong>: As Axon Server needs to store data, there are several PVC&#8217;s necessary.
+<p><strong>Persistent Volume Claims</strong>: As Axon Server needs to store data, there are several PVCs necessary.
 These are included in the StatefulSet configuration.</p>
 </li>
 <li>
-<p><strong>Network Service</strong>: For applications to be able to reach Axon Server, Kubernetes requires a network service that resolves to the pod created by the stateful set.</p>
+<p><strong>Network Service</strong>: For applications to reach Axon Server and communication between nodes, Kubernetes requires a network service that resolves to the pod created by the stateful set.</p>
 </li>
 <li>
 <p><strong>Config Map</strong>: A config map with the properties for Axon Server&#8217;s configuration.</p>
@@ -237,12 +237,15 @@ These are included in the StatefulSet configuration.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_0_create_a_namespace"><a class="anchor" href="#_step_0_create_a_namespace"></a>Step 0: Create a namespace</h2>
+<h2 id="_step_1_create_a_namespace"><a class="anchor" href="#_step_1_create_a_namespace"></a>Step 1: Create a namespace</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>We recommend running Axon Server in its separate namespace.
 During this guide, we will use the <code>axonserver</code> namespace.
-Create it using the following command:</p>
+Because of Kubernetes networking, the namespace name selected affects some of the properties in your property file, such as <code>axoniq.axonserver.domain</code> and <code>axoniq.axonserver.internal-domain</code>.</p>
+</div>
+<div class="paragraph">
+<p>Create it using the following command:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -267,7 +270,7 @@ However, if you modify this, make sure you modify commands later in this tutoria
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_1_choose_your_image_optional"><a class="anchor" href="#_step_1_choose_your_image_optional"></a>Step 1: Choose your image (Optional)</h2>
+<h2 id="_step_2_choose_your_image_optional"><a class="anchor" href="#_step_2_choose_your_image_optional"></a>Step 2: Choose your image (optional)</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>AxonIQ provides ready-to-use <a href="https://hub.docker.com/r/axoniq/axonserver">Axon Server images</a>.
@@ -278,7 +281,7 @@ If you choose to do this, replace the image in the commands below.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_2_axoniq_console"><a class="anchor" href="#_step_2_axoniq_console"></a>Step 2: AxonIQ Console</h2>
+<h2 id="_step_3_axoniq_console_optional"><a class="anchor" href="#_step_3_axoniq_console_optional"></a>Step 3: AxonIQ Console (optional)</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>By connecting your Axon Server to AxonIQ Console you can unlock additional functionality.</p>
@@ -358,10 +361,10 @@ If you choose to do this, replace the image in the commands below.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_3_configure_properties"><a class="anchor" href="#_step_3_configure_properties"></a>Step 3: Configure properties</h2>
+<h2 id="_step_4_configure_properties"><a class="anchor" href="#_step_4_configure_properties"></a>Step 4: Configure properties</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Axon Server needs to know how to run and form the cluster.
+<p>Axon Server needs to know how to run.
 There are 3 methods:</p>
 </div>
 <div class="olist arabic">
@@ -370,15 +373,12 @@ There are 3 methods:</p>
 <p><strong>AxonIQ Console</strong>: when connecting to AxonIQ Console, your server will receive all information automatically</p>
 </li>
 <li>
-<p><strong>Auto-clustering</strong>: By defining which node is in charge of forming the cluster, it will automatically form</p>
-</li>
-<li>
-<p><strong>Initializing in the Axon Server dashboard</strong>: By going into the Axon Server dashboard after Step 6, you can initialize the cluster manually</p>
+<p><strong>Initializing in the Axon Server dashboard</strong>: By going into the Axon Server dashboard after Step 6, you can initialize your node manually</p>
 </li>
 </ol>
 </div>
 <div class="paragraph">
-<p>Based on which method you choose, different <code>axonserver.properties</code> have to be put into the properties file:</p>
+<p>Based on which method you choose, different <code>axonserver-1.properties</code> have to be put into the properties file:</p>
 </div>
 <div id="_tabs_1" class="openblock tabs is-loading">
 <div class="content">
@@ -386,9 +386,6 @@ There are 3 methods:</p>
 <ul>
 <li id="_tabs_1_axoniq_console" class="tab">
 <p>AxonIQ Console</p>
-</li>
-<li id="_tabs_1_auto_clustering" class="tab">
-<p>Auto-clustering</p>
 </li>
 <li id="_tabs_1_manual" class="tab">
 <p>Manual</p>
@@ -398,27 +395,28 @@ There are 3 methods:</p>
 <div id="_tabs_1_axoniq_console--panel" class="tabpanel" aria-labelledby="_tabs_1_axoniq_console">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axoniq.axonserver.hostname=axonserver-1
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">server.servlet.context-path=/axonserver-1
+axoniq.axonserver.name=axonserver-1
+axoniq.axonserver.hostname=axonserver-1
+axoniq.axonserver.domain=axonserver.svc.cluster.local
+axoniq.axonserver.internal-domain=axonserver.svc.cluster.local
 axoniq.console.authentication=YOUR_ACCESS_TOKEN_FROM_STEP_2
-server.servlet.context-path=/axon-server-1</code></pre>
-</div>
-</div>
-</div>
-<div id="_tabs_1_auto_clustering--panel" class="tabpanel" aria-labelledby="_tabs_1_auto_clustering">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axoniq.axonserver.hostname=axonserver-1
-axoniq.axonserver.autocluster.first=axonserver-1
-axoniq.axonserver.autocluster.contexts=_admin,default
-server.servlet.context-path=/axon-server-1</code></pre>
+axoniq.axonserver.autocluster.first=axonserver-1.axonserver.svc.cluster.local
+axoniq.axonserver.autocluster.contexts=_admin,default</code></pre>
 </div>
 </div>
 </div>
 <div id="_tabs_1_manual--panel" class="tabpanel" aria-labelledby="_tabs_1_manual">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axoniq.axonserver.hostname=axonserver-1
-server.servlet.context-path=/axon-server-1</code></pre>
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">server.servlet.context-path=/axonserver-1
+axoniq.axonserver.name=axonserver-1
+axoniq.axonserver.hostname=axonserver-1
+axoniq.axonserver.domain=axonserver.svc.cluster.local
+axoniq.axonserver.internal-domain=axonserver.svc.cluster.local
+axoniq.axonserver.standalone=true
+axoniq.axonserver.autocluster.first=axonserver-1.axonserver.svc.cluster.local
+axoniq.axonserver.autocluster.contexts=_admin,default</code></pre>
 </div>
 </div>
 </div>
@@ -433,7 +431,7 @@ You can always customize these later on.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl create configmap axonserver-properties --from-file=./axonserver.properties -n axonserver</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl create configmap axonserver-1-properties --from-file=./axonserver-1.properties -n axonserver</code></pre>
 </div>
 </div>
 <div class="admonitionblock note">
@@ -455,142 +453,15 @@ See <a href="../../extra/securing-axon-server/" class="xref page">securing Axon 
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_4_creating_the_statefulset"><a class="anchor" href="#_step_4_creating_the_statefulset"></a>Step 4: Creating the StatefulSet</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Now it&#8217;s time to run the StatefulSet.
-The YAML below contains everything needed to run your first Axon Server instance.
-Please save it to <code>axonserver-sts-1.yaml</code>.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: axonserver-1
-  labels:
-    app: axonserver-1
-spec:
-  serviceName: axonserver-1
-  replicas: 1
-  selector:
-    matchLabels:
-      app: axonserver-1
-  template:
-    metadata:
-      labels:
-        app: axonserver-1
-    spec:
-      hostname: axonserver-1
-      containers:
-      - name: axonserver
-        image: axoniq/axonserver:latest-jdk-17-nonroot
-        imagePullPolicy: Always
-        ports:
-        - name: grpc
-          containerPort: 8124
-          protocol: TCP
-        - name: gui
-          containerPort: 8024
-          protocol: TCP
-        volumeMounts:
-        - name: data
-          mountPath: /axonserver/data
-        - name: events
-          mountPath: /axonserver/events
-        - name: log
-          mountPath: /axonserver/log
-        - name: config
-          mountPath: /axonserver/config
-          readOnly: true
-        startupProbe:
-          httpGet:
-            path: /axon-server-1/actuator/info
-            port: 8024
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 1
-          failureThreshold: 30
-        readinessProbe:
-          httpGet:
-            path: /axon-server-1/actuator/info
-            port: 8024
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 1
-          failureThreshold: 30
-        livenessProbe:
-          httpGet:
-            path: /axon-server-1/actuator/info
-            port: 8024
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          successThreshold: 1
-          failureThreshold: 3
-      volumes:
-        - name: config
-          configMap:
-            name: axonserver-properties
-  volumeClaimTemplates:
-    - metadata:
-        name: events
-      spec:
-        accessModes: [ ReadWriteOnce ]
-        resources:
-          requests:
-            storage: 10Gi
-    - metadata:
-        name: log
-      spec:
-        accessModes: [ ReadWriteOnce ]
-        resources:
-          requests:
-            storage: 2Gi
-    - metadata:
-        name: data
-      spec:
-        accessModes: [ ReadWriteOnce ]
-        resources:
-          requests:
-            storage: 1Gi</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Now we can apply the StatefulSet:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f axonserver-sts-1.yaml -n axonserver</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>You can now wait until Axon Server has started up, by following the logging using the following command:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl logs -f axonserver-1-0 -n axonserver</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Your server will be operational once you see logging similar to:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-none hljs">io.axoniq.axonserver.AxonServer: Started AxonServer in 29.056 seconds</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_step_5_network_services"><a class="anchor" href="#_step_5_network_services"></a>Step 5: Network services</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>We want Axon Server to be reachable on port 8024 for the Axon Server Dashboard, and on port 8124 for your Axon Framework applications.</p>
+<p>We want Axon Server to be reachable on port 8024 for the Axon Server Dashboard and port 8124 for your Axon Framework applications.</p>
 </div>
 <div class="paragraph">
 <p>First, we will need to create the proper services.
 These provide stable DNS names in Kubernetes.
-Create the following YAML and save it to <code>axonserver-service.yaml</code>:</p>
+Create the following YAML and save it to <code>axonserver-1-service.yaml</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -636,7 +507,7 @@ spec:
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The above service definition also includes an internal port for Axon Server to communicate with other Axon Servers.
+<p>The above service definition also includes an internal port for Axon Server and properties related to networking to communicate with other Axon Servers.
 While not strictly necessary now, this is useful for if you later decide to use a multi-node setup.</p>
 </div>
 </td>
@@ -648,17 +519,151 @@ While not strictly necessary now, this is useful for if you later decide to use 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f axonserver-service.yaml -n axonserver</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f axonserver-1-service.yaml -n axonserver</code></pre>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_step_6_ingresses_optional"><a class="anchor" href="#_step_6_ingresses_optional"></a>Step 6: Ingresses (optional)</h2>
+<h2 id="_step_6_creating_the_statefulset"><a class="anchor" href="#_step_6_creating_the_statefulset"></a>Step 6: Creating the StatefulSet</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Now it&#8217;s time to run the StatefulSet.
+The YAML below contains everything needed to run your first Axon Server instance.
+Please save it to <code>axonserver-sts-1.yaml</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: axonserver-1
+  labels:
+    app: axonserver-1
+spec:
+  serviceName: axonserver-1
+  replicas: 1
+  selector:
+    matchLabels:
+      app: axonserver-1
+  template:
+    metadata:
+      labels:
+        app: axonserver-1
+    spec:
+      terminationGracePeriodSeconds: 120
+      containers:
+      - name: axonserver-1
+        image: axoniq/axonserver:latest-jdk-17
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: gui
+          containerPort: 8024
+          protocol: TCP
+        - name: grpc
+          containerPort: 8124
+          protocol: TCP
+        - name: grpc-internal
+          containerPort: 8224
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /axonserver/data
+        - name: events
+          mountPath: /axonserver/events
+        - name: log
+          mountPath: /axonserver/log
+        - name: config 
+          mountPath: /axonserver/config
+          readOnly: true
+        startupProbe:
+          httpGet:
+            path: /axonserver-1/actuator/info
+            port: 8024
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 10
+          failureThreshold: 110
+        readinessProbe:
+          httpGet:
+            path: /axonserver-1/actuator/health/readiness
+            port: 8024
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 10
+          failureThreshold: 110
+        livenessProbe:
+          httpGet:
+            path: /axonserver-1/actuator/health/liveness
+            port: 8024
+          initialDelaySeconds: 90
+          periodSeconds: 5
+          successThreshold: 1
+          failureThreshold: 10
+          timeoutSeconds: 10
+      volumes:
+        - name: config 
+          configMap:
+            name: axonserver-1-properties
+            items: 
+            - key: axonserver-1.properties
+              path: axonserver.properties
+  volumeClaimTemplates:
+    - metadata:
+        name: log
+      spec:
+        accessModes: [ ReadWriteOnce ]
+        resources:
+          requests:
+            storage: 10Gi
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ ReadWriteOnce ]
+        resources:
+          requests:
+            storage: 2Gi
+    - metadata:
+        name: events
+      spec:
+        accessModes: [ ReadWriteOnce ]
+        resources:
+          requests:
+            storage: 20Gi</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now we can apply the StatefulSet:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f axonserver-sts-1.yaml -n axonserver</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can now wait until Axon Server has started up by following the logging using the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl logs -f axonserver-1-0 -n axonserver</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Your server will be operational once you see logging similar to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">io.axoniq.axonserver.AxonServer: Started AxonServer in 29.056 seconds</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_7_ingresses_optional"><a class="anchor" href="#_step_7_ingresses_optional"></a>Step 7: Ingresses (optional)</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The network services are only reachable from within the Kubernetes cluster.
-From here, there are two ways to access the defined ports: either by port-forwarding or by setting up an Ingress.</p>
+From here, there are two ways to access the defined ports: port-forwarding or setting up an Ingress.</p>
 </div>
 <div class="sect2">
 <h3 id="_port_forwarding"><a class="anchor" href="#_port_forwarding"></a>Port-forwarding</h3>
@@ -689,7 +694,7 @@ This requires an Ingress Controller to be installed in your Kubernetes cluster.
 How to do this is beyond the scope of this guide.</p>
 </div>
 <div class="paragraph">
-<p>To create an ingress for the Axon Server dashboard, save the following YAML to <code>axonserver-ingress.yaml</code>:</p>
+<p>To create an ingress for the Axon Server dashboard, save the following YAML to <code>axonserver-1-ingress.yaml</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -711,7 +716,7 @@ spec:
             port:
               number: 8024
         pathType: Prefix
-        path: /axon-server-1</code></pre>
+        path: /axonserver-1</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -719,7 +724,7 @@ spec:
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f axonserver-ingress.yaml -n axonserver</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f axonserver-1-ingress.yaml -n axonserver</code></pre>
 </div>
 </div>
 <div class="admonitionblock note">
@@ -730,12 +735,12 @@ spec:
 </td>
 <td class="content">
 <div class="paragraph">
-<p>If you want to change the name of the Axon Server from <code>axon-server-1</code> to any other name, please take into account to synchronize this:</p>
+<p>If you want to change the name of the Axon Server from <code>axonserver-1</code> to any other name, please take into account to synchronize this:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>In the <code>axonserver.properties</code> file (both context-path and hostname)</p>
+<p>In the <code>axonserver-1.properties</code> file (both context-path and hostname)</p>
 </li>
 <li>
 <p>In the StatefulSet (name, app labels, hostname, and probe urls)</p>
@@ -800,7 +805,7 @@ This is not recommended for production use.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Security</strong>: Make sure your Axon Server is secure using TLS and authentication.
+<p><strong>Security</strong>: Ensure your Axon Server is secure using TLS and authentication.
 See <a href="../../extra/securing-axon-server/" class="xref page">securing Axon Server</a> for more information.</p>
 </li>
 <li>
