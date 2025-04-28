@@ -1,7 +1,7 @@
 = Kubernetes
 
 Kubernetes has become an industry standard when it comes to deploying Software.
-While we recommend installing Axon Server on virtual machines due to the better stability they provide, this guide will help you in installing Axon Server on Kubernetes.
+While we recommend installing Axon Server on virtual machines due to their better stability, this guide will help you install Axon Server Cluster on Kubernetes.
 
 [NOTE]
 ====
@@ -14,15 +14,17 @@ You can adapt the instruction in this guide for your specific situation.
 The Kubernetes setup works with a variety of individual parts:
 
 . *Stateful set*: The stateful set runs Axon Server with a stable hostname, necessary for the headless services.
-. *Persistent Volume Claims*: As Axon Server needs to store data, there are several PVC's necessary.
+. *Persistent Volume Claims*: As Axon Server needs to store data, there are several PVCs necessary.
 These are included in the StatefulSet configuration.
-. *Network Service*: For applications to be able to reach Axon Server, Kubernetes requires a network service that resolves to the pod created by the stateful set.
+. *Network Service*: For applications to reach Axon Server and communication between nodes, Kubernetes requires a network service that resolves to the pod created by the stateful set.
 . *Config Map*: A config map with the properties for Axon Server's configuration.
 
-== Step 0: Create a namespace
+== Step 1: Create a namespace
 
 We recommend running Axon Server in its separate namespace.
 During this guide, we will use the `axonserver` namespace.
+Because of Kubernetes networking, the namespace name selected affects some of the properties in your property file, such as `axoniq.axonserver.domain` and `axoniq.axonserver.internal-domain`.
+
 Create it using the following command:
 
 [source,bash]
@@ -36,11 +38,11 @@ You can name this namespace any way you like.
 However, if you modify this, make sure you modify commands later in this tutorial as well.
 ====
 
-== Step 1: Choose your image (Optional)
+== Step 2: Choose your image (optional)
 
 include::partial$choose-your-docker-image.adoc[]
 
-== Step 2: AxonIQ Console
+== Step 3: AxonIQ Console (optional)
 
 By connecting your Axon Server to AxonIQ Console you can unlock additional functionality.
 
@@ -56,16 +58,15 @@ include::partial$console-additional-functionality.adoc[]
 include::partial$obtain-console-access-token.adoc[]
 ====
 
-== Step 3: Configure properties
+== Step 4: Configure properties
 
-Axon Server needs to know how to run and form the cluster.
+Axon Server needs to know how to run.
 There are 3 methods:
 
 . *AxonIQ Console*: when connecting to AxonIQ Console, your server will receive all information automatically
-. *Auto-clustering*: By defining which node is in charge of forming the cluster, it will automatically form
-. *Initializing in the Axon Server dashboard*: By going into the Axon Server dashboard after Step 6, you can initialize the cluster manually
+. *Initializing in the Axon Server dashboard*: By going into the Axon Server dashboard after Step 6, you can initialize your node manually
 
-Based on which method you choose, different `axonserver.properties` have to be put into the properties file:
+Based on which method you choose, different `axonserver-1.properties` have to be put into the properties file:
 
 [tabs]
 ======
@@ -74,31 +75,15 @@ AxonIQ Console::
 --
 [source,properties]
 ----
-axoniq.axonserver.hostname=axonserver-1
-axoniq.console.authentication=YOUR_ACCESS_TOKEN_FROM_STEP_2
-server.servlet.context-path=/axon-server-1
+include::example$kubernetes/axonserver-1.properties[tags=**;console;!standalone;!license]
 ----
 --
-Auto-clustering::
-+
---
-[source,properties]
-----
-axoniq.axonserver.hostname=axonserver-1
-axoniq.axonserver.autocluster.first=axonserver-1
-axoniq.axonserver.autocluster.contexts=_admin,default
-server.servlet.context-path=/axon-server-1
-----
---
-
-
 Manual::
 +
 --
 [source,properties]
 ----
-axoniq.axonserver.hostname=axonserver-1
-server.servlet.context-path=/axon-server-1
+include::example$kubernetes/axonserver-1.properties[tags=**;standalone;!console;!license]
 ----
 --
 ======
@@ -110,7 +95,7 @@ We can now create the config map:
 
 [source,bash]
 ----
-kubectl create configmap axonserver-properties --from-file=./axonserver.properties -n axonserver
+kubectl create configmap axonserver-1-properties --from-file=./axonserver-1.properties -n axonserver
 ----
 
 [NOTE]
@@ -120,7 +105,33 @@ We recommend securing your Axon Server through Access Control.
 See xref::extra/securing-axon-server.adoc[securing Axon Server] for more information.
 ======
 
-== Step 4: Creating the StatefulSet
+== Step 5: Network services
+
+We want Axon Server to be reachable on port 8024 for the Axon Server Dashboard and port 8124 for your Axon Framework applications.
+
+First, we will need to create the proper services.
+These provide stable DNS names in Kubernetes.
+Create the following YAML and save it to `axonserver-1-service.yaml`:
+
+[source,yaml]
+----
+include::example$kubernetes/axonserver-sts-1.yaml[tags=services]
+----
+
+[NOTE]
+====
+The above service definition also includes an internal port for Axon Server and properties related to networking to communicate with other Axon Servers.
+While not strictly necessary now, this is useful for if you later decide to use a multi-node setup.
+====
+
+Now, we can create the network services:
+
+[source,bash]
+----
+kubectl apply -f axonserver-1-service.yaml -n axonserver
+----
+
+== Step 6: Creating the StatefulSet
 
 Now it's time to run the StatefulSet.
 The YAML below contains everything needed to run your first Axon Server instance.
@@ -128,95 +139,7 @@ Please save it to `axonserver-sts-1.yaml`.
 
 [source,yaml]
 ----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: axonserver-1
-  labels:
-    app: axonserver-1
-spec:
-  serviceName: axonserver-1
-  replicas: 1
-  selector:
-    matchLabels:
-      app: axonserver-1
-  template:
-    metadata:
-      labels:
-        app: axonserver-1
-    spec:
-      hostname: axonserver-1
-      containers:
-      - name: axonserver
-        image: axoniq/axonserver:latest-jdk-17-nonroot
-        imagePullPolicy: Always
-        ports:
-        - name: grpc
-          containerPort: 8124
-          protocol: TCP
-        - name: gui
-          containerPort: 8024
-          protocol: TCP
-        volumeMounts:
-        - name: data
-          mountPath: /axonserver/data
-        - name: events
-          mountPath: /axonserver/events
-        - name: log
-          mountPath: /axonserver/log
-        - name: config
-          mountPath: /axonserver/config
-          readOnly: true
-        startupProbe:
-          httpGet:
-            path: /axon-server-1/actuator/info
-            port: 8024
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 1
-          failureThreshold: 30
-        readinessProbe:
-          httpGet:
-            path: /axon-server-1/actuator/info
-            port: 8024
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 1
-          failureThreshold: 30
-        livenessProbe:
-          httpGet:
-            path: /axon-server-1/actuator/info
-            port: 8024
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          successThreshold: 1
-          failureThreshold: 3
-      volumes:
-        - name: config
-          configMap:
-            name: axonserver-properties
-  volumeClaimTemplates:
-    - metadata:
-        name: events
-      spec:
-        accessModes: [ ReadWriteOnce ]
-        resources:
-          requests:
-            storage: 10Gi
-    - metadata:
-        name: log
-      spec:
-        accessModes: [ ReadWriteOnce ]
-        resources:
-          requests:
-            storage: 2Gi
-    - metadata:
-        name: data
-      spec:
-        accessModes: [ ReadWriteOnce ]
-        resources:
-          requests:
-            storage: 1Gi
+include::example$kubernetes/axonserver-sts-1.yaml[tags=sts;!license;!resources]
 ----
 
 Now we can apply the StatefulSet:
@@ -226,7 +149,7 @@ Now we can apply the StatefulSet:
 kubectl apply -f axonserver-sts-1.yaml -n axonserver
 ----
 
-You can now wait until Axon Server has started up, by following the logging using the following command:
+You can now wait until Axon Server has started up by following the logging using the following command:
 
 [source,bash]
 ----
@@ -240,67 +163,10 @@ Your server will be operational once you see logging similar to:
 io.axoniq.axonserver.AxonServer: Started AxonServer in 29.056 seconds
 ----
 
-== Step 5: Network services
-
-We want Axon Server to be reachable on port 8024 for the Axon Server Dashboard, and on port 8124 for your Axon Framework applications.
-
-First, we will need to create the proper services.
-These provide stable DNS names in Kubernetes.
-Create the following YAML and save it to `axonserver-service.yaml`:
-
-[source,yaml]
-----
-apiVersion: v1
-kind: Service
-metadata:
-  name: axonserver-1-dashboard
-  labels:
-    app: axonserver-1
-spec:
-  ports:
-  - name: gui
-    port: 8024
-    targetPort: 8024
-  selector:
-    app: axonserver-1
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: axonserver-1
-  labels:
-    app: axonserver-1
-spec:
-  ports:
-  - name: grpc
-    port: 8124
-    targetPort: 8124
-  - name: grpc-internal
-    port: 8224
-    targetPort: 8224
-  clusterIP: None
-  selector:
-    app: axonserver-1
-----
-
-[NOTE]
-====
-The above service definition also includes an internal port for Axon Server to communicate with other Axon Servers.
-While not strictly necessary now, this is useful for if you later decide to use a multi-node setup.
-====
-
-Now, we can create the network services:
-
-[source,bash]
-----
-kubectl apply -f axonserver-service.yaml -n axonserver
-----
-
-== Step 6: Ingresses (optional)
+== Step 7: Ingresses (optional)
 
 The network services are only reachable from within the Kubernetes cluster.
-From here, there are two ways to access the defined ports: either by port-forwarding or by setting up an Ingress.
+From here, there are two ways to access the defined ports: port-forwarding or setting up an Ingress.
 
 === Port-forwarding
 
@@ -326,43 +192,25 @@ If you want a more permanent way to access the Axon Server dashboard, you can de
 This requires an Ingress Controller to be installed in your Kubernetes cluster.
 How to do this is beyond the scope of this guide.
 
-To create an ingress for the Axon Server dashboard, save the following YAML to `axonserver-ingress.yaml`:
+To create an ingress for the Axon Server dashboard, save the following YAML to `axonserver-1-ingress.yaml`:
 
 [source,yaml]
 ----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: axonserver-1
-  annotations:
-    kubernetes.io/ingress.class: public
-    nginx.ingress.kubernetes.io/affinity: cookie
-    nginx.ingress.kubernetes.io/affinity-mode: persistent
-spec:
-  rules:
-  - http:
-      paths:
-      - backend:
-          service:
-            name: axonserver-1-dashboard
-            port:
-              number: 8024
-        pathType: Prefix
-        path: /axon-server-1
+include::example$kubernetes/axonserver-sts-1.yaml[tags=ingress]
 ----
 
 You can now apply the ingress:
 
 [source,bash]
 ----
-kubectl apply -f axonserver-ingress.yaml -n axonserver
+kubectl apply -f axonserver-1-ingress.yaml -n axonserver
 ----
 
 [NOTE]
 ====
-If you want to change the name of the Axon Server from `axon-server-1` to any other name, please take into account to synchronize this:
+If you want to change the name of the Axon Server from `axonserver-1` to any other name, please take into account to synchronize this:
 
-. In the `axonserver.properties` file (both context-path and hostname)
+. In the `axonserver-1.properties` file (both context-path and hostname)
 . In the StatefulSet (name, app labels, hostname, and probe urls)
 . In the network services
 . In the Ingress
@@ -399,6 +247,6 @@ Now your Axon Framework applications will automatically to this port `8124` on y
 
 When you go to production, you need to consider the following:
 
-. *Security*: Make sure your Axon Server is secure using TLS and authentication.
+. *Security*: Ensure your Axon Server is secure using TLS and authentication.
 See xref::extra/securing-axon-server.adoc[securing Axon Server] for more information.
 . *High Availability*: Running multiple nodes in a cluster is recommended for high availability. This requires a link:https://axoniq.io/pricing[subscription].

@@ -1,0 +1,177 @@
+# tag::services[]
+apiVersion: v1
+kind: Service
+metadata:
+  name: axonserver-2-dashboard
+  labels:
+    app: axonserver-2
+spec:
+  ports:
+  - name: gui
+    port: 8024
+    targetPort: 8024
+  selector:
+    app: axonserver-2
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: axonserver-2
+  labels:
+    app: axonserver-2
+spec:
+  ports:
+  - name: grpc
+    port: 8124
+    targetPort: 8124
+  - name: grpc-internal
+    port: 8224
+    targetPort: 8224
+  clusterIP: None
+  selector:
+    app: axonserver-2
+# end::services[]
+---
+# tag::sts[]
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: axonserver-2
+  labels:
+    app: axonserver-2
+spec:
+  serviceName: axonserver-2
+  replicas: 1
+  selector:
+    matchLabels:
+      app: axonserver-2
+  template:
+    metadata:
+      labels:
+        app: axonserver-2
+    spec:
+      terminationGracePeriodSeconds: 120
+      containers:
+      - name: axonserver-2
+        image: axoniq/axonserver:latest-jdk-17
+        imagePullPolicy: IfNotPresent
+        # tag::resources[]
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+          limits:
+            memory: "16Gi"
+            cpu: "2"
+        # end::resources[]
+        ports:
+        - name: gui
+          containerPort: 8024
+          protocol: TCP
+        - name: grpc
+          containerPort: 8124
+          protocol: TCP
+        - name: grpc-internal
+          containerPort: 8224
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /axonserver/data
+        - name: events
+          mountPath: /axonserver/events
+        - name: log
+          mountPath: /axonserver/log
+        - name: config 
+          mountPath: /axonserver/config
+          readOnly: true
+        # tag::license[]
+        - name: license
+          mountPath: /axonserver/data/license
+          readOnly: true
+        # end::license[]
+        startupProbe:
+          httpGet:
+            path: /axonserver-2/actuator/info
+            port: 8024
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 10
+          failureThreshold: 110
+        readinessProbe:
+          httpGet:
+            path: /axonserver-2/actuator/health/readiness
+            port: 8024
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 10
+          failureThreshold: 110
+        livenessProbe:
+          httpGet:
+            path: /axonserver-2/actuator/health/liveness
+            port: 8024
+          initialDelaySeconds: 90
+          periodSeconds: 5
+          successThreshold: 1
+          failureThreshold: 10
+          timeoutSeconds: 10
+      volumes:
+        - name: config 
+          configMap:
+            name: axonserver-2-properties
+            items: 
+            - key: axonserver-2.properties
+              path: axonserver.properties
+        # tag::license[]
+        - name: license 
+          secret:
+            secretName: axoniq-license
+            items:
+              - key: axoniq.license
+                path: axoniq.license
+        # end::license[]
+  volumeClaimTemplates:
+    - metadata:
+        name: log
+      spec:
+        accessModes: [ ReadWriteOnce ]
+        resources:
+          requests:
+            storage: 10Gi
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ ReadWriteOnce ]
+        resources:
+          requests:
+            storage: 2Gi
+    - metadata:
+        name: events
+      spec:
+        accessModes: [ ReadWriteOnce ]
+        resources:
+          requests:
+            storage: 20Gi
+# end::sts[]
+---
+# tag::ingress[]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: axonserver-2
+  annotations:
+    kubernetes.io/ingress.class: public
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/affinity-mode: persistent
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: axonserver-2-dashboard
+            port:
+              number: 8024
+        pathType: Prefix
+        path: /axonserver-2
+# tag::end[]
