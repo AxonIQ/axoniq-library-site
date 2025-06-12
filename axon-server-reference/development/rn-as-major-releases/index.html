@@ -343,6 +343,61 @@
 </div>
 </div>
 <div class="sect1">
+<h2 id="_release_2025_1"><a class="anchor" href="#_release_2025_1"></a>Release 2025.1</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_dynamic_consistency_boundary_support_beta"><a class="anchor" href="#_dynamic_consistency_boundary_support_beta"></a>Dynamic Consistency Boundary Support (beta)</h3>
+<div class="paragraph">
+<p>Axon Server 2025.1 introduces support for Dynamic Consistency Boundaries (DCB) in combination with Axon Framework version 5.0.
+DCB uses a different index format to store events, which allows for more efficient event retrieval based on labels. To use this a context has to be created with the DCB option. DCB contexts are not compatible with previous Axon Server versions, so you cannot use them in combination with Axon Framework 4.x.</p>
+</div>
+<div class="paragraph">
+<p>To initialize Axon Server with DCB contexts, you can use the following options:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Start in standalone mode, using the property axoniq.axonserver.standalone-dcb=true  (instead of axoniq.axonserver.standalone=true) creates the default context with DCB enabled.</p>
+</li>
+<li>
+<p>With autocluser, adding the property axoniq.axonserver.autocluster.dcb=true will create all specified contexts with DCB enabled.</p>
+</li>
+<li>
+<p>In cluster templates, you can specify the dcb option in the context definition, for example:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>axoniq:
+  axonserver:
+    cluster-template:
+      first: localhost:8224
+      replicationGroups:
+      - name: _admin
+        roles:
+        - node: axonserver-enterprise-1
+          role: PRIMARY
+        contexts:
+        - name: _admin
+          dcbContext: false
+      - name: default
+        roles:
+        - node: axonserver-enterprise-1
+          role: PRIMARY
+        contexts:
+        - name: default
+          dcbContext: true
+        - name: nondcb
+          dcbContext: false
+      applications: []
+      users: []</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_release_2025_0"><a class="anchor" href="#_release_2025_0"></a>Release 2025.0</h2>
 <div class="sectionbody">
 <div class="sect2">
