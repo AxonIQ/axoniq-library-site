@@ -346,10 +346,74 @@
 <h2 id="_release_2025_1"><a class="anchor" href="#_release_2025_1"></a>Release 2025.1</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_dynamic_consistency_boundary_support_beta"><a class="anchor" href="#_dynamic_consistency_boundary_support_beta"></a>Dynamic Consistency Boundary Support (beta)</h3>
+<h3 id="_dynamic_consistency_boundary_dcb_experimental"><a class="anchor" href="#_dynamic_consistency_boundary_dcb_experimental"></a>Dynamic Consistency Boundary (DCB) Experimental</h3>
 <div class="paragraph">
-<p>Axon Server 2025.1 introduces support for Dynamic Consistency Boundaries (DCB) in combination with Axon Framework version 5.0.
-DCB uses a different index format to store events, which allows for more efficient event retrieval based on labels. To use this a context has to be created with the DCB option. DCB contexts are not compatible with previous Axon Server versions, so you cannot use them in combination with Axon Framework 4.x.</p>
+<p>Axon Server 2025.1 introduces comprehensive support for Dynamic Consistency Boundaries (DCB), a revolutionary approach
+to event sourcing that eliminates the constraints of traditional aggregate boundaries while maintaining transactional
+consistency. This feature represents a fundamental shift in how event-driven systems handle consistency and state
+management.</p>
+</div>
+<div class="sect3">
+<h4 id="_what_is_dynamic_consistency_boundary"><a class="anchor" href="#_what_is_dynamic_consistency_boundary"></a>What is Dynamic Consistency Boundary?</h4>
+<div class="paragraph">
+<p>Dynamic Consistency Boundary (DCB) is a technique for enforcing consistency in event-driven systems without relying on
+rigid transactional boundaries. Unlike traditional event sourcing approaches that bind events to fixed aggregate
+streams, DCB allows developers to dynamically compose event-based state based on the needs of a given operation,
+providing unprecedented flexibility in domain modeling. A Dynamic Consistency Boundary (DCB) is a flexible architectural
+pattern that promises more adaptable transactional consistency within a single bounded context, allowing you to define
+the scope of transactional consistency independently for each operation based upon specific business rules and
+constraints.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_key_features"><a class="anchor" href="#_key_features"></a>Key Features</h4>
+<div class="paragraph">
+<p><strong>Event Tagging and Filtering</strong>: DCB-compliant event stores allow events to be tagged when published and filtered by
+type and/or tags during queries. This enables a single event to affect multiple entities within the same bounded
+context, eliminating the need for multiple events representing the same business fact.</p>
+</div>
+<div class="paragraph">
+<p><strong>Single Event Stream per Bounded Context</strong>: Rather than assigning events to fixed (aggregate) streams, DCB allows for
+dynamic filtering of events within the Bounded Context, simplifying the overall architecture while maintaining
+consistency guarantees.</p>
+</div>
+<div class="paragraph">
+<p><strong>Optimistic Locking with Query-based Consistency</strong>: Instead of traditional stream-based optimistic locking, DCB uses
+query-based consistency checks. The event store ensures no new events matching the specified query were added since the
+decision model was built, enabling parallel writes for unrelated operations.</p>
+</div>
+<div class="paragraph">
+<p><strong>Backward Compatibility</strong>: Existing applications won&#8217;t break. If you want to keep your aggregates, go for it. But for
+those ready to break free, DCB is here.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_dcb_grpc_api"><a class="anchor" href="#_dcb_grpc_api"></a>DCB gRPC API</h4>
+<div class="paragraph">
+<p>Axon Server 2025.1 includes new gRPC endpoints in the <code>dcb.proto</code> specification to support DCB operations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Event Publishing with Tags</strong>: Enhanced event publishing capabilities that support tagging events for cross-entity
+consistency</p>
+</li>
+<li>
+<p><strong>Query-based Event Retrieval</strong>: Advanced querying mechanisms that allow filtering events by type and tags</p>
+</li>
+<li>
+<p><strong>Dynamic Consistency Validation</strong>: Real-time consistency checking based on query parameters rather than aggregate
+streams</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_initialization"><a class="anchor" href="#_initialization"></a>Initialization</h4>
+<div class="paragraph">
+<p>DCB uses a different index format to store events, which allows for more efficient event retrieval based on labels. To
+use this a context has to be created with the DCB option. DCB contexts are not compatible with previous Axon Server
+versions, so you cannot use them in combination with Axon Framework 4.x.</p>
 </div>
 <div class="paragraph">
 <p>To initialize Axon Server with DCB contexts, you can use the following options:</p>
@@ -357,10 +421,12 @@ DCB uses a different index format to store events, which allows for more efficie
 <div class="ulist">
 <ul>
 <li>
-<p>Start in standalone mode, using the property axoniq.axonserver.standalone-dcb=true  (instead of axoniq.axonserver.standalone=true) creates the default context with DCB enabled.</p>
+<p>Start in standalone mode, using the property axoniq.axonserver.standalone-dcb=true  (instead of
+axoniq.axonserver.standalone=true) creates the default context with DCB enabled.</p>
 </li>
 <li>
-<p>With autocluser, adding the property axoniq.axonserver.autocluster.dcb=true will create all specified contexts with DCB enabled.</p>
+<p>With autocluser, adding the property axoniq.axonserver.autocluster.dcb=true will create all specified contexts with
+DCB enabled.</p>
 </li>
 <li>
 <p>In cluster templates, you can specify the dcb option in the context definition, for example:</p>
@@ -392,6 +458,7 @@ DCB uses a different index format to store events, which allows for more efficie
           dcbContext: false
       applications: []
       users: []</pre>
+</div>
 </div>
 </div>
 </div>
