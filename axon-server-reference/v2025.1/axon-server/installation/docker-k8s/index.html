@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Axon Server</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-server-reference/v2025.1/axon-server/installation/docker-k8s/">
+    <link rel="prev" href="../local-installation/">
+    <link rel="next" href="../../administration/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../../_/img/favicon.ico" sizes="32x32">
+    <link rel="icon" href="../../../../../_/img/icon.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../../../../../_/img/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="../../../../../_/img/apple-touch-icon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../../_/static/manifest.webmanifest">
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../../_'</script>
+
+
+  </head>
+  <body class="article">
+    <div class="banner">
+    <a href="https://console.axoniq.io">Manage and monitor your Axon Framework applications and Axon Server environments. <span class="banner_button" target="_blank">Try AxonIQ Console</span></a>
+</div>    
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io"><img src="../../../../../_/img/logo-dark4x.png" class="header_logo" /></a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../../../axon-framework-reference/4.11/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../">Axon Server</a>
+                <a class="navbar-item" href="../../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../../axoniq-console-reference/">AxonIQ Console</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item search hide-for-print">
+          <div id="search-field" class="field">
+            <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+          </div>
+        </div>
+        <a class="navbar-item navbar-button" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item navbar-button" href="https://discuss.axoniq.io" target="_blank">AxonIQ Discuss</a>
+        <a class="navbar-item navbar-button" href="https://axoniq.io/contact" target="_blank">Get in touch</a>
+      </div>
+    </div>
+  </nav>
+</header>
+    <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../../">Axon Server Reference</a></li>
+    <li><a href="../">Installation</a></li>
+    <li><a href="./">Docker / K8s</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Axon%20Server" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Axon%20Server%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BAxon%20Server%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-server-reference%2Fv2025.1%2Faxon-server%2Finstallation%2Fdocker-k8s%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v2025.1</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../../development/axon-server/installation/docker-k8s/">development</a>
+    <a class="version item is-current" href="./">v2025.1</a>
+    <a class="version item" href="../../../../v2025.0/axon-server/installation/docker-k8s/">v2025.0</a>
+    <a class="version item" href="../../../../v2024.2/axon-server/installation/docker-k8s/">v2024.2</a>
+    <a class="version item" href="../../../../v2024.1/axon-server/installation/docker-k8s/">v2024.1</a>
+    <a class="version item is-missing" href="../../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-server-reference" data-version="v2025.1">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../../">Axon Server</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Installation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../local-installation/">Local installation</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Docker / K8s</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../administration/">Administration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../administration/admin-configuration/">Configuration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/admin-configuration/configuration/">System properties</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/admin-configuration/command-line-interface/">Command Line Interface</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/admin-configuration/rest-api/">REST API</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/admin-configuration/grpc-api/">gRPC API</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../administration/monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/monitoring/actuator-endpoints/">Actuator Endpoints</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/monitoring/axon-server-metrics/">Axon Server Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/monitoring/grpc-metrics/">gRPC Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/monitoring/heartbeat-monitoring/">Heartbeat Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/monitoring/diagnostics/">Diagnostics</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../administration/multi-context/">Multi-Context</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../administration/tiered-storage/">Tiered Storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../administration/event-transformation/">Event Transformation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../administration/tagging/">Tagging</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../administration/backups/">Backups</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../administration/recovery/">Recovery</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../administration/plugins/">Axon Server Plugins</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../administration/persistent-streams/">Persistent Streams</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../administration/logging/">Logging</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../administration/logging/logging-format/">Logging Format</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../administration/error-codes/">Error Codes</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../administration/integration/">Integrations</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../openapi/integration-api/">Axon Server Integration HTTP API</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../openapi/integration-outbound-api/">Axon Server Outbound HTTP API</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../clustering/">Clustering</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../clustering/cluster-basics/">Cluster Basics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../clustering/node-roles/">Node Roles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../clustering/replication-groups/">Replication Groups</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../clustering/replication-logs/">Replication Logs</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../security/">Security</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/ssl/">SSL</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-ee/">Access Control for Axon Server</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-clients/">Security for Axon Framework Client Applications</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-cli/">Access Control and the CLI</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-api/">Access Control on the REST and gRPC APIs</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-ldap/">Axon Server EE - LDAP Extension</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../security/access-control-oauth2/">Axon Server EE - OAuth Extension</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../performance/">Performance</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../performance/tuning-event-processing/">Event Segments</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../performance/flow-control/">Flow Control</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/non-axon-server-to-axon-server/">Non-Axon Server to Axon Server</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../architecture/">Architecture</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../architecture/config-database/">Config Database</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../troubleshooting/">Troubleshooting</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../rn-as-major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../rn-as-minor-releases/">Patch Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Axon Server</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><!-- vale Google.Passive = NO -->
+<!-- vale Google.Will = NO -->
+<!-- vale Google.We = NO -->
+<!-- vale Google.FirstPerson = NO -->
+<!-- vale AxonIQ.AcronymCase = NO -->
+<!-- vale AxonIQ.Headings = NO --></p>
+</div>
+<div class="paragraph">
+<p>This section is split into 4 sub-sections.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="#docker-image">The Axon Server Docker Image</a></p>
+</li>
+<li>
+<p><a href="#build-image">Construction of the Axon Server Docker Image</a></p>
+</li>
+<li>
+<p><a href="#docker-compose">Deployment using Docker Compose</a></p>
+</li>
+<li>
+<p><a href="#kubernetes">Deployment using Kubernetes</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="docker-image"><a class="anchor" href="#docker-image"></a>Docker image</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>AxonIQ provides ready to use <a href="https://hub.docker.com/r/axoniq/axonserver">Axon Server images</a>.
+There are two types of images available: one with Axon Server running as the user <code>root</code> and one with Axon Server running as user <code>axonserver</code>.
+Both images are based on <a href="https://hub.docker.com/_/eclipse-temurin">Eclipse Temurin</a>.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The <code>root</code> image of version 2024.2.3 is available as <code>axoniq/axonserver:2024.2.3</code> and is based on <code>eclipse-temurin:17-focal</code>.
+This image is particularly useful for running in Docker Desktop, as it will not have any trouble creating files and directories as user <code>root</code>.</p>
+</li>
+<li>
+<p>The <code>axonserver</code> image of version 2024.2.3 is available as <code>axoniq/axonserver:2024.2.3-nonroot</code> and is based on the same Eclipse Temurin image.
+This image is more secure and useful in Kubernetes and OpenShift clusters.
+You should take care to declare the user- and group-id, both of which are <code>1001</code> and are named <code>axonserver</code>.
+Doing this will ensure that any mounted volumes will be writable by the user running Axon Server.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The images export the following volumes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>/axonserver/config</code>
+This is where you can add configuration files, such as an additional <code>axonserver.properties</code> and the license file.
+However, you can also opt to use, for instance, Kubernetes, or Docker-compose secrets.
+Note that Axon Server assumes it can write to the directory configured with <code>axoniq.axonserver.enterprise.licenseDirectory</code>, so you don&#8217;t have to put the license on all nodes.</p>
+</li>
+<li>
+<p><code>/axonserver/data</code>
+This is where the ControlDB, the PID file, and a copy of the application logs are written to.</p>
+</li>
+<li>
+<p><code>/axonserver/events</code>
+In this volume the Event Store is created, with a single directory per context.</p>
+</li>
+<li>
+<p><code>/axonserver/log</code>
+In this volume the Replication Logs are created, with a single directory per Replication Group.</p>
+</li>
+<li>
+<p><code>/axonserver/exts</code>
+In this volume you can place Extension JAR-files, such as the LDAP and OAuth2 extensions.</p>
+</li>
+<li>
+<p><code>/axonserver/plugins</code>
+In this volume Axon Server will place all uploaded plugins.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="build-image"><a class="anchor" href="#build-image"></a>Building you own image</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A starter <code>Dockerfile</code> is included below which can be tailored as per your requirements.</p>
+</div>
+<div class="paragraph">
+<p>The starter file helps create the image in multiple stages,</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The image will be based on <code>eclipse-temurin:17-focal</code>.</p>
+</li>
+<li>
+<p>The first stage creates the directories that will become our volumes.</p>
+</li>
+<li>
+<p>The second stage begins by copying the home directory with its volume mount points, carefully keeping ownership set to the new user.</p>
+</li>
+<li>
+<p>The last steps copy the executable jar named axonserver.jar and a common set of properties.
+It marks the volume mounting points and exposed ports and finally specifies the command to start Axon Server EE.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">FROM eclipse-temurin:17-focal
+RUN mkdir -p /axonserver/config /axonserver/data /axonserver/events /axonserver/log /axonserver/exts
+
+COPY axonserver.jar axonserver.properties /axonserver/
+
+WORKDIR /axonserver
+
+VOLUME [ "/axonserver/config", "/axonserver/data", "/axonserver/events", "/axonserver/log", "/axonserver/exts", "/axonserver/plugins"  ]
+EXPOSE 8024/tcp 8124/tcp 8224/tcp
+
+ENTRYPOINT [ "java", "-jar", "./axonserver.jar" ]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For the common properties (<code>axonserver.properties</code>), the minimum set can be added to ensure that the volumes get mounted and logs generated.
+Again these can be tailored as per the deployment requirements.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axoniq.axonserver.event.storage=./events
+axoniq.axonserver.snapshot.storage=./events
+axoniq.axonserver.replication.log-storage-folder=./log
+
+axoniq.axonserver.enterprise.licenseDirectory=./config
+
+axoniq.axonserver.controldb-path=./data
+axoniq.axonserver.pid-file-location=./data
+
+logging.file=./data/axonserver.log
+logging.file.max-history=10
+logging.file.max-size=10MB</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Place the Dockerfile, the Axon Server jar file (<code>axonserver.jar</code>) and the <code>axonserver.properties</code> in the current directory.
+Assuming we are building version 2024.2.3, the image can be constructed using the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ docker build --tag my-repository/axonserver:2024.2.3</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This completes the construction of the Docker image.
+The image can pushed to your local repository or you could keep it local if you only want to run it on your development machine.
+The next step is to run it either using <a href="#docker-compose">Docker Compose</a> or <a href="#kubernetes">Kubernetes</a>.</p>
+</div>
+<div class="paragraph">
+<p>If you want to run the docker image for a standalone instance of Axon Server and have it initialized automatically, you can start it with the <code>axoniq.axonserver.standalone</code> property set through the environment, for instance:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ docker run -dit -e axoniq.axonserver.standalone=true -p 8024:8024 -p 8124:8124 my-repository/axonserver:2024.2.3</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_production_considerations"><a class="anchor" href="#_production_considerations"></a>Production considerations</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Security</strong> Please consider enabling <a href="../../security/ssl/" class="xref page">TLS</a> and <a href="../../security/access-control/" class="xref page">Access Control</a> to secure your setup.</p>
+</li>
+<li>
+<p><strong>root vs nonroot</strong> The image above runs axonserver as the root user. This might be not desirable and you might want to change it to a different user.</p>
+</li>
+<li>
+<p><strong>axonserver-cli</strong> The <code>axonserver-cli</code> provides useful functionality to interact with a running axonserver. We recommend to include it in the docker image, so it is available in case you need to troubleshoot issues in production.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="docker-compose"><a class="anchor" href="#docker-compose"></a>Docker compose</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Server is meant to be run in a distributed manner, as a cluster where there will be multiple instances of Axon Server nodes running all interconnected to each other.</p>
+</div>
+<div class="paragraph">
+<p>The installation process assumes that Docker Compose will be used to run a 3-node Axon Server cluster, that is running 3 services of the same container image we built above.
+Let us designate these services as "<em>axonserver-1</em>", "<em>axonserver-2</em>" and "<em>axonserver-3</em>".
+The default docker compose uses the docker image provided by AxonIQ on DockerHub at axoniq/axonserver:2024.2.3.
+If you wish to use your own docker image, you can replace each occurrence of "axoniq/axonserver:2024.2.3" with your own Docker image and tag.</p>
+</div>
+<div class="paragraph">
+<p>Each container instance will use separate volumes for “data”, “events”, and “log”.
+An environment variable is added to tell Axon Server about the location of the license file.
+We will use "secrets" to inject the license file, tokens as well as the cluster/context definitions using the <a href="../local-installation/#auto-clustering" class="xref page">autocluster</a> mechanism.</p>
+</div>
+<div class="paragraph">
+<p>The complete docker-compose file is depicted below.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">version: '3.3'
+services:
+  axonserver-1:
+    image: axoniq/axonserver:2024.2.3
+    hostname: axonserver-1
+    volumes:
+      - axonserver-data1:/axonserver/data
+      - axonserver-events1:/axonserver/events
+      - axonserver-log1:/axonserver/log
+    secrets:
+      - source: axoniq-license
+        target: /axonserver/config/axoniq.license
+      - source: axonserver-properties
+        target: /axonserver/config/axonserver.properties
+    environment:
+      - AXONIQ_LICENSE=/axonserver/config/axoniq.license
+    ports:
+      - '8024:8024'
+      - '8124:8124'
+    networks:
+      - axon-demo
+
+  axonserver-2:
+    image: axoniq/axonserver:2024.2.3
+    hostname: axonserver-2
+    volumes:
+      - axonserver-data2:/axonserver/data
+      - axonserver-events2:/axonserver/events
+      - axonserver-log2:/axonserver/log
+    secrets:
+      - source: axoniq-license
+        target: /axonserver/config/axoniq.license
+      - source: axonserver-properties
+        target: /axonserver/config/axonserver.properties
+    environment:
+      - AXONIQ_LICENSE=/axonserver/config/axoniq.license
+    ports:
+      - '8025:8024'
+      - '8125:8124'
+    networks:
+      - axon-demo
+
+  axonserver-3:
+    image: axoniq/axonserver:2024.2.3
+    hostname: axonserver-3
+    volumes:
+      - axonserver-data3:/axonserver/data
+      - axonserver-events3:/axonserver/events
+      - axonserver-log3:/axonserver/log
+    secrets:
+      - source: axoniq-license
+        target: /axonserver/config/axoniq.license
+      - source: axonserver-properties
+        target: /axonserver/config/axonserver.properties
+    environment:
+      - AXONIQ_LICENSE=/axonserver/config/axoniq.license
+    ports:
+      - '8026:8024'
+      - '8126:8124'
+    networks:
+      - axon-demo
+
+volumes:
+  axonserver-data1:
+  axonserver-events1:
+  axonserver-log1:
+  axonserver-data2:
+  axonserver-events2:
+  axonserver-log2:
+  axonserver-data3:
+  axonserver-events3:
+  axonserver-log3:
+
+networks:
+  axon-demo:
+
+secrets:
+  axonserver-properties:
+    file: ./axonserver.properties
+  axoniq-license:
+    file: ./axoniq.license</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>axonserver.properties</code> properties file referred to in the secrets’ definition section is depicted below.
+It uses <code>autocluster</code> to set up the cluster on startup, contacting the first node to initialize the procedure.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axoniq.axonserver.autocluster.first=axonserver-1
+axoniq.axonserver.autocluster.contexts=_admin,default</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Starting Axon Server using the docker-compose command is depicted below.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">$ docker-compose up</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="kubernetes"><a class="anchor" href="#kubernetes"></a>Kubernetes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>For example purposes only</strong></p>
+</div>
+<div class="paragraph">
+<p>The examples below show only one of the ways you could deploy Axon Server to Kubernetes.
+As discussed in <a href="https://developer.axoniq.io/w/revisiting-axon-server-in-containers">this Blog article</a>, there are many aspects that you need to carefully plan ahead for.
+A complete set of examples can be found in the "<a href="https://github.com/AxonIQ/running-axon-server">Running Axon Server</a>" GitHub repository.
+We especially recommend using <a href="https://github.com/AxonIQ/running-axon-server/tree/master/3-k8s/4-k8s-ee-ssts-tls">the "Singleton StatefulSet" approach</a>.
+Although the complexity of deploying any application to Kubernetes can be overwhelming, we strongly recommend you to study this subject carefully.
+The examples we provide are not necessarily the best approach for your particular situation, so be careful about copying them without any further modifications, if only because they generate self-signed certificates that have a one-year validity.</p>
+</div>
+<div class="sect2">
+<h3 id="_creating_the_secrets_and_configmap"><a class="anchor" href="#_creating_the_secrets_and_configmap"></a>Creating the Secrets and ConfigMap</h3>
+<div class="paragraph">
+<p>An important thing to consider is the use of a "nonroot" image.
+This is due to the fact that volumes are mounted as owned by the mount location’s owner in Docker, while Kubernetes uses a special security context, defaulting to &#8220;root&#8221;.
+Since a "nonroot" image runs Axon Server under its own user, it has no rights on the mounted volume other than “read”.
+The context can be specified, but only through the user or group’s ID, and not using their name as we did in the image, because that name does not exist in the k8s management context.
+So we have to adjust the first stage to specify a specific numeric value <em>(here we have given 1001)</em> , and then use that value in the security context of the Stateful set which we shall see below.</p>
+</div>
+<div class="paragraph">
+<p>We would need to supply a license/token file (for client applications) and cluster/context definitions via an axonserver.properties file.
+Unlike Docker Compose, Kubernetes mounts Secrets and ConfigMaps as directories rather than files, so we need to split license and configuration to two separate locations.
+For the license secret we can use a new location “/axonserver/license/axoniq.license” and adjust the environment variable to match.
+For the system token we’ll use “/axonserver/security/token.txt”, and for the properties file we’ll use a ConfigMap that we mount on top of the “/axonserver/config” directory.</p>
+</div>
+<div class="paragraph">
+<p>These can be created using "kubectl" directly from their respective file as depicted below.
+It is recommended to create a dedicated namespace before creating the secrets and the config maps.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">$ kubectl create secret generic axonserver-license --from-file=./axoniq.license -n ${axonserver-ns}
+secret/axonserver-license created
+$ kubectl create secret generic axonserver-token --from-file=./axoniq.token -n ${axonserver-ns}
+secret/axonserver-token created
+$ kubectl create configmap axonserver-properties --from-file=./axonserver.properties -n ${axonserver-ns}
+configmap/axonserver-properties created
+$</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the descriptor we now have to declare the secret, add a volume for it, and mount the secret on the volume.
+Then a list of volumes has to be added to link the actual license and properties.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deploying_axon_server"><a class="anchor" href="#_deploying_axon_server"></a>Deploying Axon Server</h3>
+<div class="paragraph">
+<p>The complete spec for the Axon Server Stateful set is given below.
+This includes the security context, the volume mounts, the readiness and liveness probes and finally the volumes.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: axonserver
+  labels:
+    app: axonserver
+spec:
+  serviceName: axonserver
+  replicas: 1
+  selector:
+    matchLabels:
+      app: axonserver
+  template:
+    metadata:
+      labels:
+        app: axonserver
+    spec:
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: axonserver
+        image: axoniq/axonserver:latest-dev-nonroot
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: grpc
+          containerPort: 8124
+          protocol: TCP
+        - name: gui
+          containerPort: 8024
+          protocol: TCP
+        env:
+        - name: AXONIQ_LICENSE
+          value: "/axonserver/license/axoniq.license"
+        volumeMounts:
+        - name: data
+          mountPath: /axonserver/data
+        - name: events
+          mountPath: /axonserver/events
+        - name: log
+          mountPath: /axonserver/log
+        - name: config
+          mountPath: /axonserver/config
+          readOnly: true
+        - name: system-token
+          mountPath: /axonserver/security
+          readOnly: true
+        - name: license
+          mountPath: /axonserver/license
+          readOnly: true
+        readinessProbe:
+          httpGet:
+            path: /actuator/info
+            port: 8024
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: /actuator/info
+            port: 8024
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: axonserver-properties
+        - name: system-token
+          secret:
+            secretName: axonserver-token
+        - name: license
+          secret:
+            secretName: axonserver-license
+  volumeClaimTemplates:
+    - metadata:
+        name: events
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5Gi
+    - metadata:
+        name: log
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The StatefulSet can be applied using the following command (assuming that the StatefulSet spec is stored in the file "axonserver-sts.yml").</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">$ kubectl apply -f axonserver-sts.yml -n ${axonserver-ns}
+statefulset.apps/axonserver created</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The next step would be to create the two services required for Axon Server, that is axonserver-gui on 8024 (HTTP) and axonserver on 8124 (gRPC).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">---
+apiVersion: v1
+kind: Service
+metadata:
+  name: axonserver-gui
+  labels:
+    app: axonserver
+spec:
+  ports:
+  - name: gui
+    port: 8024
+    targetPort: 8024
+  selector:
+    app: axonserver
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: axonserver
+  labels:
+    app: axonserver
+spec:
+  ports:
+  - name: grpc
+    port: 8124
+    targetPort: 8124
+  clusterIP: None
+  selector:
+    app: axonserver
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: axonserver
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/affinity-mode: persistent
+spec:
+  rules:
+  - host: axonserver
+    http:
+      paths:
+      - backend:
+          serviceName: axonserver-gui
+          servicePort: 8024
+---</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The services use an Ingress to allow incoming traffic and can be deployed with the following command (assuming that the Service specs are stored in the file "axonserver-ing.yml").</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">$ kubectl apply -f axonserver-ing.yml -n ${axonserver-ns}
+service/axonserver-gui created
+service/axonserver created
+ingress.networking.k8s.io/axonserver created</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To run an Axon Server cluster in Kubernetes it is recommended to create a separate stateful set for each node, and not to scale a single stateful set to multiple instances. Scaling a single stateful set makes it hard to control individual nodes in the cluster.</p>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../local-installation/">Local installation</a></span>
+  <span class="next"><a href="../../administration/">Administration</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-framework">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-server">Axon Server</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-console">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/blog/protect-sensitive-data-in-an-event-sourced-application">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/">Customer Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://console.axoniq.io/">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://axoniq.bsky.social/">Bluesky</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>&nbsp;</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.instagram.com/axoniq/">Instagram</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</footer>
+<script id="site-script" src="../../../../../_/js/site.js" data-ui-root-path="../../../../../_"></script>
+<script async src="../../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../../.." data-snippet-length="100" data-stylesheet="../../../../../_/css/search.css"></script>
+<script async src="../../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
