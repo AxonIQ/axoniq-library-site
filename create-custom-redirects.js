@@ -98,75 +98,75 @@ const redirectFallback = "/home/"
 const latestDefinitions = [
     {
         baseFolder: "axon-framework-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "message-handler-customization-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "meta-annotations-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "identifier-generation-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "deadlines-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "dead-letter-queue-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "axon-server-reference",
-        latestVersion: "v2024.2"
+        latestVersion: "v2025.1"
     },
     {
         baseFolder: "amqp-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "jgroups-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "jobrunr-pro-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "multitenancy-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "kotlin-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "kafka-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "mongodb-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "reactor-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "spring-aot-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "spring-cloud-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "tracing-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.11"
     },
 ]
 const app = express()
