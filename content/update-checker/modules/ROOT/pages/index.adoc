@@ -1,0 +1,104 @@
+= Axon Framework Update Checker
+
+The update checker is a new feature included in the upcoming Axon Framework 5, which ensures the security of the Axon Framework application and its modules and provides useful information to its maintainers.
+
+== What does the update checker do?
+
+**1. Identify updates and vulnerabilities:**
+The AxonIQ update checker will retrieve available updates and known vulnerabilities for the Axon modules in use.
+This will then be communicated to the Axon Framework application's logs.
+You can see such a sample down below.
+
+[source,terminaloutput]
+----
+13:52:29.074 [main] INFO UpdateChecker -- Your AxonIQ libraries will be checked for updates periodically. See https://axoniq.io/update-check for more information.
+13:52:31.054 [virtual-48] INFO UpdateChecker -- AxonIQ has found the following dependency upgrade(s):
+13:52:31.056 [virtual-48] INFO UpdateChecker -- io.axoniq.console:console-framework-client-spring-boot-starter .. 2.1.0 -> 2.1.5
+13:52:31.057 [virtual-48] INFO UpdateChecker -- io.axoniq.console:console-framework-client-api .................. 2.1.0 -> 2.1.5
+13:52:31.057 [virtual-48] INFO UpdateChecker -- io.axoniq.console:console-framework-client ...................... 2.1.0 -> 2.1.5
+13:52:31.057 [virtual-48] INFO UpdateChecker -- org.axonframework:axon-configuration ............................ 5.0.1 -> 5.0.3
+13:52:31.057 [virtual-48] INFO UpdateChecker -- org.axonframework:axon-eventsourcing ............................ 5.0.1 -> 5.0.3
+13:52:31.057 [virtual-48] INFO UpdateChecker -- org.axonframework:axon-disruptor ................................ 5.0.1 -> 5.0.3
+13:52:31.057 [virtual-48] INFO UpdateChecker -- org.axonframework:axon-modelling ................................ 5.0.1 -> 5.0.3
+13:52:31.057 [virtual-48] INFO UpdateChecker -- org.axonframework:axon-messaging ................................ 5.0.1 -> 5.0.3
+13:52:31.057 [virtual-48] INFO UpdateChecker -- No vulnerabilities have been found in your Axon libraries.
+----
+
+**2. Collect anonymous data**:
+To detect updates and vulnerabilities, the update checker collects anonymous data about your Axon Framework installation.
+This data is sent to AxonIQ and includes technical information about your environment, such as:
+
+- Environment details (OS, Java version)
+- Axon module names and versions in use
+- UUID stored in the user's home directory to identify the installation
+
+.Details of the collected data
+[%collapsible]
+====
+To be exact, the following information is sent to AxonIQ to find updates and vulnerabilities:
+
+- Machine identifier: A UUID stored in the user's home directory, which is used to identify the installation.
+- Session identifier: A UUID generated for each JVM, to identify unique instances.
+- Java information: Version, vendor and architecture.
+- Kotlin information: Version (if applicable).
+- Operating system information: Name, version, and architecture.
+- List of artifacts: Maven coordinates of `io.axoniq` and `org.axonframework` modules in use, including their versions. We never send information about any third-party libraries or dependencies.
+====
+
+[IMPORTANT]
+====
+We will never collect any personal, application-specific, or business logic data.
+====
+
+Of course, the code is open-source, so you can always inspect it yourself. The original pull request can be found here: https://github.com/AxonFramework/AxonFramework/pull/3492
+
+== Why do we collect this data?
+
+This data provides insight into real-world usage of Axon Framework, helping us make informed decisions about development priorities, resource planning, and sustainability efforts. It also assists in ensuring compliance with licensing requirements for future commercial modules.
+
+This in turn will allow AxonIQ to maintain the free and open-source core of Axon Framework while developing new enterprise features under a source-available license.
+
+== What you get in return
+
+Besides ensuring the continuity of the Axon Framework, you will also receive:
+
+- **Critical security alerts:**
+Immediate notifications about vulnerabilities affecting your Axon modules
+- **Important updates:**
+Information about patches, fixes, and compatibility guidance
+- **Peace of mind:**
+Rapid communication in case of supply chain or security issues
+
+We are committed to providing you with timely and relevant information to keep your Axon Framework applications secure and up-to-date.
+
+== How to opt out
+
+Participation is optional.
+If you prefer not to send anonymous usage data, you can disable the update checker in any of these ways:
+
+- **JVM system property:**
+`-Daxoniq.update-check.disabled=true`
+- **Environment variable:**
+`AXONIQ_UPDATE_CHECKER_DISABLED=true`
+- **Configuration file:**
+Create `$HOME/.axoniq/update-checker.properties` with the content:
+`disabled=true`
+
+_Note: Opting out means you will not receive update notifications or security alerts._
+
+== Why this matters
+
+The UpdateChecker is part of AxonIQ’s commitment to transparency and open source sustainability.
+By understanding how Axon Framework is used, we can:
+
+- Keep the core framework open-source and free.
+- Develop new enterprise features under a source-available license.
+- Accelerate development, improve documentation, and provide better support.
+
+== Our commitment
+
+We remain dedicated to open source values and transparency.
+The update checker is a measured, privacy-respecting step to ensure Axon Framework’s future.
+No drastic license changes, just better insight and communication.
+
+
