@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Connecting to Axon Server</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-5-getting-started/configure-axon-server/">
+    <link rel="prev" href="../project-structure/">
+    <link rel="next" href="../implement-command-create-course/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <link rel="stylesheet" href="../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../_/img/favicon.ico" sizes="32x32">
+    <link rel="icon" href="../../_/img/icon.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../../_/img/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="../../_/img/apple-touch-icon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../_/static/manifest.webmanifest">
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../_'</script>
+
+
+  </head>
+  <body class="article">
+    <div class="header_container">
+      <div class="banner">
+    <a href="https://console.axoniq.io">Manage and monitor your Axon Framework applications and Axon Server environments. <span class="banner_button" target="_blank">Try AxonIQ Console</span></a>
+</div>      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io"><img src="../../_/img/logo-dark4x.png" class="header_logo" /></a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../axon-framework-reference/4.11/">Axon Framework</a>
+                <a class="navbar-item" href="../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../axon-server-reference/v2025.1/">Axon Server</a>
+                <a class="navbar-item" href="../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../axoniq-console-reference/">AxonIQ Console</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item search hide-for-print">
+          <div id="search-field" class="field">
+            <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+          </div>
+        </div>
+        <a class="navbar-item navbar-button" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item navbar-button" href="https://discuss.axoniq.io" target="_blank">AxonIQ Discuss</a>
+        <a class="navbar-item navbar-button" href="https://axoniq.io/contact" target="_blank">Get in touch</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../">Getting Started with Axon Framework 5 </a></li>
+    <li><a href="./">Connecting to Axon Server</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/af5-getting-started/modules/ROOT/pages/configure-axon-server.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Connecting%20to%20Axon%20Server" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Connecting%20to%20Axon%20Server%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BConnecting%20to%20Axon%20Server%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-5-getting-started%2Fconfigure-axon-server%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-5-getting-started" data-version="master">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../">Getting Started with Axon Framework 5</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../sample-domain-event-modeling/">University Domain</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../project-structure/">Project Structure</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="./">Connecting to Axon Server</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../implement-command-create-course/">Feature: Course Creation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../implement-command-subscribe-student/">Feature: Subscribe Student</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Connecting to Axon Server</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>While the in-memory Event Store is perfect for getting started and understanding the concepts, real applications need persistent storage.
+This is where Axon Server comes into play!
+Axon Server is the purpose-built event store, and along with Axon Framework 5, it fully supports the Dynamic Consistency Boundary (DCB) concept that changes the way you think about event sourcing and even how you model your business domain.</p>
+</div>
+<div class="paragraph">
+<p>The best part?
+Connecting your application to Axon Server is incredibly simple—it&#8217;s designed to work out of the box with minimal configuration.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_adding_axon_server_dependency"><a class="anchor" href="#_adding_axon_server_dependency"></a>Adding Axon Server dependency</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The first step is to add the Axon Server connector dependency to your <code>pom.xml</code>.
+This single dependency provides everything you need to connect to Axon Server:</p>
+</div>
+<div class="listingblock">
+<div class="title">/pom.xml</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-server-connector&lt;/artifactId&gt;
+    &lt;version&gt;${axon.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That&#8217;s it for the code changes!
+Axon Framework 5 will automatically detect the presence of the Axon Server connector and configure your application to use it instead of the in-memory Event Store.
+No additional configuration code is needed—the framework handles all the wiring for you.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_running_axon_server_with_docker"><a class="anchor" href="#_running_axon_server_with_docker"></a>Running Axon Server with Docker</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To run Axon Server locally, we&#8217;ll use Docker Compose.
+To use the Axon Server with DCB support, you need to use Axon Server version <code>2025.1.0</code> or later.
+Create a <code>docker-compose.yml</code> file in your project root:</p>
+</div>
+<div class="listingblock">
+<div class="title">/docker-compose.yml</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">services:
+  axon-server:
+    image: axoniq/axonserver:2025.1.0
+    ports:
+      - "8024:8024"
+      - "8124:8124"
+    environment:
+      axoniq_axonserver_hostname: axon-server
+      axoniq_axonserver_autocluster_first: axon-server
+      axoniq_axonserver_autocluster_contexts: _admin
+    volumes:
+      - data:/axonserver/data
+      - events:/axonserver/events
+
+volumes:
+  db:
+    driver: local
+  data:
+    driver: local
+  events:
+    driver: local</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Start Axon Server by running:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">docker compose up</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will start Axon Server and make it available at <code><a href="http://localhost:8024" class="bare">http://localhost:8024</a></code> for the web UI and <code>localhost:8124</code> for gRPC connections.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_context_creation"><a class="anchor" href="#_context_creation"></a>Context creation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here&#8217;s where it gets exciting!
+To use the Dynamic Consistency Boundary features we&#8217;ve been learning about, you need to create a special DCB-enabled context in Axon Server.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open the Axon Server UI at <a href="http://localhost:8024" class="external" target="_blank" rel="noopener">http://localhost:8024</a></p>
+</li>
+<li>
+<p>Click on "Create new context"</p>
+</li>
+<li>
+<p>Enter <code>university</code> as the context name</p>
+</li>
+<li>
+<p><strong>Crucially</strong>: Check the <code>DCB context (beta)</code> checkbox in the General settings tab</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/AxonServer_DCBContext_Creation.png" alt="AxonServer DCBContext Creation">
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The DCB context checkbox is essential!
+If you forget to create the context or miss the DCB checkbox, your application will fail with an error like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">org.axonframework.commandhandling.CommandExecutionException: Exception while handling command
+Caused by: java.util.concurrent.ExecutionException: io.grpc.StatusRuntimeException: UNAVAILABLE</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuring_your_application_to_use_the_dcb_context"><a class="anchor" href="#_configuring_your_application_to_use_the_dcb_context"></a>Configuring your application to use the DCB context</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Once you&#8217;ve created the DCB-enabled context in Axon Server, you need to configure your application to use it.
+The only configuration change required is to specify the context name in your Axon Server configuration.</p>
+</div>
+<div class="paragraph">
+<p>Update your <code>UniversityAxonApplication</code> class to override the default Axon Server configuration:</p>
+</div>
+<div class="listingblock">
+<div class="title">/src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class UniversityAxonApplication {
+
+    private static final String CONTEXT = "university"; <i class="conum" data-value="1"></i><b>(1)</b>
+
+    public static ApplicationConfigurer configurer() {
+        var configurer = EventSourcingConfigurer.create();
+        configurer = CreateCourseConfiguration.configure(configurer);
+
+        // Override default Axon Server configuration to use DCB context
+        configurer.componentRegistry(r -&gt; r.registerComponent(AxonServerConfiguration.class, c -&gt; { <i class="conum" data-value="2"></i><b>(2)</b>
+            var axonServerConfig = new AxonServerConfiguration();
+            axonServerConfig.setContext(CONTEXT); <i class="conum" data-value="3"></i><b>(3)</b>
+            return axonServerConfig;
+        }));
+
+        return configurer;
+    }
+
+    // ...existing code...
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Define the context name that matches what you created in Axon Server UI</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Override the default <code>AxonServerConfiguration</code> component registration</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Set the context to use our DCB-enabled context</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This configuration ensures that your application connects to the correct context in Axon Server and can take advantage of the Dynamic Consistency Boundary features.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>This manual configuration approach will be simplified significantly with the upcoming Spring Boot integration for Axon Framework 5.
+In Spring Boot applications, you&#8217;ll be able to configure the context through simple application properties without needing to manually register components.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_testing_with_axon_server"><a class="anchor" href="#_testing_with_axon_server"></a>Testing with Axon Server</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One of the great benefits of Axon Framework&#8217;s design (thanks to the new configuration approach and the test fixtures) is that your tests work seamlessly with both the in-memory Event Store and Axon Server.
+When you run your <code>AxonTestFixture</code> tests with the Axon Server connector dependency present, the fixture will automatically use your Axon Server configuration.
+This means your tests now run against the same Event Store technology as production.</p>
+</div>
+<div class="paragraph">
+<p>Your existing test code doesn&#8217;t need any changes, but just keep in mind that you should use random IDs, because the Axon Server events won&#8217;t be purged automatically between test runs.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@BeforeEach
+void beforeEach() {
+    var application = new UniversityAxonApplication();
+    fixture = AxonTestFixture.with(application.configurer()); <i class="conum" data-value="1"></i><b>(1)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The fixture automatically detects and uses Axon Server when the connector is present.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you have the <code>axon-server-connector</code> on the classpath, and you&#8217;d like to run your tests against the in-memory Event Store instead, you should disable the <code>ConfigurationEnhancer</code> that automatically registers the <code>AxonServerEventStorageEnginer</code> with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.componentRegistry(r -&gt; r.disableEnhancer(ServerConnectorConfigurationEnhancer.class));</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exploring_events_in_axon_server_ui"><a class="anchor" href="#_exploring_events_in_axon_server_ui"></a>Exploring events in Axon Server UI</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One of the powerful features of Axon Server is its web-based interface that allows you to explore and analyze the events stored in your Event Store.
+After running your application and executing some commands, you can use the Axon Server UI to inspect the events that have been persisted.</p>
+</div>
+<div class="paragraph">
+<p>Navigate to the Event Store section in the Axon Server UI and click on the "Search" tab.
+Here you&#8217;ll find a comprehensive interface for exploring your events:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/AxonServer_DCBEvents_Search.png" alt="AxonServer DCBEvents Search">
+</div>
+</div>
+<div class="paragraph">
+<p>The Event Store Search interface provides several powerful capabilities:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Event Browsing</strong>: View all events stored in your Event Store in chronological order.</p>
+</li>
+<li>
+<p><strong>Event Details</strong>: See the complete event payload, including all properties and their values.</p>
+</li>
+<li>
+<p><strong>Tag Visualization</strong>: Each event displays its associated tags in the rightmost column, making it easy to see which business entities each event relates to.</p>
+</li>
+<li>
+<p><strong>Tag Filtering</strong>: Use the search functionality to filter events by specific tags (for example, <code>courseId</code> or <code>studentId</code>).</p>
+</li>
+<li>
+<p><strong>Event Type Filtering</strong>: Filter events by their type to focus on specific kinds of domain events.</p>
+</li>
+<li>
+<p><strong>Time-based Filtering</strong>: Search for events within specific time ranges.</p>
+</li>
+<li>
+<p><strong>Context Selection</strong>: Switch between different contexts to explore events from different parts of your application.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This interface is particularly valuable when working with Dynamic Consistency Boundaries, as you can easily see how events are tagged with multiple business entity identifiers.
+For example, a <code>StudentSubscribedToCourse</code> event will show both <code>studentId</code> and <code>courseId</code> tags, demonstrating how a single event can be associated with multiple business concepts.</p>
+</div>
+<div class="paragraph">
+<p>The search capabilities make it easy to trace the event history for specific business entities or understand the sequence of events that led to a particular system state.
+This is invaluable for debugging, auditing, and understanding the behavior of your event-sourced application.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_switching_between_event_store_implementations"><a class="anchor" href="#_switching_between_event_store_implementations"></a>Switching between event store implementations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Sometimes you might want to switch back to the in-memory Event Store for development or testing purposes.
+To do that, you may use configuration properties as shown in the <a href="https://github.com/AxonIQ/university-demo/" class="external" target="_blank" rel="noopener">Axon University Demo repository on GitHub</a>.</p>
+</div>
+<div class="paragraph">
+<p>This flexibility allows you to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Use in-memory storage for fast unit tests.</p>
+</li>
+<li>
+<p>Use Axon Server for integration tests and production.</p>
+</li>
+<li>
+<p>Switch between implementations without code changes.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_whats_next"><a class="anchor" href="#_whats_next"></a>What&#8217;s next?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>With Axon Server configured, your events are now persisted reliably, and you can take advantage of all the advanced features that Axon Server provides.
+To read more about that, visit the <a href="https://docs.axoniq.io/axon-server-reference/v2025.1/" class="external" target="_blank" rel="noopener">Axon Server Reference</a>.</p>
+</div>
+<div class="paragraph">
+<p>Your application is now ready for more complex scenarios and can handle the full power of event sourcing with persistent storage.
+In production environments, you&#8217;d typically run Axon Server in a cluster configuration for high availability, but this single-node setup is perfect for development and learning.</p>
+</div>
+<div class="paragraph">
+<p>The beauty of Axon Framework&#8217;s approach is that your code remains completely unchanged—whether you&#8217;re using in-memory storage or Axon Server, your command handlers, event sourcing handlers, and business logic work exactly the same way.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_your_opinion_matters"><a class="anchor" href="#_your_opinion_matters"></a>Your opinion matters!</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Thank you for completing this tutorial!
+We hope you&#8217;ve found value in exploring these new APIs and are excited about the upcoming Axon Framework 5 release.
+You now have a unique opportunity to shape the framework&#8217;s future and transform application development practices across the industry.
+If you&#8217;d like to do so, please share your feedback with us.
+You can do it on <a href="https://discuss.axoniq.io/t/feedback-template/6034">AxonIQ Discuss</a> or connect directly with our Framework team on LinkedIn.
+Your perspectives are invaluable to us, and we&#8217;re eager to engage in meaningful discussions about your ideas and experiences.</p>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../project-structure/">Project Structure</a></span>
+  <span class="next"><a href="../implement-command-create-course/">Feature: Course Creation</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-framework">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-server">Axon Server</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-console">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/blog/protect-sensitive-data-in-an-event-sourced-application">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/">Customer Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://console.axoniq.io/">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://axoniq.bsky.social/">Bluesky</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>&nbsp;</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.instagram.com/axoniq/">Instagram</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script async src="../../_/js/vendor/page-actions.js"></script>
+<script async src="../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../_/js/vendor/lunr.js"></script>
+<script src="../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../.." data-snippet-length="100" data-stylesheet="../../_/css/search.css"></script>
+<script async src="../../search-index.js"></script>
+    </div>
+  </body>
+</html>

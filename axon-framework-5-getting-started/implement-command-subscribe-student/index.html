@@ -123,6 +123,9 @@
     <a class="nav-link" href="../project-structure/">Project Structure</a>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../configure-axon-server/">Connecting to Axon Server</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../implement-command-create-course/">Feature: Course Creation</a>
   </li>
   <li class="nav-item is-current-page" data-depth="1">
@@ -311,7 +314,8 @@ class SubscribeStudentToCourseTest {
 
     @BeforeEach
     void beforeEach() {
-        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer());
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer());
     }
 
     @Test
@@ -531,6 +535,10 @@ We will list them along with the assertion function, as well as show what&#8217;
 
         private StudentId studentId;
 
+        @EntityCreator
+        public State() {
+        }
+
         @EventSourcingHandler
         void evolve(StudentEnrolledInFaculty event) {
             this.studentId = event.studentId();
@@ -607,6 +615,10 @@ It&#8217;s the same rule of thumb that you use while designing DDD Aggregates.</
         private StudentId studentId;
         private int noOfCoursesStudentSubscribed = 0;
         private boolean alreadySubscribed = false;
+
+        @EntityCreator
+        public State() {
+        }
 
         // other handlers added previously omitted for brevity
 
@@ -857,7 +869,7 @@ To do so, let&#8217;s create a new class <code>SubscribeStudentToCourseConfigura
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.subscribestudent;
 
 import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
@@ -867,7 +879,7 @@ import java.util.List;
 public class SubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
-        var stateEntity = EventSourcedEntityBuilder
+        var stateEntity = EventSourcedEntityModule
                 .annotatedEntity(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
         var commandHandlingModule = StatefulCommandHandlingModule
                 .named("SubscribeStudentToCourse")
@@ -912,18 +924,6 @@ public class SubscribeStudentConfiguration {
 <div class="paragraph">
 <p>Now what&#8217;s better for a developer than seeing the green bar flash in your IDE after running the tests?
 Let&#8217;s do it! Remember to mark the slice as completed in the Event Modeling diagram if you use this approach.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_your_opinion_matters"><a class="anchor" href="#_your_opinion_matters"></a>Your opinion matters!</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Thank you for completing this tutorial!
-We hope you&#8217;ve found value in exploring these new APIs and are excited about the upcoming Axon Framework 5 release.
-You now have a unique opportunity to shape the framework&#8217;s future and transform application development practices across the industry.
-If you&#8217;d like to do so, please share your feedback with us. You can do it on <a href="https://discuss.axoniq.io/t/feedback-template/6034">AxonIQ Discuss</a> or connect directly with our Framework team on LinkedIn.
-Your perspectives are invaluable to us, and we&#8217;re eager to engage in meaningful discussions about your ideas and experiences.</p>
 </div>
 </div>
 </div>

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Feature: Course Creation</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-5-getting-started/implement-command-create-course/">
-    <link rel="prev" href="../project-structure/">
+    <link rel="prev" href="../configure-axon-server/">
     <link rel="next" href="../implement-command-subscribe-student/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../_/css/site.css">
@@ -122,6 +122,9 @@
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../project-structure/">Project Structure</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../configure-axon-server/">Connecting to Axon Server</a>
   </li>
   <li class="nav-item is-current-page" data-depth="1">
     <a class="nav-link" href="./">Feature: Course Creation</a>
@@ -342,7 +345,8 @@ class CreateCourseTest {
 
     @BeforeEach <i class="conum" data-value="1"></i><b>(1)</b>
     void beforeEach() {
-        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer()); <i class="conum" data-value="2"></i><b>(2)</b>
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer()); <i class="conum" data-value="2"></i><b>(2)</b>
     }
 
 }</code></pre>
@@ -357,7 +361,7 @@ Adding the code to create the <code>AxonTestFixture</code> here will ensure that
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>This line creates a new <code>AxonTestFixture</code> based on our configurer. The configuration will be build and started from configurer by the fixture itself.</td>
+<td>This line creates a new <code>AxonTestFixture</code> based on our configurer. The configuration will be built and started from the configurer by the fixture itself.</td>
 </tr>
 </table>
 </div>
@@ -403,7 +407,8 @@ import java.util.UUID;class CreateCourseTest {
 
     @BeforeEach
     void beforeEach() {
-        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer());
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer());
     }
 
     @Test
@@ -662,9 +667,14 @@ class CreateCourseCommandHandler {
     @EventSourcedEntity(tagKey = "courseId") <i class="conum" data-value="1"></i><b>(1)</b>
     static class State {
 
-        private boolean created = false; <i class="conum" data-value="2"></i><b>(2)</b>
+        private boolean created; <i class="conum" data-value="2"></i><b>(2)</b>
 
-        @EventSourcingHandler <i class="conum" data-value="3"></i><b>(3)</b>
+        @EntityCreator <i class="conum" data-value="3"></i><b>(3)</b>
+        private State() {
+            this.created = false;
+        }
+
+        @EventSourcingHandler <i class="conum" data-value="4"></i><b>(4)</b>
         public void evolve(CourseCreated event) {
             this.created = true;
         }
@@ -673,10 +683,10 @@ class CreateCourseCommandHandler {
     @CommandHandler
     void handle(
         CreateCourse command,
-        @InjectEntity(idProperty = "courseId") State state, <i class="conum" data-value="4"></i><b>(4)</b>
+        @InjectEntity(idProperty = "courseId") State state, <i class="conum" data-value="5"></i><b>(5)</b>
         EventAppender eventAppender
     ) {
-        if(state.created) { <i class="conum" data-value="5"></i><b>(5)</b>
+        if(state.created) { <i class="conum" data-value="6"></i><b>(6)</b>
             return;
         }
         var event = new CourseCreated(command.courseId(), command.name(), command.capacity());
@@ -703,16 +713,20 @@ In other words: you don&#8217;t need to know who/how many students are subscribe
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The <code>@EntityCreator</code> annotation indicates to Axon Framework that this method should be called when the entity is created. It&#8217;s the place when you can set up the initial state.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
 <td>The <code>@EventSourcingHandler</code> annotation indicates to Axon Framework that this method should be called while rehydrating the state of the entity.
 Axon Framework will use the type of the annotated method argument to link this method to the specific type of event. Furthermore, the event type is used to query the <code>Event Store</code> just for those types.</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
 <td>The <code>@InjectEntity</code> annotation indicates to Axon Framework to inject the entity with the given identifier property which needs to be present in the processed command.
 In this case, we want to inject the <code>State</code> entity with the <code>courseId</code> property.</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
 <td>The <code>if</code> statement checks if the course was already created.
 If it was, we don&#8217;t need to do anything, so we just return from the method.
 To just ignore the command (do not publish events) is a choice. Thanks to that, the command can be safely retried.
@@ -747,13 +761,14 @@ public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotated(CourseId.class, CreateCourseCommandHandler.State.class);  <i class="conum" data-value="1"></i><b>(1)</b>
+                .annotated(CourseId.class, CreateCourseCommandHandler.State.class); <i class="conum" data-value="1"></i><b>(1)</b>
 
         var commandHandlingModule = StatefulCommandHandlingModule.named("CreateCourse")
                 .entities()
                 .entity(stateEntity)  <i class="conum" data-value="2"></i><b>(2)</b>
                 .commandHandlers()
                 .annotatedCommandHandlingComponent(c -&gt; new CreateCourseCommandHandler());
+
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
@@ -883,7 +898,7 @@ To see how to implement this slice differently, you can check the GitHub reposit
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../project-structure/">Project Structure</a></span>
+  <span class="prev"><a href="../configure-axon-server/">Connecting to Axon Server</a></span>
   <span class="next"><a href="../implement-command-subscribe-student/">Feature: Subscribe Student</a></span>
 </nav>
     </article>
