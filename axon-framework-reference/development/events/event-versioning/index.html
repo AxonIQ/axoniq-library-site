@@ -400,7 +400,7 @@ This allows you to update events in an incremental manner, writing an upcaster f
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-<div class="title">Benefits if Upcasters</div>
+<div class="title">Benefits of Upcasters</div>
 <div class="paragraph">
 <p>Perhaps the greatest benefit of upcasting is that it allows you to do non-destructive refactoring.
 In other words, the complete event history remains intact.</p>
@@ -472,7 +472,7 @@ To validate if the intermediate representation supports a given type, you can in
 </table>
 </div>
 <div class="sect2">
-<h3 id="_provided_abstract_upcaster_implementations"><a class="anchor" href="#_provided_abstract_upcaster_implementations"></a>Provided abstract Upcaster implementations</h3>
+<h3 id="provided_abstract_upcaster_implementations"><a class="anchor" href="#provided_abstract_upcaster_implementations"></a>Provided abstract Upcaster implementations</h3>
 <div class="paragraph">
 <p>As described earlier, the <code>Upcaster</code> interface does not upcast a single event; it requires a <code>Stream&lt;IntermediateEventRepresentation&gt;</code> and returns one.
 However, an upcaster is usually written to adjust a single event out of this stream.
@@ -762,6 +762,66 @@ public class AxonConfig {
 </div>
 </div>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="upcasting_snapshots"><a class="anchor" href="#upcasting_snapshots"></a>Upcasting snapshots</h3>
+<div class="paragraph">
+<p>Although the description above leans towards event upcasting, note that all the given constructs can be used to upcast a <a href="../../tuning/event-snapshots/" class="xref page">snapshot</a>.</p>
+</div>
+<div class="paragraph">
+<p>From the <code>abstract</code> upcaster implementations shared <a href="#provided_abstract_upcaster_implementations">earlier</a>, the only feasible upcaster is the <code>SingleEventUpcaster</code>. We can logically deduce that a multi-upcaster would be incorrect, as only the last returned snapshot is used to load an aggregate. Furthermore, context-aware upcasters aren&#8217;t necessary either, as any context-specific information in a snapshot is generated during event sourcing. Hence, if any data should carry over, simply reconstruct the snapshot instead.</p>
+</div>
+<div class="paragraph">
+<p>When upcasting events, the <strong>type</strong> to upcaster equals the fully qualified class name of the event itself. When upcasting snapshots, the type is the fully qualified class name of the <strong>aggregate</strong>. Knowing this detail, let&#8217;s look at an example of a snapshot upcaster for the <code>GiftCard</code> aggregate (as exemplified <a href="../../axon-framework-commands/modeling/aggregate/" class="xref page">here</a>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class GiftCardSnapshotNull_to_1Upcaster extends SingleEventUpcaster {
+
+   private static final SimpleSerializedType TARGET_TYPE =
+           new SimpleSerializedType(GiftCard.class.getTypeName(), null);
+
+   @Override
+   protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation) {
+      return intermediateRepresentation.getType().equals(TARGET_TYPE);
+   }
+
+   @Override
+   protected IntermediateEventRepresentation doUpcast(
+           IntermediateEventRepresentation intermediateRepresentation
+   ) {
+      return intermediateRepresentation.upcastPayload(
+              new SimpleSerializedType(TARGET_TYPE.getName(), "1"),
+              org.dom4j.Document.class,
+                            com.fasterxml.jackson.databind.JsonNode.class,
+              event -&gt; {
+                  ((ObjectNode) event).put("owner", "[owner-id]");
+                  return event;
+              }
+      );
+   }
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Whenever constructing a snapshot upcaster, be mindful of <a href="../../tuning/event-snapshots/#_filtering_snapshot_events" class="xref page"><code>SnapshotFilters</code></a>.
+When using the <code>@Revision</code> annotation on your Aggregate, a <code>RevisionSnapshotFilter</code> is constructed by default.
+The <code>RevisionSnapshotFilter</code> will make it so that snapshot events <strong>never</strong> reach your upcaster.</p>
+</div>
+<div class="paragraph">
+<p>As such, it is advised to override the <code>SnapshotFilter</code> of an Aggregate to a no-op entry when you prefer to upcaster your snapshots.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>

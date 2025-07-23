@@ -456,27 +456,43 @@ The result from either can be used to configure the same aggregate factories in 
 </li>
 </ul>
 </div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p><strong>Snapshotter Configuration</strong></p>
 </div>
+<div class="sect2">
+<h3 id="_snapshotter_configuration"><a class="anchor" href="#_snapshotter_configuration"></a>Snapshotter configuration</h3>
+<div class="sect3">
+<h4 id="_executor"><a class="anchor" href="#_executor"></a>Executor</h4>
 <div class="paragraph">
 <p>If you use an executor that executes snapshot creation in another thread, make sure you configure the correct transaction management for your underlying event store, if necessary.</p>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_default_snapshotter"><a class="anchor" href="#_default_snapshotter"></a>Default Snapshotter</h4>
 <div class="paragraph">
 <p>For both non-Spring and Spring users a default <code>Snapshotter</code> is provided.
 The former uses the Configuration API to provide a default <code>AggregateSnapshotter</code>, retrieving the aggregate factories from the registered Aggregates / <code>AggregateConfiguration`s.
 Spring uses a `SpringAggregateSnapshotter</code>, which will automatically looks up the right <code>AggregateFactory</code> instances from the application context when a snapshot needs to be created.</p>
 </div>
-<div class="paragraph">
-<p>The <code>@Revision</code> annotation has a dedicated, automatically configured <code>SnapshotFilter</code> implementation. This implementation is used to filter out non-matching snapshots from the <code>Repository&#8217;s loading process.
-So when the `@Revision</code> annotation is used on an aggregate the snapshots will be filtered out automatically. When the`@Revision` on an aggregate is missing a <code>RevisionSnapshotFilter</code> is configured for revision <code>null</code>.</p>
-</div>
-</blockquote>
 </div>
 <div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
+<h4 id="_revision_based_snapshot_filter"><a class="anchor" href="#_revision_based_snapshot_filter"></a>Revision-based snapshot filter</h4>
+<div class="paragraph">
+<p>The <code>@Revision</code> annotation has a dedicated, automatically configured <code>SnapshotFilter</code> implementation. This implementation is used to filter out non-matching snapshots from the <code>Repository&#8217;s loading process.
+So when the `@Revision</code> annotation is used on an aggregate the snapshots will be filtered out automatically. When the`@Revision` on an aggregate is missing a <code>RevisionSnapshotFilter</code> is configured for revision <code>null</code>.
+For more details on snapshot filtering, please read <a href="#_filtering_snapshot_events">here</a></p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_axon_configuration_api" class="tab">
+<p>Axon Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot_auto_configuration" class="tab">
+<p>Spring Boot auto configuration</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_axon_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">AggregateConfigurer&lt;GiftCard&gt; giftCardConfigurer =
@@ -489,8 +505,7 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration()
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration"><a class="anchor" href="#_spring_boot_auto_configuration"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_1_spring_boot_auto_configuration--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot_auto_configuration">
 <div class="paragraph">
 <p>It is possible to define a custom <code>SnapshotTriggerDefinition</code> for an aggregate as a Spring bean.
 In order to tie the <code>SnapshotTriggerDefinition</code> bean to an aggregate, use the <code>snapshotTriggerDefinition</code> attribute on <code>@Aggregate</code> annotation.
@@ -511,6 +526,9 @@ public SnapshotTriggerDefinition giftCardSnapshotTrigger(Snapshotter snapshotter
 
 @Aggregate(snapshotTriggerDefinition = "giftCardSnapshotTrigger")
 public class GiftCard {...}</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -572,8 +590,19 @@ The latter allows combining several `SnapshotFilter`s together.</p>
 <div class="paragraph">
 <p>The following snippets show how to configure a <code>SnapshotFilter</code>:</p>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_2"><a class="anchor" href="#_axon_configuration_api_2"></a>Axon Configuration API</h4>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_axon_configuration_api" class="tab">
+<p>Axon Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot_auto_configuration" class="tab">
+<p>Spring Boot auto configuration</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_axon_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">SnapshotFilter giftCardSnapshotFilter = snapshotData -&gt; /* allow or disallow this snapshotData */;
@@ -586,8 +615,7 @@ Configurer configurer = DefaultConfigurer.defaultConfiguration()
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_2"><a class="anchor" href="#_spring_boot_auto_configuration_2"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_2_spring_boot_auto_configuration--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot_auto_configuration">
 <div class="paragraph">
 <p>It is possible to define a custom <code>SnapshotFilter</code> for an aggregate as a Spring bean.
 In order to tie the <code>SnapshotFilter</code> bean to an aggregate, use the <code>snapshotFilter</code> attribute on <code>@Aggregate</code> annotation.</p>
@@ -605,10 +633,31 @@ public SnapshotFilter giftCardSnapshotFilter() {
 public class GiftCard {...}</code></pre>
 </div>
 </div>
+</div>
+</div>
+</div>
 <div class="paragraph">
 <p>The above snippet would be feasible to follow <em>if</em> fine-grained control is required when filtering snapshots from the store.
 For example, when your snapshots are not based on the Aggregate class (which is the default).
 When this is not required, you can base yourself on the default <code>SnapshotFilter</code> - the <code>RevisionSnapshotFilter</code>.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you have defined an <a href="../../events/event-versioning/#upcasting_snapshots" class="xref page">upcaster</a> for your snapshots, you must define the revision of the snapshots as well. As described, any use of the <code>@Revision</code> annotation automatically results in a <code>RevisionSnapshotFilter</code>.</p>
+</div>
+<div class="paragraph">
+<p>Any <code>SnapshotFilter</code> present will impact the snapshot events given to your upcasters!
+Hence, it is advised to override the default <code>SnapshotFilter</code> to a no-op entry when you prefer to upcast your snapshots instead.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>To configure this <code>SnapshotFilter</code>, all you have to do is use the <code>@Revision</code> annotation on your Aggregate class.
@@ -626,7 +675,6 @@ Check out the following example for how to set this up:</p>
 public class GiftCard {
     // Omitted aggregate internals for simplicity.
 }</code></pre>
-</div>
 </div>
 </div>
 </div>
@@ -735,7 +783,7 @@ This approach prevents the need to (re)serialize aggregates when storing to disk
 <p>To configure a cache for your Aggregates, consider the following snippet:</p>
 </div>
 <div class="sect3">
-<h4 id="_axon_configuration_api_3"><a class="anchor" href="#_axon_configuration_api_3"></a>Axon Configuration API</h4>
+<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
@@ -752,7 +800,7 @@ This approach prevents the need to (re)serialize aggregates when storing to disk
 </div>
 </div>
 <div class="sect3">
-<h4 id="_spring_boot_auto_configuration_3"><a class="anchor" href="#_spring_boot_auto_configuration_3"></a>Spring Boot auto configuration</h4>
+<h4 id="_spring_boot_auto_configuration"><a class="anchor" href="#_spring_boot_auto_configuration"></a>Spring Boot auto configuration</h4>
 <div class="paragraph">
 <p>The <code>Aggregate</code> annotation allows specification of the cache bean:</p>
 </div>
