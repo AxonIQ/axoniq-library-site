@@ -1,0 +1,198 @@
+= From Model to Code: Event Modeling & Axon Framework
+:author: Sara Torrey
+:docdate: 2020-27-10
+:doctype: article
+:icons: font
+
+=== *How do I design an application? What’s the process like? Where do I even begin?!*
+
+Well, the ‘old me’ would design an application "on the fly," AKA, create a repository on GitHub, open it on IntelliJ, and BAM! So you’ve got an application a few hours later with some backend functionality, MongoDB, and UI/UX designed with the great helping hands of Bootstrap and SemanticUI.
+
+Success? Sure… maybe for a simple application. But what about designing a large-scale application or a modular application with individual parts that can scale and evolve easily? Then how should I start something like that?
+
+When I first learned about link:/products/axon-framework[Axon Framework], the concept of link:/concepts[DDD] and link:/concepts/cqrs-and-event-sourcing[Event Sourcing] were very new to me. I attended several training sessions and read tirelessly about the structural designs, messaging systems, microservices, and more. I read Eric Evans’ blue book, Vijay Nair’s _Practical Domain-Driven Design in Enterprise Java_, and many articles and Q&As on StackOverflow and AxonIQ Google group (now link:https://discuss.axoniq.io/[discuss.axoniq.io]). Unfortunately, the amount of information (and at times, the lack thereof) felt overwhelming and sometimes overly technical.
+
+The help came from my colleague, Ivan Dugalic, who explained the concept of Event Modeling to me. At that time, I had heard about Alberto Brandolini’s Event Storming and Adam Dimytruk’s Event Modeling that had been derived from Event Storming. Still, I had not yet used either concept.
+
+I am a visual learner and have to do things myself to grasp how they work. Ivan showed me the Hotel Demo application, inspired by Adam’s Hotel Application model shown in his link:https://eventmodeling.org/posts/what-is-event-modeling/[blog]. So, I decided to create my own small Music Lesson Scheduling application using Event Modeling.
+
+As I mentioned before, in the past, I had created applications on the fly without much of an upfront design in mind. I would add components and classes without thinking about how these components would communicate to each other later on or whether or not they were loosely coupled and cohesive. As a result, I did not thoroughly examine if these components would satisfy the overall requirements effectively. I also was not really concerned if I could easily add more features in a day or a year from now or if the system could evolve in time. But as I am generally an organized person and like to plan things, it made perfect sense to plan carefully and in advance when creating an application. Additionally, as a parent, I am all about simplifying life, so Event Modeling seemed like the ideal choice.
+
+== A new tool in the toolbox
+
+`“Event Modeling uses 3 moving pieces and 4 patterns based on 2 ideas.”`
+
+Of course, based on your application, the moving parts can be more than 3 (as you will see below).
+
+=== Moving parts
+
+Commands:
+
+* In this section, the *user* is given the ability to affect/change the system. (blue sticky notes)
+
+Events:
+
+* What events *were* (notice that events are always in past tense)* *stored in the system as we move forward in time? (orange sticky notes)
+
+Views/Queries:
+
+* The information needs to be available to the user (dates for a lesson are available on the calendar for a student to book).
+
+* They can also be retrieved at a later date.
+
+UX/UI/Wireframes:
+
+* This is the visual part of the story-telling or the visual of the web page. This part comes at the top of the model.
+
+* The swim lanes show different people who are interacting with our system.
+
+* At this point, we have enough information to work on the UI/UX part.
+
+Aggregates (a tactical link:/concepts[DDD] pattern)
+
+* Aggregates are another moving part of my design, but I will focus on those in more detail in the next blog.
+
+=== 4 patterns:
+. State Change
+//-
+* Commands to Events. +
+- Given events (previous state) +
+- When a command (new intent) +
+- Then, a new event is published (new state)
+
+. State View
+
+* Informing the users about the state of the system is shown here.
+
+* Given event(s): A lesson time is available to be booked, except for the week of spring break when the school is closed.
+
+* Then view(s): The calendar should show all the dates except for March 12-19th.
+
+*Integration*: Systems can receive and send information to other systems. These integrations do not have the visible aspects and need higher-level patterns, which are Translation and Automation.
+
+[start=3]
+. Translation
+//-
+* It is helpful to translate the information (Event) from another system into a format (Command) that is more familiar in our system. This integration component is sometimes implemented as Saga, regular event handler, process manager, etc. Essentially, it is a simple translator that acts as an Anti-Corruption layer.
+
+. Automation
+
+* Queries are also part of the API (not only events and commands). For more complex integrations (for example, with some 3rd party Payment provider), one could utilize queries/projections as a starting point of this integration. For example, the idea of a to-do list/view.
+
+* This integration pattern is different from Translation, and it could be considered in integration with systems that do not provide messaging API (command, events, queries). These systems provide REST endpoints, and you could query your own projection (for example, in some time-frequency - batching- pooling ) and send an HTTP request to that other service/payment provider (to-do list)
+
+== Exploration exercise in 7 steps - the blueprint
+
+Adam explains this process as a ‘Workshop Format’ in 7 simple steps:
+
+[start=1]
+. Brain Storming:
+//-
+* Use OrangePost-its
+
+* Use Past Tense +
+- Events (the first moving part) are described as something that happened in the past +
+- They are immutable
+
+* Only state-changing events need to be specified
+
+image::modelling-20AF2.jpg[modelling AF2]
+
+[start=2]
+. The Plot
+//-
+* The storyline (Events)
+
+* The concept of TIME is introduced in this step, and the events are carefully planned based on the timeline.
+
+image::modelling-20AF5.jpg[modelling AF5]
+
+[start=3]
+. StoryBoard
+//-
+* Wireframe (the second moving part) is shown from the _user’s perspective_ on the system representing the source and destination of the information.
+
+* UI: Wireframes are usually put on top of the blueprint
+
+image::modelling-20AF3.png[modelling AF3]
+
+[start=4]
+. Identify Input (Commands)
+//-
+* Command (the third moving part) is the intent to change the state of a system.
+
+* The transactions are both on the business and technical sides.
+
+image::modelling-20AF7.png[modelling AF7]
+
+[start=5]
+. Identify Output (Views or Read-Models - the fourth moving part)
+//-
+* Access to information or data is key
+
+* We want to know if payment went through on a certain pay period
+
+* As stated above, views are passive, and they cannot change the event after it’s been stored in the system
+
+image::modelling-20AF.png[modelling AF]
+
+[start=6]
+. Organizing events into swimlanes
+//-
+* Allow a system/app to exist as a set of autonomous parts owned and managed by different teams.
+//-
+- In my case, the swimlanes are there to group the events by concepts/aggregates. So basically, this BIG stream of all events is divided into small event streams, each belonging to a specific aggregate.
+
+image::modelling-20AF6.png[modelling AF6]
+
+[start=7]
+. Elaborate on scenarios:
+
+//-
+
+* Given-When-Then or Given-Then allows for rapid review by various representatives
+- GIVEN events = current state
+- WHEN new COMMANDS = new intent
+- THEN new events are published
+
+For example, in this application:
+- GIVEN Lesson Added
+- WHEN Book Lesson
+- THEN Lesson Booked
+
+* Just have to be careful and sure that each specification belongs to one command or one view.
+
+
+
+image::modelling-20AF4.png[modelling AF4]
+
+In Axon Framework, we use aggregates to organize the commands and events belonging to a certain part of the business. This will allow for different parts of an application to grow independently. In the diagram above, each square with a yellow sticky note is an example of an aggregate. As you can see, the events, commands, views, and event “no events” are organized and can be identified with this simple visual diagram. 
+
+
+Seeing the boundaries and components so clearly will allow us to translate this model into code quickly without losing any information. For instance, as seen above, writing “Acceptance” tests are very easily done here. 
+
+
+I will talk more about aggregates in the next blog post… but in the meantime, you can listen to my podcast with Allard Buijze, “link:/podcast[All about Aggregates].”
+
+
+== Closing thoughts
+
+
+In short, Event Modeling helps create a transparent system for all departments in a business to view how the system is going to work and what can be easily changed. It helps provide a simple solution to designing and evolving complex systems, and I highly recommend it. Once the design is completed, translating the model into code becomes easily manageable.
+
+
+In the next article, Ivan and I will discuss different tools that Axon Framework and Server provide to make our application's coding process easier.
+
+
+Until then… happy coding!
+
+
+_Many thanks to my colleague Ivan Dugalic for his help with this project._
+
+
+_To view the link:https://miro.com/app/board/o9J_kobh9rI=/[full Miro board] for this project._
+
+
+_For more information on Event Modeling, please visit Adam's link:https://eventmodeling.org/posts/what-is-event-modeling/[article] detailing his process and Vijay Nair’s link:https://www.infoq.com/news/2020/09/adameventmodeling/?utm_campaign=infoq_content&utm_source=twitter&utm_medium=feed&utm_term=architecture-design[interview] with him on InfoQ. I will also have a podcast on Exploring Axon coming up with Adam later this month._
+        
+Sara Torrey
