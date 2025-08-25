@@ -1,26 +1,28 @@
 = From Model to Code - Translating the (Event) Model into Code
+
+pass:[<!-- vale AxonIQ.Headings = NO -->]
+pass:[<!-- vale proselint.Uncomparables = NO -->]
+
 :author: Ivan Dugalic
 :docdate: 2020-24-11
-:doctype: article
-:icons: font
 
 In the link:/from-model-to-code/event-modeling-and-axon-framework/[previous blog post], we (well, mostly Sara Torrey) have discussed Event modeling and how it can be used as a tool to create a blueprint for your solution.
 
-image::translating5.jpg
+image::translating5.jpg[]
 
-In this part, we will focus on translating the event model to the source code, by using link:/products/axon-server[Axon Framework] as a programming model and link:/products/axon-server[Axon Server] as an event store and message broker.
+In this part, we will focus on translating the event model to the source code, by using link:https://www.axoniq.io/products/axon-server[Axon Framework] as a programming model and link:https://www.axoniq.io/products/axon-server[Axon Server] as an event store and message broker.
 
 == Messages
 
 We have identified three types of messages: commands, events, and queries. It is natural to create a Java/Kotlin class for every message. For example, `AddLessonCommand` or `LessonAddedEvent`. Messages should be immutable. If you use the Kotlin programming language you can consider "data" classes. If you are using the Java programming language you can consider "records" (Java 14), or simple "pojos" with *final* attributes and only getters exposed. These messages are forming the core API of your system and they should be *public.*
 
-== The command side/model - Aggregates
+== The Command Side/Model - Aggregates
 
 Once you have your messages modeled in source code, you have to start thinking about which components are going to handle/publish these messages. These components are Aggregates.
 
 _An Aggregate is an entity or group of entities that are always kept in a consistent state (within a single ACID transaction). The Aggregate Root is the entity within the aggregate that is responsible for maintaining this consistent state. This makes the aggregate a prime building block for implementing a domain (*command*) model in Axon-based applications._
 
-image::translating3.jpg
+image::translating3.jpg[]
 
 _We start with the UI corresponding to the form to add a lesson. In this image we focus on the command side: The blue sticky note with the Add Lesson command, is classified to the &quot;command side&quot; area. The Add Lesson is linked to the Lesson Context (represented by a yellow sticky note), which representes the aggregate root, and generates a Lesson Added (orange sticky note) event that is sent to the query side._
 
@@ -62,7 +64,7 @@ com.demo.music.command.api.LessonAddedEvent
 ----
 
 Copy
-The _command_ package represents the "command" side/model of the *link:/concepts[CQRS] pattern*, which is the dominant architectural pattern in our design.
+The _command_ package represents the "command" side/model of the *link:https://www.axoniq.io/concepts[CQRS] pattern*, which is the dominant architectural pattern in our design.
 
 What about the “query” side/model? What about green sticky notes? These belong to the _com.demo.music.query_ package:
 
@@ -78,9 +80,9 @@ com.demo.music.query.api.FindAllPaymetsToProcessQuery
 Copy
 == The query side/model
 
-So far, you have only the "command" software model in place. The events that are published are stored _somewhere_ (we are not going to discuss where exactly, yet). These events represent the fact, something that already happened, and they are not optimized for direct querying. You want to subscribe to these events on the "query" side, and to create denormalized views that are more adequate for querying.
+So far, you have only the "command" software model in place. The events that are published are stored _somewhere_ (we are not going to discuss where exactly, yet). These events represent the fact, something that already happened, and they are not optimized for direct querying. You want to subscribe to these events on the "query" side, and to create denormalized views that are more suitable for querying.
 
-image::translating.jpg
+image::translating.jpg[]
 
 _Now we focus on the query side. The Lesson Added orange sticky note (the event sent by the command side in the previous diagram) is linked to the Lesson Availability green sticky note (corresponding to a view or a projection) on the query side. The Lesson Availability view will be used when the query side receives a findAvailableLessonByIdQuery (represented in a dark-green sticky note) sent by the RestController linked to the paymentDetails screen in the UI._
 
@@ -126,19 +128,19 @@ As we gain a deeper understanding of how to reflect the event model into the sof
 
 The specifications are made collaboratively with all participants. A *Give-When-Then* or *Given-Then* can be constructed one after the other very rapidly while being reviewed by multiple role representatives.
 
-image::translating4.jpg
+image::translating4.jpg[]
 
 By using link:https://docs.axoniq.io/axon-framework-reference/4.10/testing/commands-events/[Axon Framework test fixture library], the transition to the source code (unit) tests is immediate:
 
-image::translating6.jpg
+image::translating6.jpg[]
 
 These tests are unit and acceptance tests at the same time. One would prefer to have these tests written at first and then implement aggregate(s), practicing "test-driven development".
 
-== Security and Authorization
+== Security And Authorization
 
 It is obvious from the blueprint (image 1) itself that specific roles (for example, a _manager_) are limited in command messages they can send or query messages they can issue. The blueprint also shows exactly where and when sensitive data crosses boundaries. This is very valuable and very responsible. Just follow the 'arrows', it is very transparent.
 
-== Ports and Adapters
+== Ports And Adapters
 
 Our _Driving_ Adapters are mostly Controllers (Thymeleaf/MVC, REST, WebSockets) who are injected in their constructor with the concrete implementation of the interface (port) from the core domain. These interfaces (ports) and their implementations are provided by Axon platform out of the box:
 
@@ -154,13 +156,13 @@ Our _Driven_ Adapters are implementations of domain interfaces (ports) that are 
 
 *** Event bus
 
-*** image::translating2.jpg
+*** image::translating2.jpg[]
 
 link:/products/axon-server[Axon Server] implements all three types of buses: AxonServerCommandBus, AxonServerEventStore, and AxonServerQueryBus.
 
 This way, Axon takes "location transparency" further than placing services behind a logical URL. In Axon, a component (for example a REST controller/adapter) that sends a message via CommandGateway/QueryGateway does not need to specify a destination for that message. Messages are routed via Axon Server based on their stereotype (Command, Query, or Event) and the type of payload that they carry. This will enable multiple deployment strategies, as now you can deploy REST controllers/adapters, command side, and query side components independently, as separate services if you like.
 
-image::translating7.jpg
+image::translating7.jpg[]
 
 link:/products/axon-server[Axon Server] is an event store as well. It is storing the events/facts durably, enabling link:/concepts/cqrs-and-event-sourcing[event sourcing] and preserving the history, which is valuable for auditing and regulatory purposes.
 
