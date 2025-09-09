@@ -13,7 +13,7 @@ In this blog, I discuss five workarounds for non-functional requirements that I 
 
 Before diving into these workarounds, it's crucial to note a critical difference between Kafka and Axon architectures. In Kafka, all messages carry the same weight, typically being events. However, Axon distinguishes between commands, queries, and events, and Axon Server and Axon Framework support these message types. This distinction plays a vital role when dealing with non-functional requirements.
 
-=== Sharing information with other microservices
+== Sharing information with other microservices
 
 image::Sharing-20information-20with-20other-20microservices.png[Sharing information with other microservices]
 
@@ -31,7 +31,7 @@ With Axon Server in place, we can use query messages to get information from oth
 
 To quickly initiate queries to another service, we can treat the API as a separate dependency. Although there is still a runtime dependency, we can have a dedicated service to ensure the projection remains up to date and handle the queries, reducing the likelihood of failure. Creating integration tests is straightforward as we can return the information defined in the API.
 
-=== Prevent concurrent modifications
+== Prevent concurrent modifications
 
 image::Prevent-20concurrent-20modifications.png[Prevent concurrent modifications]
 
@@ -47,7 +47,7 @@ With Axon Server's event sourcing approach, consistency is inherently maintained
 
 By leveraging the capabilities of Axon Server and its event sourcing approach, developers can effectively manage concurrency control and prevent conflicts when multiple instances modify the same entity.
 
-=== Ensuring the quality of events
+== Ensuring the quality of events
 
 image::Ensuring-20the-20quality-20of-20events.png[Ensuring the quality of events]
 
@@ -65,7 +65,7 @@ Using clear and descriptive event names is effortless as their intent is evident
 
 In Axon, the default serializer is currently set to XStream, which has compatibility issues with newer Java versions. However, switching to Jackson is straightforward. Since all events are based on Plain Old Java Objects (POJOs), creating a module with shared messages for other services is simple. This module can be easily utilized in those services. As events play a central role, considering the proper events early in the development cycle becomes imperative.
 
-=== The ability to scale dynamically
+== The ability to scale dynamically
 
 Moving to a microservice architecture enables dynamic scaling. This means you can easily increase the number of instances to handle high loads and scale down when the load decreases.
 
@@ -73,7 +73,7 @@ When using Kafka, the level of parallelization is determined by the number of pa
 
 In contrast, the Axon Framework handles parallelization differently. It allows you to split a stream of events into segments based on your application's needs, typically using the aggregate identifier as the default. The number of segments can be dynamically adjusted as required. Additionally, segments can be merged to reduce overhead during periods of lower load. This approach provides greater flexibility and ease in scaling dynamically.
 
-=== Handling complexity
+== Handling complexity
 
 image::Handling-20complexity.png[Handling complexity]
 
@@ -83,7 +83,7 @@ At my previous workplace, teams used state machines with Kafka to further reduce
 
 In contrast, handling complexity is easier with command messages. Each command message is targeted at a specific aggregate. Based on the aggregate's state, we can determine the command's validity and the events that need to be applied. A stateful event processor can help manage complexity in complex processes, such as communicating with external services. For example, when an external service calls a webhook, we convert it into an event. The event processor then reads the event and, depending on the state, may execute a command. Breaking things down in this way feels more intuitive than using state machines. +
 
-=== Conclusion
+== Conclusion
 
 I hope this might give you a different perspective on how to do microservices. With each of the five approaches, the Axon solution is not strictly superior to the Kafka solution. Often, they are also influencing each other. It might also be viable to have a combination. For example, services in complex subdomains can be built using Axon Framework, and events can be shared via Kafka with other microservices. With the link:https://github.com/AxonFramework/extension-kafka[Kafka extension] for Axon Framework, this is a good option. If both subdomains use Axon, commands and queries can be sent from one service to another in a mixed architecture.
 
