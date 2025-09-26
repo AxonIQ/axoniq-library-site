@@ -92,7 +92,7 @@
 <div class="page-actions">
   <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
   <div class="actions-menu toolbar_dropdown_menu card">
-      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/af5-getting-started/modules/ROOT/pages/implement-command-create-course.adoc">Edit this Page</a>
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/main/docs/af5-getting-started/modules/ROOT/pages/implement-command-create-course.adoc">Edit this Page</a>
     
     <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Feature%3A%20Course%20Creation" target="discuss_search">View Discussions</a>
     <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Feature%3A%20Course%20Creation%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BFeature%3A%20Course%20Creation%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-5-getting-started%2Fimplement-command-create-course%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
@@ -131,6 +131,15 @@
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../configure-axon-server/">Connecting to Axon Server</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <span class="nav-text">xref:implement-stateless-event-handler.adoc</span>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../implement-stateful-event-handler/">Feature: Send Notification To The Administrator When All Courses Are Fully Booked</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../implement-read-model/">Feature: Build Course Statistics Read Model (Projection)</a>
   </li>
 </ul>
   </li>
@@ -200,7 +209,7 @@ Following our Vertical Slice Architecture, we&#8217;ll place each message in its
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-import org.axonframework.modelling.annotation.TargetEntityId;
+import org.axonframework.modelling.annotations.TargetEntityId;
 
 public record CreateCourse(
     CourseId courseId,
@@ -230,6 +239,11 @@ The class may be as simple as:</p>
     public String toString() { // will be used as a tag value
         return raw;
     }
+
+    public static CourseId random() {
+        return new CourseId(UUID.randomUUID().toString());
+    }
+
 }</code></pre>
 </div>
 </div>
@@ -294,7 +308,137 @@ In the future, the configuration API will expose methods to do that without plac
 <div class="sectionbody">
 <div class="paragraph">
 <p>With our messages defined, we&#8217;ll now follow a Test-First approach to specify the behavior of our slice (feature).
-Axon provides excellent support for testing through the <code>AxonTestFixture</code>.</p>
+If you&#8217;ve already explored previous milestones you may see <code>AxonTestFixture</code> being used.
+This test support is under heavy development but wasn&#8217;t adjusted to the changes in Milestone 3.
+So for now, we will inherit from <code>UniversityApplicationTest</code> in all our test classes.
+Please check it out below and copy it to your project.</p>
+</div>
+<div class="listingblock">
+<div class="title">src/test/java/io/axoniq/demo/university/UniversityApplicationTest.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university;
+
+import jakarta.annotation.Nonnull;
+import org.assertj.core.api.Assertions;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
+import org.axonframework.test.fixture.RecordingEventStore;
+import org.axonframework.test.server.AxonServerContainerUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+public abstract class UniversityApplicationTest {
+
+    protected AxonConfiguration sut;
+
+    @BeforeEach
+    void beforeEach() throws IOException {
+        var configurer = UniversityAxonApplication.configurer(this::configureTestApplication);
+        sut = configurer.start();
+    }
+
+    @AfterEach
+    void afterEach() {
+        sut.shutdown();
+    }
+
+    private EventSourcingConfigurer configureTestApplication(EventSourcingConfigurer configurer) {
+        configurer = configurer.componentRegistry(cr -&gt; cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()));
+        configurer = useEventStorageEngineAsEventSource(configurer);
+        configurer = overrideConfigurer(configurer);
+        return configurer;
+    }
+
+    private static EventSourcingConfigurer useEventStorageEngineAsEventSource(EventSourcingConfigurer eventSourcingConfigurer) {
+        return eventSourcingConfigurer.messaging(m -&gt; m.eventProcessing(
+                        ep -&gt; ep.pooledStreaming(
+                                ps -&gt; ps.defaults((cfg, d) -&gt; d.eventSource(eventSourceFromEventStorageEngine(cfg)))
+                        )
+                )
+        );
+    }
+
+    private static StreamableEventSource&lt;EventMessage&gt; eventSourceFromEventStorageEngine(Configuration configuration) {
+        var eventStorageEngine = configuration.getComponent(EventStorageEngine.class);
+        return new StreamableEventSource&lt;&gt;() {
+            @Override
+            public MessageStream&lt;EventMessage&gt; open(@Nonnull StreamingCondition condition) {
+                return eventStorageEngine.stream(condition);
+            }
+
+            @Override
+            public CompletableFuture&lt;TrackingToken&gt; firstToken() {
+                return eventStorageEngine.firstToken();
+            }
+
+            @Override
+            public CompletableFuture&lt;TrackingToken&gt; latestToken() {
+                return eventStorageEngine.latestToken();
+            }
+
+            @Override
+            public CompletableFuture&lt;TrackingToken&gt; tokenAt(@Nonnull Instant at) {
+                return eventStorageEngine.tokenAt(at);
+            }
+        };
+    }
+
+    protected void eventOccurred(Object event) {
+        eventsOccurred(event);
+    }
+
+    protected void eventsOccurred(Object... events) {
+        eventsOccurred(List.of(events));
+    }
+
+    protected void eventsOccurred(List&lt;Object&gt; events) {
+        var eventGateway = sut.getComponent(EventGateway.class);
+        var unitOfWork = sut.getComponent(UnitOfWorkFactory.class).create();
+        unitOfWork.onInvocation(ctx -&gt; eventGateway.publish(ctx, events));
+        unitOfWork.execute().join();
+        var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
+        eventStore.reset();
+    }
+
+    protected void executeCommand(Object command) {
+        var commandGateway = sut.getComponent(CommandGateway.class);
+        commandGateway.sendAndWait(command);
+    }
+
+    protected void assertEvents(Object... events) {
+        var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
+        Assertions.assertThat(eventStore.recorded().stream().map(Message::payload)).contains(events);
+    }
+
+    protected void assertNoEvents() {
+        var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
+        Assertions.assertThat(eventStore.recorded().stream().map(Message::payload)).isEmpty();
+    }
+
+    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) {
+        // this is the place, where you will configure module to be tested
+        return configurer;
+    }
+}</code></pre>
+</div>
 </div>
 <div class="paragraph">
 <p>So keep focus on the current command - <code>CreateCourse</code> and create corresponding <code>CreateCourseTest</code> class in the <code>io.axoniq.demo.university.faculty.write.createcourse</code> package.</p>
@@ -339,14 +483,11 @@ We need to have access to application components in tests to verify their behavi
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.createcourse;
 
-class CreateCourseTest {
+class CreateCourseTest extends UniversityApplicationTest { <i class="conum" data-value="1"></i><b>(1)</b>
 
-    private AxonTestFixture fixture;
-
-    @BeforeEach <i class="conum" data-value="1"></i><b>(1)</b>
-    void beforeEach() {
-        var application = new UniversityAxonApplication();
-        fixture = AxonTestFixture.with(application.configurer()); <i class="conum" data-value="2"></i><b>(2)</b>
+    @Override
+    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) {
+        return CreateCourseConfiguration.configure(configurer); <i class="conum" data-value="2"></i><b>(2)</b>
     }
 
 }</code></pre>
@@ -356,12 +497,11 @@ class CreateCourseTest {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The <code>@BeforeEach</code> marks this method to be called before any test is executed in our test class.
-Adding the code to create the <code>AxonTestFixture</code> here will ensure that we have a fresh fixture for each test case, and thus we make our different tests independent.</td>
+<td>Inheriting from <code>UniversityApplicationTest</code> gives us access to the application configuration and some helper methods to execute commands and verify events.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>This line creates a new <code>AxonTestFixture</code> based on our configurer. The configuration will be built and started from the configurer by the fixture itself.</td>
+<td>This line configures the test to use the <code>CreateCourseConfiguration</code> class, which we will allow us to test just this slice in isolation.</td>
 </tr>
 </table>
 </div>
@@ -369,7 +509,7 @@ Adding the code to create the <code>AxonTestFixture</code> here will ensure that
 <div class="sect2">
 <h3 id="_testing_the_command"><a class="anchor" href="#_testing_the_command"></a>Testing the command</h3>
 <div class="paragraph">
-<p>Thanks to the help of the <code>AxonTestFixture</code> we can now create a test following the Given-When-Then pattern:</p>
+<p>Thanks to the help of the <code>UniversityApplicationTest</code> we can now create a test following the Given-When-Then pattern:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -401,28 +541,29 @@ For now, we focus on the happy path. In the Event Modeling, we&#8217;ve describe
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.createcourse;
 
-import java.util.UUID;class CreateCourseTest {
+class CreateCourseTest extends UniversityApplicationTest {
 
-    private AxonTestFixture fixture;
-
-    @BeforeEach
-    void beforeEach() {
-        var application = new UniversityAxonApplication();
-        fixture = AxonTestFixture.with(application.configurer());
+    @Override
+    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) {
+        return CreateCourseConfiguration.configure(configurer);
     }
 
     @Test
     void givenNotExistingCourse_WhenCreateCourse_ThenSuccess() {
+        // given <i class="conum" data-value="1"></i><b>(1)</b>
         var courseId = new CourseId(UUID.randomUUID().toString());
         var courseName = "Event Sourcing in Practice";
         var capacity = 3;
 
-        fixture.given() <i class="conum" data-value="1"></i><b>(1)</b>
-               .noPriorActivity()
-               .when()
-               .command(new CreateCourse(courseId, courseName, capacity)) <i class="conum" data-value="2"></i><b>(2)</b>
-               .then()
-               .events(new CourseCreated(courseId, courseName, capacity)); <i class="conum" data-value="3"></i><b>(3)</b>
+        // when
+        executeCommand(
+                new CreateCourse(courseId, courseName, capacity) <i class="conum" data-value="2"></i><b>(2)</b>
+        );
+
+        // then
+        assertEvents(
+                new CourseCreated(courseId, courseName, capacity) <i class="conum" data-value="3"></i><b>(3)</b>
+        );
     }
 
 }</code></pre>
@@ -471,9 +612,9 @@ Let&#8217;s create a new class for that inside the slice package, name it <code>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.createcourse;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.modelling.annotation.InjectEntity;
+import org.axonframework.modelling.annotations.InjectEntity;
 
 class CreateCourseCommandHandler {
 
@@ -527,10 +668,10 @@ We&#8217;re going to do it in dedicated class <code>CreateCourseConfiguration</c
 public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
-        var commandHandlingModule = StatefulCommandHandlingModule.named("CreateCourse") <i class="conum" data-value="1"></i><b>(1)</b>
+        var commandHandlingModule = CommandHandlingModule.named("CreateCourse") <i class="conum" data-value="1"></i><b>(1)</b>
                 .commandHandlers()
                 .annotatedCommandHandlingComponent(c -&gt; new CreateCourseCommandHandler()); <i class="conum" data-value="2"></i><b>(2)</b>
-        return configurer.registerStatefulCommandHandlingModule(commandHandlingModule); <i class="conum" data-value="3"></i><b>(3)</b>
+        return configurer.registerCommandHandlingModule(commandHandlingModule); <i class="conum" data-value="3"></i><b>(3)</b>
     }
 
 }</code></pre>
@@ -540,7 +681,7 @@ public class CreateCourseConfiguration {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The <code>StatefulCommandHandlingModule</code> is a component that allows us to register the command handler for the <code>CreateCourse</code> command.
+<td>The <code>CommandHandlingModule</code> is a component that allows us to register the command handler for the <code>CreateCourse</code> command.
 For our current needs we skip <code>entities</code> configuration, because we don&#8217;t need the state yet.</td>
 </tr>
 <tr>
@@ -549,7 +690,7 @@ For our current needs we skip <code>entities</code> configuration, because we do
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>The <code>registerStatefulCommandHandlingModule</code> method registers the command handler module in the Axon Framework configuration.</td>
+<td>The <code>registerCommandHandlingModule</code> method registers the command handler module in the Axon Framework configuration.</td>
 </tr>
 </table>
 </div>
@@ -563,8 +704,13 @@ To do that, let&#8217;s introduce changes in our main <code>UniversityAxonApplic
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class UniversityAxonApplication {
 
     public static ApplicationConfigurer configurer() {
+        return configurer(CreateCourseConfiguration::configure);
+    }
+
+    // This additional method allows us to selective register modules (helpful in tests)
+    public static ApplicationConfigurer configurer(UnaryOperator&lt;EventSourcingConfigurer&gt; customization) {
         var configurer = EventSourcingConfigurer.create();
-        configurer = CreateCourseConfiguration.configure(configurer);
+        configurer = customization.apply(configurer);
         return configurer;
     }
 
@@ -599,17 +745,22 @@ class CreateCourseTest {
 
     @Test
     void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents() {
-        var courseId = new CourseId(UUID.randomUUID().toString());
+        // given
+        var courseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
         var capacity = 3;
 
-        fixture.given()
-               .event(new CourseCreated(courseId, courseName, capacity)) <i class="conum" data-value="1"></i><b>(1)</b>
-               .when()
-               .command(new CreateCourse(courseId, courseName, capacity)) <i class="conum" data-value="2"></i><b>(2)</b>
-               .then()
-               .success() <i class="conum" data-value="3"></i><b>(3)</b>
-               .noEvents(); <i class="conum" data-value="3"></i><b>(3)</b>
+        eventOccurred(
+                new CourseCreated(courseId, courseName, capacity) <i class="conum" data-value="1"></i><b>(1)</b>
+        );
+
+        // when
+        executeCommand(
+                new CreateCourse(courseId, courseName, capacity) <i class="conum" data-value="2"></i><b>(2)</b>
+        );
+
+        // then
+        assertNoEvents(); <i class="conum" data-value="3"></i><b>(3)</b>
     }
 
 }</code></pre>
@@ -644,7 +795,7 @@ Expected  |  Actual
 </div>
 </div>
 <div class="paragraph">
-<p>Do you remember that we haven&#8217;t used any state inside the <strong>Stateful</strong> command handling component?
+<p>Do you remember that we haven&#8217;t used any state inside the command handling component?
 Now we are definitely going to do that, because the system decision what to do with the command will be based on what happened in the system before—the state derived from the historical events.</p>
 </div>
 </div>
@@ -760,16 +911,17 @@ Come back to the <code>CreateCourseConfiguration</code> class and add the <code>
 public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
-        var stateEntity = EventSourcedEntityModule
+         var stateEntity = EventSourcedEntityModule
                 .annotated(CourseId.class, CreateCourseCommandHandler.State.class); <i class="conum" data-value="1"></i><b>(1)</b>
 
-        var commandHandlingModule = StatefulCommandHandlingModule.named("CreateCourse")
-                .entities()
-                .entity(stateEntity)  <i class="conum" data-value="2"></i><b>(2)</b>
+        var commandHandlingModule = CommandHandlingModule
+                .named("CreateCourse")
                 .commandHandlers()
                 .annotatedCommandHandlingComponent(c -&gt; new CreateCourseCommandHandler());
 
-        return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
+        return configurer
+                .registerEntity(stateEntity) <i class="conum" data-value="2"></i><b>(2)</b>
+                .registerCommandHandlingModule(commandHandlingModule);
     }
 
 }</code></pre>
@@ -806,8 +958,13 @@ In the example below, we&#8217;re doing essentially what the Test Fixture does f
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class UniversityAxonApplication {
 
     public static ApplicationConfigurer configurer() {
+        return configurer(CreateCourseConfiguration::configure);
+    }
+
+    // This additional method allows us to selective register modules (helpful in tests)
+    public static ApplicationConfigurer configurer(UnaryOperator&lt;EventSourcingConfigurer&gt; customization) {
         var configurer = EventSourcingConfigurer.create();
-        configurer = CreateCourseConfiguration.configure(configurer);
+        configurer = customization.apply(configurer);
         return configurer;
     }
 
@@ -829,7 +986,7 @@ In the example below, we&#8217;re doing essentially what the Test Fixture does f
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The <code>start</code> method builds and starts (for example, invoke lifecycle hooks) the configuration and returns the <code>NewConfiguration</code> instance. The name of the <code>NewConfiguration</code> type will definitely change to <code>Configuration</code> when the Framework is released fully.</td>
+<td>The <code>start</code> method builds and starts (for example, invoke lifecycle hooks) the configuration and returns the <code>Configuration</code> instance.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
@@ -848,7 +1005,7 @@ In the example below, we&#8217;re doing essentially what the Test Fixture does f
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-If you&#8217;re using Spring Boot you can always define <code>NewConfiguration</code> as a <code>@Bean</code> and inject it into your controller. The first-class Spring support for Axon Framework 5 is under development.
+If you&#8217;re using Spring Boot you can always define <code>Configuration</code> as a <code>@Bean</code> and inject it into your controller. The first-class Spring support for Axon Framework 5 is under development.
 </td>
 </tr>
 </table>

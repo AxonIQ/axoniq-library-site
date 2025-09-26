@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>State Stored Aggregates</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/4.11/axon-framework-commands/modeling/state-stored-aggregates/">
+    <link rel="prev" href="../multi-entity-aggregates/">
+    <link rel="next" href="../aggregate-creation-from-another-aggregate/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../../_/img/favicon.ico" sizes="32x32">
+    <link rel="icon" href="../../../../../_/img/icon.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../../../../../_/img/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="../../../../../_/img/apple-touch-icon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../../_/static/manifest.webmanifest">
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../../_'</script>
+
+
+  </head>
+  <body class="article">
+    <div class="header_container">
+      <div class="banner">
+    <a href="https://console.axoniq.io">Manage and monitor your Axon Framework applications and Axon Server environments. <span class="banner_button" target="_blank">Try AxonIQ Console</span></a>
+</div>      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io"><img src="../../../../../_/img/logo-dark4x.png" class="header_logo" /></a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="../../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../../4.11/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../../axon-server-reference/v2025.1/">Axon Server</a>
+                <a class="navbar-item" href="../../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../../axoniq-console-reference/">AxonIQ Console</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item search hide-for-print">
+          <div id="search-field" class="field">
+            <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+          </div>
+        </div>
+        <a class="navbar-item navbar-button" href="https://academy.axoniq.io" target="_blank">AxonIQ Academy</a>
+        <a class="navbar-item navbar-button" href="https://discuss.axoniq.io" target="_blank">AxonIQ Discuss</a>
+        <a class="navbar-item navbar-button" href="https://axoniq.io/contact" target="_blank">Get in touch</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../../">Axon Framework Reference</a></li>
+    <li><a href="../../">Commands</a></li>
+    <li><a href="../aggregate/">Aggregates</a></li>
+    <li><a href="./">State Stored Aggregates</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/main/docs/old-reference-guide/modules/axon-framework-commands/pages/modeling/state-stored-aggregates.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;State%20Stored%20Aggregates" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22State%20Stored%20Aggregates%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BState%20Stored%20Aggregates%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fmain%2Faxon-framework-commands%2Fmodeling%2Fstate-stored-aggregates%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">main</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-current" href="./">main</a>
+    <a class="version item" href="../../../../4.12/axon-framework-commands/modeling/state-stored-aggregates/">4.12</a>
+    <a class="version item" href="../../../../4.11/axon-framework-commands/modeling/state-stored-aggregates/">4.11</a>
+    <a class="version item" href="../../../../4.10/axon-framework-commands/modeling/state-stored-aggregates/">4.10</a>
+    <a class="version item is-missing" href="../../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="main">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../upgrading-to-4-7/">Upgrading to Axon Framework 4.7</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/unit-of-work/">Unit of Work</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/timeouts/">Timeouts</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../aggregate/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../multi-entity-aggregates/">Multi-Entity Aggregates</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="./">State Stored Aggregates</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../aggregate-creation-from-another-aggregate/">Aggregate Creation from another Aggregate</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../aggregate-polymorphism/">Aggregate Polymorphism</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-versioning/">Event Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/implementations/">Implementations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../sagas/">Sagas</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../sagas/implementation/">Implementation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../sagas/associations/">Associations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../sagas/infrastructure/">Infrastructure</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../deadlines/">Deadlines</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../deadlines/deadline-managers/">Deadline Managers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../deadlines/event-schedulers/">Event Schedulers</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/commands-events/">Commands / Events</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/sagas-1/">Sagas</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../serialization/">Serialization</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/tracing/">Distributed Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">State Stored Aggregates</h1>
+            <div class="paragraph">
+<p>In the <a href="../aggregate/" class="xref page">Aggregate</a> main page we have seen how to create an Aggregate backed by Event Sourcing.
+In other words, the storage method for an Event Sourced Aggregate is by replaying the events which constitute the changes on the Aggregate.</p>
+</div>
+<div class="paragraph">
+<p>An Aggregate can, however, be stored as-is too.
+When doing so, the <code>Repository</code> used to save and load the Aggregate, is the <code>GenericJpaRepository</code>.
+The structure of a state-stored Aggregate is a little different from an Event Sourced Aggregate:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateMember;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+
+@Entity <i class="conum" data-value="1"></i><b>(1)</b>
+public class GiftCard {
+
+    @Id <i class="conum" data-value="2"></i><b>(2)</b>
+    @AggregateIdentifier
+    private String id;
+
+    <i class="conum" data-value="3"></i><b>(3)</b>
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "giftCardId")
+    @AggregateMember
+    private List&lt;GiftCardTransaction&gt; transactions = new ArrayList&lt;&gt;();
+
+    private int remainingValue;
+
+    @CommandHandler  <i class="conum" data-value="4"></i><b>(4)</b>
+    public GiftCard(IssueCardCommand cmd) {
+        if (cmd.getAmount() &lt;= 0) {
+            throw new IllegalArgumentException("amount &lt;= 0");
+        }
+        id = cmd.getCardId();
+        remainingValue = cmd.getAmount();
+
+         <i class="conum" data-value="5"></i><b>(5)</b>
+        apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
+    }
+
+    @CommandHandler
+    public void handle(RedeemCardCommand cmd) {
+         <i class="conum" data-value="6"></i><b>(6)</b>
+        if (cmd.getAmount() &lt;= 0) {
+            throw new IllegalArgumentException("amount &lt;= 0");
+        }
+        if (cmd.getAmount() &gt; remainingValue) {
+            throw new IllegalStateException("amount &gt; remaining value");
+        }
+        if (transactions.stream().map(GiftCardTransaction::getTransactionId).anyMatch(cmd.getTransactionId()::equals)) {
+            throw new IllegalStateException("TransactionId must be unique");
+        }
+
+         <i class="conum" data-value="7"></i><b>(7)</b>
+        remainingValue -= cmd.getAmount();
+        transactions.add(new GiftCardTransaction(id, cmd.getTransactionId(), cmd.getAmount()));
+
+        apply(new CardRedeemedEvent(id, cmd.getTransactionId(), cmd.getAmount()));
+    }
+
+    @EventHandler  <i class="conum" data-value="8"></i><b>(8)</b>
+    protected void on(CardReimbursedEvent event) {
+        this.remainingValue += event.getAmount();
+    }
+
+    protected GiftCard() { }  <i class="conum" data-value="9"></i><b>(9)</b>
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above code shows a state-stored Aggregate from a 'Gift Card Service'.
+The numbered comments in the snippet point out Axon specifics which are explained here:</p>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>As the Aggregate is stored in a JPA repository, it is required to annotated the class with <code>@Entity</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>An Aggregate Root must declare a field that contains the Aggregate Identifier.
+This identifier must be initialized at the latest when the first event is published.
+This identifier field must be annotated by the <code>@AggregateIdentifier</code> annotation.
+When using JPA to store the Aggregate, Axon knows to use the <code>@Id</code> annotation provided by JPA.
+Since the Aggregate is an entity, the <code>@Id</code> annotation is a hard requirement.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>This Aggregate has several '<a href="../multi-entity-aggregates/" class="xref page">Aggregate Members</a>'.
+Since the Aggregate is stored as is, the correct mapping of the entities should be taken into account.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>A <code>@CommandHandler</code> annotated constructor, or differently put the 'command handling constructor'.
+This annotation tells the framework that the given constructor is capable of handling the <code>IssueCardCommand</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>The static <code>AggregateLifecycle#apply(Object&#8230;&#8203;)</code> may be used to publish an Event Message.
+Upon calling this function the provided `Object`s will be published as `EventMessage`s within the scope of the Aggregate they are applied in.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>The Command Handling method will first decide whether the incoming Command is valid to handle at this point.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="7"></i><b>7</b></td>
+<td>After the business logic has been validated, the state of the Aggregate may be adjusted</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="8"></i><b>8</b></td>
+<td>Entities within an Aggregate can listen to the events the Aggregate publishes, by defining an <code>@EventHandler</code> annotated method.
+These methods will be invoked when an Event Message is published prior to being handled by any external handlers.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="9"></i><b>9</b></td>
+<td>A no-arg constructor, which is required by JPA.
+Failure to provide this constructor will result in an exception when loading the Aggregate.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Adjusting state in Command Handlers</div>
+<div class="paragraph">
+<p>Differently from <a href="../aggregate/" class="xref page">Event Sourced Aggregates</a>, State-Stored Aggregates can pair the decission making logic and state changes in a Command Handler.
+There are no consequences for State-Stored Aggregates in following this paradigm as there are no Event Sourcing Handlers which drive it&#8217;s state.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../multi-entity-aggregates/">Multi-Entity Aggregates</a></span>
+  <span class="next"><a href="../aggregate-creation-from-another-aggregate/">Aggregate Creation from another Aggregate</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="primary-footer">
+    <div class="footer-logo ">
+      <a href="https://axoniq.io/">
+        <img src="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png" alt="Logo AxonIQ" loading="lazy" srcset="https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=45&amp;height=10&amp;name=Logo%20AxonIQ%20(2).png 45w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=90&amp;height=20&amp;name=Logo%20AxonIQ%20(2).png 90w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=135&amp;height=30&amp;name=Logo%20AxonIQ%20(2).png 135w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=180&amp;height=40&amp;name=Logo%20AxonIQ%20(2).png 180w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=225&amp;height=50&amp;name=Logo%20AxonIQ%20(2).png 225w, https://www.axoniq.io/hs-fs/hubfs/Logo%20AxonIQ%20(2).png?width=270&amp;height=60&amp;name=Logo%20AxonIQ%20(2).png 270w" sizes="(max-width: 90px) 100vw, 90px" width="90" height="20">
+      </a>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Products</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-framework">Axon Framework</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axon-server">Axon Server</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/products/axoniq-console">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://www.axoniq.io/blog/protect-sensitive-data-in-an-event-sourced-application">AxonIQ Data Protection</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Sites</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="http://support.axoniq.io/">Customer Support Portal</a></li>
+          <li><a class="ext" target="_blank" href="https://academy.axoniq.io/">AxonIQ Academy</a></li>
+          <li><a class="ext" target="_blank" href="https://console.axoniq.io/">AxonIQ Console</a></li>
+          <li><a class="ext" target="_blank" href="https://discuss.axoniq.io/">AxonIQ Discuss</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>Follow us</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.youtube.com/axoniq">YouTube</a></li>
+          <li><a class="ext" target="_blank" href="https://www.linkedin.com/company/axoniq">LinkedIn</a></li>
+          <li><a class="ext" target="_blank" href="https://github.com/AxonIQ">GitHub</a></li>
+          <li><a class="ext" target="_blank" href="https://axoniq.bsky.social/">Bluesky</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-menu">
+	    <h3>&nbsp;</h3>
+	    <div>
+        <ul role="menu">
+          <li><a class="ext" target="_blank" href="https://www.instagram.com/axoniq/">Instagram</a></li>
+          <li><a class="ext" target="_blank" href="https://www.facebook.com/AxonIQ.io">Facebook</a></li>
+          <li><a class="ext" target="_blank" href="https://twitter.com/axon_iq">Twitter</a></li>
+          <li><a class="ext" target="_blank" href="https://medium.com/axoniq">Medium</a></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</footer>
+<script id="site-script" src="../../../../../_/js/site.js" data-ui-root-path="../../../../../_"></script>
+<script async src="../../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../../.." data-snippet-length="100" data-stylesheet="../../../../../_/css/search.css"></script>
+<script async src="../../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

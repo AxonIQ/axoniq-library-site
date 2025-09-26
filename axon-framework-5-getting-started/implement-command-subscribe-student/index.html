@@ -92,7 +92,7 @@
 <div class="page-actions">
   <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
   <div class="actions-menu toolbar_dropdown_menu card">
-      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/af5-getting-started/modules/ROOT/pages/implement-command-subscribe-student.adoc">Edit this Page</a>
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/main/docs/af5-getting-started/modules/ROOT/pages/implement-command-subscribe-student.adoc">Edit this Page</a>
     
     <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Feature%3A%20Subscribe%20Student" target="discuss_search">View Discussions</a>
     <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Feature%3A%20Subscribe%20Student%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BFeature%3A%20Subscribe%20Student%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-5-getting-started%2Fimplement-command-subscribe-student%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
@@ -131,6 +131,15 @@
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../configure-axon-server/">Connecting to Axon Server</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <span class="nav-text">xref:implement-stateless-event-handler.adoc</span>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../implement-stateful-event-handler/">Feature: Send Notification To The Administrator When All Courses Are Fully Booked</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../implement-read-model/">Feature: Build Course Statistics Read Model (Projection)</a>
   </li>
 </ul>
   </li>
@@ -305,96 +314,113 @@ Translating Event Modeling specification to test is a repeatable task, so it can
 <div class="listingblock">
 <div class="title">src/test/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourseTest.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.createcourse;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.subscribestudent;
 
-import java.util.UUID;
+import io.axoniq.demo.university.UniversityApplicationTest;
+import io.axoniq.demo.university.faculty.events.CourseCreated;
+import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
+import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
+import io.axoniq.demo.university.shared.ids.CourseId;
+import io.axoniq.demo.university.shared.ids.StudentId;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.junit.jupiter.api.Test;
 
-class SubscribeStudentToCourseTest {
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-    private AxonTestFixture fixture;
+public class SubscribeStudentToCourseTest extends UniversityApplicationTest {
 
-    @BeforeEach
-    void beforeEach() {
-        var application = new UniversityAxonApplication();
-        fixture = AxonTestFixture.with(application.configurer());
+    @Override
+    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) {
+        return SubscribeStudentConfiguration.configure(configurer);
     }
 
     @Test
     void successfulSubscription() {
+        // given
         var courseId = CourseId.random();
         var studentId = StudentId.random();
 
-        fixture.given()
-               .event(new CourseCreated(courseId, "Event Sourcing in Practice", 2))
-               .event(new StudentEnrolledInFaculty(studentId, "Mateusz", "Nowak"))
-               .when()
-               .command(new SubscribeStudentToCourse(studentId, courseId))
-               .then()
-               .events(new StudentSubscribedToCourse(studentId, courseId));
+        eventsOccurred(
+                new StudentEnrolledInFaculty(studentId, "Mateusz", "Nowak"),
+                new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2)
+        );
+
+        // when
+        executeCommand(new SubscribeStudentToCourse(studentId, courseId));
+
+        // then
+        assertEvents(new StudentSubscribedToCourse(studentId, courseId));
     }
 
     @Test
     void studentAlreadySubscribed() {
+        // given
         var courseId = CourseId.random();
         var studentId = StudentId.random();
 
-        fixture.given()
-               .event(new StudentEnrolledInFaculty(studentId, "Allard", "Buijze"))
-               .event(new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2))
-               .event(new StudentSubscribedToCourse(studentId, courseId))
-               .when()
-               .command(new SubscribeStudentToCourse(studentId, courseId))
-               .then()
-               .exception(RuntimeException.class, "Student already subscribed to this course");
+        eventsOccurred(
+                new StudentEnrolledInFaculty(studentId, "Allard", "Buijze"),
+                new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2),
+                new StudentSubscribedToCourse(studentId, courseId)
+        );
+
+        // when-then
+        assertThatThrownBy(() -&gt; executeCommand(
+                new SubscribeStudentToCourse(studentId, courseId)
+        )).cause().hasMessageContaining("Student already subscribed to this course");
+        assertNoEvents();
     }
 
     @Test
     void courseFullyBooked() {
+        // given
         var courseId = CourseId.random();
         var student1Id = StudentId.random();
         var student2Id = StudentId.random();
         var student3Id = StudentId.random();
 
-        fixture.given()
-               .event(new StudentEnrolledInFaculty(student1Id, "Mateusz", "Nowak"))
-               .event(new StudentEnrolledInFaculty(student2Id, "Steven", "van Beelen"))
-               .event(new StudentEnrolledInFaculty(student3Id, "Mitchell", "Herrijgers"))
-               .event(new CourseCreated(courseId, "Event Sourcing Masterclass", 2))
-               .event(new StudentSubscribedToCourse(student1Id, courseId))
-               .event(new StudentSubscribedToCourse(student2Id, courseId))
-               .when()
-               .command(new SubscribeStudentToCourse(student3Id, courseId))
-               .then()
-               .exception(RuntimeException.class, "Course is fully booked");
+        eventsOccurred(
+                new StudentEnrolledInFaculty(student1Id, "Mateusz", "Nowak"),
+                new StudentEnrolledInFaculty(student2Id, "Steven", "van Beelen"),
+                new StudentEnrolledInFaculty(student3Id, "Mitchell", "Herrijgers"),
+                new CourseCreated(courseId, "Event Sourcing Masterclass", 2),
+                new StudentSubscribedToCourse(student1Id, courseId),
+                new StudentSubscribedToCourse(student2Id, courseId)
+        );
+
+        // when-then
+        assertThatThrownBy(() -&gt; executeCommand(
+                new SubscribeStudentToCourse(student3Id, courseId)
+        )).cause().hasMessageContaining("Course is fully booked");
+        assertNoEvents();
     }
 
     @Test
     void studentSubscribedToTooManyCourses() {
+        // given
         var studentId = StudentId.random();
         var course1Id = CourseId.random();
         var course2Id = CourseId.random();
         var course3Id = CourseId.random();
         var targetCourseId = CourseId.random();
 
-        fixture.given()
-                .event(new StudentEnrolledInFaculty(studentId, "Milan", "Savic"))
-                .event(new CourseCreated(targetCourseId, "Programming", 10))
-                .event(new CourseCreated(course1Id, "Course 1", 10))
-                .event(new CourseCreated(course2Id, "Course 2", 10))
-                .event(new CourseCreated(course3Id, "Course 3", 10))
-                .event(new StudentSubscribedToCourse(studentId, course1Id))
-                .event(new StudentSubscribedToCourse(studentId, course2Id))
-                .event(new StudentSubscribedToCourse(studentId, course3Id))
-                .when()
-                .command(new SubscribeStudentToCourse(studentId, targetCourseId))
-                .then()
-                .noEvents()
-                .exceptionSatisfies(thrown -&gt; assertThat(thrown)
-                        .isInstanceOf(RuntimeException.class)
-                        .hasMessage("Student subscribed to too many courses")
-                );
-    }
+        eventsOccurred(
+                new StudentEnrolledInFaculty(studentId, "Milan", "Savic"),
+                new CourseCreated(targetCourseId, "Programming", 10),
+                new CourseCreated(course1Id, "Course 1", 10),
+                new CourseCreated(course2Id, "Course 2", 10),
+                new CourseCreated(course3Id, "Course 3", 10),
+                new StudentSubscribedToCourse(studentId, course1Id),
+                new StudentSubscribedToCourse(studentId, course2Id),
+                new StudentSubscribedToCourse(studentId, course3Id)
+        );
 
+        // when-then
+        assertThatThrownBy(() -&gt; executeCommand(
+                new SubscribeStudentToCourse(studentId, targetCourseId)
+        )).cause().hasMessageContaining("Student subscribed to too many courses");
+        assertNoEvents();
+    }
 }</code></pre>
 </div>
 </div>
@@ -424,13 +450,13 @@ class SubscribeStudentToCourseCommandHandler {
     }
 
     private List&lt;StudentSubscribedToCourse&gt; decide(SubscribeStudentToCourse command, State state) {
-        // todo: check business rules
+        // Check business rules implementation will be added in the following sections
         return List.of(new StudentSubscribedToCourse(command.studentId(), command.courseId()));
     }
 
     @EventSourcedEntity <i class="conum" data-value="5"></i><b>(5)</b>
     static class State {
-        // todo: define state necessary to accept or reject `SubscribeStudentToCourse` command
+        // State definition will be built incrementally in the following sections
     }
 
 }</code></pre>
@@ -513,7 +539,7 @@ We will use the value to define the <code>EventCriteria</code> later in this sec
 </table>
 </div>
 <div class="paragraph">
-<p>As you see there are two TODOs left in the <code>SubscribeStudentToCourseCommandHandler</code> code.
+<p>As you can see, there are two parts left to implement in the <code>SubscribeStudentToCourseCommandHandler</code> code.
 Now we need to validate the business rules, and there are quite a few of them.
 The student can subscribe to a course only if they adhere to the domain invariants of the operation.
 We will list them along with the assertion function, as well as show what&#8217;s needed in the State object to validate them.</p>
@@ -873,22 +899,20 @@ import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
-
-import java.util.List;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 
 public class SubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
-                .annotatedEntity(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
-        var commandHandlingModule = StatefulCommandHandlingModule
-                .named("SubscribeStudentToCourse")
-                .entities()
-                .entity(stateEntity)
+                .annotated(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
+        var commandHandlingModule = CommandHandlingModule
+                .named("SubscribeStudent")
                 .commandHandlers()
                 .annotatedCommandHandlingComponent(c -&gt; new SubscribeStudentToCourseCommandHandler());
-        return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
+        return configurer
+                .registerEntity(stateEntity)
+                .registerCommandHandlingModule(commandHandlingModule);
     }
 
 }</code></pre>
@@ -902,11 +926,11 @@ public class SubscribeStudentConfiguration {
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class UniversityAxonApplication {
 
-    public static ApplicationConfigurer configurer() {
-        var configurer = EventSourcingConfigurer.create();
-        configurer = CreateCourseConfiguration.configure(configurer);
-        configurer = SubscribeStudentConfiguration.configure(configurer); <i class="conum" data-value="1"></i><b>(1)</b>
-        return configurer;
+     public static ApplicationConfigurer configurer() {
+        return configurer(c -&gt; {
+            CreateCourseConfiguration.configure(c);
+            SubscribeStudentConfiguration.configure(c);  <i class="conum" data-value="1"></i><b>(1)</b>
+        });
     }
 
     // rest omitted for brevity
@@ -918,7 +942,7 @@ public class SubscribeStudentConfiguration {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>We register the <code>StatefulCommandHandlingModule</code> as a child of the <code>EventSourcingConfigurer</code>.</td>
+<td>We register the <code>SubscribeStudentConfiguration</code> as a child of the <code>EventSourcingConfigurer</code>.</td>
 </tr>
 </table>
 </div>
