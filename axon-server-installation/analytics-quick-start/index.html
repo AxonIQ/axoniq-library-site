@@ -193,7 +193,7 @@
 <p><!-- vale AxonIQ.Headings = NO --></p>
 </div>
 <div class="paragraph">
-<p>Axon Server version `2025.2.0-EAP2 contains a preview of Axon Server Analytics, which provides advanced analytics capabilities for your Axon applications. To use the analytics features, you need to set up an Axon Server cluster with an analytics node.</p>
+<p>Axon Server version <code>2025.2.0-EAP2</code> contains a preview of Axon Server Analytics, which provides advanced analytics capabilities for your Axon applications. To use the analytics features, you need to set up an Axon Server cluster with an analytics node.</p>
 </div>
 <div class="paragraph">
 <p>This guide outlines the installation process for an Axon Server cluster with an Axon Server analytics node, covering two primary scenarios:</p>
@@ -207,6 +207,9 @@
 <p>Setting up a new cluster with an existing event store</p>
 </li>
 </ol>
+</div>
+<div class="paragraph">
+<p>It also describes how to use the <code>Insights Agent</code> to interact with your event data using natural language queries.</p>
 </div>
 </div>
 </div>
@@ -222,7 +225,7 @@
 <p>Anthropic API key</p>
 </li>
 <li>
-<p>Docker and Docker Compose installed on your machine</p>
+<p>Docker installed on your machine</p>
 </li>
 </ul>
 </div>
@@ -249,8 +252,17 @@
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Prepare your environment</strong>. Ensure you have a suitable directory for your new Axon Server cluster.
-2.. <strong>Extract the zip file download from the trial page in the target directory</strong>.</p>
+<p><strong>Prepare your environment</strong>. Ensure you have a suitable directory for your new Axon Server cluster.</p>
+</li>
+<li>
+<p><strong>Extract the zip file download from the trial page in the target directory</strong>.</p>
+<div class="paragraph">
+<p>The zip file contains a docker compose file to set up two Axon Server nodes and an event generator.</p>
+</div>
+<div class="paragraph">
+<p>The first Axon Server node is
+a PRIMARY node. This node is used by clients to connect to the event store. The second node is an Analytics Node. This node connects to the PRIMARY node and provides analytics capabilities. The event generator generates demo data and sends it to the PRIMARY node. Axon Server&#8217;s replication process replicates the data to the Analytics Node.</p>
+</div>
 </li>
 <li>
 <p><strong>Replace &lt;your_anthropic_api_key&gt; with your actual key in the docker-compose.yml file</strong>.</p>
@@ -265,9 +277,42 @@
 </li>
 <li>
 <p><strong>Verify the containers</strong>. Check the Axon Server console or logs to ensure that the Axon Server is started correctly. To log on to the Axon Server console, use the URL <a href="http://localhost:8024" class="bare">http://localhost:8024</a>.</p>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/overview-node-1.png" alt="Axon Server Overview" width="800">
+</div>
+</div>
+<div class="paragraph">
+<p>The overview shows two Axon Server nodes, axonserver-1 and axonserver-2, both connected to the <code>default</code> and <code>_admin</code> context. The green lines indicate that <code>axonserver-1</code> is the leader for both contexts.</p>
+</div>
+<div class="paragraph">
+<p>The container <code>axonserver-2</code> is an Analytics Node. The menu on the left shows fewer options as this node is an analytics node. The Event store menu has the analytics option.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/overview-node-2.png" alt="Axon Server Analytics Node Overview" width="800">
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>Context</code> page shows the <code>default</code> context. The <code>default</code> context is empty as no events have been generated yet. In the replication group tab, you can see that <code>axonserver-1</code> is a primary node for both replication groups, and <code>axonserver-2</code> is an analytics node for both replication groups.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/replication-groups.png" alt="Axon Server Context Page" width="800">
+</div>
+</div>
 </li>
 <li>
 <p><strong>Generate demo data</strong>. Use the URL <a href="http://localhost:8888" class="bare">http://localhost:8888</a> to open the event generator.</p>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/event-generator.png" alt="Event Generator" width="800">
+</div>
+</div>
+<div class="paragraph">
+<p>This page allows you to configure and start the event generation process. You can specify the number of aggregates, events per second, and other parameters. Click the <code>Start</code> button to begin generating events.
+If you need to change the configuration to connect to a different Axon Server instance, you can do so by updating the information in the <code>Configuration</code> section and clicking the <code>Settings</code> button.</p>
+</div>
 </li>
 </ol>
 </div>
@@ -318,18 +363,98 @@
 <pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">docker compose up -d axonserver-1 axonserver-2</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>The docker-compose file contains three services, two axon server nodes and an event generator. In this scenario, you only need to start the two Axon Server nodes.</p>
+</div>
 </li>
 <li>
 <p><strong>Verify the container</strong>. Check the Axon Server console or logs to ensure that the Axon Server is started correctly. To log on to the Axon Server console, use the URL <a href="http://localhost:8024" class="bare">http://localhost:8024</a>.</p>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/overview-node-1.png" alt="Axon Server Overview" width="800">
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>Context</code> page shows the <code>default</code> context. The <code>default</code> context contains the event store data you placed in the <code>node1/events/default</code> directory. You can see the number of events in the context.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/contexts.png" alt="Axon Server Context Page" width="800">
+</div>
+</div>
 </li>
 <li>
 <p><strong>Verify the second container</strong>. Check the Axon Server console or logs to ensure that the Axon Server is started correctly. To log on to the Axon Server console, use the URL <a href="http://localhost:8025" class="bare">http://localhost:8025</a>.</p>
-</li>
-</ol>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/overview-node-2.png" alt="Axon Server Overview" width="800">
+</div>
 </div>
 <div class="paragraph">
 <p>The overview page on the second node shows the two nodes connected. The menu on the left shows fewer options as this node is an analytics node. The Event store menu has the analytics option.</p>
 </div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_using_the_insights_agent"><a class="anchor" href="#_using_the_insights_agent"></a>Using the Insights Agent</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Open the Analytics page.</strong> Open the Axon Server Console at <a href="http://localhost:8025" class="bare">http://localhost:8025</a> and click on the “Event Store” -  “Analytics” menu item.</p>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/analytics-sql.png" alt="Axon Server Analytics Page" width="800">
+</div>
+</div>
+<div class="paragraph">
+<p>The page has two sections: on the left there is a SQL editor, and on the right there is a chat interface. In the SQL editor, you can enter SQL queries to query the event store. You can query the events by selecting from the <code>events</code> table. The <code>events</code> table has the following columns:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>token</code>: The global index of the event.</p>
+</li>
+<li>
+<p><code>eventIdentifier</code>: The unique ID of the event.</p>
+</li>
+<li>
+<p><code>aggregateId</code>: The ID of the aggregate that the event belongs to.</p>
+</li>
+<li>
+<p><code>aggregateType</code>: The type of the aggregate that the event belongs to.</p>
+</li>
+<li>
+<p><code>type</code>: The type of the event.</p>
+</li>
+<li>
+<p><code>revision</code>: The revision of the event.</p>
+</li>
+<li>
+<p><code>data</code>: The payload of the event.</p>
+</li>
+<li>
+<p><code>timestamp</code>: The timestamp of the event.</p>
+</li>
+<li>
+<p><code>metaData</code>: The metadata of the event.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Start a chat.</strong> Enter a question in the chat input field at the bottom of the page and press Enter or click the send button (paper plane icon) to submit your question. The <code>Insights Agent</code> will process your question and provide a response based on the event data available in the Axon Server event store.</p>
+<div class="imageblock">
+<div class="content">
+<img src="../_images/analytics-agent.png" alt="Axon Server Analytics Page" width="800">
+</div>
+</div>
+</li>
+</ol>
 </div>
 </div>
 </div>
