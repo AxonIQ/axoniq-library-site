@@ -244,9 +244,7 @@ Unlike command handlers that need to validate business rules against current sta
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/shared/application/notifier/NotificationService.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.shared.application.notifier;
-
-public interface NotificationService { <i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface NotificationService { <i class="conum" data-value="1"></i><b>(1)</b>
 
     record Notification(String recipientId, String message) { <i class="conum" data-value="2"></i><b>(2)</b>
     }
@@ -292,12 +290,7 @@ These are simplified implementations for tutorial purposes. In a real applicatio
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/shared/infrastructure/notifier/LoggingNotificationService.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.shared.infrastructure.notifier;
-
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import java.util.logging.Logger;
-
-public class LoggingNotificationService implements NotificationService { <i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class LoggingNotificationService implements NotificationService { <i class="conum" data-value="1"></i><b>(1)</b>
 
     private static final Logger logger = Logger.getLogger(LoggingNotificationService.class.getName());
 
@@ -326,13 +319,7 @@ public class LoggingNotificationService implements NotificationService { <i clas
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/shared/infrastructure/notifier/RecordingNotificationService.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.shared.infrastructure.notifier;
-
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-public class RecordingNotificationService implements NotificationService { <i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class RecordingNotificationService implements NotificationService { <i class="conum" data-value="1"></i><b>(1)</b>
 
     private final NotificationService delegate; <i class="conum" data-value="2"></i><b>(2)</b>
     private final ConcurrentLinkedQueue&lt;Notification&gt; recorded = new ConcurrentLinkedQueue&lt;&gt;(); <i class="conum" data-value="3"></i><b>(3)</b>
@@ -387,14 +374,7 @@ public class RecordingNotificationService implements NotificationService { <i cl
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/shared/configuration/NotificationServiceConfiguration.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.shared.configuration;
-
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import io.axoniq.demo.university.shared.infrastructure.notifier.LoggingNotificationService;
-import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-
-public class NotificationServiceConfiguration {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class NotificationServiceConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         return configurer.componentRegistry(cr -&gt; cr.registerComponent( <i class="conum" data-value="1"></i><b>(1)</b>
@@ -436,14 +416,7 @@ public class NotificationServiceConfiguration {
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/WhenStudentSubscribedThenSendNotification.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
-
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.MessageStream;
-
-public class WhenStudentSubscribedThenSendNotification { <i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class WhenStudentSubscribedThenSendNotification { <i class="conum" data-value="1"></i><b>(1)</b>
 
     private final NotificationService notificationService; <i class="conum" data-value="2"></i><b>(2)</b>
 
@@ -511,30 +484,18 @@ public class WhenStudentSubscribedThenSendNotification { <i class="conum" data-v
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/StudentSubscribedNotifierConfiguration.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
-
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-
-import java.util.concurrent.CompletableFuture;
-
-public class StudentSubscribedNotifierConfiguration {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class StudentSubscribedNotifierConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         PooledStreamingEventProcessorModule automationProcessor = EventProcessorModule <i class="conum" data-value="1"></i><b>(1)</b>
                 .pooledStreaming("Automation_WhenStudentSubscribedThenSendNotification_Processor") <i class="conum" data-value="2"></i><b>(2)</b>
                 .eventHandlingComponents( <i class="conum" data-value="3"></i><b>(3)</b>
                         c -&gt; c.annotated(cfg -&gt; new WhenStudentSubscribedThenSendNotification(cfg.getComponent(NotificationService.class))) <i class="conum" data-value="4"></i><b>(4)</b>
-                )
-                // Due to a minor bug in the InMemoryEventStorageEngine this customization is needed if you want to use the implementation in the tests
-                .customized((c, cus) -&gt; cus.initialToken(s -&gt; CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0)))); <i class="conum" data-value="5"></i><b>(5)</b>
+                ).notCustomized();
 
         return configurer
                 .modelling(modelling -&gt; modelling.messaging(messaging -&gt; messaging.eventProcessing(eventProcessing -&gt;
-                        eventProcessing.pooledStreaming(ps -&gt; ps.processor(automationProcessor)) <i class="conum" data-value="6"></i><b>(6)</b>
+                        eventProcessing.pooledStreaming(ps -&gt; ps.processor(automationProcessor)) <i class="conum" data-value="5"></i><b>(5)</b>
                 )));
     }
 }</code></pre>
@@ -560,10 +521,6 @@ public class StudentSubscribedNotifierConfiguration {
 </tr>
 <tr>
 <td><i class="conum" data-value="5"></i><b>5</b></td>
-<td>Custom token initialization for testing with <code>InMemoryEventStorageEngine</code> (this is a workaround for testing) - will not be needed in further Axon Framework milestones.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="6"></i><b>6</b></td>
 <td>We register the processor module with the event processing configuration</td>
 </tr>
 </table>
@@ -580,45 +537,43 @@ public class StudentSubscribedNotifierConfiguration {
 <div class="listingblock">
 <div class="title">src/test/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/WhenStudentSubscribedThenSendNotificationTest.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class WhenStudentSubscribedThenSendNotificationAxonFixtureTest {
 
-import io.axoniq.demo.university.UniversityApplicationTest;
-import io.axoniq.demo.university.shared.configuration.NotificationServiceConfiguration;
-import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import io.axoniq.demo.university.shared.ids.StudentId;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.junit.jupiter.api.Test;
+    private AxonTestFixture fixture;
 
-import java.util.concurrent.TimeUnit;
+    @BeforeEach
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        var sliceConfigurer = application.configurer(configurer -&gt; { <i class="conum" data-value="1"></i><b>(1)</b>
+            configurer = NotificationServiceConfiguration.configure(configurer);
+            return StudentSubscribedNotifierConfiguration.configure(configurer);
+        });
+        fixture = AxonTestFixture.with(sliceConfigurer);
+    }
 
-import static org.assertj.core.api.Assertions.*;
-import static org.awaitility.Awaitility.*;
-
-class WhenStudentSubscribedThenSendNotificationTest extends UniversityApplicationTest { <i class="conum" data-value="1"></i><b>(1)</b>
-
-    @Override
-    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) { <i class="conum" data-value="2"></i><b>(2)</b>
-        configurer = NotificationServiceConfiguration.configure(configurer);
-        configurer = StudentSubscribedNotifierConfiguration.configure(configurer);
-        return configurer;
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
     }
 
     @Test
     void automationTest() {
-        // when
         var studentId = StudentId.random();
         var courseId = CourseId.random();
-        eventsOccurred(new StudentSubscribedToCourse(studentId, courseId)); <i class="conum" data-value="3"></i><b>(3)</b>
 
-        // then
         var expectedNotification = new NotificationService.Notification(studentId.raw(), "You have subscribed to course " + courseId);
-        var notificationService = (RecordingNotificationService) sut.getComponent(NotificationService.class);
-        await().atMost(2, TimeUnit.SECONDS) <i class="conum" data-value="4"></i><b>(4)</b>
-                .untilAsserted(() -&gt; assertThat(notificationService.sent()).contains(expectedNotification)); <i class="conum" data-value="5"></i><b>(5)</b>
+
+        fixture.given()
+                .events(new StudentSubscribedToCourse(studentId, courseId)) <i class="conum" data-value="2"></i><b>(2)</b>
+                .then()
+                .await(r -&gt; r.expect(cfg -&gt; assertNotificationSent(cfg, expectedNotification))); <i class="conum" data-value="3"></i><b>(3)</b>
     }
+
+    private void assertNotificationSent(Configuration configuration, NotificationService.Notification expectedNotification) {
+        var notificationService = (RecordingNotificationService) configuration.getComponent(NotificationService.class);
+        assertThat(notificationService.sent()).contains(expectedNotification); <i class="conum" data-value="4"></i><b>(4)</b>
+    }
+
 }</code></pre>
 </div>
 </div>
@@ -626,22 +581,18 @@ class WhenStudentSubscribedThenSendNotificationTest extends UniversityApplicatio
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>We extend <code>UniversityApplicationTest</code> which provides the test infrastructure</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
 <td>We configure both the notification service and our event handler for testing</td>
 </tr>
 <tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>We use <code>events()</code> to publish the <code>StudentSubscribedToCourse</code> event</td>
+</tr>
+<tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>We use <code>eventsOccurred()</code> to publish the <code>StudentSubscribedToCourse</code> event</td>
+<td>The <code>await</code> method from <code>AxonTestFixture</code> use the Awaitility library under the hood, to wait for asynchronous processing to complete</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>We use Awaitility to wait for asynchronous processing to complete</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="5"></i><b>5</b></td>
 <td>We assert that the expected notification was sent</td>
 </tr>
 </table>

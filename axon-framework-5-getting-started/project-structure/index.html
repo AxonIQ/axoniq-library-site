@@ -242,9 +242,10 @@ Please ensure you have the following properties and dependencies in your <code>p
 
     &lt;properties&gt;
         &lt;assertj.version&gt;3.27.3&lt;/assertj.version&gt;
-        &lt;axon.version&gt;5.0.0-M3&lt;/axon.version&gt;
+        &lt;axon.version&gt;5.0.0-preview&lt;/axon.version&gt;
         &lt;hamcrest.version&gt;3.0&lt;/hamcrest.version&gt;
         &lt;junit.version&gt;5.12.1&lt;/junit.version&gt;
+        &lt;jackson.version&gt;2.20.0&lt;/jackson.version&gt;
         &lt;log4j.version&gt;2.24.3&lt;/log4j.version&gt;
         &lt;maven.compiler.source&gt;21&lt;/maven.compiler.source&gt;
         &lt;maven.compiler.target&gt;21&lt;/maven.compiler.target&gt;
@@ -269,6 +270,16 @@ Please ensure you have the following properties and dependencies in your <code>p
             &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
             &lt;artifactId&gt;axon-eventsourcing&lt;/artifactId&gt;
             &lt;version&gt;${axon.version}&lt;/version&gt;
+        &lt;/dependency&gt;
+
+        &lt;!-- Serialization Dependencies --&gt;
+
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.fasterxml.jackson&lt;/groupId&gt;
+            &lt;artifactId&gt;jackson-bom&lt;/artifactId&gt;
+            &lt;version&gt;${jackson.version}&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
         &lt;/dependency&gt;
 
         &lt;!-- Log4j Dependencies --&gt;
@@ -361,8 +372,8 @@ It aligns perfectly with the Event Modeling that we used to design our applicati
  ┃ ┃ ┣ 📂 changecoursecapacity
  ┃ ┃ ┣ 📂 subscribestudent
  ┃ ┃ ┗ 📂 ...
- ┃ ┣ 📂 read (query slices - FUTURE MILESTONES)
- ┃ ┗ 📂 automation (automation slices - FUTURE MILESTONES)
+ ┃ ┣ 📂 read (query handling slices )
+ ┃ ┗ 📂 automation (automation slices)
  ┣ 📂 shared (common code, like identifiers, exceptions, etc)
  ┗ 📂 ...</code></pre>
 </div>
@@ -378,15 +389,15 @@ You will also see that in this tutorial.</p>
 </div>
 <div class="paragraph">
 <p><strong>Write Slices</strong>
-Contains commands that represent user intentions, define business rules through aggregates, produce domain events, and enforce invariants (for example <code>SubscribeStudent</code> command → <code>StudentSubscribed</code> event, with <code>SubscriptionsPerStudentNotExceedMax</code> rule).</p>
+Contains commands that represent user intentions, define business rules through aggregates, produce domain events, and enforce invariants (for example <code>SubscribeStudentToCourse</code> command → <code>StudentSubscribedToCourse</code> event, with <code>SubscriptionsPerStudentNotExceedMax</code> rule).</p>
 </div>
 <div class="paragraph">
-<p><strong>Read Slices [FOR THE FUTURE MILESTONES]</strong>
-Implements queries and read models optimized for specific use cases, with projectors that transform events into queryable state (for example <code>GetSubscriptionsByStudentId</code> query → <code>StudentSubscriptionsReadModel</code>).</p>
+<p><strong>Read Slices</strong>
+Implements queries and read models optimized for specific use cases, with projectors that transform events into queryable state (for example <code>GetCourseStatsById</code> query → <code>CoursesStatsReadModel</code>).</p>
 </div>
 <div class="paragraph">
-<p><strong>Automation Slices [FOR THE FUTURE MILESTONES]</strong>
-Processes events to trigger subsequent actions, implementing system policies and workflows, that connect different modules (for example <code>WhenStudentSubscribedToCourseThenSendEmailNotification</code>).</p>
+<p><strong>Automation Slices</strong>
+Processes events to trigger subsequent actions, implementing system policies and workflows, that connect different modules (for example <code>WhenStudentSubscribedThenSendNotification</code>).</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -410,7 +421,7 @@ you can now keep your slices completely independent of each other!</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Commands (<code>createcourse</code> , <code>SubscribeStudentToCourse</code>), which are the actions that can be executed</p>
+<p>Commands (<code>CreateCourse</code> , <code>SubscribeStudentToCourse</code>), which are the actions that can be executed</p>
 </li>
 <li>
 <p>Events that capture what happened and may notify other parts of the system or the user</p>

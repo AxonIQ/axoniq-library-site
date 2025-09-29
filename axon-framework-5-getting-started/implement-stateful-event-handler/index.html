@@ -222,9 +222,7 @@ The stateful handler implements this automation pattern by monitoring multiple e
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/SendAllCoursesFullyBookedNotification.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
-
-public record SendAllCoursesFullyBookedNotification(String facultyId) { <i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record SendAllCoursesFullyBookedNotification(String facultyId) { <i class="conum" data-value="1"></i><b>(1)</b>
 }</code></pre>
 </div>
 </div>
@@ -239,12 +237,7 @@ public record SendAllCoursesFullyBookedNotification(String facultyId) { <i class
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/events/AllCoursesFullyBookedNotificationSent.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.events;
-
-import io.axoniq.demo.university.faculty.FacultyTags;
-import org.axonframework.eventsourcing.annotations.EventTag;
-
-public record AllCoursesFullyBookedNotificationSent( <i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record AllCoursesFullyBookedNotificationSent( <i class="conum" data-value="1"></i><b>(1)</b>
         @EventTag(key = FacultyTags.FACULTY_ID) <i class="conum" data-value="2"></i><b>(2)</b>
         String facultyId
 ) {
@@ -272,29 +265,7 @@ public record AllCoursesFullyBookedNotificationSent( <i class="conum" data-value
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/WhenAllCoursesFullyBookedThenSendNotification.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
-
-import io.axoniq.demo.university.faculty.FacultyTags;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import io.axoniq.demo.university.faculty.events.*;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotations.InjectEntity;
-
-import java.util.HashMap;
-import java.util.Map;
-
-public class WhenAllCoursesFullyBookedThenSendNotification {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class WhenAllCoursesFullyBookedThenSendNotification {
 
     private static final String FACULTY_ID = "ONLY_FACULTY_ID"; <i class="conum" data-value="1"></i><b>(1)</b>
 
@@ -534,19 +505,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/AllCoursesFullyBookedNotifierConfiguration.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
-
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.configuration.EntityModule;
-
-import java.util.concurrent.CompletableFuture;
-
-public class AllCoursesFullyBookedNotifierConfiguration {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AllCoursesFullyBookedNotifierConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         EntityModule&lt;String, WhenAllCoursesFullyBookedThenSendNotification.State&gt; automationState = <i class="conum" data-value="1"></i><b>(1)</b>
@@ -557,18 +516,18 @@ public class AllCoursesFullyBookedNotifierConfiguration {
                 .eventHandlingComponents(
                         c -&gt; c.annotated(cfg -&gt; new WhenAllCoursesFullyBookedThenSendNotification.AutomationEventHandler()) <i class="conum" data-value="3"></i><b>(3)</b>
                 )
-                .customized((c, cus) -&gt; cus.initialToken(s -&gt; CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0)))); <i class="conum" data-value="4"></i><b>(4)</b>
+                .notCustomized();
 
-        var commandHandlingModule = CommandHandlingModule.named("SendAllCoursesFullyBookedCommandHandler") <i class="conum" data-value="5"></i><b>(5)</b>
+        var commandHandlingModule = CommandHandlingModule.named("SendAllCoursesFullyBookedCommandHandler") <i class="conum" data-value="4"></i><b>(4)</b>
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(cfg -&gt; new WhenAllCoursesFullyBookedThenSendNotification.AutomationCommandHandler()) <i class="conum" data-value="6"></i><b>(6)</b>
+                .annotatedCommandHandlingComponent(cfg -&gt; new WhenAllCoursesFullyBookedThenSendNotification.AutomationCommandHandler()) <i class="conum" data-value="5"></i><b>(5)</b>
                 .build();
 
         return configurer
-                .componentRegistry(cr -&gt; cr.registerModule(automationState)) <i class="conum" data-value="7"></i><b>(7)</b>
-                .registerCommandHandlingModule(commandHandlingModule) <i class="conum" data-value="8"></i><b>(8)</b>
+                .componentRegistry(cr -&gt; cr.registerModule(automationState)) <i class="conum" data-value="6"></i><b>(6)</b>
+                .registerCommandHandlingModule(commandHandlingModule) <i class="conum" data-value="7"></i><b>(7)</b>
                 .modelling(modelling -&gt; modelling.messaging(messaging -&gt; messaging.eventProcessing(eventProcessing -&gt;
-                        eventProcessing.pooledStreaming(ps -&gt; ps.processor(automationProcessor)) <i class="conum" data-value="9"></i><b>(9)</b>
+                        eventProcessing.pooledStreaming(ps -&gt; ps.processor(automationProcessor)) <i class="conum" data-value="8"></i><b>(8)</b>
                 )));
     }
 }</code></pre>
@@ -590,26 +549,22 @@ public class AllCoursesFullyBookedNotifierConfiguration {
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>Custom token initialization for testing with <code>InMemoryEventStorageEngine</code> (this is a workaround for testing) - will not be needed in further Axon Framework milestones.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="5"></i><b>5</b></td>
 <td>Configure command handling module with descriptive name</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
 <td>Register the command handler component</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="7"></i><b>7</b></td>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
 <td>Register the entity module for state persistence</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="8"></i><b>8</b></td>
+<td><i class="conum" data-value="7"></i><b>7</b></td>
 <td>Register the command handling module</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="9"></i><b>9</b></td>
+<td><i class="conum" data-value="8"></i><b>8</b></td>
 <td>Register the event processor module</td>
 </tr>
 </table>
@@ -626,58 +581,52 @@ public class AllCoursesFullyBookedNotifierConfiguration {
 <div class="listingblock">
 <div class="title">src/test/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/WhenAllCoursesFullyBookedThenSendNotificationTest.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class WhenAllCoursesFullyBookedThenSendNotificationAxonFixtureTest {
 
-import io.axoniq.demo.university.UniversityApplicationTest;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import io.axoniq.demo.university.shared.configuration.NotificationServiceConfiguration;
-import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
-import io.axoniq.demo.university.faculty.events.CourseCreated;
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import io.axoniq.demo.university.shared.ids.StudentId;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.junit.jupiter.api.Test;
+    private AxonTestFixture fixture;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+    @BeforeEach
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        var sliceConfigurer = application.configurer(configurer -&gt; { <i class="conum" data-value="1"></i><b>(1)</b>
+            configurer = NotificationServiceConfiguration.configure(configurer);
+            return AllCoursesFullyBookedNotifierConfiguration.configure(configurer);
+        });
+        fixture = AxonTestFixture.with(sliceConfigurer);
+    }
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-
-public class WhenAllCoursesFullyBookedThenSendNotificationTest extends UniversityApplicationTest { <i class="conum" data-value="1"></i><b>(1)</b>
-
-    @Override
-    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) { <i class="conum" data-value="2"></i><b>(2)</b>
-        configurer = NotificationServiceConfiguration.configure(configurer);
-        configurer = AllCoursesFullyBookedNotifierConfiguration.configure(configurer);
-        return configurer;
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
     }
 
     @Test
     void automationTest() {
-        // when <i class="conum" data-value="3"></i><b>(3)</b>
         var studentId1 = StudentId.random();
         var studentId2 = StudentId.random();
         var courseId1 = CourseId.random();
         var courseId2 = CourseId.random();
 
-        List&lt;Object&gt; events = List.of( <i class="conum" data-value="4"></i><b>(4)</b>
-                new CourseCreated(courseId1, "Course 1", 2), // Create course with capacity 2
-                new CourseCreated(courseId2, "Course 2", 2), // Create course with capacity 2
-                new StudentSubscribedToCourse(studentId1, courseId1), // Fill first course
-                new StudentSubscribedToCourse(studentId2, courseId1),
-                new StudentSubscribedToCourse(studentId1, courseId2), // Fill second course
-                new StudentSubscribedToCourse(studentId2, courseId2)  // This should trigger notification
-        );
-        eventsOccurred(events);
-
-        // then <i class="conum" data-value="5"></i><b>(5)</b>
         var expectedNotification = new NotificationService.Notification("admin", "All courses are fully booked now.");
-        RecordingNotificationService notificationService = (RecordingNotificationService) sut.getComponent(NotificationService.class);
-        await().atMost(10, TimeUnit.SECONDS)
-                .untilAsserted(() -&gt; assertThat(notificationService.sent()).contains(expectedNotification));
+
+        fixture.given()
+                .events( <i class="conum" data-value="2"></i><b>(2)</b>
+                        new CourseCreated(courseId1, "Course 1", 2), // Create course with capacity 2
+                        new CourseCreated(courseId2, "Course 2", 2), // Create course with capacity 2
+                        new StudentSubscribedToCourse(studentId1, courseId1), // Fill first course
+                        new StudentSubscribedToCourse(studentId2, courseId1),
+                        new StudentSubscribedToCourse(studentId1, courseId2), // Fill second course
+                        new StudentSubscribedToCourse(studentId2, courseId2)  // This should trigger notification
+                )
+                .then()
+                .await(r -&gt; r.expect(cfg -&gt; assertNotificationSent(cfg, expectedNotification)));
     }
+
+    private void assertNotificationSent(Configuration configuration, NotificationService.Notification expectedNotification) {
+        var notificationService = (RecordingNotificationService) configuration.getComponent(NotificationService.class);
+        assertThat(notificationService.sent()).contains(expectedNotification); <i class="conum" data-value="3"></i><b>(3)</b>
+    }
+
 }</code></pre>
 </div>
 </div>
@@ -685,22 +634,14 @@ public class WhenAllCoursesFullyBookedThenSendNotificationTest extends Universit
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Extend the test infrastructure</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
 <td>Configure both notification service and our stateful handler</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td><strong>When</strong>: Create a scenario where all courses become fully booked</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
 <td>Sequence of events that gradually fills all courses to capacity</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
 <td><strong>Then</strong>: Verify the notification was sent when condition was met</td>
 </tr>
 </table>

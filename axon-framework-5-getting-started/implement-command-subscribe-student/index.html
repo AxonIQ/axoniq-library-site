@@ -187,13 +187,7 @@ Let&#8217;s define them as Java records, as before.</p>
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribedToCourse.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.events;
-
-import org.axonframework.eventsourcing.annotations.EventTag;
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-
-public record StudentEnrolledInFaculty(
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record StudentEnrolledInFaculty(
         @EventTag <i class="conum" data-value="1"></i><b>(1)</b>
         StudentId studentId,
         String firstName,
@@ -214,13 +208,7 @@ public record StudentEnrolledInFaculty(
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribedToCourse.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.events;
-
-import org.axonframework.eventsourcing.annotations.EventTag;
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-
-public record StudentSubscribedToCourse(
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record StudentSubscribedToCourse(
         @EventTag <i class="conum" data-value="1"></i><b>(1)</b>
         StudentId studentId,
         @EventTag <i class="conum" data-value="1"></i><b>(1)</b>
@@ -246,12 +234,7 @@ In the case of one event type per entity/tag/aggregateId we would need to duplic
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.createcourse;
-
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-
-public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 }</code></pre>
 </div>
 </div>
@@ -314,112 +297,132 @@ Translating Event Modeling specification to test is a repeatable task, so it can
 <div class="listingblock">
 <div class="title">src/test/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourseTest.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.subscribestudent;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class SubscribeStudentToCourseTest {
 
-import io.axoniq.demo.university.UniversityApplicationTest;
-import io.axoniq.demo.university.faculty.events.CourseCreated;
-import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import io.axoniq.demo.university.shared.ids.StudentId;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.junit.jupiter.api.Test;
+    private AxonTestFixture fixture;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+    @BeforeEach
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        var sliceConfigurer = application.configurer(SubscribeStudentConfiguration::configure);
+        fixture = AxonTestFixture.with(sliceConfigurer);
+    }
 
-public class SubscribeStudentToCourseTest extends UniversityApplicationTest {
-
-    @Override
-    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) {
-        return SubscribeStudentConfiguration.configure(configurer);
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
     }
 
     @Test
     void successfulSubscription() {
-        // given
         var courseId = CourseId.random();
         var studentId = StudentId.random();
 
-        eventsOccurred(
-                new StudentEnrolledInFaculty(studentId, "Mateusz", "Nowak"),
-                new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2)
-        );
-
-        // when
-        executeCommand(new SubscribeStudentToCourse(studentId, courseId));
-
-        // then
-        assertEvents(new StudentSubscribedToCourse(studentId, courseId));
+        fixture.given()
+                .event(new StudentEnrolledInFaculty(studentId, "Mateusz", "Nowak"))
+                .event(new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2))
+                .when()
+                .command(new SubscribeStudentToCourse(studentId, courseId))
+                .then()
+                .events(new StudentSubscribedToCourse(studentId, courseId));
     }
 
     @Test
     void studentAlreadySubscribed() {
-        // given
         var courseId = CourseId.random();
         var studentId = StudentId.random();
 
-        eventsOccurred(
-                new StudentEnrolledInFaculty(studentId, "Allard", "Buijze"),
-                new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2),
-                new StudentSubscribedToCourse(studentId, courseId)
-        );
+        fixture.given()
+                .event(new StudentEnrolledInFaculty(studentId, "Allard", "Buijze"))
+                .event(new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2))
+                .event(new StudentSubscribedToCourse(studentId, courseId))
+                .when()
+                .command(new SubscribeStudentToCourse(studentId, courseId))
+                .then()
+                .exceptionSatisfies(thrown -&gt; assertThat(thrown)
+                        .hasMessageContaining("Student already subscribed to this course")
+                );
+    }
 
-        // when-then
-        assertThatThrownBy(() -&gt; executeCommand(
-                new SubscribeStudentToCourse(studentId, courseId)
-        )).cause().hasMessageContaining("Student already subscribed to this course");
-        assertNoEvents();
+    @Test
+    void studentAlreadySubscribedAnotherCourse() {
+        var courseId = CourseId.random();
+        var anotherCourseId = CourseId.random();
+        var studentId = StudentId.random();
+
+        fixture.given()
+                .event(new StudentEnrolledInFaculty(studentId, "Allard", "Buijze"))
+                .event(new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2))
+                .event(new StudentSubscribedToCourse(studentId, anotherCourseId))
+                .when()
+                .command(new SubscribeStudentToCourse(studentId, courseId))
+                .then()
+                .events(new StudentSubscribedToCourse(studentId, courseId));
+    }
+
+    @Test
+    void studentSubscribedIfAnotherOneAlreadySubscribed() {
+        var courseId = CourseId.random();
+        var studentId = StudentId.random();
+        var anotherStudentId = StudentId.random();
+
+        fixture.given()
+                .event(new StudentEnrolledInFaculty(studentId, "Allard", "Buijze"))
+                .event(new StudentEnrolledInFaculty(anotherStudentId, "Marc", "Gathier"))
+                .event(new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2))
+                .event(new StudentSubscribedToCourse(anotherStudentId, courseId))
+                .when()
+                .command(new SubscribeStudentToCourse(studentId, courseId))
+                .then()
+                .events(new StudentSubscribedToCourse(studentId, courseId));
     }
 
     @Test
     void courseFullyBooked() {
-        // given
         var courseId = CourseId.random();
         var student1Id = StudentId.random();
         var student2Id = StudentId.random();
         var student3Id = StudentId.random();
 
-        eventsOccurred(
-                new StudentEnrolledInFaculty(student1Id, "Mateusz", "Nowak"),
-                new StudentEnrolledInFaculty(student2Id, "Steven", "van Beelen"),
-                new StudentEnrolledInFaculty(student3Id, "Mitchell", "Herrijgers"),
-                new CourseCreated(courseId, "Event Sourcing Masterclass", 2),
-                new StudentSubscribedToCourse(student1Id, courseId),
-                new StudentSubscribedToCourse(student2Id, courseId)
-        );
-
-        // when-then
-        assertThatThrownBy(() -&gt; executeCommand(
-                new SubscribeStudentToCourse(student3Id, courseId)
-        )).cause().hasMessageContaining("Course is fully booked");
-        assertNoEvents();
+        fixture.given()
+                .event(new StudentEnrolledInFaculty(student1Id, "Mateusz", "Nowak"))
+                .event(new StudentEnrolledInFaculty(student2Id, "Steven", "van Beelen"))
+                .event(new StudentEnrolledInFaculty(student3Id, "Mitchell", "Herrijgers"))
+                .event(new CourseCreated(courseId, "Event Sourcing Masterclass", 2))
+                .event(new StudentSubscribedToCourse(student1Id, courseId))
+                .event(new StudentSubscribedToCourse(student2Id, courseId))
+                .when()
+                .command(new SubscribeStudentToCourse(student3Id, courseId))
+                .then()
+                .exceptionSatisfies(thrown -&gt; assertThat(thrown)
+                        .hasMessageContaining("Course is fully booked")
+                );
     }
 
     @Test
     void studentSubscribedToTooManyCourses() {
-        // given
         var studentId = StudentId.random();
         var course1Id = CourseId.random();
         var course2Id = CourseId.random();
         var course3Id = CourseId.random();
         var targetCourseId = CourseId.random();
 
-        eventsOccurred(
-                new StudentEnrolledInFaculty(studentId, "Milan", "Savic"),
-                new CourseCreated(targetCourseId, "Programming", 10),
-                new CourseCreated(course1Id, "Course 1", 10),
-                new CourseCreated(course2Id, "Course 2", 10),
-                new CourseCreated(course3Id, "Course 3", 10),
-                new StudentSubscribedToCourse(studentId, course1Id),
-                new StudentSubscribedToCourse(studentId, course2Id),
-                new StudentSubscribedToCourse(studentId, course3Id)
-        );
-
-        // when-then
-        assertThatThrownBy(() -&gt; executeCommand(
-                new SubscribeStudentToCourse(studentId, targetCourseId)
-        )).cause().hasMessageContaining("Student subscribed to too many courses");
-        assertNoEvents();
+        fixture.given()
+                .event(new StudentEnrolledInFaculty(studentId, "Milan", "Savic"))
+                .event(new CourseCreated(targetCourseId, "Programming", 10))
+                .event(new CourseCreated(course1Id, "Course 1", 10))
+                .event(new CourseCreated(course2Id, "Course 2", 10))
+                .event(new CourseCreated(course3Id, "Course 3", 10))
+                .event(new StudentSubscribedToCourse(studentId, course1Id))
+                .event(new StudentSubscribedToCourse(studentId, course2Id))
+                .event(new StudentSubscribedToCourse(studentId, course3Id))
+                .when()
+                .command(new SubscribeStudentToCourse(studentId, targetCourseId))
+                .then()
+                .noEvents()
+                .exceptionSatisfies(thrown -&gt; assertThat(thrown)
+                        .hasMessageContaining("Student subscribed to too many courses")
+                );
     }
 }</code></pre>
 </div>
@@ -433,9 +436,7 @@ Let&#8217;s make it right away!</p>
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.subscribestudent;
-
-class SubscribeStudentToCourseCommandHandler {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class SubscribeStudentToCourseCommandHandler {
 
     private static final int MAX_COURSES_PER_STUDENT = 3; <i class="conum" data-value="1"></i><b>(1)</b>
 
@@ -500,12 +501,7 @@ We&#8217;re going to use the <code>SubscriptionId</code> class and define it as 
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscriptionId.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.subscribestudent;
-
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-
-record SubscriptionId(CourseId courseId, StudentId studentId) {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">record SubscriptionId(CourseId courseId, StudentId studentId) {
 
 }</code></pre>
 </div>
@@ -513,12 +509,7 @@ record SubscriptionId(CourseId courseId, StudentId studentId) {
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.createcourse;
-
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-
-public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 
     @TargetEntityId
     private SubscriptionId subscriptionId() { <i class="conum" data-value="1"></i><b>(1)</b>
@@ -893,15 +884,7 @@ To do so, let&#8217;s create a new class <code>SubscribeStudentToCourseConfigura
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.write.subscribestudent;
-
-import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.StateManager;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-
-public class SubscribeStudentConfiguration {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityModule
