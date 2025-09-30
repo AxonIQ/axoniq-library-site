@@ -132,7 +132,7 @@
     <a class="nav-link" href="../configure-axon-server/">Connecting to Axon Server</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <span class="nav-text">xref:implement-stateless-event-handler.adoc</span>
+    <a class="nav-link" href="../implement-stateless-event-handler/">Feature: Send Notification When Student Subscribed</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../implement-stateful-event-handler/">Feature: Send Notification To The Administrator When All Courses Are Fully Booked</a>
@@ -386,29 +386,109 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Create an initial read model when a course is created with zero students</td>
+<td>Constructor injection of the repository for persistence</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Update the course name when renamed</td>
+<td>Create an initial read model when a course is created with zero students</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Update capacity when changed</td>
+<td>Update the course name when renamed</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>Increment student count when a student subscribes</td>
+<td>Update capacity when changed</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Increment student count when a student subscribes</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
 <td>Decrement student count when a student unsubscribes</td>
 </tr>
 </table>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_step_5_configure_the_read_model_components"><a class="anchor" href="#_step_5_configure_the_read_model_components"></a>Step 5: Configure the read model components</h3>
+<h3 id="_step_5_define_the_query_and_query_handler"><a class="anchor" href="#_step_5_define_the_query_and_query_handler"></a>Step 5: Define the query and query handler</h3>
+<div class="paragraph">
+<p>Now let&#8217;s create the query and its handler to enable querying the read model:</p>
+</div>
+<div class="listingblock">
+<div class="title">src/main/java/io/axoniq/demo/university/faculty/read/coursestats/GetCourseStatsById.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.read.coursestats;
+
+import io.axoniq.demo.university.shared.ids.CourseId;
+
+public record GetCourseStatsById(CourseId courseId) { <i class="conum" data-value="1"></i><b>(1)</b>
+    public record Result(CoursesStatsReadModel stats) { <i class="conum" data-value="2"></i><b>(2)</b>
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Query object containing the course ID to look up</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Result wrapper containing the read model (null if not found)</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">src/main/java/io/axoniq/demo/university/faculty/read/coursestats/GetCourseStatsByIdQueryHandler.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package io.axoniq.demo.university.faculty.read.coursestats;
+
+import org.axonframework.queryhandling.annotations.QueryHandler;
+
+public record GetCourseStatsByIdQueryHandler(
+        CourseStatsRepository repository <i class="conum" data-value="1"></i><b>(1)</b>
+) {
+
+    @QueryHandler
+    GetCourseStatsById.Result handle(GetCourseStatsById query) { <i class="conum" data-value="2"></i><b>(2)</b>
+        return repository.findById(query.courseId()) <i class="conum" data-value="3"></i><b>(3)</b>
+                .map(GetCourseStatsById.Result::new) <i class="conum" data-value="4"></i><b>(4)</b>
+                .orElseGet(() -&gt; new GetCourseStatsById.Result(null)); <i class="conum" data-value="5"></i><b>(5)</b>
+    }
+
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Constructor injection of the repository</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Query handler method annotated with <code>@QueryHandler</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Look up the read model in the repository</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Wrap found read model in Result</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Return Result with null if not found (safe handling of missing data)</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_step_6_configure_the_read_model_components"><a class="anchor" href="#_step_6_configure_the_read_model_components"></a>Step 6: Configure the read model components</h3>
 <div class="paragraph">
 <p>Finally, let&#8217;s wire everything together with a proper Axon Framework 5 configuration:</p>
 </div>
@@ -424,10 +504,16 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
                         c -&gt; c.annotated(cfg -&gt; new CoursesStatsProjection(cfg.getComponent(CourseStatsRepository.class))) <i class="conum" data-value="2"></i><b>(2)</b>
                 ).notCustomized();
 
+        QueryHandlingModule getCourseStatsByIdQueryHandler = QueryHandlingModule.named("get-course-stats-by-id") <i class="conum" data-value="3"></i><b>(3)</b>
+                .queryHandlers()
+                .annotatedQueryHandlingComponent(cfg -&gt; new GetCourseStatsByIdQueryHandler(cfg.getComponent(CourseStatsRepository.class)))
+                .build();
+
         return configurer
-                .componentRegistry(cr -&gt; cr.registerComponent(CourseStatsRepository.class, cfg -&gt; new InMemoryCourseStatsRepository())) <i class="conum" data-value="3"></i><b>(3)</b>
+                .componentRegistry(cr -&gt; cr.registerComponent(CourseStatsRepository.class, cfg -&gt; new InMemoryCourseStatsRepository())) <i class="conum" data-value="4"></i><b>(4)</b>
+                .registerQueryHandlingModule(getCourseStatsByIdQueryHandler) <i class="conum" data-value="5"></i><b>(5)</b>
                 .modelling(modelling -&gt; modelling.messaging(messaging -&gt; messaging.eventProcessing(eventProcessing -&gt;
-                        eventProcessing.pooledStreaming(ps -&gt; ps.processor(projectionProcessor)) <i class="conum" data-value="4"></i><b>(4)</b>
+                        eventProcessing.pooledStreaming(ps -&gt; ps.processor(projectionProcessor)) <i class="conum" data-value="6"></i><b>(6)</b>
                 )));
     }
 
@@ -450,10 +536,18 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Register the repository implementation as a component</td>
+<td>Create a query handling module for processing course stats queries</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Register the repository implementation as a component</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Register the query handler as a component</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
 <td>Register the event processor with the framework</td>
 </tr>
 </table>
@@ -465,12 +559,16 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
 <h2 id="_testing_the_read_model"><a class="anchor" href="#_testing_the_read_model"></a>Testing the read model</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Let&#8217;s create comprehensive tests to verify our read model works correctly:</p>
+<p>Let&#8217;s create comprehensive tests to verify our read model works correctly.
+The <code>AxonTestFixture</code> doesn&#8217;t have first-class support for testing Queries yet.
+However, it&#8217;s still flexible enough that we can still use the custom <code>expect</code> method to test our projections by leveraging the <code>Configuration</code> object to access the <code>QueryGateway</code> for performing queries.</p>
 </div>
 <div class="listingblock">
 <div class="title">src/test/java/io/axoniq/demo/university/faculty/read/coursestats/CourseStatsProjectionTest.java</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CourseStatsProjectionTest {
+
+   private AxonTestFixture fixture;
 
     @BeforeEach
     void beforeEach() {
@@ -490,7 +588,7 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
         fixture.when()
                 .nothing()
                 .then()
-                .expect(cfg -&gt; assertReadModelNotFound(cfg, courseId));
+                .expect(cfg -&gt; assertCourseStatsNotExist(cfg, courseId));
     }
 
     @Test
@@ -506,7 +604,7 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
         fixture.given()
                 .events(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
                 .then()
-                .await(r -&gt; r.expect(cfg -&gt; assertReadModel(cfg, expectedReadModel))); <i class="conum" data-value="2"></i><b>(2)</b>
+                .await(r -&gt; r.expect(cfg -&gt; assertCourseStats(cfg, expectedReadModel))); <i class="conum" data-value="2"></i><b>(2)</b>
     }
 
     @Test
@@ -525,7 +623,7 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
         fixture.given()
                 .events(new CourseCreated(courseId, originalName, 42), new CourseRenamed(courseId, newName))
                 .then()
-                .await(r -&gt; r.expect(cfg -&gt; assertReadModel(cfg, expectedReadModel)));
+                .await(r -&gt; r.expect(cfg -&gt; assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -545,7 +643,7 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
                 .events(new CourseCreated(courseId, "Event Sourcing in Practice", originalCapacity),
                         new CourseCapacityChanged(courseId, newCapacity))
                 .then()
-                .await(r -&gt; r.expect(cfg -&gt; assertReadModel(cfg, expectedReadModel)));
+                .await(r -&gt; r.expect(cfg -&gt; assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -564,7 +662,7 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
                 .events(new CourseCreated(courseId, "Event Sourcing in Practice", 42),
                         new StudentSubscribedToCourse(studentId, courseId))
                 .then()
-                .await(r -&gt; r.expect(cfg -&gt; assertReadModel(cfg, expectedReadModel)));
+                .await(r -&gt; r.expect(cfg -&gt; assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -584,22 +682,22 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
                         new StudentSubscribedToCourse(studentId, courseId),
                         new StudentUnsubscribedFromCourse(studentId, courseId))
                 .then()
-                .await(r -&gt; r.expect(cfg -&gt; assertReadModel(cfg, expectedReadModel)));
+                .await(r -&gt; r.expect(cfg -&gt; assertCourseStats(cfg, expectedReadModel)));
     }
 
-    private void assertReadModel(Configuration configuration, CoursesStatsReadModel expectedReadModel) {
-        var found = courseStatsRepository(configuration).findById(expectedReadModel.courseId());
-        assertThat(found).isNotEmpty();
-        assertThat(found).hasValue(expectedReadModel);
+    private void assertCourseStats(Configuration configuration, CoursesStatsReadModel expectedReadModel) {
+        var found = configuration.getComponent(QueryGateway.class) <i class="conum" data-value="3"></i><b>(3)</b>
+                .query(new GetCourseStatsById(expectedReadModel.courseId()), GetCourseStatsById.Result.class, null)
+                .join();
+        assertThat(found).isNotNull();
+        assertThat(found.stats()).isEqualTo(expectedReadModel);
     }
 
-    private void assertReadModelNotFound(Configuration configuration, CourseId courseId) {
-        var found = courseStatsRepository(configuration).findById(courseId);
-        assertThat(found).isEmpty();
-    }
-
-    private CourseStatsRepository courseStatsRepository(Configuration configuration) { <i class="conum" data-value="3"></i><b>(3)</b>
-        return configuration.getComponent(CourseStatsRepository.class);
+    private void assertCourseStatsNotExist(Configuration configuration, CourseId courseId) {
+        var found = configuration.getComponent(QueryGateway.class)
+                .query(new GetCourseStatsById(courseId), GetCourseStatsById.Result.class, null)
+                .join();
+        assertThat(found.stats()).isNull();
     }
 
 }</code></pre>
@@ -617,7 +715,7 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Helper to access the repository from the test configuration</td>
+<td>We&#8217;re getting the QueryGateway from the configuration to perform queries against our read model</td>
 </tr>
 </table>
 </div>
