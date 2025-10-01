@@ -63,8 +63,8 @@ const rewriteMappings = {
  * For example, "/architecture-overview" will be replaced with "https://www.axoniq.io/concepts/cqrs-and-event-sourcing"
  */
 const fullReplaceMappings = {
-    "/architecture-overview": "https://www.axoniq.io/concepts/cqrs-and-event-sourcing",
-    "/axon-server-introduction": "https://www.axoniq.io/products/axon-server",
+    "/architecture-overview": "/home/",
+    "/axon-server-introduction": "/home/",
     "/axon-server/": `/axon-server-reference/latest/`,
     "/release-notes/rn-axon-framework": `https://docs.axoniq.io/axon-framework-reference/latest/release-notes`,
     "/release-notes/rn-axon-server": `/axon-server-reference/latest/release-notes/`,
