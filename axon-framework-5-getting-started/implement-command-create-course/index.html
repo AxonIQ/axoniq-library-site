@@ -414,18 +414,17 @@ For now, we focus on the happy path. In the Event Modeling, we&#8217;ve describe
     // fixture creation skipped for brevity
 
     @Test
-    void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents() {
+    void givenNotExistingCourse_WhenCreateCourse_ThenSuccess() {
         var courseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
         var capacity = 3;
 
         fixture.given()
-               .event(new CourseCreated(courseId, courseName, capacity)) <i class="conum" data-value="1"></i><b>(1)</b>
-               .when()
-               .command(new CreateCourse(courseId, courseName, capacity)) <i class="conum" data-value="2"></i><b>(2)</b>
-               .then()
-               .success() <i class="conum" data-value="3"></i><b>(3)</b>
-               .noEvents(); <i class="conum" data-value="3"></i><b>(3)</b>
+                .when()
+                .command(new CreateCourse(courseId, courseName, capacity))
+                .then()
+                .success()
+                .events(new CourseCreated(courseId, courseName, capacity));
     }
 
 }</code></pre>
@@ -899,6 +898,14 @@ To see how to implement this slice differently, you can check the GitHub reposit
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_next_steps"><a class="anchor" href="#_next_steps"></a>Next steps</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Up next, we will look how to subscribe a student. This is a scenario wherein both a <code>Course</code> <strong>and</strong> <code>Student</code> entity will be required to perform business validation (which includes use of the dynamic consistency boundary feature). However, if you prefer to pick up another slice similar to the described create course flow, like "Rename Course" or "Change Course Capacity", feel free to follow the same structure is taken above.</p>
+</div>
+</div>
+</div>
         <nav class="pagination">
   <span class="prev"><a href="../project-structure/">Project Structure</a></span>
   <span class="next"><a href="../implement-command-subscribe-student/">Feature: Subscribe Student</a></span>
@@ -910,6 +917,7 @@ To see how to implement this slice differently, you can check the GitHub reposit
       <footer class="footer">
   <div class="secondary-footer">
     <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
   </div>
 </footer>
 <script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
