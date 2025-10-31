@@ -367,6 +367,10 @@ There are two types of Backup nodes - <a href="#active-backup-node">Active Backu
 <p><em>Secondary nodes</em> -&gt; Support for tiered storage.
 If a replication group contains secondary nodes the primary nodes will only retain recent data.</p>
 </li>
+<li>
+<p><em>Analyzing nodes</em> -&gt; Analytics nodes have another storage format for events, more suitable for running analytical queries.
+They can be used alongside primary nodes in a replication group to offload analytical queries from the primary nodes. For more information see <a href="../analytics-nodes/" class="xref page">Analytics nodes</a>.</p>
+</li>
 </ul>
 </div>
 <div class="paragraph">
@@ -383,11 +387,11 @@ It is also possible to <a href="#changing-node-roles">change the role</a> that a
 <div class="paragraph">
 <p>You can use backup nodes for instance when you want to ensure that you have a copy of your event store in another data center.
 As the backup node will never become the leader for a replication group it reduces the risk of high latency, compared to having a normal (Primary) node in another data center.
-By default, clients can connect to backup nodes.
-This can be disabled by setting the <code>axoniq.axonserver.force-connection-to-primary-or-messaging-node</code> property to <code>true</code>.</p>
+By default, clients can&#8217;t connect to backup nodes.
+This can be enabled by setting the <code>axoniq.axonserver.force-connection-to-primary-or-messaging-node</code> property to <code>false</code>.</p>
 </div>
 <div class="paragraph">
-<p>Backup nodes come in two flavors</p>
+<p>Backup nodes come in two flavors.</p>
 </div>
 <div class="sect2">
 <h3 id="active-backup-node"><a class="anchor" href="#active-backup-node"></a>Active backup node</h3>
@@ -398,7 +402,7 @@ When an event is raised within a context the transaction to commit it in the Eve
 </div>
 <div class="paragraph">
 <p>It is possible to customize the number of active backup nodes involved in the transactions by changing the value of the property <code>axoniq.axonserver.replication.min-active-backups</code> . The default value of this parameter is <code>"1"</code> which means that if you have Active Backup nodes, at least one of them needs to be up at any time.
-The higher the value set for this property, the higher the number of Active backup member nodes that need to be available for a successful transaction, so this property affects the availability of the cluster and hence needs to be carefully managed.</p>
+The higher the value set for this property, the higher the number of Active backup member nodes that need to be available for a successful transaction. This property affects the availability of the cluster and hence needs to be carefully managed.</p>
 </div>
 <div class="paragraph">
 <p>There are three possible ways to assign the ACTIVE_BACKUP role to a node within a replication group:</p>
@@ -558,11 +562,15 @@ The nodes can be added as a MESSAGING_ONLY role within a replication group.</p>
 </li>
 <li>
 <p><code>-t</code> refers to the access token to authenticate at server</p>
+<div class="olist upperalpha">
+<ol class="upperalpha" type="A">
+<li>
+<p>Axon Server provided REST API (http:[server]:[port]/swagger-ui.html) which offers the <em>replication-group-rest-controller</em> to help perform role maintenance operations</p>
+</li>
+</ol>
+</div>
 </li>
 </ul>
-</div>
-<div class="paragraph">
-<p>C) Axon Server provided REST API (http:[server]:[port]/swagger-ui.html) which offers the <em>replication-group-rest-controller</em> to help perform role maintenance operations</p>
 </div>
 </div>
 </div>
@@ -583,27 +591,31 @@ Axon Server version 4.4 and higher
 </div>
 <div class="paragraph">
 <p>You can add nodes as secondary nodes to a replication group, if you want to limit the amount of data stored on primary nodes.
-You could for example have fast (more expensive) storage on the primary nodes and less expensive storage on the secondary nodes.
-Most activity will take place on recent data, and only when you need to access older data you have to go to the secondary nodes.</p>
+You could, for example, have fast, (more expensive) storage on the primary nodes and less expensive storage on the secondary nodes.
+Most activity will take place on recent data, and only when you need to access older data, you have to go to the secondary nodes.</p>
 </div>
 <div class="paragraph">
 <p>Once you have defined secondary nodes for a replication group, this will apply for all contexts that are defined in the replication group.
 You can configure the retention time per context, so for some contexts you may have a longer retention time than for others.</p>
 </div>
 <div class="paragraph">
-<p>As the old data still needs to be available at least one SECONDARY node needs to be up at all times.
+<p>As the old data still needs to be available, at least one SECONDARY node needs to be up at all times.
 PRIMARY nodes will not delete information from their event stores until all SECONDARY nodes have this information.</p>
 </div>
 <div class="paragraph">
 <p>There are three possible ways to assign the SECONDARY role to a node within a replication group:</p>
 </div>
-<div class="paragraph">
-<p>A) The Axon Server UI Console.
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The Axon Server UI Console.
 Navigate to the Replication Groups icon on the navigation menu of the console which will open up the replication group maintenance screen.
 The nodes can be added as a MESSAGING_ONLY role within a replication group.</p>
-</div>
-<div class="paragraph">
-<p>B) The <em>add-node-to-replication-group</em> command with the role option as SECONDARY.</p>
+</li>
+<li>
+<p>The <em>add-node-to-replication-group</em> command with the role option as SECONDARY.</p>
+</li>
+</ol>
 </div>
 <div class="listingblock">
 <div class="content">

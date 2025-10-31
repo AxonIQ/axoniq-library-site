@@ -410,20 +410,23 @@ The first is the <a href="#automatic-initialization">Automatic Initialization</a
 <div class="paragraph">
 <p>The manual process of member registration of the cluster can be bypassed by setting a couple of properties in the axonserver.properties file.</p>
 </div>
-<div class="paragraph">
-<p>axoniq.axonserver.autocluster.first=internal-hostname:internal-port axoniq.axonserver.autocluster.contexts=context1,context2</p>
+<div class="listingblock">
+<div class="content">
+<pre>axoniq.axonserver.autocluster.first=internal-hostname:internal-port
+axoniq.axonserver.autocluster.contexts=context1,context2</pre>
+</div>
 </div>
 <div class="paragraph">
-<p>The <em>axoniq.axonserver.autocluster.first</em> property defines the first node in the cluster, by specifying its internal hostname (the hostname used by other Axon Server nodes to connect to this host), and the internal port.
+<p>The <code>axoniq.axonserver.autocluster.first</code> property defines the first node in the cluster, by specifying its internal hostname (the hostname used by other Axon Server nodes to connect to this host), and the internal port.
 If the internal port is default (8224) it can be omitted.</p>
 </div>
 <div class="paragraph">
-<p><em>axoniq.axonserver.autocluster.contexts</em> defines the contexts to create on the first node and the context to join for the other nodes.
+<p><code>axoniq.axonserver.autocluster.contexts</code> defines the contexts to create on the first node and the context to join for the other nodes.
 All of these contexts will be joined as primary nodes.
 When you don&#8217;t specify any contexts, the initial node will only create an admin context, the other nodes will join the cluster, but not be a member of any contexts.</p>
 </div>
 <div class="paragraph">
-<p>The autocluster properties will only take effect on a clean start of a node.
+<p>The auto cluster properties will only take effect on a clean start of a node.
 If a node is already initialized, it will not create any contexts anymore, nor join the cluster again.
 Denoting a node as "first", does not mean that node is more important than the other nodes.
 AxonServer uses Raft, a protocol in which all nodes are equal and elect a leader for a term.
@@ -431,6 +434,13 @@ You can&#8217;t specify what node will be the leader and there is no notion of a
 All nodes in a Replication Group receive all data and are allowed to become leader during an election.
 Axon Server does provide a way to assign <a href="../node-roles/" class="xref page">roles</a> to nodes that can tweak this.
 An example: If you want to have a node that receives all data but does not participate in Raft, you can add it as a <code>passive backup</code> node.</p>
+</div>
+<div class="paragraph">
+<p>By default, the auto cluster feature will create all contexts in the normal (non-DCB) format. If you want to create DCB contexts, you can set the property <code>axoniq.axonserver.autocluster.dcb=true</code>.</p>
+</div>
+<div class="paragraph">
+<p>With the auto cluster feature, you can let nodes join the cluster with other roles than primary.
+For example, if you want to have a node that only acts as an analytics node, you can set the property <code>axoniq.axonserver.autocluster.role=ANALYTICS</code>. It will then join the cluster as an analytics node for all contexts defined in <code>axoniq.axonserver.autocluster.contexts</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -511,6 +521,7 @@ Each node will read this file, find its own configuration and configure itself.
           role: PRIMARY
         contexts:
         - name: default
+          dcbContext: false
       applications: []
       users: []</code></pre>
 </div>
