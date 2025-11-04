@@ -4,7 +4,7 @@
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Backups</title>
-    <link rel="canonical" href="https://docs.axoniq.io/axon-server-reference/v2025.2/axon-server/administration/backups/">
+    <link rel="canonical" href="https://docs.axoniq.io/axon-server-reference/development/axon-server/administration/backups/">
     <link rel="prev" href="../tagging/">
     <link rel="next" href="../recovery/">
     <meta name="generator" content="Antora 3.1.10">
@@ -61,7 +61,7 @@
           <div class="navbar-dropdown card">
                 <a class="navbar-item" href="../../../../../axon-framework-reference/4.11/">Axon Framework</a>
                 <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
-                <a class="navbar-item" href="../../../../v2025.2/">Axon Server</a>
+                <a class="navbar-item" href="../../../">Axon Server</a>
                 <a class="navbar-item" href="../../../../../synapse-reference/v0.12/">Axon Synapse</a>
                 <a class="navbar-item" href="../../../../../axoniq-console-reference/">AxonIQ Console</a>
           </div>
@@ -346,120 +346,270 @@
 <p><!-- vale Google.Passive = NO -->
 <!-- vale Google.Will = NO -->
 <!-- vale Google.We = NO -->
-<!-- vale Google.EnDash = NO --></p>
+<!-- vale Google.EnDash = NO -->
+<!-- vale AxonIQ.Headings = NO --></p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Before proceeding with backing up Axon Server, ensure you have thoroughly read through this page and are
+familiar with the backup procedure.
+Practice the backup and restore procedures before disaster strikes.
+Axoniq does not acknowledge any liability if a backup/restore fails due to a failure to follow the backup procedure.
+Please ensure you have verified your backups by also testing the restore procedure.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
-<p>The core strategy employed by AxonServer to keep data available, is to replicate it over various cluster nodes.
-These nodes should be in availability zones that are isolated from each other in relevant disaster scenarios.
-With Axon Server 4.3, the introduction of specific <a href="../../clustering/node-roles/" class="xref page">backup_nodes</a> makes it easier to set up and operate AxonServer without ever making explicit backups to off-line media.
-Nevertheless, there are also environments where such backups are a strict requirement and for that reason, AxonServer does support it.</p>
+<p>This document describes how to <a href="#backup">backup</a> and <a href="#restore">restore</a> Axon Server.
+Axon Server ensures durability by replicating its data across cluster nodes.</p>
 </div>
 <div class="paragraph">
-<p>There are three types of items that need to be backed up</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="#control-database">Control Database</a></p>
-</li>
-<li>
-<p><a href="#event-stream-segments">Event Store Segments</a></p>
-</li>
-<li>
-<p><a href="#log-entry-segments">Log Entry Segments</a></p>
-</li>
-</ul>
+<p>To increase data durability, Axon Server nodes can be placed in different availability zones.
+Designated <a href="../../clustering/node-roles/" class="xref page">backup nodes</a> enable faster disaster recovery and an up-to-date copy of your data.</p>
 </div>
 <div class="paragraph">
-<p>To support the creation of consistent backups, Axon Server provides a REST API.
-This API provides three controllers to perform backup operations</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><em>Backup Info Rest Controller</em> - End point for Axon SE/EE for event stream segment backup</p>
-</li>
-<li>
-<p><em>Backup Control DB Rest Controller</em> - End point for Axon SE for control database backup</p>
-</li>
-<li>
-<p><em>Cluster Backup Info Rest Controller</em> - End points for Axon EE for control database and log entry segment backup</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>The API documentation is accessible at http:[server]:[port]/swagger-ui.html.</p>
+<p>Regardless of clustering and backup nodes, offline backups remain a crucial part of your setup.
+Steps to create reliable backups are outlined below.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="control-database"><a class="anchor" href="#control-database"></a>Control database</h2>
+<h2 id="backup"><a class="anchor" href="#backup"></a>Backup</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The control database is a relational H2 database and contains important configuration information for your Axon Server SE/EE deployment.
-Although it&#8217;s stored in a single file, this file cannot be simply copied for backup as it may not be in a safe state.</p>
+<p>To support the creation of consistent backups, Axon Server provides an HTTP API.
+The API documentation is accessible at <code>http://[server]:8024/swagger-ui/index.html</code> .</p>
 </div>
 <div class="paragraph">
-<p>For Axon Server, a call to the POST endpoint <code>http://[server]/createControlDbBackup</code> forces the creation of a proper backup file.</p>
+<p>You need to back up the ConfigDB and the event store separately as described below.
+As the ConfigDB refers to data stored in the append-only event store, it is paramount that the ConfigDB is backed up first.</p>
+</div>
+<div class="sect2">
+<h3 id="control-database"><a class="anchor" href="#control-database"></a>Config database</h3>
+<div class="paragraph">
+<p>The ConfigDB contains important runtime configuration for your Axon Server deployment, like users or roles.
+A call to the POST endpoint <code>http://[server]/v1/backup/createControlDbBackup</code> creates a backup <code>.zip</code> file on disk and returns its path.
+After calling the endpoint, you have to copy or move that file to your backup location.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="event-store-segments"><a class="anchor" href="#event-store-segments"></a>Event store</h3>
+<div class="paragraph">
+<p>The event store contains your events, which make up the bulk of your backup size.
+Axon Server uses several indices, which are also included in this backup.</p>
 </div>
 <div class="paragraph">
-<p>It returns the full path to that file (.zip), which can then be used to move that file to another storage medium.</p>
+<p>Backup procedures differ between DCB-Contexts and non-DCB contexts.</p>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="event-stream-segments"><a class="anchor" href="#event-stream-segments"></a>Event store segments</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="event-stream-segments-dcb"><a class="anchor" href="#event-stream-segments-dcb"></a>DCB Event Store</h3>
 <div class="paragraph">
-<p>The event store segments are either closed and immutable, or still open for new events.
-For the closed segments, it is feasible to only back up the ones that haven&#8217;t been backed-up yet, since the ones that have been are guaranteed not to change.</p>
+<p>Backups for DCB contexts are currently only available in the push-variety, meaning Axon Server <strong>"pushes"</strong> data to a location.
+We advise to have Axon Server push the backup into a mounted backup volume.</p>
 </div>
 <div class="paragraph">
-<p>For Axon Server, a call to the GET endpoint <code>http://[server]/v1/backup/filenames</code> with event type (either <code>EVENT</code> or <code>SNAPSHOT</code>), the context name and optionally the last segment that has already been backed up will return a list of file names belonging to segments that haven&#8217;t been backed up yet, but which are now safe to backup by simply copying them.</p>
+<p>It is currently not supported for an external tool to <strong>"pull"</strong> data out of a live Axon Server node.
+Of course you can pull data from the backup location after a backup has completed.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="storage-considerations"><a class="anchor" href="#storage-considerations"></a>Storage considerations</h3>
+<div class="paragraph">
+<p>In the current backup implementation, storage requirements for the backup can be estimated as follows:
+<code>currentSpaceInUseByRocksDBColumnFamilies * 2 + currentSpaceInUseByEvents + space used by update trackers (label and snapshots)</code></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="procedure"><a class="anchor" href="#procedure"></a>Procedure for backup</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Call the <code>/v2/backup</code> endpoint with arguments</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">  curl -X 'POST' \
+    'http://127.0.0.1:8024/v2/backup' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "context": "billing",
+    "location": "/mnt/backups"
+  }'</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>The <em>[server]</em> could be any node that is a PRIMARY member node for the context that needs to be backed up.</p>
+<p>This will provide you with an id you can use to query progress of that backup, for example <code>1a39b69c-0ca4-42cd-b0ed-22ee3727402a</code>.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="2">
+<li>
+<p>Use the received ID to check the status of your backup.</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -X 'GET' \
+  'http://127.0.0.1:8024/v2/backup/1a39b69c-0ca4-42cd-b0ed-22ee3727402a' \
+  -H 'accept: */*'</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>In addition, you may choose to back up the current segment file that is being written to.
-These are files with names larger than the last entry returned to the filenames from the backup endpoint.
-It is important to overwrite this file with subsequent backups, because no guarantees can be given about the completeness of this file.
-This means the filename of this file should not be used to construct the "lastSegmentBackedUp" in subsequent requests to the backup endpoint.</p>
+<p>Once this endpoint returns <code>"backupState": "FINISHED"</code>, your backup has completed.</p>
 </div>
+<div class="sect3">
+<h4 id="_non_dcb_event_store"><a class="anchor" href="#_non_dcb_event_store"></a>Non-DCB Event Store</h4>
+<div class="paragraph">
+<p>Axon Server exposes an HTTP endpoint <code>/v1/backup/eventstore</code> that can be used to gather files for backup.
+This endpoint returns a JSON object with a list of paths.</p>
+</div>
+<div class="paragraph">
+<p>It also returns a number <code>lastClosedSegment</code> that can be used in subsequent backup calls as <code>lastClosedSegmentBackedUp</code> to only receive changed files.
+You are required to copy (with overwrite) all files returned by this endpoint, even if they exist in the target location.</p>
+</div>
+<div class="paragraph">
+<p>The API documentation is accessible at <code>http://[server]:8024/swagger-ui/index.html</code></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tips_for_reliable_backups"><a class="anchor" href="#_tips_for_reliable_backups"></a>Tips for reliable backups</h3>
 <div class="quoteblock">
 <blockquote>
 <div class="paragraph">
-<p><strong>Note</strong></p>
+<p>To ensure integrity of your data, please adhere to the following guidelines:</p>
 </div>
-<div class="paragraph">
-<p>From Axon Server SE version 4.5.12 / Axon Server EE version 4.5.17 onwards there is a new endpoint available: <code>/v1/backup/eventstore</code>.
-This endpoint returns a JSON object with the files to back up, including the currently active event store segment.
-It also returns the number of last closed event store segment.
-This number can be used in subsequent backups to retrieve files updated since the last backup.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Never modify files in the back up</p>
+</li>
+<li>
+<p>Do not create a backup with the target path set to the live storage location</p>
+</li>
+<li>
+<p>Use the correct backup endpoint for DCB and non-DCB contexts</p>
+</li>
+<li>
+<p>If you restore a backup that is not the most recent one, all newer backups must be discarded</p>
+</li>
+</ul>
 </div>
 </blockquote>
 </div>
 </div>
 </div>
+</div>
 <div class="sect1">
-<h2 id="log-entry-segments"><a class="anchor" href="#log-entry-segments"></a>Log entry segments (only for Axon Server clusters)</h2>
+<h2 id="restore"><a class="anchor" href="#restore"></a>Restore</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Unlike the event stream segments, the log entry segments backup should not be done incrementally.
-All the files are replaced by the next backup.
-The log entry segments backup is supported by the GET endpoint <code>http:[server]/v1/backup/log/filenames</code>.
-It takes the replication group name and returns a list of file names that completely replace the previous backup for that replication group.
-The <em>[server]</em> could be any node that is a PRIMARY member node for the replication group that needs to be backed up.</p>
+<p>We distinguish between restoring without any preexisting data, for example after a disaster destroyed the previous cluster entirely.
+And restoring one or more contexts in a running cluster to a previous state.</p>
+</div>
+<div class="sect2">
+<h3 id="_restore_with_no_pre_existing_data_on_disk"><a class="anchor" href="#_restore_with_no_pre_existing_data_on_disk"></a>Restore with no pre-existing data on disk</h3>
+<div class="sect3">
+<h4 id="restore-configdb"><a class="anchor" href="#restore-configdb"></a>ConfigDB</h4>
+<div class="paragraph">
+<p>If you backed up the ConfigDB, you can restore the ConfigDB so your restored cluster has the same configuration as when the backup was taken.
+For this, you <strong>need</strong> to make sure, that each node gets restored the ConfigDB backed up for that node.
+In particular, this requires that the hostname of the node after the restore is exactly the same as before.
+If that cannot be achieved, refer to the <a href="../recovery/" class="xref page">recovery procedure</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="restore-event-store"><a class="anchor" href="#restore-event-store"></a>Event store</h4>
+<div class="paragraph">
+<p>The event store can be restored to all nodes from one copy in the backup location.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Copy the events folder from the backup to the location defined by <code>axoniq.axonserver.event.storage</code></p>
+</li>
+<li>
+<p>Copy the snapshots folder from the backup to the location defined by <code>axoniq.axonserver.snapshot.storage</code></p>
+</li>
+<li>
+<p>Ensure the license and properties file and (optionally) a cluster-template is present when starting Axon Server.</p>
+</li>
+<li>
+<p>Start Axon Server</p>
+</li>
+<li>
+<p>Create a replication group and the contexts that match the context named from your backup if not already covered by your cluster-template.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="restore-running-cluster"><a class="anchor" href="#restore-running-cluster"></a>Restore in a running cluster</h3>
+<div class="paragraph">
+<p>In this case we assume you want to restore one or more contexts into a running axonserver cluster.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+This is for emergency use only, as a restore will undo everything <strong>within</strong> the system that has happened since the backup.
+It will <strong>not</strong> undo all side effects your system might have caused.
+If there were only some wrong events published, compensating actions or in worse case,  <a href="../event-transformation/" class="xref page">event transformation</a> might be  less intrusive countermeasures.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
-<p>Even if the recent file has incomplete data, a node will be able to recover a consistent state from such a file and will initialize itself at the position immediately after the last complete write.
-The replication process (if present) will ensure subsequent entries are automatically synchronized.</p>
+<p>As the cluster is still running, no restore of the ConfigDB is necessary.</p>
 </div>
 <div class="paragraph">
-<p>Because the control database contains a pointer to the last log entry that is known to be stored safely on the cluster (the commit index), the proper order of doing this is to first create the control database backup and then backing up the log entry segments and the event stream segments.</p>
+<p>Steps:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Delete replication groups of affected contexts with preserving data</p>
+</li>
+<li>
+<p>Delete the context folder as specified by <code>axoniq.axonserver.event.storage</code> and <code>axoniq.axonserver.snapshot.storage</code></p>
+</li>
+<li>
+<p>Copy the backup data (events and snapshots)</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>Copy the events folder from the backup to the location defined by <code>axoniq.axonserver.event.storage</code></p>
+</li>
+<li>
+<p>Copy the snapshots folder from the backup to the location defined by <code>axoniq.axonserver.snapshot.storage</code></p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Create new replication groups</p>
+</li>
+<li>
+<p>Create contexts with their previous names</p>
+</li>
+</ol>
 </div>
 <div class="paragraph">
-<p>This will ensure that the log entry segments may have entries beyond the commit index (which is ok) but there are not missing entries before the commit index (which would be bad).</p>
+<p>For detailed examples and more sophisticated restore procedures, see <a href="../advanced-backups/" class="xref page">advanced backups</a>.</p>
+</div>
 </div>
 </div>
 </div>
