@@ -56,6 +56,7 @@ const rewriteMappings = {
     "/appendices/meta-annotations": "/meta-annotations-guide/latest",
     "/appendices/identifier-generation": "/identifier-generation-guide/latest",
     "/appendices/query-reference": "/axon-server-query-language-guide",
+    "/axoniq-console-reference": "/axoniq-platform-reference"
 }
 
 /**
@@ -85,6 +86,8 @@ const fullReplaceMappings = {
     "/axon-server/migration": `/axon-server-reference/latest/axon-server/migration`,
     // This page no longer exists, redirect to its parent
     "/axon-framework/axon-framework-commands/modeling": "/axon-framework-reference/latest/axon-framework-commands",
+    // Old console documentation that is so out of date we redirect to reference
+    '/bikerental-console-demo': `/axoniq-console-reference/`
 }
 
 // Redirect all unknown URLs to the home page
@@ -98,27 +101,27 @@ const redirectFallback = "/home/"
 const latestDefinitions = [
     {
         baseFolder: "axon-framework-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "message-handler-customization-guide",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "meta-annotations-guide",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "identifier-generation-guide",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "deadlines-guide",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "dead-letter-queue-guide",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "axon-server-reference",
@@ -126,47 +129,47 @@ const latestDefinitions = [
     },
     {
         baseFolder: "amqp-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "jgroups-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "jobrunr-pro-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "multitenancy-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "kotlin-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "kafka-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "mongodb-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "reactor-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "spring-aot-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "spring-cloud-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "tracing-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
 ]
 const app = express()
