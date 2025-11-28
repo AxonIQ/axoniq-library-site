@@ -141,7 +141,7 @@ const latestDefinitions = [
     },
     {
         baseFolder: "multitenancy-extension-reference",
-        latestVersion: "4.12"
+        latestVersion: "4.11"
     },
     {
         baseFolder: "kotlin-extension-reference",
