@@ -56,6 +56,7 @@ const rewriteMappings = {
     "/appendices/meta-annotations": "/meta-annotations-guide/latest",
     "/appendices/identifier-generation": "/identifier-generation-guide/latest",
     "/appendices/query-reference": "/axon-server-query-language-guide",
+    "/axoniq-console-reference": "/axoniq-platform-reference"
 }
 
 /**
@@ -85,6 +86,8 @@ const fullReplaceMappings = {
     "/axon-server/migration": `/axon-server-reference/latest/axon-server/migration`,
     // This page no longer exists, redirect to its parent
     "/axon-framework/axon-framework-commands/modeling": "/axon-framework-reference/latest/axon-framework-commands",
+    // Old console documentation that is so out of date we redirect to reference
+    '/bikerental-console-demo': `/axoniq-console-reference/`
 }
 
 // Redirect all unknown URLs to the home page
@@ -138,7 +141,7 @@ const latestDefinitions = [
     },
     {
         baseFolder: "multitenancy-extension-reference",
-        latestVersion: "4.11"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "kotlin-extension-reference",
