@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Event Publishing</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/events/event-publishing/">
+    <link rel="prev" href="../event-handlers/">
+    <link rel="next" href="../event-processors/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../5.0/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/development/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Events</a></li>
+    <li><a href="./">Publishing</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/main/docs/reference-guide/modules/events/pages/event-publishing.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Event%20Publishing" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Event%20Publishing%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BEvent%20Publishing%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fevents%2Fevent-publishing%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">development</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-current" href="./">development</a>
+    <a class="version item" href="../../../5.0/events/event-publishing/">5.0</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="development">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Event Publishing</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The publishing of an event is the starting point of such a message.
+Events have to be published, just like any type of message, before they can be handled.
+Event publication can originate from a couple of locations within your Axon Framework application.
+In general, these can be grouped in two major areas:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Publishing events from an entity, and</p>
+</li>
+<li>
+<p>Publishing events from regular components</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Axon provides five interfaces you can use to publish event to your event handlers:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The <code>EventAppender</code> - This component comes into play when <a href="#event_appender">publishing events</a>, from for example an entity.</p>
+</li>
+<li>
+<p>The <code>EventGateway</code> - This component comes into play when <a href="#event_gateway">publishing events from anything else than an entity</a>.</p>
+</li>
+<li>
+<p>The <code>EventSink</code>, <code>EventBus</code>, and <code>EventStore</code> - Axon&#8217;s infrastructure layering to support different event publication concerns, as described <a href="#low_level_event_publication">here</a>.
+Useful to know they exist, but we recommend usage of the <code>EventAppender</code> and <code>EventGateway</code> at all times.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>This page will describe how to <a href="#event_tagging">structure an event</a> and then get it on a publication mechanism.
+For more specifics regarding event publication and storage implementations in Axon Framework, read <a href="../infrastructure/" class="xref page">this</a> section.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Event publication only results in event storage if an <a href="../infrastructure/#event_store" class="xref page">Event Store</a> is used.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="event_appender"><a class="anchor" href="#event_appender"></a>Event Appender: Publishing events from an entity</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="../../commands/modeling/aggregate/" class="xref page">Entity</a> or its <a href="../../commands/modeling/multi-entity-aggregates/" class="xref page">child entities</a> are typically the starting point of all event messages.
+The event simply is the notification that a decision has been made; a successful resolution of handling a command.
+Note that <a href="#event_tagging">tagging</a> is a hard requirement to ensure the published event as associated with your entity or entities.</p>
+</div>
+<div class="paragraph">
+<p>To publish an event from an entity, it is required to do this from the lifecycle of the entity instance.
+This is mandatory as we want the entity identifier to be tied to the event message.
+It is also of the essence that the events originate in order.</p>
+</div>
+<div class="paragraph">
+<p>The <code>EventAppender</code> provides a simple means to achieve the above:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+
+class GiftCard {
+
+    @CommandHandler
+    public static GiftCard create(IssueCardCommand cmd, EventAppender appender) {
+        appender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount(), cmd.shopId()));
+        return new GiftCard();
+    }
+    // omitted state, command and event sourcing handlers
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>EventAppender</code> is automatically injected by Axon Framework when declared as a parameter in a command handler.
+It is the recommended way to append events from within an entity&#8217;s command handling methods, as it automatically:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Uses the current <code>ProcessingContext</code>, ensuring transactionality and correlation data propagation.</p>
+</li>
+<li>
+<p>Attaches the entity identifier to the event.</p>
+</li>
+<li>
+<p>Publishes the event to registered event handlers within the entity (necessary for event sourcing).</p>
+</li>
+<li>
+<p>Publishes the event to the <code>EventSink</code>.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">The <code>EventAppender</code> can append multiple events at once</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public static GiftCard create(IssueCardCommand cmd, EventAppender appender) {
+    appender.append(
+            new CardIssuedEvent(cmd.cardId(), cmd.amount(), cmd.shopId()),
+            new CardActivatedEvent(cmd.cardId())
+    );
+    return new GiftCard();
+}</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="event_gateway"><a class="anchor" href="#event_gateway"></a>Event Gateway: Publishing events from a non-entity</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In the vast majority of cases, <a href="../../commands/modeling/aggregate/" class="xref page">entities</a> will publish events by appending them.
+However, occasionally, it is necessary to publish an event directly to the <code>EventSink</code>, possibly from within another component such as an event handler or a regular service.</p>
+</div>
+<div class="paragraph">
+<p>The <code>EventGateway</code> provides a convenient API for publishing events from components that are not entities:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+class Notifier {
+
+    private EventGateway eventGateway;
+
+    public CompletableFuture&lt;Void&gt; publishEvent() {
+        return eventGateway.publish(List.of(new CardIssuedEvent("card-1", 100, "Axoniq shop")));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>EventGateway</code> automatically wraps your event objects into <code>EventMessage</code> instances before sending them to the <code>EventSink</code>.
+It provides two main approaches for publishing events:</p>
+</div>
+<div class="sect2">
+<h3 id="_publishing_without_a_processingcontext"><a class="anchor" href="#_publishing_without_a_processingcontext"></a>Publishing without a <code>ProcessingContext</code></h3>
+<div class="paragraph">
+<p>When publishing events from outside a message handler (for example, from an HTTP endpoint or scheduled task), you can use the simple <code>publish</code> method without providing a <code>ProcessingContext</code>.
+Down below is an example of a Spring REST endpoint doing just that:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+@RestController
+class CardController {
+
+    private final EventGateway eventGateway;
+
+    public CardController(EventGateway eventGateway) {
+        this.eventGateway = eventGateway;
+    }
+
+    @PostMapping("/cards/{cardId}/issue")
+    public CompletableFuture&lt;Void&gt; issueCard(@PathVariable String cardId,
+                                             @RequestBody IssueCardRequest request) {
+        return eventGateway.publish(List.of(
+                new CardIssuedEvent(cardId, request.amount(), request.shopId()))
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>EventGateway#publish(List&lt;?)</code> method returns a <code>CompletableFuture&lt;Void&gt;</code>, allowing you to handle the result asynchronously.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_publishing_with_a_processingcontext"><a class="anchor" href="#_publishing_with_a_processingcontext"></a>Publishing with a <code>ProcessingContext</code></h3>
+<div class="paragraph">
+<p>When publishing events from within a message handler (such as an event handler or query handler), you should provide the <code>ProcessingContext</code> to maintain correlation data:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+
+@EventHandler
+public void on(PaymentReceivedEvent event,
+               ProcessingContext context,
+               EventGateway eventGateway) {
+    // Validation logic...
+
+    eventGateway.publish(
+        context,
+        new BalanceUpdatedEvent(event.getAccountId(), event.getAmount())
+    );
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Providing the <code>ProcessingContext</code> ensures that:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Correlation data (trace ID, correlation ID, causation ID) flows from one message to another.</p>
+</li>
+<li>
+<p>The event publication is part of the same processing lifecycle.</p>
+</li>
+<li>
+<p>Distributed tracing works correctly across message boundaries.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Async-native API</div>
+<div class="paragraph">
+<p>All event publishing methods in Axon return a <code>CompletableFuture&lt;Void&gt;</code>.
+This allows you to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Chain additional operations after publication.</p>
+</li>
+<li>
+<p>Handle errors gracefully.</p>
+</li>
+<li>
+<p>Integrate with reactive frameworks.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public CompletableFuture&lt;Void&gt; publishEvent() {
+    return eventGateway.publish(List.of(new CardIssuedEvent("card-1", 100, "Axoniq shop")))
+                       .thenRun(() -&gt; logger.info("Event published successfully"))
+                       .exceptionally(ex -&gt; {
+                           logger.error("Failed to publish event", ex);
+                           return null;
+                       });
+}</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="low_level_event_publication"><a class="anchor" href="#low_level_event_publication"></a>Event sink, bus, and store: Low-level event publication</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For advanced use cases, Axon Framework provides lower-level components for event publication: the <code>EventSink</code>, <code>EventBus</code>, and <code>EventStore</code>.
+These components give you more control over the event publication process, but require more manual handling.</p>
+</div>
+<div class="paragraph">
+<p>For detailed information about these infrastructure components, see the <a href="../infrastructure/" class="xref page">Infrastructure</a> page.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>For most use cases, prefer using <a href="#event_gateway"><code>EventGateway</code></a> or <a href="#event_appender"><code>EventAppender</code></a> over these lower-level components.
+The higher-level APIs handle message wrapping and context management automatically, reducing the chance of errors.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="event_sink_directly"><a class="anchor" href="#event_sink_directly"></a>Using <code>EventSink</code> directly</h3>
+<div class="paragraph">
+<p>The <code>EventSink</code> is the foundational interface for publishing events, which Axon uses to provide a multitude of event sink options.
+It operates on <code>EventMessage</code> instances rather than plain event objects, giving you full control over metadata:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+class DirectEventPublisher {
+
+    private final EventSink eventSink;
+
+    public CompletableFuture&lt;Void&gt; publishWithMetadata() {
+        EventMessage eventMessage = new GenericEventMessage(
+                new MessageType(CardIssuedEvent.class),
+                new CardIssuedEvent("cardId", 100, "shopId")
+        ).withMetadata(Map.of("userId", "user123", "source", "api"));
+        return eventSink.publish(null, eventMessage);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The example above shows that when using the <code>EventSink</code> directly, you need to create an <code>EventMessage</code> instance containing <em>your</em> event payload yourself.
+However, this does give control over the entire structure of your <code>EventMessage</code>, including setting any metadata.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Event Appender and Gateway understand <code>EventMessages</code></div>
+<div class="paragraph">
+<p>Although the <code>EventSink</code> enforce the <code>EventMessage</code>, you are still able to provide an <code>EventMessage</code> to an <code>EventAppender</code> and <code>EventGateway</code>.
+Thus, Axon ensures your <code>EventMesage</code> is not wrapped in another <code>EventMessage</code>, as that would be wasteful.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="event_bus_directly"><a class="anchor" href="#event_bus_directly"></a>Using <code>EventBus</code> directly</h3>
+<div class="paragraph">
+<p>The <code>EventBus</code> extends <code>EventSink</code> and adds the capability to publish events to subscribed event handlers.
+As with the <code>EventSink</code>, this interface exists to allow Axon to construct other event bus implementations (in the future).
+We can restructure our example from <a href="#event_sink_directly">here</a> and use an <code>EventBus</code> instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+class DirectEventPublisher {
+
+    private final EventBus eventBus;
+
+    public CompletableFuture&lt;Void&gt; publishWithMetadata() {
+        EventMessage eventMessage = new GenericEventMessage(
+                new MessageType(CardIssuedEvent.class),
+                new CardIssuedEvent("cardId", 100, "shopId")
+        );
+        return eventBus.publish(null, eventMessage);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="event_store_direct"><a class="anchor" href="#event_store_direct"></a>Using <code>EventStore</code> directly</h3>
+<div class="paragraph">
+<p>The <code>EventStore</code> combines the functionality of an <code>EventBus</code> with durable storage.
+For more details on configuring and using an event store, be sure to read this <a href="../infrastructure/#event_store" class="xref page">section</a>.
+We can restructure our example from <a href="#event_sink_directly">here</a> and use an <code>EventStore</code> instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+class DirectEventPublisher {
+
+    private final EventStore eventStore;
+
+    public CompletableFuture&lt;Void&gt; publishWithMetadata() {
+        EventMessage eventMessage = new GenericEventMessage(
+                new MessageType(CardIssuedEvent.class),
+                new CardIssuedEvent("cardId", 100, "shopId")
+        );
+        return eventStore.publish(null, eventMessage);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="event_tagging"><a class="anchor" href="#event_tagging"></a>Event tagging</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When events are published as a result of command handling for <a href="#event_appender">an entity</a>, the applicable events should be tagged.
+These tags are essential to protect your <a href="../event-store-internals/#dynamic_consistency_boundaries_dcb" class="xref page">consistency boundary</a>, which is mandatory to protect your entities and aggregates against concurrent writes.</p>
+</div>
+<div class="paragraph">
+<p>When events are stored, it&#8217;s the tags that determine which logical groupings they belong to.
+This affects:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Event sourcing</strong>: Tags define which events are loaded when reconstructing entity state.
+An entity can source events from multiple tag-based streams, not just a single aggregate stream.</p>
+</li>
+<li>
+<p><strong>Consistency boundaries</strong>: Tags establish the boundary for write conflict detection.
+Events with the same tags are checked for concurrent modifications.</p>
+</li>
+<li>
+<p><strong>Event streaming</strong>: Event processors can filter events based on tags when streaming from the event store.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Without tags, events would lack the metadata needed to organize them into meaningful boundaries, limiting the flexibility of your event-sourced models.</p>
+</div>
+<div class="sect2">
+<h3 id="_configuring_tags_with_eventtag"><a class="anchor" href="#_configuring_tags_with_eventtag"></a>Configuring tags with <code>@EventTag</code></h3>
+<div class="paragraph">
+<p>The simplest way to tag events is using the <code>@EventTag</code> annotation on event fields:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventTag;
+
+record OrderPlacedEvent(
+    @EventTag String orderId,
+    @EventTag(key = "region") String orderRegion,
+    int amount
+) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>@EventTag</code> annotation marks fields whose values should be extracted as tags when the event is published.
+By default, the tag key matches the field name, but you can override it by specifying the <code>key</code> attribute (as shown with <code>"region"</code>).</p>
+</div>
+<div class="paragraph">
+<p>When an <code>OrderPlacedEvent</code> is appended, the <code>TagResolver</code> automatically extracts <code>orderId</code> and <code>region</code> as tags from the annotated fields.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_custom_tag_resolution"><a class="anchor" href="#_custom_tag_resolution"></a>Custom tag resolution</h3>
+<div class="paragraph">
+<p>For more complex scenarios where annotation-based tagging is insufficient, you can implement a custom <code>TagResolver</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.annotation.Nonnull;
+import org.axonframework.eventsourcing.eventstore.TagResolver;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.Tag;
+
+import java.util.Set;
+
+public class CustomTagResolver implements TagResolver {
+
+    @Override
+    public Set&lt;Tag&gt; resolve(@Nonnull EventMessage event) {
+        Object payload = event.payload();
+        if (payload instanceof OrderPlacedEvent orderEvent) {
+            return Set.of(
+                    Tag.of("orderId", orderEvent.orderId()),
+                    Tag.of("customer", orderEvent.customerId())
+            );
+        }
+        return Set.of();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Register your custom <code>TagResolver</code> using the configuration API:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public ApplicationConfigurer configureTagResolver(ApplicationConfigurer configurer) {
+    return configurer.eventsourcingConfigurer(esConfigurer -&gt;
+        esConfigurer.registerTagResolver(config -&gt; new CustomTagResolver())
+    );
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When using Spring Boot, you can register a custom <code>TagResolver</code> as a Spring bean:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
+public class AxonConfig {
+
+    @Bean
+    public TagResolver tagResolver() {
+        return new CustomTagResolver();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For detailed information about tags, event criteria, and consistency markers, see <a href="../event-store-internals/#tags" class="xref page">Event Store Internals</a>.</p>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../event-handlers/">Handling</a></span>
+  <span class="next"><a href="../event-processors/">Event Processors</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

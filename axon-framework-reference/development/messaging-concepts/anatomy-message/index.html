@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Anatomy of a Message</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/messaging-concepts/anatomy-message/">
+    <link rel="prev" href="../">
+    <link rel="next" href="../message-intercepting/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../5.0/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/development/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Messaging Concepts</a></li>
+    <li><a href="./">Anatomy of a Message</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/main/docs/reference-guide/modules/messaging-concepts/pages/anatomy-message.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Anatomy%20of%20a%20Message" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Anatomy%20of%20a%20Message%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BAnatomy%20of%20a%20Message%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fmessaging-concepts%2Fanatomy-message%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">development</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-current" href="./">development</a>
+    <a class="version item" href="../../../5.0/messaging-concepts/anatomy-message/">5.0</a>
+    <a class="version item" href="../../../4.12/messaging-concepts/anatomy-message/">4.12</a>
+    <a class="version item" href="../../../4.11/messaging-concepts/anatomy-message/">4.11</a>
+    <a class="version item" href="../../../4.10/messaging-concepts/anatomy-message/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="development">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Anatomy of a Message</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In Axon, all communication between components is done with explicit messages, represented by the <code>Message</code> interface.
+A <code>Message</code> consists of a message type, payload, metadata, and an identifier.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="message_type"><a class="anchor" href="#message_type"></a>Message type</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every message in Axon Framework has a <code>MessageType</code>, which identifies what type of message it is - what structure and content you can expect.</p>
+</div>
+<div class="paragraph">
+<p>The <code>MessageType</code> consists of two parts:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>A <code>QualifiedName</code> - The business or domain name of the message type.</p>
+</li>
+<li>
+<p>A <code>version</code> - The version of the message structure.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>This decouples the message type from its Java class representation.
+<strong>The Java class is not used to identify the type of a message.</strong>
+Instead, the <code>MessageType</code> identifies what structure the message has, independent of which Java class is used to represent it.</p>
+</div>
+<div class="paragraph">
+<p>Many messages can have the same <code>MessageType</code> - it&#8217;s a type identifier, not an instance identifier.
+For example, all "OrderPlaced v1.0" events share the same <code>MessageType</code>, even though each is a distinct message with its own unique <a href="#message-identifier">identifier</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_benefits_of_messagetype"><a class="anchor" href="#_benefits_of_messagetype"></a>Benefits of <code>MessageType</code></h3>
+<div class="paragraph">
+<p>This approach provides several advantages:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Flexibility in representation</strong>: Different services can use different Java classes to represent the same message type.</p>
+</li>
+<li>
+<p><strong>Decoupling</strong>: Services don&#8217;t need to share concrete message class implementations.</p>
+</li>
+<li>
+<p><strong>Business alignment</strong>: Message names can reflect business terminology rather than technical class names.</p>
+</li>
+<li>
+<p><strong>Version management</strong>: All message types (commands, events, queries) can be versioned consistently.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_defining_message_types"><a class="anchor" href="#_defining_message_types"></a>Defining message types</h3>
+<div class="paragraph">
+<p>The component in charge of deciding on the <code>MessageType</code>, is the <code>MessageTypeResolver</code>. The default <code>MessageTypeResolver</code> checks for message-specific annotation.
+These annotations are the <code>@Command</code>, <code>@Event</code>, or <code>@Query</code> annotation, which you can attach on your classes:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Event(name = "OrderPlaced", version = "1.0")
+public class OrderPlacedEvent {
+    private final String orderId;
+    private final BigDecimal amount;
+
+    // Constructor, getters...
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The annotation parameters control the <code>MessageType</code>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>namespace</code> - The namespace or bounded context (defaults to the package name)</p>
+</li>
+<li>
+<p><code>name</code> - The business name (defaults to the simple class name)</p>
+</li>
+<li>
+<p><code>version</code> - The message version (defaults to <code>0.0.1</code>)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If you don&#8217;t specify these annotations, Axon will use the fully qualified class name as the <code>QualifiedName</code> and <code>0.0.1</code> as the version, maintaining backward compatibility.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Beyond their technical purpose, these annotations serve as documentation in your code.
+They make it immediately clear that a class represents a command, event, or query, improving code readability and making your domain model&#8217;s intent explicit.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_payload_conversion_at_handling_time"><a class="anchor" href="#_payload_conversion_at_handling_time"></a>Payload conversion at handling time</h3>
+<div class="paragraph">
+<p>Because message identity is decoupled from Java classes, <strong>payloads are converted to the handler&#8217;s expected type at handling time</strong>.</p>
+</div>
+<div class="paragraph">
+<p>This means different handlers can receive the same message in different Java representations:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Handler 1: Receives as domain object (OrderPlacedEvent is @Event annotated)
+@EventHandler
+public void handle(OrderPlacedEvent event) {
+    // Payload is converted to OrderPlacedEvent
+}
+
+// Handler 2: Receives as JSON (must specify messageType)
+@EventHandler(messageType = "com.example.orders.OrderPlaced")
+public void handle(JsonNode event) {
+    // Same message, converted to JsonNode
+}
+
+// Handler 3: Receives as Map (must specify messageType)
+@EventHandler(messageType = "com.example.orders.OrderPlaced")
+public void handle(Map&lt;String, Object&gt; event) {
+    // Same message, converted to Map
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axon uses the message&#8217;s <code>MessageType</code> to identify which handlers should receive the message, then converts the payload to whatever type each handler needs.
+The message identifier remains the same throughout - it&#8217;s still the same message, just represented in different Java types.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>When the first parameter of your handler is not annotated with <code>@Event</code> (or <code>@Command</code>, <code>@Query</code>) or does not represent the fully qualified class name of the message, you must specify the message name attribute on the handler annotation.
+This tells Axon which message type the handler should receive.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This approach <strong>reduces the need for upcasters</strong> in many scenarios.
+Instead of creating upcasters to convert old message formats to new Java classes during deserialization, you can often just handle messages in different formats and let Axon perform the conversion.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="message_type_resolution"><a class="anchor" href="#message_type_resolution"></a>Message type resolution</h3>
+<div class="paragraph">
+<p>The <code>MessageTypeResolver</code> determines the <code>MessageType</code> for each message class in your application.
+By default, it uses the annotations and class information to derive the qualified name and version.</p>
+</div>
+<div class="sect3">
+<h4 id="_specifying_message_types"><a class="anchor" href="#_specifying_message_types"></a>Specifying message types</h4>
+<div class="paragraph">
+<p>Use the message-specific annotations to define the name, namespace, and version of your messages.</p>
+</div>
+<div class="paragraph">
+<p><strong>For events:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.example.events;
+
+// Namespace defaults to the package name: "com.example.events"
+// Full qualified name will be: "com.example.events.UserRegistered"
+@Event(name = "UserRegistered", version = "1.0")
+public class UserRegisteredEvent {
+    // fields, constructors, etc.
+}
+
+// Explicitly specify a different namespace
+// Full qualified name will be: "com.mycompany.user.UserRegistered"
+@Event(namespace = "com.mycompany.user", name = "UserRegistered", version = "1.0")
+public class UserRegisteredEvent {
+    // fields, constructors, etc.
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>For commands:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.example.commands;
+
+@Command(name = "RegisterUser", version = "1.0")
+public class RegisterUserCommand {
+    // fields, constructors, etc.
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>For queries:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.example.queries;
+
+@Query(name = "FindUserById", version = "1.0")
+public class FindUserByIdQuery {
+    // fields, constructors, etc.
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Default values:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>If you don&#8217;t specify a <code>namespace</code>, Axon uses the package name of the class.</p>
+</li>
+<li>
+<p>If you don&#8217;t specify a <code>name</code>, Axon uses the simple class name.</p>
+</li>
+<li>
+<p>If you don&#8217;t specify a <code>version</code>, Axon uses <code>0.0.1</code> as the version.</p>
+</li>
+<li>
+<p>The fully qualified name is always: <code>namespace + "." + name</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_custom_message_type_resolution"><a class="anchor" href="#_custom_message_type_resolution"></a>Custom message type resolution</h4>
+<div class="paragraph">
+<p>If you need custom logic to determine message types, you can implement the <code>MessageTypeResolver</code> interface:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.MessageType;
+
+public class CustomMessageTypeResolver implements MessageTypeResolver {
+
+    @Override
+    public Optional&lt;MessageType&gt; resolve(@Nonnull Class&lt;?&gt; payloadType); {
+        // Custom logic to determine the MessageType
+        return /* ... */;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then register it with your configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ApplicationConfigurer applicationConfigurer = /* The configurer that contains this Application's configuration */
+MessagingConfigurer.enhance(applicationConfigurer)
+    .registerMessageTypeResolver(config -&gt; new CustomMessageTypeResolver());</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_payload"><a class="anchor" href="#_payload"></a>Payload</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The payload contains the information about what happened - the specific data related to the message.
+While the message type describes what the message means (for example, "OrderPlaced"), the payload contains the details about that specific occurrence (the order ID, amount, customer details, etc.).</p>
+</div>
+<div class="sect2">
+<h3 id="_accessing_the_payload"><a class="anchor" href="#_accessing_the_payload"></a>Accessing the payload</h3>
+<div class="paragraph">
+<p>You can access the payload in different ways:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void retrievePayload(Message message) {
+    // Get the payload as-is
+    Object payload = message.payload();
+
+    // Get the payload converted to a specific type
+    OrderPlacedEvent event = message.payloadAs(OrderPlacedEvent.class);
+
+    // Get the payload type
+    Class&lt;?&gt; type = message.payloadType();
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>payloadAs(Type)</code> method converts the payload to the required type at the moment you need it.
+In most cases, you don&#8217;t need to pass a <code>Converter</code> explicitly - if the message has passed through converter-aware components (which is typical in Axon), the conversion happens automatically.</p>
+</div>
+<div class="paragraph">
+<p>If you need explicit control over conversion, you can provide a converter:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void retrieveConvertedPayload(Message message, Converter converter) {
+    OrderPlacedEvent payload = message.payloadAs(OrderPlacedEvent.class, converter);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is useful when you need the same message in different formats at different points in your processing logic.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_converting_message_payloads"><a class="anchor" href="#_converting_message_payloads"></a>Converting message payloads</h3>
+<div class="paragraph">
+<p>If you need to convert a message&#8217;s payload for downstream processing, use <code>withConvertedPayload</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void convertEventPayload(EventMessage event, Converter converter) {
+    // Create a new message with JSON payload
+    EventMessage jsonMessage = event.withConvertedPayload(
+            JsonNode.class,
+            converter
+    );
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This creates a new <code>Message</code> instance with the converted payload, leaving the original message unchanged.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="meta-data"><a class="anchor" href="#meta-data"></a>Metadata</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Metadata describes the context in which a message was generated.
+For example, metadata might contain information about the message that caused this message to be generated, or user information about who triggered the action.</p>
+</div>
+<div class="paragraph">
+<p>In Axon, metadata is represented as a <code>Map&lt;String, String&gt;</code>.
+<strong>Both keys and values must be Strings.</strong>
+This simplifies serialization and aligns with how most systems and frameworks handle metadata.</p>
+</div>
+<div class="paragraph">
+<p>Metadata is immutable - mutating methods create and return a new instance instead of modifying an existing one.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>When more complex metadata value are required, you can use Axon&#8217;s <code>Converter</code> to convert the value to a <code>String</code> before adding it to the <code>Metadata</code>. Just don&#8217;t forget to convert it back to the value you require on the other end!</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_creating_metadata"><a class="anchor" href="#_creating_metadata"></a>Creating metadata</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Metadata metadata = Metadata.with("userId", "user-123") <i class="conum" data-value="1"></i><b>(1)</b>
+                            .and("traceId", "trace-456"); <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Creates a <code>Metadata</code> instance with a single key-value pair</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Adds another entry, returning a new instance with both entries</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adding_metadata_to_messages"><a class="anchor" href="#_adding_metadata_to_messages"></a>Adding metadata to messages</h3>
+<div class="paragraph">
+<p>Messages in Axon are immutable.
+To add metadata, you create a new message instance with the additional metadata:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">EventMessage event = new GenericEventMessage(
+    messageType,
+    new OrderPlacedEvent(orderId, amount)
+);
+
+// Add metadata - creates a new message instance
+EventMessage eventWithMetadata = event.withMetadata(
+    Metadata.with("userId", "user-123")
+);
+
+// Add to existing metadata - merges with any existing entries
+EventMessage mergedMessage = eventWithMetadata.andMetadata(
+    Metadata.with("correlationId", "corr-789")
+);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>withMetadata</code> method replaces all metadata with the given map.
+The <code>andMetadata</code> method merges the given metadata with existing entries, with new entries overwriting existing ones with the same key.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Because metadata values must be Strings, you need to convert any non-String values before adding them to metadata:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Convert numbers, booleans, etc. to String
+Metadata metadata = Metadata.with("count", String.valueOf(42))
+                            .and("enabled", String.valueOf(true));</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Know that you can always use Axon&#8217;s <code>Converter</code> to convert the values!</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_message_specific_data"><a class="anchor" href="#_message_specific_data"></a>Message-specific data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Different message types provide additional information beyond payload and metadata.</p>
+</div>
+<div class="paragraph">
+<p>For example:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An <code>EventMessage</code> provides a <code>timestamp()</code> representing when the event occurred.</p>
+</li>
+<li>
+<p>A <code>CommandMessage</code> provides a <code>routingKey()</code> used to route the command to the correct handler instance. Especially important in distributed environments.</p>
+</li>
+<li>
+<p>A <code>CommandMessage</code> and <code>QueryMessage</code> provide a <code>priority()</code> used to signal the importance of the command/query with the handling system.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">EventMessage event = // ...
+Instant occurredAt = event.timestamp();</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">CommandMessage command = // ...
+Optional&lt;String&gt; routingKey = command.routingKey();</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="message-identifier"><a class="anchor" href="#message-identifier"></a>Message identifier</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each message has a unique identifier that identifies that specific message instance.
+The identifier remains constant even if the message is represented in different Java classes or if metadata is added.</p>
+</div>
+<div class="paragraph">
+<p>Two messages with the same identifier represent the same conceptual message, even if:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Their payloads are represented using different Java classes (for example, domain object vs JSON).</p>
+</li>
+<li>
+<p>They have different metadata.</p>
+</li>
+<li>
+<p>They exist in different services or contexts.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">String id = message.identifier();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The identifier is automatically generated when you create a message, or you can provide a specific identifier through the message constructor.</p>
+</div>
+<div class="paragraph">
+<p>Together, the <code>MessageType</code> and <code>identifier</code> provide complete message identification:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The <code>MessageType</code> tells you <strong>what type</strong> of message it is (the structure)</p>
+</li>
+<li>
+<p>The <code>identifier</code> tells you <strong>which specific instance</strong> of that message type it is</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_creating_messages"><a class="anchor" href="#_creating_messages"></a>Creating messages</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>While Axon typically creates messages for you based on method return values and parameters, you can create messages explicitly when needed:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public EventMessage constructEvent(String orderId,
+                                   double amount) {
+    // Create an event message
+    MessageType orderPlacedType = new MessageType(
+            new QualifiedName("com.example.orders", "OrderPlaced"),
+            "1.0"
+    );
+    return new GenericEventMessage(
+            orderPlacedType,
+            new OrderPlacedEvent(orderId, amount),
+            Metadata.with("userId", "user-123")
+    );
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Axon&#8217;s infrastructure components that construct <code>Messages</code> for you know to look for annotations like <code>@Command</code>, <code>@Event</code>, or <code>@Query</code>. If you construct a <code>Message</code> yourself it becomes your responsibility to derive the right <code>MessageType</code>! You can either use the <code>MessageType</code> construct for this or the <code>MessageTypeResolver</code>. The latter is the infrastructure component Axon Framework uses to derive <code>MessageTypes</code> throughout.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../">Messaging Concepts</a></span>
+  <span class="next"><a href="../message-intercepting/">Message Intercepting</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Event Store Internals</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/events/event-store-internals/">
+    <link rel="prev" href="../infrastructure/">
+    <link rel="next" href="../event-versioning/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/development/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Events</a></li>
+    <li><a href="../infrastructure/">Infrastructure</a></li>
+    <li><a href="./">Event Store Internals</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/reference-guide/modules/events/pages/event-store-internals.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Event%20Store%20Internals" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Event%20Store%20Internals%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BEvent%20Store%20Internals%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.0%2Fevents%2Fevent-store-internals%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.0</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/events/event-store-internals/">development</a>
+    <a class="version item is-current" href="./">5.0</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.0">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="./">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Event Store Internals</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This chapter covers the specifics of working with an Event Store in Axon Framework.
+Most users do not need to interact with these components directly, but understanding them provides valuable insight into how Axon manages event storage and consistency.
+Furthermore, if you do need to customize these parts, it&#8217;s good to know that they&#8217;re there.</p>
+</div>
+<div class="paragraph">
+<p>It explains Dynamic Consistency Boundaries (DCB), a flexible approach to organizing events beyond traditional aggregate-based storage.
+You will learn about event tags and the <code>TagResolver</code> for attaching metadata to events, as well as <code>EventCriteria</code> and the <code>CriteriaResolver</code> for querying events based on those tags.
+Finally, the chapter covers consistency markers, which ensure write conflict detection when working with tag-based event groupings.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="dynamic_consistency_boundaries_dcb"><a class="anchor" href="#dynamic_consistency_boundaries_dcb"></a>Dynamic Consistency Boundary</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Dynamic Consistency Boundary, or DCB for short, allows for a flexible boundary to <em>what</em> should be appended
+<em>consistently</em> with other existing event streams in the event store.
+In other words, DCB provides a flexible approach to organizing and querying events.
+In doing so, it eliminates the focus on the aggregate identifier, replacing it for user defined <a href="#tags">tags</a>.
+Note that tags are plural.
+As such, an event is no longer either attached to zero or one aggregate/entity, but potentially <strong>several</strong> due to DCB.</p>
+</div>
+<div class="paragraph">
+<p>This shift provides great flexibility in deriving models, as there is no longer a hard boundary around, for example, an aggregate stream.
+It allows users to depend on N-"aggregate" streams in one sourcing operation, allowing commands to span a complete view of the task at hand.</p>
+</div>
+<div class="paragraph">
+<p>To not overencumber the sourcing operation of an <code>EventStore</code>, not only tags, but also (event) "types" are used when reading events.
+The types act as a filter on the entity streams that matches the tags.
+The tags and the types combined from the <a href="#event_criteria">event criteria</a>.
+It is this <code>EventCriteria</code> that Axon Framework uses for <a href="../../commands/command-handlers/#publishing_events_with_eventappender" class="xref page">appending events</a>, <a href="../../commands/command-handlers/#_command_handlers" class="xref page">sourcing events to recreate entities</a>, and <a href="../event-processors/streaming/" class="xref page">streaming events</a>.</p>
+</div>
+<div class="paragraph">
+<p>You could conclude that DCB makes the base event store operations of appending, sourcing, and streaming focus on an 0-N event stream focus instead of 0-or-1 event stream.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="tags"><a class="anchor" href="#tags"></a>Tags</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Aligning with the dynamic consistency boundary means that an event has zero to N tags.
+Axon has the <code>Tag</code> class for this, which typically:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Represent a (domain/business specific) identifier.</p>
+</li>
+<li>
+<p>Represent an event type.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You are only ever required to directly construct a <code>Tag</code> in Axon if you are constructing an <code>EventCriteria</code> from scratch.
+The <a href="#event_criteria">event criteria</a> section provides more details on this.</p>
+</div>
+<div class="paragraph">
+<p>In most cases, the <code>TagResolver</code> will take the task of resolving the <code>Tags</code> for an event.
+The <code>TagResolver</code> inspects events and derives tags based on annotations or custom logic, reducing boilerplate and ensuring consistent tagging across your application.</p>
+</div>
+<div class="paragraph">
+<p>Axon provides the <code>@EventTag</code> annotation for tag definition on event classes:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.messaging.eventhandling.annotation.Event;
+
+@Event(name = "orderPlaced")
+record OrderPlacedEvent(
+    @EventTag OrderId customerId,
+    @EventTag(key = "region") String orderRegion,
+    String orderId
+) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When an <code>OrderPlacedEvent</code> is appended, the <code>TagResolver</code> automatically extracts <code>customerId</code> and <code>region</code> as tags from the annotated fields.
+By default, the tag key matches the field name, but you can override it by specifying a value in the annotation (as shown with <code>"region"</code>).</p>
+</div>
+<div class="paragraph">
+<p>For more complex scenarios, you can implement a custom <code>TagResolver</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.annotation.Nonnull;
+import org.axonframework.eventsourcing.eventstore.TagResolver;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.Tag;
+
+import java.util.Set;
+
+public class CustomTagResolver implements TagResolver {
+
+    @Override
+    public Set&lt;Tag&gt; resolve(@Nonnull EventMessage event) {
+        Object payload = event.payload();
+        if (payload instanceof OrderPlacedEvent orderEvent) {
+            return Set.of(
+                    Tag.of("orderId", orderEvent.orderId().toString())
+            );
+        }
+        // You will require an if for every event (set)!
+        return Set.of();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This example shows use of the <code>Tag#of(String, String)</code> operation, clarifying Axon expects the tag key and value to resolve to a workable <code>String</code>.
+Note that this will require you to write an if-block for every type of or set of events to be able to deduce an actual tag.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="event_criteria"><a class="anchor" href="#event_criteria"></a>Event criteria</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Where <a href="#tags">tags</a> form the basis for an event query, these tags need to be combined in the right order to come to an actual criteria.
+This is the job of the event criteria, or <code>EventCriteria</code>, in Axon.
+The <code>EventCriteria</code> will be used in specific <a href="#conditions">conditions</a> when querying events.
+Here&#8217;s an example of an event criteria with a identifier tag and type tag:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
+
+public EventCriteria createCriteriaFor(OrderPlacedEvent event) {
+    return EventCriteria.havingTags(Tag.of("orderId", event.orderId().toString()))
+                        .andBeingOneOfTypes("OrderPlaced");
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is the <code>EventCriteria</code> that allows you to define "slices" of an otherwise potentially large entity.
+Events that (although part of the entity&#8217;s stream) don&#8217;t influence the decision-making, can be omitted when sourcing an entity.</p>
+</div>
+<div class="paragraph">
+<p>In most cases, Axon can construct an <code>EventCriteria</code> for you automatically:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Appending - When appending, we combine the condition used for sourcing with the outcome of invoking the <a href="#tags">tag resolver</a> with newly appended events.</p>
+</li>
+<li>
+<p>Sourcing - When sourcing a single entity stream we use the entity&#8217;s identifier.</p>
+</li>
+<li>
+<p>Streaming - When streaming we combine the names of all subscribed event handlers into a criteria.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>There are two scenarios remaining where you would be required to construct an <code>EventCriteria</code> yourself.</p>
+</div>
+<div class="paragraph">
+<p>If you want to event source an entity based on several streams, you need to define a <code>CriteriaResolver</code> yourself, as we (currently) cannot deduce the correct <code>EventCriteria</code> to construct for this.</p>
+</div>
+<div class="paragraph">
+<p>When using an autodetected entity, you can add an <code>@EventCriteriaBuilder</code> annotated method to your event sourced entity:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
+
+@EventSourcedEntity
+public class StudentSubscribedToCourseState {
+
+    @EventCriteriaBuilder
+    private static EventCriteria resolveCriteria(SubscriptionId id) {
+        String courseId = id.courseId().toString();
+        String studentId = id.studentId().toString();
+        return EventCriteria.either(
+                EventCriteria
+                        .havingTags(Tag.of("courseID", courseId))
+                        .andBeingOneOfTypes(
+                                CourseCreated.class.getName(),
+                                CourseCapacityChanged.class.getName(),
+                                StudentSubscribedToCourse.class.getName(),
+                                StudentUnsubscribedFromCourse.class.getName()
+                        ),
+                EventCriteria
+                        .havingTags(Tag.of("studentId", studentId))
+                        .andBeingOneOfTypes(
+                                StudentEnrolledInFaculty.class.getName(),
+                                StudentSubscribedToCourse.class.getName(),
+                                StudentUnsubscribedFromCourse.class.getName()
+                        )
+        );
+    }
+
+    // Entity fields and event sourcing handlers omitted...
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When an <code>StudentSubscribedToCourseState</code> entity is loaded, the <code>CriteriaResolver</code> automatically calls the <code>@EventCriteriaBuilder</code> method to determine which events to source.
+The method must be static and return an <code>EventCriteria</code>.
+If no <code>@EventCriteriaBuilder</code> method is defined, the resolver falls back to the <code>tagKey</code> attribute of <code>@EventSourcedEntity</code>, or uses the entity&#8217;s simple class name as the tag key.</p>
+</div>
+<div class="paragraph">
+<p>For more complex scenarios or when taking a declarative configuration approach, you can implement a custom <code>CriteriaResolver</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
+
+public class CustomCriteriaResolver implements CriteriaResolver&lt;SubscriptionId&gt; {
+
+    @Override
+    public EventCriteria resolve(SubscriptionId identifier, ProcessingContext context) {
+        String courseId = id.courseId().toString();
+        String studentId = id.studentId().toString();
+        return EventCriteria.either(
+                EventCriteria
+                        .havingTags(Tag.of("courseID", courseId))
+                        .andBeingOneOfTypes(
+                                CourseCreated.class.getName(),
+                                CourseCapacityChanged.class.getName(),
+                                StudentSubscribedToCourse.class.getName(),
+                                StudentUnsubscribedFromCourse.class.getName()
+                        ),
+                EventCriteria
+                        .havingTags(Tag.of("studentId", studentId))
+                        .andBeingOneOfTypes(
+                                StudentEnrolledInFaculty.class.getName(),
+                                StudentSubscribedToCourse.class.getName(),
+                                StudentUnsubscribedFromCourse.class.getName()
+                        )
+        );
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conditions"><a class="anchor" href="#conditions"></a>Append, source, and stream conditions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>While <a href="#event_criteria">event criteria</a> define <em>what</em> events to match, conditions wrap this criteria with additional context for specific event store operations.
+Axon provides three condition types, each tailored for a different operation:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>AppendCondition</strong></dt>
+<dd>
+<p>Used when appending events to the event store.
+It combines an <code>EventCriteria</code> with a <code>ConsistencyMarker</code> to enforce write conflict detection.
+The <a href="#consistency_marker">consistency marker</a> tracks the position until which the criteria should be validated—if events matching the criteria were appended after this position, the append operation fails.
+This ensures that concurrent writes to the same logical boundary are detected.</p>
+<div class="paragraph">
+<p>For events that don&#8217;t participate in any consistency boundary (such as standalone events), use <code>AppendCondition.none()</code>.</p>
+</div>
+</dd>
+<dt class="hdlist1"><strong>SourcingCondition</strong></dt>
+<dd>
+<p>Used when sourcing events to rebuild entity state.
+It combines an <code>EventCriteria</code> with a starting <code>Position</code> in the event sequence.
+The criteria determines which events to retrieve, while the position allows sourcing from a specific point (useful when loading from a snapshot).</p>
+<div class="paragraph">
+<p>This condition is what the <code>CriteriaResolver</code> ultimately produces when loading an event-sourced entity.</p>
+</div>
+</dd>
+<dt class="hdlist1"><strong>StreamingCondition</strong></dt>
+<dd>
+<p>Used when streaming events for event processors.
+It combines an <code>EventCriteria</code> with a <code>TrackingToken</code> that marks the position to start streaming from.
+Unlike sourcing (which retrieves a bounded sequence), streaming is continuous and open-ended.</p>
+<div class="paragraph">
+<p>The criteria defaults to matching any tag, making it suitable for processors that need to observe all events rather than a specific entity stream.</p>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>In practice, most users won&#8217;t construct these conditions directly, as you do not have to interact with the <code>EventStore</code> directly.
+Axon builds the appropriate condition based on the operation:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>When <strong>appending</strong>, the framework combines the sourcing condition with tags from newly appended events.</p>
+</li>
+<li>
+<p>When <strong>sourcing</strong>, the <code>CriteriaResolver</code> constructs the condition from the entity identifier.</p>
+</li>
+<li>
+<p>When <strong>streaming</strong>, event processors construct the condition from their subscribed event handler names.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="consistency_marker"><a class="anchor" href="#consistency_marker"></a>Consistency marker</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To support a dynamic consistency boundary with an event store, a <strong>consistency marker</strong> is a hard requirement.
+The consistency marker is returned as the final entry when sourcing events from an event store.
+As such, it tracks the logical grouping of sourced events.</p>
+</div>
+<div class="paragraph">
+<p>When appending events with tags, thus as part of a sourced entity, Axon automatically attaches this consistency marker to the <a href="#conditions">append condition</a>.
+In doing so, we prevent write conflicts, ensuring that concurrent writes to the same logical boundary are detected and handled appropriately.</p>
+</div>
+<div class="paragraph">
+<p>As with many components in this chapter, the chance is slim you will need to interact with the <code>ConsistencyMarker</code> directly.
+However, being aware of the internals could just be what you are searching for.</p>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../infrastructure/">Infrastructure</a></span>
+  <span class="next"><a href="../event-versioning/">Versioning</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

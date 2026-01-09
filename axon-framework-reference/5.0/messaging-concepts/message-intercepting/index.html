@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Message Intercepting</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/messaging-concepts/message-intercepting/">
+    <link rel="prev" href="../anatomy-message/">
+    <link rel="next" href="../supported-parameters-annotated-handlers/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/development/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Messaging Concepts</a></li>
+    <li><a href="./">Message Intercepting</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/reference-guide/modules/messaging-concepts/pages/message-intercepting.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Message%20Intercepting" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Message%20Intercepting%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BMessage%20Intercepting%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.0%2Fmessaging-concepts%2Fmessage-intercepting%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.0</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/messaging-concepts/message-intercepting/">development</a>
+    <a class="version item is-current" href="./">5.0</a>
+    <a class="version item" href="../../../4.12/messaging-concepts/message-intercepting/">4.12</a>
+    <a class="version item" href="../../../4.11/messaging-concepts/message-intercepting/">4.11</a>
+    <a class="version item" href="../../../4.10/messaging-concepts/message-intercepting/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.0">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Message Intercepting</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are two different types of interceptors: dispatch interceptors and handler interceptors.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Dispatch interceptors</strong> - Interceptors that are invoked before a message is dispatched.
+At that point, it may not even be known that a handler exists for that message.
+They can modify the message (add metadata) or block dispatching entirely.</p>
+</li>
+<li>
+<p><strong>Handler interceptors</strong> - Interceptors that are invoked just before the message handler is invoked.
+They can perform actions before and after handling, and are aware of the active <a href="../processing-context/" class="xref page">processing context</a>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s look at each interceptor in a bit more detail.</p>
+</div>
+<div class="paragraph">
+<p>Message dispatch interceptors are invoked when a message is <strong>dispatched/published</strong> on a bus.
+They can alter the message by adding metadata or block it by not proceeding with the chain.
+These interceptors are always invoked on the thread that dispatches the message.</p>
+</div>
+<div class="paragraph">
+<p>The <code>MessageDispatchInterceptor</code> interface defines a single method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface MessageDispatchInterceptor&lt;M extends Message&gt; {
+
+    @Nonnull
+    MessageStream&lt;?&gt; interceptOnDispatch(
+            @Nonnull M message,
+            @Nullable ProcessingContext context,
+            @Nonnull MessageDispatchInterceptorChain&lt;M&gt; interceptorChain
+    );
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In turn, message handler interceptors can take action both before and after message <strong>handling</strong>.
+Interceptors can even block message processing altogether, for example for security reasons.</p>
+</div>
+<div class="paragraph">
+<p>The <code>MessageHandlerInterceptor</code> interface also defines a single method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface MessageHandlerInterceptor&lt;M extends Message&gt; {
+
+    @Nonnull
+    MessageStream&lt;?&gt; interceptOnHandle(
+            @Nonnull M message,
+            @Nonnull ProcessingContext context,
+            @Nonnull MessageHandlerInterceptorChain&lt;M&gt; interceptorChain
+    );
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Unlike dispatch interceptors, handler interceptors are invoked in the context of the message handler with an active <code>ProcessingContext</code>.
+This allows them to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Register lifecycle callbacks (see <a href="../processing-context/" class="xref page"><code>ProcessingContext</code></a>).</p>
+</li>
+<li>
+<p>Attach correlation data that will propagate to messages created during handling.</p>
+</li>
+<li>
+<p>Manage transactions around handling.</p>
+</li>
+<li>
+<p>Access processing phase information.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Note that both interceptor types are much a like. Both intercept a message, both receive an interceptor specific chain, both have a <code>ProcessingContext</code> parameter, and both return a <code>MessageStream</code> that allows them to work seamlessly with Axon&#8217;s async-native architecture.
+The differences lie in the used interceptor chain implementation, which is unique per type of interceptor, and the nullability of <code>ProcessingContext</code> when dispatching.</p>
+</div>
+<div class="paragraph">
+<p>As a <code>ProcessingContext</code> is only active when handling a message, a dispatch interceptor will only have a non-null context when dispatching happens from within a message handler. Subsequently, a handler interceptor will always have an active processing context since it wraps message handling, for which a <code>ProcessingContext</code> is a hard requirement.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="generic-message-interceptors"><a class="anchor" href="#generic-message-interceptors"></a>Generic message interceptors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The sections below describe dispatch and handler interceptors for the specific types of message Axon Framework supports. However, you can register a generic <code>Message</code> interceptor with Axon, which will automatically be attached to all message-specific dispatching or handling components:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-jave hljs" data-lang="jave">public void registerMessageHandlerInterceptor(MessagingConfigurer configurer) {
+    configurer.registerMessageHandlerInterceptor(
+            // The LoggingInterceptor is provided by Axon out of the box.
+            config -&gt; new LoggingInterceptor&lt;&gt;()
+    );
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Component-specific interceptors</div>
+<div class="paragraph">
+<p>Besides being able to register interceptors for your buses and processors, you are able to register them for specific handling components. Please check <a href="../component-message-intercepting/" class="xref page">this</a> chapter for more details on this.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="command-interceptors"><a class="anchor" href="#command-interceptors"></a>Command interceptors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One of the advantages of using a command bus is the ability to undertake action based on all incoming commands.
+Examples are logging or authentication, which you might want to do regardless of the type of command.</p>
+</div>
+<div class="sect2">
+<h3 id="_command_dispatch_interceptors"><a class="anchor" href="#_command_dispatch_interceptors"></a>Command dispatch interceptors</h3>
+<div class="paragraph">
+<p>Command dispatch interceptors are invoked when a command is dispatched on a command bus.
+They can alter the command message by adding metadata or block the command by not proceeding with the chain.
+These interceptors are always invoked on the thread that dispatches the command.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s create a dispatch interceptor that logs each command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CommandLoggingDispatchInterceptor
+        implements MessageDispatchInterceptor&lt;CommandMessage&gt; {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(CommandLoggingDispatchInterceptor.class);
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnDispatch(
+            CommandMessage command,
+            ProcessingContext context,
+            MessageDispatchInterceptorChain&lt;CommandMessage&gt; chain
+    ) {
+
+        logger.info("Dispatching command: {}", command.type());
+
+        // Proceed with the chain
+        return chain.proceed(command, context);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also modify the message before dispatching:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MetadataEnrichingInterceptor
+        implements MessageDispatchInterceptor&lt;CommandMessage&gt; {
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnDispatch(
+            CommandMessage command,
+            ProcessingContext context,
+            MessageDispatchInterceptorChain&lt;CommandMessage&gt; chain
+    ) {
+        // Add metadata
+        CommandMessage enrichedCommand = command.andMetadata(
+            Metadata.with("timestamp", String.valueOf(System.currentTimeMillis()))
+        );
+
+        return chain.proceed(enrichedCommand, context);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Register the interceptor with a <code>CommandBus</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCommandDispatchInterceptor(MessagingConfigurer configurer) {
+    configurer.registerCommandDispatchInterceptor(
+            config -&gt; new CommandLoggingDispatchInterceptor()
+    );
+}</code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_structural_validation"><a class="anchor" href="#_structural_validation"></a>Structural validation</h4>
+<div class="paragraph">
+<p>There is no point in processing a command if it does not contain all required information in the correct format.
+A command that lacks information should be blocked as early as possible, preferably even before a transaction has been started.
+Therefore, an interceptor should check all incoming commands for the availability of such information.
+This is called <em>structural</em> validation.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework has support for the JSR 303 Bean Validation specification.
+This allows you to annotate the fields on commands with annotations like <code>@NotEmpty</code> and <code>@Pattern</code>.
+You need to include a JSR 303 implementation (such as Hibernate-Validator) on your classpath.
+Then, configure a <code>BeanValidationInterceptor</code> on your command bus, and it will automatically find and configure your validator implementation.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Interceptor Ordering</div>
+<div class="paragraph">
+<p>You want to spend as few resources on an invalid command as possible.
+Therefore, this interceptor is generally placed at the front of the interceptor chain.
+In some cases, a <code>LoggingInterceptor</code> (provided by Axon) or <code>AuditingInterceptor</code> (custom) might need to be placed first, with the validating interceptor immediately following it.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>BeanValidationInterceptor</code> also implements <code>MessageHandlerInterceptor</code>, allowing you to configure it as a handler interceptor as well.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="command-handler-interceptors"><a class="anchor" href="#command-handler-interceptors"></a>Command handler interceptors</h3>
+<div class="paragraph">
+<p>Command handler interceptors can take action both before <strong>and</strong> after command processing.
+Interceptors can even block command processing altogether, for example for security reasons.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s create a handler interceptor that performs authorization:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AuthorizationInterceptor
+        implements MessageHandlerInterceptor&lt;CommandMessage&gt; {
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnHandle(
+            CommandMessage command,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain&lt;CommandMessage&gt; chain
+    ) {
+
+        String userId = command.metadata().get("userId");
+
+        if (userId == null) {
+            throw new SecurityException("No user ID in metadata");
+        }
+
+        if (!"authorized-user".equals(userId)) {
+            throw new SecurityException("User not authorized");
+        }
+
+        // User is authorized, proceed
+        return chain.proceed(command, context);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also perform actions after handling by using the <code>ProcessingContext</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class LoggingInterceptor
+        implements MessageHandlerInterceptor&lt;CommandMessage&gt; {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(LoggingInterceptor.class);
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnHandle(
+            CommandMessage command,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain&lt;CommandMessage&gt; chain
+    ) {
+        logger.info("Before handling: {}", command.type());
+
+        // Register action to run after successful handling
+        context.whenComplete(ctx -&gt; {
+            logger.info("Successfully handled: {}", command.type());
+        });
+
+        // Register error handler
+        context.onError((ctx, phase, error) -&gt; {
+            logger.error("Error handling {}: {}", command.type(), error.getMessage());
+        });
+
+        return chain.proceed(command, context);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Register the interceptor with a <code>CommandBus</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCommandHandlerInterceptor(MessagingConfigurer configurer) {
+    configurer.registerCommandHandlerInterceptor(
+            config -&gt; new AuthorizationInterceptor()
+    );
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_event_interceptors"><a class="anchor" href="#_event_interceptors"></a>Event interceptors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Similar to command messages, event messages can also be intercepted prior to publishing and handling.</p>
+</div>
+<div class="sect2">
+<h3 id="_event_dispatch_interceptors"><a class="anchor" href="#_event_dispatch_interceptors"></a>Event dispatch interceptors</h3>
+<div class="paragraph">
+<p>Any event dispatch interceptors registered to an event bus will be invoked when an event is published.
+They have the ability to alter the event message by adding metadata or provide logging capabilities.
+These interceptors are always invoked on the thread that published the event.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class EventLoggingDispatchInterceptor
+        implements MessageDispatchInterceptor&lt;EventMessage&gt; {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(EventLoggingDispatchInterceptor.class);
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnDispatch(
+            EventMessage event,
+            ProcessingContext context,
+            MessageDispatchInterceptorChain&lt;EventMessage&gt; chain
+    ) {
+
+        logger.info("Publishing event: {}", event.type());
+        return chain.proceed(event, context);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Below we have an example on how to register an <code>EventMessage</code>-specific <code>MessageDispatchInterceptor</code> with Axon:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerEventDispatchInterceptor(MessagingConfigurer configurer) {
+    configurer.registerEventDispatchInterceptor(
+            config -&gt; new EventLoggingDispatchInterceptor()
+    );
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="event-handler-interceptors"><a class="anchor" href="#event-handler-interceptors"></a>Event handler interceptors</h3>
+<div class="paragraph">
+<p>Event handler interceptors can take action both before and after event handling.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class EventSecurityInterceptor
+        implements MessageHandlerInterceptor&lt;EventMessage&gt; {
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnHandle(
+            EventMessage event,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain&lt;EventMessage&gt; chain
+    ) {
+        String userId = event.metadata().get("userId");
+        if (userId == null || !"authorized-user".equals(userId)) {
+            throw new SecurityException("Unauthorized event");
+        }
+
+        return chain.proceed(event, context);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To register the <code>EventSecurityInterceptor</code> as a <code>EventMessage</code>-specific <code>MessageHandlerInterceptor</code>, you can utilize the <code>MessagingConfigurer</code> as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerEventHandlerInterceptor(MessagingConfigurer configurer) {
+    configurer.registerEventHandlerInterceptor(
+            config -&gt; new EventSecurityInterceptor()
+    );
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_query_interceptors"><a class="anchor" href="#_query_interceptors"></a>Query interceptors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One of the advantages of using a query bus is the ability to undertake action based on all incoming queries.
+Examples are logging or authentication, which you might want to do regardless of the type of query.</p>
+</div>
+<div class="sect2">
+<h3 id="_query_dispatch_interceptors"><a class="anchor" href="#_query_dispatch_interceptors"></a>Query dispatch interceptors</h3>
+<div class="paragraph">
+<p>Query dispatch interceptors are invoked when a query is dispatched on a query bus.
+They have the ability to alter the message by adding metadata or block the handler execution.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class QueryLoggingDispatchInterceptor
+        implements MessageDispatchInterceptor&lt;QueryMessage&gt; {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(QueryLoggingDispatchInterceptor.class);
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnDispatch(
+            QueryMessage query,
+            ProcessingContext context,
+            MessageDispatchInterceptorChain&lt;QueryMessage&gt; chain
+    ) {
+
+        logger.info("Dispatching query: {}", query.type());
+        return chain.proceed(query, context);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Below we have an example on how to register an <code>QueryMessage</code>-specific <code>MessageDispatchInterceptor</code> with Axon:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerQueryDispatchInterceptor(MessagingConfigurer configurer) {
+    configurer.registerQueryDispatchInterceptor(
+            config -&gt; new QueryLoggingDispatchInterceptor()
+    );
+}</code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_structural_validation_2"><a class="anchor" href="#_structural_validation_2"></a>Structural validation</h4>
+<div class="paragraph">
+<p>There is no point in processing a query if it does not contain all required information in the correct format.
+A query that lacks information should be blocked as early as possible.
+Therefore, an interceptor should check all incoming queries for the availability of such information.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework has support for JSR 303 Bean Validation.
+This allows you to annotate the fields on queries with annotations like <code>@NotEmpty</code> and <code>@Pattern</code>.
+Configure a <code>BeanValidationInterceptor</code> on your query bus, and it will automatically find and configure your validator implementation.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Interceptor Ordering</div>
+<div class="paragraph">
+<p>You want to spend as few resources on invalid queries as possible.
+Therefore, this interceptor is generally placed at the front of the interceptor chain.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>BeanValidationInterceptor</code> also implements <code>MessageHandlerInterceptor</code>, allowing you to configure it as a handler interceptor as well.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_query_handler_interceptors"><a class="anchor" href="#_query_handler_interceptors"></a>Query handler interceptors</h3>
+<div class="paragraph">
+<p>Query handler interceptors can take action both before and after query processing.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class QuerySecurityInterceptor
+        implements MessageHandlerInterceptor&lt;QueryMessage&gt; {
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnHandle(
+            QueryMessage query,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain&lt;QueryMessage&gt; chain
+    ) {
+        String userId = query.metadata().get("userId");
+        if (userId == null || !"authorized-user".equals(userId)) {
+            throw new SecurityException("Unauthorized query");
+        }
+
+        return chain.proceed(query, context);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To register the <code>QuerySecurityInterceptor</code> as a <code>QueryMessage</code>-specific <code>MessageHandlerInterceptor</code>, you can utilize the <code>MessagingConfigurer</code> as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerEventHandlerInterceptor(MessagingConfigurer configurer) {
+    configurer.registerEventHandlerInterceptor(
+            config -&gt; new EventSecurityInterceptor()
+    );
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../anatomy-message/">Anatomy of a Message</a></span>
+  <span class="next"><a href="../supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

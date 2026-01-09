@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Query Dispatchers</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/queries/query-dispatchers/">
+    <link rel="prev" href="../query-handlers/">
+    <link rel="next" href="../infrastructure/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/development/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Queries</a></li>
+    <li><a href="./">Dispatching</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/reference-guide/modules/queries/pages/query-dispatchers.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Query%20Dispatchers" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Query%20Dispatchers%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BQuery%20Dispatchers%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.0%2Fqueries%2Fquery-dispatchers%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.0</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/queries/query-dispatchers/">development</a>
+    <a class="version item is-current" href="./">5.0</a>
+    <a class="version item" href="../../../4.12/queries/query-dispatchers/">4.12</a>
+    <a class="version item" href="../../../4.11/queries/query-dispatchers/">4.11</a>
+    <a class="version item" href="../../../4.10/queries/query-dispatchers/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.0">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Query Dispatchers</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The dispatching of a query is the starting point of such a message.
+Queries have to be dispatched, just like any type of message, before they can be handled.
+To that end Axon provides two interfaces:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The <a href="../infrastructure/#query_bus" class="xref page">QueryBus</a>, and</p>
+</li>
+<li>
+<p>the <a href="../infrastructure/#query_gateway" class="xref page">QueryGateway</a>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>This page shows how and when to use these components.
+How to configure and specifics on the gateway and bus implementations are discussed <a href="../infrastructure/" class="xref page">here</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="query-bus-and-gateway"><a class="anchor" href="#query-bus-and-gateway"></a>The query bus and query gateway</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>QueryBus</code> is the mechanism that dispatches queries to query handlers.
+Queries are registered using the query name.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>For those familiar with previous iterations of Axon Framework, it does not support scatter-gather queries where multiple handlers respond to the same query. If you rely heavily on scatter-gather queries, please provide feedback at <a href="https://github.com/AxonFramework/AxonFramework/issues/3689">this GitHub issue</a>.</p>
+</div>
+<div class="paragraph">
+<p>As a workaround, if you need to collect information from multiple sources, consider using multiple separate queries or implementing an aggregating query handler that coordinates the data collection internally.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>QueryGateway</code>, as described in more detail <a href="../infrastructure/#query_gateway" class="xref page">here</a>, is a convenient interface towards the query dispatching mechanism.
+While you are not required to use a gateway to dispatch queries, it is generally the easiest option to do so.
+It abstracts certain aspects for you, like the necessity to wrap a Query payload in a Query Message.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>QueryBus</code>, as explained in more detail <a href="../infrastructure/#query_bus" class="xref page">here</a>, is a low-level infrastructure component.
+For typical application code, prefer using the <code>QueryGateway</code>, which provides a more convenient API and handles message creation for you.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Axon Framework supports three types of queries:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="#point-to-point-queries">Point-to-point queries</a>,</p>
+</li>
+<li>
+<p><a href="#subscription-queries">Subscription queries</a>,</p>
+</li>
+<li>
+<p><a href="#streaming-queries">Streaming queries</a>.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="point-to-point-queries"><a class="anchor" href="#point-to-point-queries"></a>Point-to-point queries</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A point-to-point query represents a query request to a single query handler.
+If no handler is found for a given query, a <code>NoHandlerForQueryException</code> is thrown.</p>
+</div>
+<div class="sect2">
+<h3 id="_query_handler_example"><a class="anchor" href="#_query_handler_example"></a>Query handler example</h3>
+<div class="paragraph">
+<p>First, define the query message with the <code>@Query</code> annotation:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.annotation.Query;
+
+@Query(namespace = "inventory", name = "FetchItems")
+public class FetchItemsQuery {
+    private final String criteria;
+
+    public FetchItemsQuery(String criteria) {
+        this.criteria = criteria;
+    }
+
+    public String getCriteria() {
+        return criteria;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then write the query handler:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler <i class="conum" data-value="1"></i><b>(1)</b>
+public List&lt;String&gt; query(FetchItemsQuery query) { <i class="conum" data-value="2"></i><b>(2)</b>
+    // return the query result based on given criteria
+    return repository.findItems(query.getCriteria());
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>@QueryHandler</code> annotation marks this method as a query handler.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The first parameter must be the <code>@Query</code> annotated message class. The handler will process queries matching the query name defined by the <code>@Query</code> annotation (<code>inventory.FetchItems</code> in this case). If you want to use a different parameter type (for example, <code>Map&lt;String, Object&gt;</code>), you <strong>must</strong> specify <code>queryName</code> in the <code>@QueryHandler</code> annotation.</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dispatching_with_querygateway"><a class="anchor" href="#_dispatching_with_querygateway"></a>Dispatching with <code>QueryGateway</code></h3>
+<div class="paragraph">
+<p>To query our view model using the <code>QueryGateway</code>:</p>
+</div>
+<div class="sect3">
+<h4 id="_single_result_query"><a class="anchor" href="#_single_result_query"></a>Single result query</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Query for a single result
+CompletableFuture&lt;String&gt; result = queryGateway.query(
+    new FetchItemQuery("item-123"),
+    String.class
+);
+
+result.thenAccept(item -&gt; System.out.println("Item: " + item));</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_multiple_results_query"><a class="anchor" href="#_multiple_results_query"></a>Multiple results query</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Query for multiple results
+CompletableFuture&lt;List&lt;String&gt;&gt; results = queryGateway.queryMany(
+    new FetchItemsQuery("criteria"),
+    String.class
+);
+
+results.thenAccept(items -&gt; items.forEach(System.out::println));</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Async-native API</div>
+<div class="paragraph">
+<p>All query methods in Axon 5 return <code>CompletableFuture</code>, allowing you to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Chain additional operations after receiving results</p>
+</li>
+<li>
+<p>Handle errors gracefully</p>
+</li>
+<li>
+<p>Integrate with reactive frameworks</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The result is returned asynchronously regardless of the QueryBus implementation.
+However, if a <code>@QueryHandler</code> annotated function&#8217;s return type is <code>CompletableFuture</code>, the result will be fully asynchronous.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dispatching_with_processingcontext"><a class="anchor" href="#_dispatching_with_processingcontext"></a>Dispatching with <code>ProcessingContext</code></h3>
+<div class="paragraph">
+<p>When dispatching queries from within a message handler (such as an event handler or command handler), you should provide the <code>ProcessingContext</code> to maintain correlation data:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(OrderPlacedEvent event,
+               ProcessingContext context,
+               QueryGateway queryGateway) {
+    // Dispatch query with ProcessingContext for correlation
+    queryGateway.query(
+        new FetchInventoryQuery(event.getProductId()),
+        Inventory.class,
+        context
+    ).thenAccept(inventory -&gt; {
+        // Handle inventory result...
+    });
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Providing the <code>ProcessingContext</code> ensures that:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Correlation data (trace ID, correlation ID, causation ID) flows from one message to another</p>
+</li>
+<li>
+<p>The query dispatch is part of the same processing lifecycle</p>
+</li>
+<li>
+<p>Distributed tracing works correctly across message boundaries</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When dispatching from outside a message handler (for example, from an HTTP endpoint), you can omit the <code>ProcessingContext</code> or pass <code>null</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@RestController
+public class ItemController {
+
+    private final QueryGateway queryGateway;
+
+    public ItemController(QueryGateway queryGateway) {
+        this.queryGateway = queryGateway;
+    }
+
+    @GetMapping("/items/{id}")
+    public CompletableFuture&lt;ItemDTO&gt; getItem(@PathVariable String id) {
+        return queryGateway.query(
+            new FetchItemQuery(id),
+            ItemDTO.class
+            // No ProcessingContext needed when dispatching from HTTP endpoint
+        );
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="subscription-queries"><a class="anchor" href="#subscription-queries"></a>Subscription queries</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The subscription query allows a client to get the initial state of the model it wants to query, and to stay up-to-date as the queried view model changes.
+In short, it is an invocation of a point-to-point query with the possibility to be updated when the initial state changes.
+To update a subscription with changes to the model, we use the <code>QueryUpdateEmitter</code> component provided by Axon.</p>
+</div>
+<div class="sect2">
+<h3 id="_query_handler_example_2"><a class="anchor" href="#_query_handler_example_2"></a>Query handler example</h3>
+<div class="paragraph">
+<p>Let&#8217;s look at a query handler that provides the initial state:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler
+public List&lt;CardSummary&gt; handle(FetchCardSummariesQuery query) {
+    return entityManager
+        .createNamedQuery("CardSummary.fetch", CardSummary.class)
+        .setParameter("idStartsWith", query.getFilter().getIdStartsWith())
+        .setFirstResult(query.getOffset())
+        .setMaxResults(query.getLimit())
+        .getResultList();
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_emitting_updates"><a class="anchor" href="#_emitting_updates"></a>Emitting updates</h3>
+<div class="paragraph">
+<p>Once our GiftCard gets redeemed, we update any component interested in the updated state.
+We achieve this by emitting an update using the <code>QueryUpdateEmitter</code> component within the event handler:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(RedeemedEvent event, QueryUpdateEmitter emitter) {
+    <i class="conum" data-value="1"></i><b>(1)</b>
+    CardSummary summary = entityManager.find(CardSummary.class, event.getId());
+    summary.setRemainingValue(summary.getRemainingValue() - event.getAmount());
+
+    <i class="conum" data-value="2"></i><b>(2)</b>
+    emitter.emit(
+        FetchCardSummariesQuery.class, <i class="conum" data-value="3"></i><b>(3)</b>
+        query -&gt; event.getId().startsWith(query.getFilter().getIdStartsWith()), <i class="conum" data-value="4"></i><b>(4)</b>
+        summary <i class="conum" data-value="5"></i><b>(5)</b>
+    );
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>First, we update our view model by updating the existing card.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>If there is a subscription query interested in updates about this specific GiftCard, we emit an update.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The first parameter is the type of the query (<code>FetchCardSummariesQuery</code> in our case) which corresponds to the query type in the query handler.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The second parameter is a predicate that selects which subscription queries to update.
+In our case, we only update subscription queries interested in the GiftCard that has been updated.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>The third parameter is the actual update, which in our case is the card summary.</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_issuing_a_subscription_query"><a class="anchor" href="#_issuing_a_subscription_query"></a>Issuing a subscription query</h3>
+<div class="paragraph">
+<p>Once we have the query handling and emitting side implemented, we can issue a subscription query to get the initial state of the GiftCard and be updated once it is redeemed:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><i class="conum" data-value="1"></i><b>(1)</b>
+commandGateway.sendAndWait(new IssueCardCommand("gc1", amount));
+
+<i class="conum" data-value="2"></i><b>(2)</b>
+FetchCardSummariesQuery query =
+    new FetchCardSummariesQuery(offset, limit, filter);
+
+<i class="conum" data-value="3"></i><b>(3)</b>
+Publisher&lt;CardSummary&gt; results = queryGateway.subscriptionQuery(
+    query,
+    CardSummary.class
+);
+
+<i class="conum" data-value="4"></i><b>(4)</b>
+Disposable subscription = Flux.from(results)
+    .subscribe(
+        cardSummary -&gt; System.out.println("Received: " + cardSummary),
+        error -&gt; System.err.println("Error: " + error),
+        () -&gt; System.out.println("Completed")
+    );
+
+<i class="conum" data-value="5"></i><b>(5)</b>
+commandGateway.sendAndWait(new RedeemCardCommand("gc1", amount));
+
+<i class="conum" data-value="6"></i><b>(6)</b>
+// When done, cancel the subscription
+subscription.dispose();</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Issue a GiftCard with <code>gc1</code> id and initial value of <code>amount</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Create a subscription query to get the list of GiftCards and be updated once the state of GiftCard with id <code>gc1</code> is changed.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Send the subscription query via the <code>QueryGateway</code>.
+The method returns a <code>Publisher</code> that combines both the initial results and any updates.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Subscribe to the <code>Publisher</code> to receive the initial state and all subsequent updates.
+The subscription is active until explicitly cancelled or the emitting side completes it.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>When we issue a <code>RedeemCardCommand</code>, our event handler in the projection will be triggered, which will result in the emission of an update.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>When done with the subscription, cancel it by disposing the subscription.
+This automatically closes the subscription query on the server side.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Subscription query as Publisher</div>
+<div class="paragraph">
+<p>In Axon 5, subscription queries return a single <code>Publisher</code> that streams both initial results and updates.
+The <code>Publisher</code> automatically combines initial state (0, 1, or N results) with any subsequent updates.
+When you cancel the subscription (by disposing the <code>Disposable</code> returned from <code>subscribe()</code>), it automatically closes the subscription query on the server side.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Mandatory dependency</div>
+<div class="paragraph">
+<p>The <code>reactor-core</code> dependency is mandatory for usage of subscription queries.
+Axon Framework uses Project Reactor internally to build the <code>Publisher</code> for subscription queries.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="streaming-queries"><a class="anchor" href="#streaming-queries"></a>Streaming queries</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The streaming query allows a client to stream large result sets without loading everything into memory at once.
+The streaming query relies on the reactive stream model, specifically the <code>Publisher</code> type.</p>
+</div>
+<div class="paragraph">
+<p>The streaming query is flexible enough to handle <strong>any</strong> query return type.
+Any return type that is not a <code>Publisher</code> will automatically be converted to a <code>Publisher</code>.
+The <code>Publisher</code> will emit one or multiple items based on the query handler.</p>
+</div>
+<div class="paragraph">
+<p>The <code>QueryGateway</code> provides the <code>streamingQuery</code> method to utilize the streaming query.
+It&#8217;s simple to use and requires just two parameters: the query payload and the expected response type class.
+Note that the <code>streamingQuery</code> method <strong>is lazy</strong>, meaning the query is sent once the <code>Publisher</code> is subscribed to.</p>
+</div>
+<div class="sect2">
+<h3 id="_streaming_query_example"><a class="anchor" href="#_streaming_query_example"></a>Streaming query example</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler
+public List&lt;CardSummary&gt; handle(FetchCardSummariesQuery query) {
+    return cardRepository.findAll(); <i class="conum" data-value="1"></i><b>(1)</b>
+}
+
+public Publisher&lt;CardSummary&gt; consumer() {
+    return queryGateway.streamingQuery(query, CardSummary.class); <i class="conum" data-value="2"></i><b>(2)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>We query the <code>cardRepository</code> for all the cards.
+The repository can potentially return a result set containing thousands of items.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>We use the <code>queryGateway</code> to issue the streaming query.
+If we used a point-to-point query with <code>queryMany</code>, we would get an extensive list transferred as a single result message over the network.
+This result can potentially cause a buffer overflow or maximum message size violation.
+Instead, we use <code>streamingQuery</code>, which converts our response to a stream and chunks the result into smaller messages containing the <code>CardSummary</code> instances.</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_native_streaming_with_flux"><a class="anchor" href="#_native_streaming_with_flux"></a>Native streaming with <code>Flux</code></h3>
+<div class="paragraph">
+<p>For fine-grained control of the producing stream, you can use Project Reactor&#8217;s <code>Flux</code> as the return type:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler
+public Flux&lt;CardSummary&gt; handle(FetchCardSummariesQuery query) {
+    return reactiveCardRepository.findAll();
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When using a <code>Flux</code> as the return type, you can control backpressure, stream cancellation, and implement more complex features like pagination.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Transaction leaking concerns</div>
+<div class="paragraph">
+<p>Once a consumer of the streaming query receives the <code>Publisher</code> to subscribe to, the transaction will be considered completed successfully.
+That means that any subsequent messages on the stream will not be part of the transaction, including errors.
+As the transaction is already over, an error will not be propagated to the parent transaction to invoke any rollback method.</p>
+</div>
+<div class="paragraph">
+<p>This has the implication that the streaming query should not be used within a <code>ProcessingContext</code> (within message handlers or any other transactional methods) to chain other transactional actions (like sending a command or query).</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_streaming_back_pressure"><a class="anchor" href="#_streaming_back_pressure"></a>Streaming back-pressure</h3>
+<div class="paragraph">
+<p>Back-pressure (flow control) is an essential feature in reactive systems that allows consumers to control the data flow, ensuring they are not overwhelmed by the producer.
+The streaming query implements a pull-based back-pressure strategy, which means that the producer will emit data when the consumer is ready to receive it.</p>
+</div>
+<div class="paragraph">
+<p>If you are using Axon Server, see the Axon Server flow control documentation for more information.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cancellation"><a class="anchor" href="#_cancellation"></a>Cancellation</h3>
+<div class="paragraph">
+<p>The streaming query can be implemented as an infinite stream.
+Hence, it&#8217;s important to cancel it once the client is not interested in receiving any more data.</p>
+</div>
+<div class="paragraph">
+<p>The following sample shows how this could be achieved:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public Publisher&lt;CardSummary&gt; consumer() {
+    return Flux.from(queryGateway.streamingQuery(query, CardSummary.class))
+               .take(100)
+               .takeUntil(message -&gt; somePredicate.test(message));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The example above shows how the <code>take</code> operator limits the number of items to be emitted.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_error_handling"><a class="anchor" href="#_error_handling"></a>Error handling</h3>
+<div class="paragraph">
+<p>A producer that produces an error by calling <code>onError(Throwable)</code> will terminate the handler execution.
+The consumer will, in turn, have its <code>onError(Throwable)</code> subscription handler called.</p>
+</div>
+<div class="paragraph">
+<p>Note that exceptions do not flow upstream (from consumer to producer).
+If an error happens on the consumer side, the consumer error will trigger a cancel signal propagated to the producer.
+This signal will effectively cancel the stream without the producer knowing the reason.</p>
+</div>
+<div class="paragraph">
+<p>Hence, it&#8217;s recommended to set a timeout on the query handler&#8217;s side in case of a finite stream.
+Essentially to protect against malfunctioning consumers or producers.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler
+public Flux&lt;CardSummary&gt; handle(FetchCardSummariesQuery query) {
+    return reactiveCardRepository.findAll()
+                                 .timeout(Duration.ofSeconds(5));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The example above shows how the <code>timeout</code> operator is used to cancel a request if no responses have been observed during a five-second timespan.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Mandatory dependency</div>
+<div class="paragraph">
+<p>The <code>reactor-core</code> dependency is mandatory for usage of streaming queries.
+However, it is a compile time dependency and is not required for other Axon features.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Both <code>QueryGateway</code> and <code>QueryBus</code> are automatically configured by Axon Framework.</p>
+</div>
+<div class="sect2">
+<h3 id="_spring_boot_configuration"><a class="anchor" href="#_spring_boot_configuration"></a>Spring Boot configuration</h3>
+<div class="paragraph">
+<p>When using Spring Boot with Axon, both components are available as beans and can be injected directly:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Service
+public class ItemService {
+
+    private final QueryGateway queryGateway;
+
+    public ItemService(QueryGateway queryGateway) {
+        this.queryGateway = queryGateway;
+    }
+
+    public CompletableFuture&lt;ItemDTO&gt; findItem(String itemId) {
+        return queryGateway.query(
+            new FetchItemQuery(itemId),
+            ItemDTO.class
+        );
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration_api"><a class="anchor" href="#_configuration_api"></a>Configuration API</h3>
+<div class="paragraph">
+<p>When configuring Axon programmatically, you can access both components from the configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ApplicationConfigurer configurer = DefaultConfigurer.defaultConfiguration();
+
+configurer.messaging(messagingConfigurer -&gt; {
+    // QueryBus is registered by default, but can be customized
+    messagingConfigurer.registerQueryBus(config -&gt; new CustomQueryBus());
+});
+
+Configuration configuration = configurer.start();
+QueryGateway queryGateway = configuration.getComponent(QueryGateway.class);
+QueryBus queryBus = configuration.getComponent(QueryBus.class);</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_summary"><a class="anchor" href="#_summary"></a>Summary</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework provides multiple ways to dispatch queries:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Query Type</th>
+<th class="tableblock halign-left valign-top">Use Case</th>
+<th class="tableblock halign-left valign-top">Key Features</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Point-to-point</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Single handler, single or multiple results</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>query()</code> for single result, <code>queryMany()</code> for list results</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Subscription</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Initial state + updates over time</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Reactive <code>Flux</code> for initial results and updates, requires <code>reactor-core</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Streaming</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Large result sets, reactive streams</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Back-pressure support, cancellation, chunked results, requires <code>reactor-core</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>In most cases, you should use:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>QueryGateway</code> for dispatching queries from your application code</p>
+</li>
+<li>
+<p>Provide <code>ProcessingContext</code> when dispatching from within message handlers</p>
+</li>
+<li>
+<p>Omit <code>ProcessingContext</code> (or pass <code>null</code>) when dispatching from HTTP endpoints or scheduled tasks</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../query-handlers/">Handling</a></span>
+  <span class="next"><a href="../infrastructure/">Infrastructure</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

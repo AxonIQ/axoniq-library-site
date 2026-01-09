@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Understanding the Architecture Principles of Axon Framework 5</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/migration/understanding-architecture-principles/">
+    <link rel="prev" href="../solved-architecture-choices/">
+    <link rel="next" href="../../messaging-concepts/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/development/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Migration Guide</a></li>
+    <li><a href="./">Understanding Choices</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/reference-guide/modules/migration/pages/understanding-architecture-principles.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Understanding%20the%20Architecture%20Principles%20of%20Axon%20Framework%205" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Understanding%20the%20Architecture%20Principles%20of%20Axon%20Framework%205%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BUnderstanding%20the%20Architecture%20Principles%20of%20Axon%20Framework%205%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.0%2Fmigration%2Funderstanding-architecture-principles%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.0</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/migration/understanding-architecture-principles/">development</a>
+    <a class="version item is-current" href="./">5.0</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.0">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Understanding Choices</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Understanding the Architecture Principles of Axon Framework 5</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Now let&#8217;s explore some of the most significant architectural changes you&#8217;ll encounter when migrating from Axon Framework 4.x to Axon Framework 5.
+Each change builds upon a core philosophy, such as: embracing asynchronicity, eliminating hidden state management, decoupling business logic from technical concerns, and providing developers with clearer, more expressive APIs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_async_native_apis_for_better_concurrency_and_throughput"><a class="anchor" href="#_async_native_apis_for_better_concurrency_and_throughput"></a>Async-native APIs for better concurrency and throughput</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework 5 fundamentally reimagines how the framework interacts with your code.
+In Axon Framework 4.x, many operations were synchronous and contained bottlenecks.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 makes asynchronicity explicit and pervasive.
+Rather than hiding <code>CompletableFuture</code> chains behind method returns, the framework embraces them as first-class citizens.
+Every infrastructure component that touches message processing, event storage, or command/query handling now operates natively with <code>CompletableFuture</code> and reactive streams.</p>
+</div>
+<div class="paragraph">
+<p>This change flows through:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The <code>CommandBus</code> and <code>CommandGateway</code></p>
+</li>
+<li>
+<p>The <code>EventStore</code> and <code>EventStorageEngine</code></p>
+</li>
+<li>
+<p>Event Processors and message handlers</p>
+</li>
+<li>
+<p>The <code>QueryBus</code> and <code>QueryGateway</code></p>
+</li>
+<li>
+<p>The entire <code>Repository</code> layer</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Modern systems increasingly demand non-blocking execution.
+By making async explicit, developers can reason about concurrency clearly and therefore can optimize scheduling effectively.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_improved_configuration_architecture_makes_configuring_your_project_easier"><a class="anchor" href="#_the_improved_configuration_architecture_makes_configuring_your_project_easier"></a>The improved configuration architecture makes configuring your project easier</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One of the most architecturally significant changes is how Axon Framework approaches configuration.
+Axon Framework 4.x had a centralized <code>axon-configuration</code> module that depended on all other modules to provide a global configuration.
+This created:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>High coupling between modules</p>
+</li>
+<li>
+<p>Difficult modularization for custom extensions</p>
+</li>
+<li>
+<p>All-or-nothing configuration initialization</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 inverts the dependency structure.
+Instead of having an <code>axon-configuration</code> module that depends on all other modules, the core module (<code>axon-messaging</code>) now contains an <code>ApplicationConfigurer</code> interface.
+The key insight: different layers provide different configurers based on what you&#8217;re trying to build.</p>
+</div>
+<div class="paragraph">
+<p>The new <code>ApplicationConfigurer</code> interface now only provides basic operations to register components, decorate components, register modules, and register lifecycle handlers.
+This breaks down into specific layer configurers:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>MessagingConfigurer</strong> - For basic messaging concepts (<code>CommandBus</code>, <code>QueryBus</code>, <code>EventSink</code>)</p>
+</li>
+<li>
+<p><strong>ModellingConfigurer</strong> - Wraps <code>MessagingConfigurer</code>, adds modeling-specific registration</p>
+</li>
+<li>
+<p><strong>EventSourcingConfigurer</strong> - Wraps <code>ModellingConfigurer</code>, adds event store and event storage engine registration</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Instead of a monolithic configuration class, you now compose modular configurers:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.axonserver.connector.AxonServerConnection;
+import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.core.interception.LoggingInterceptor;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+
+class AxonConfig {
+
+    public ApplicationConfigurer configurer() {
+        return EventSourcingConfigurer.create()
+                                      .registerEventStorageEngine(config -&gt; new AxonServerEventStorageEngine(
+                                              config.getComponent(AxonServerConnection.class),
+                                              config.getComponent(EventConverter.class)
+                                      ))
+                                      // Accessing the modelling layer...
+                                      .modelling(modelling -&gt; {
+                                          CommandHandlingModule.CommandHandlerPhase commandHandlingModule =
+                                                  CommandHandlingModule.named("orders")
+                                                                       .commandHandlers();
+                                          modelling.registerCommandHandlingModule(commandHandlingModule);
+                                      })
+                                      // Accessing the messaging layer...
+                                      .messaging(messaging -&gt; messaging.registerDispatchInterceptor(
+                                              config -&gt; new LoggingInterceptor&lt;&gt;()
+                                      ));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each layer wraps the one below it, creating a delegation chain that lets you move up and down to access layer-specific APIs.</p>
+</div>
+<div class="paragraph">
+<p>The benefits of this architecture include:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Clear separation</strong>: Each module configures its own concerns.</p>
+</li>
+<li>
+<p><strong>Lazy initialization</strong>: Components only initialize when needed.</p>
+</li>
+<li>
+<p><strong>Custom modules</strong>: Easier to create domain-specific configuration modules.</p>
+</li>
+<li>
+<p><strong>Composability</strong>: Pick and choose exactly what you need from Axon.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>For more info:</strong> <a href="https://www.axoniq.io/blog/announcing-axon-framework-5-configuring-axon-made-easy">Configuration Blog</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_moving_away_from_fixed_aggregates_to_entities_with_tags_the_dynamic_consistency_boundary_approach"><a class="anchor" href="#_moving_away_from_fixed_aggregates_to_entities_with_tags_the_dynamic_consistency_boundary_approach"></a>Moving away from fixed aggregates to entities with tags: the Dynamic Consistency Boundary approach</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One of the most significant changes is how Axon Framework 5 conceptualizes event storage.
+Axon Framework 4.x&#8217;s event store was fundamentally aggregate-centric.
+An <code>EventStore</code> stored events grouped by aggregate root.
+This made sense for a certain class of applications, but imposed constraints:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Complex event sourcing patterns spanning multiple entities.</p>
+</li>
+<li>
+<p>Systems needing to event-source entire bounded contexts.</p>
+</li>
+<li>
+<p>Read models sourced from multiple aggregate streams.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 moves to a "Dynamic Consistency Boundary" (DCB) model.
+Rather than assuming a single aggregate root per stream, events can be organized by tags.</p>
+</div>
+<div class="paragraph">
+<p><strong>For more info:</strong> <a href="https://www.axoniq.io/blog/dcb-in-af-5">DCB Blog</a> and <a href="../../events/event-store-internals/" class="xref page">Event Store internals</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_rethinking_unit_of_work_with_the_processingcontext"><a class="anchor" href="#_rethinking_unit_of_work_with_the_processingcontext"></a>Rethinking Unit of Work with the <code>ProcessingContext</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One of the most profound architectural changes in Axon Framework 5 is the complete rewrite of the <code>UnitOfWork</code> abstraction.</p>
+</div>
+<div class="paragraph">
+<p>In Axon Framework 4, the <code>UnitOfWork</code> relied on <code>ThreadLocal</code> to track the currently active unit of work.
+This approach broke down in modern execution environments:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Virtual threads can move between OS threads, invalidating <code>ThreadLocal</code> semantics.</p>
+</li>
+<li>
+<p>Reactive stacks execute multiple logical flows on the same OS thread.</p>
+</li>
+<li>
+<p>Distributed tracing needs explicit context propagation.</p>
+</li>
+<li>
+<p>Hidden state made it difficult to understand code flow without deep framework knowledge.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The removal of <code>ThreadLocal</code> is paramount for a reactive programming style.
+Axon Framework 5 breaks down the <code>UnitOfWork</code> interface into two interfaces and a concrete implementation:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The <code>ProcessingLifecycle</code>, describing methods to register actions into distinct <code>ProcessingLifeCycle.Phases</code>, thus managing the "lifecycle of a process."</p>
+</li>
+<li>
+<p>The <code>ProcessingContext</code>, an implementation of the <code>ProcessingLifecycle</code> adding resource management.</p>
+</li>
+<li>
+<p>The <code>UnitOfWork</code>, an implementation of the <code>ProcessingContext</code> and thus <code>ProcessingLifecycle</code>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> replaces the use of the <code>ThreadLocal</code>.
+As such, you will notice that the <code>ProcessingContext</code> will become a parameter throughout virtually all infrastructure interfaces Axon Framework provides.
+This will become most apparent on all message handlers.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Axon Framework 4.x: Implicit ThreadLocal-based unit of work
+@EventHandler
+public void handle(MyEvent event) {
+    UnitOfWork uow = CurrentUnitOfWork.get();
+    // Process event
+}
+
+// Axon Framework 5: Explicit ProcessingContext
+@EventHandler
+public void handle(MyEvent event, ProcessingContext context) {
+    // Context is explicit, can be reasoned about
+    // Flows through all nested operations
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> provides:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Explicit resource management</strong>: Store and retrieve resources bound to the current message processing operation.</p>
+</li>
+<li>
+<p><strong>Clear lifecycle management</strong>: Resources are bound to the logical processing unit, not the OS thread.</p>
+</li>
+<li>
+<p><strong>Distributed tracing support</strong>: The context can carry trace information through async boundaries.</p>
+</li>
+<li>
+<p><strong>Better integration with reactive stacks</strong>: Works seamlessly with reactive frameworks.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>For more info:</strong> <a href="../../messaging-concepts/processing-context/" class="xref page">Processing Context</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_message_type_and_qualified_name_decoupling_from_javas_type_system"><a class="anchor" href="#_message_type_and_qualified_name_decoupling_from_javas_type_system"></a>Message type and qualified name: Decoupling from Java&#8217;s type system</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework 4.x coupled message identity tightly to Java&#8217;s type system.
+A command&#8217;s type was its class, an event&#8217;s type was determined by its class name.
+This approach had fundamental limitations.
+For example, what happens when you need to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Support multiple versions of the same message simultaneously?</p>
+</li>
+<li>
+<p>Deploy messages across JVM and non-JVM systems?</p>
+</li>
+<li>
+<p>Evolve message schemas independent of code deployments?</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In Axon Framework 4.x, these scenarios required workarounds.
+Message versioning was handled through a separate <code>RevisionResolver</code> mechanism.
+Cross-platform compatibility required custom serialization logic.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 introduces two new foundational concepts: <code>QualifiedName</code> and <code>MessageType</code>.</p>
+</div>
+<div class="paragraph">
+<p>The <code>QualifiedName</code> represents the business identity of a message, completely independent of Java&#8217;s type system.</p>
+</div>
+<div class="paragraph">
+<p>Rather than relying on convention, you now explicitly declare message identity.</p>
+</div>
+<div class="paragraph">
+<p>This decoupling has profound implications for your entire architecture:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Version negotiation happens at the message level, not the serializer level.</p>
+</li>
+<li>
+<p>Non-JVM systems can understand message identity without reflection.</p>
+</li>
+<li>
+<p>Schema registries can track messages by qualified name and version independent of deployment artifacts.</p>
+</li>
+<li>
+<p>Upcasting and down casting becomes more explicit and controllable.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>For more info:</strong> <a href="../../messaging-concepts/anatomy-message/#message_type" class="xref page">Message Types</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_messagestream_significantly_improves_messaging_for_axon_throughout"><a class="anchor" href="#_the_messagestream_significantly_improves_messaging_for_axon_throughout"></a>The <code>MessageStream</code> significantly improves messaging for Axon throughout</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In Axon Framework 4.x, retrieving multiple messages from the event store required understanding different APIs.
+<code>DomainEventStream</code> was used for events, <code>BlockingStream</code> for certain operations, and standard <code>Stream</code> or <code>List</code> for other scenarios.
+This fragmentation made it difficult to write generic code.</p>
+</div>
+<div class="paragraph">
+<p>Each required different handling patterns.
+Worse, Axon Framework 4.x couldn&#8217;t easily support both synchronous and reactive message handlers with the same infrastructure.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 introduces <code>MessageStream</code>, a unified abstraction that elegantly handles:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Empty results (like event handlers, which return nothing).</p>
+</li>
+<li>
+<p>Single results (like command handlers, which return one response).</p>
+</li>
+<li>
+<p>Multiple results (like query handlers, which may return N values).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>MessageStream</code> also supports attaching context information to each message.</p>
+</div>
+<div class="paragraph">
+<p>This context carries metadata about each message (like aggregate identifier, sequence number) without coupling the message itself to the source.</p>
+</div>
+<div class="paragraph">
+<p>The introduction of <code>MessageStream</code> has cascading effects throughout Axon Framework 5:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>EventStore</code> operations return <code>MessageStream</code> instead of custom stream types.</p>
+</li>
+<li>
+<p><code>EventStorageEngine</code> operations work with <code>MessageStream</code> internally.</p>
+</li>
+<li>
+<p>Event processors consume messages as <code>MessageStream</code>.</p>
+</li>
+<li>
+<p>Handlers can return <code>MessageStream</code> for flexible result types.
+The <code>MessageStream</code> is enforced when registering lambdas as your message handlers.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_serialization_to_conversion_a_cleaner_separation_of_concerns"><a class="anchor" href="#_serialization_to_conversion_a_cleaner_separation_of_concerns"></a>Serialization to conversion: A cleaner separation of concerns</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework 4.x placed serialization concerns into a large <code>Serializer</code> abstraction that handled everything: payload conversion, metadata handling, and revision resolution.
+In Axon Framework 4.x, a <code>Serializer</code> had to:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Convert payloads to/from wire format.</p>
+</li>
+<li>
+<p>Handle metadata serialization.</p>
+</li>
+<li>
+<p>Resolve revisions via <code>RevisionResolver</code>.</p>
+</li>
+<li>
+<p>Support multiple serialization formats (XStream, Jackson, etc.).</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>This breadth of responsibility made it difficult to reason about serialization and prevented flexibility in format choice.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 breaks this into focused, composable pieces and replaces <code>Serializer</code> with a three-level <code>Converter</code> hierarchy with concrete types:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>General Converter</strong>: Used for all conversions unless a more specific converter is provided</p>
+</li>
+<li>
+<p><strong>MessageConverter</strong>: Specifically handles conversion of <code>Message</code> implementations</p>
+</li>
+<li>
+<p><strong>EventConverter</strong>: Specifically handles conversion of <code>EventMessage</code> implementations</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Infrastructure components now enforce the use of the appropriate converter due to the concrete types for each layer:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.springframework.context.annotation.Bean;
+
+class AxonConfig {
+
+    @Bean
+    public EventStorageEngine eventStorageEngine(
+            AxonServerConnectionManager connectionManager,
+            EventConverter eventConverter
+    ) {
+        return new AxonServerEventStorageEngine(connectionManager.getConnection(), eventConverter);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The default converter switched from XStream to Jackson, eliminating the problematic reflection behavior of XStream.
+However, if you need XML serialization:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Configure Jackson with XML support
+JacksonConverter xmlConverter = new JacksonConverter(
+    new ObjectMapper(new XmlFactory())
+);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Version resolution moved from the <code>Serializer</code> layer to the <code>MessageType</code> itself.
+Rather than having a <code>RevisionResolver</code> determine message version at serialization time, the version is now part of the message&#8217;s identity:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Old Axon Framework 4.x approach
+@Revision("2.0")
+public class AccountCreatedEvent { }
+
+// New Axon 5 approach
+@Event(name = "AccountCreatedEvent", version = "2.0")
+public class AccountCreatedEvent { }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This makes versioning explicit and independent of serialization concerns.</p>
+</div>
+<div class="paragraph">
+<p><strong>For more info:</strong> <a href="https://github.com/AxonFramework/AxonFramework/issues/3102">GitHub Issue #3102</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pooledstreamingeventprocessor_replaces_trackingeventprocessor"><a class="anchor" href="#_pooledstreamingeventprocessor_replaces_trackingeventprocessor"></a><code>PooledStreamingEventProcessor</code> replaces <code>TrackingEventProcessor</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework 4&#8217;s event processing architecture centered on the <code>TrackingEventProcessor</code>, which maintained position in event streams.
+While functional, the <code>TrackingEventProcessor</code> had limitations in resource management and scalability.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 removes the <code>TrackingEventProcessor</code> entirely.
+In its place, the <code>PooledStreamingEventProcessor</code> provides similar capabilities with better resource management.
+The pooled approach allows for more efficient thread utilization, as worker threads are shared across segments rather than dedicated per segment.
+This results in better scalability when processing high volumes of events across many segments.</p>
+</div>
+<div class="paragraph">
+<p><strong>For more info:</strong> <a href="../../events/event-processors/streaming/" class="xref page">Streaming Event Processors</a></p>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../solved-architecture-choices/">Resolved Problems</a></span>
+  <span class="next"><a href="../../messaging-concepts/">Messaging Concepts</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

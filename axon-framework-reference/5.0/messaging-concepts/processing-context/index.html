@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Processing Context</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/messaging-concepts/processing-context/">
+    <link rel="prev" href="../exception-handling/">
+    <link rel="next" href="../../commands/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/development/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Messaging Concepts</a></li>
+    <li><a href="./">Processing Context</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/reference-guide/modules/messaging-concepts/pages/processing-context.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Processing%20Context" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Processing%20Context%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BProcessing%20Context%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.0%2Fmessaging-concepts%2Fprocessing-context%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.0</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/messaging-concepts/processing-context/">development</a>
+    <a class="version item is-current" href="./">5.0</a>
+    <a class="version item" href="../../../4.12/messaging-concepts/unit-of-work/">4.12</a>
+    <a class="version item" href="../../../4.11/messaging-concepts/unit-of-work/">4.11</a>
+    <a class="version item" href="../../../4.10/messaging-concepts/unit-of-work/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.0">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Processing Context</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> is the core abstraction for managing the lifecycle of message processing in Axon Framework.
+It coordinates all actions performed during the processing of a message, regardless of whether it&#8217;s a command, event, or query. As such, it is constructed by <strong>any</strong> message handling component in Axon Framework, so that you don&#8217;t have to.
+While you&#8217;re unlikely to interact with it directly in most cases, understanding the <code>ProcessingContext</code> helps you leverage Axon&#8217;s lifecycle management capabilities when needed.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>As stated directly above, you are unlikely to interact with the <code>ProcessingContext</code> in the majority of cases. Default Axon Framework usage through message handlers means you mostly only ever have to pass it along. If you do need use to it, for whatever reason, be certain to clearly read the documentation below and ask questions when in doubt.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_overview"><a class="anchor" href="#_overview"></a>Overview</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When Axon processes a message, it creates a <code>ProcessingContext</code> that:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Manages the processing lifecycle</strong> through distinct phases (pre-invocation, invocation, commit, etc.)</p>
+</li>
+<li>
+<p><strong>Stores resources</strong> needed during processing (database connections, entity managers, etc.)</p>
+</li>
+<li>
+<p><strong>Coordinates cleanup actions</strong> to release resources after processing</p>
+</li>
+<li>
+<p><strong>Provides access to framework components</strong> from the configuration</p>
+</li>
+<li>
+<p><strong>Supports async-native processing</strong> with <code>CompletableFuture</code>-based APIs</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> ensures that message processing is atomic. Processing either completes successfully or is rolled back entirely if something goes wrong.</p>
+</div>
+<div class="paragraph">
+<p>In most cases, Axon&#8217;s building blocks automatically manage the <code>ProcessingContext</code> for you.
+You typically only need to interact with it when:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Registering lifecycle callbacks for cleanup or transaction management <strong>not</strong> supported by Axon Framework out of the box.</p>
+</li>
+<li>
+<p>Managing custom resources that span multiple processing steps.</p>
+</li>
+<li>
+<p>Implementing advanced interceptors or custom infrastructure components.</p>
+</li>
+<li>
+<p>Single-point of access to Axon&#8217;s configured components.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_accessing_the_processing_context"><a class="anchor" href="#_accessing_the_processing_context"></a>Accessing the processing context</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> is injected as a parameter in your message handlers:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public OrderResult handle(PlaceOrderCommand command,
+                          ProcessingContext context) {
+    // Access the context to register callbacks, manage resources, etc.
+    context.onCommit(ctx -&gt; {
+        logger.info("Order placed successfully");
+        return CompletableFuture.completedFuture(null);
+    });
+
+    return processOrder(command);
+}
+
+@EventHandler
+public void on(OrderPlacedEvent event,
+               ProcessingContext context) {
+    // Register cleanup action
+    context.doFinally(ctx -&gt; releaseResources());
+
+    updateProjection(event);
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_processing_lifecycle"><a class="anchor" href="#_processing_lifecycle"></a>Processing lifecycle</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> manages message processing through a series of phases.
+Each phase serves a specific purpose in the processing lifecycle.</p>
+</div>
+<div class="sect2">
+<h3 id="_lifecycle_phases"><a class="anchor" href="#_lifecycle_phases"></a>Lifecycle phases</h3>
+<div class="paragraph">
+<p>The processing lifecycle consists of these phases, executed in order:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 66.6668%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Phase</th>
+<th class="tableblock halign-left valign-top">Order</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pre-Invocation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">-10000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Execute setup actions before the handler is invoked. Use for validation, security checks, or preparing resources.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Invocation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The main processing phase where your message handler executes.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Post-Invocation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Execute actions after handler invocation but before commit. Use for post-processing logic that should happen before persistence.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Prepare-Commit</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">20000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prepare resources for commit. Use for validation before the final commit.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Commit</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">30000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Commit changes. Use for persisting state, committing transactions, publishing events, or sending messages.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>After-Commit</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">40000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Execute actions after successful commit. Use for notifications, logging, or triggering follow-up processes.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_phase_execution_rules"><a class="anchor" href="#_phase_execution_rules"></a>Phase execution rules</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Sequential execution</strong>: Phases execute strictly in order from lowest to highest.</p>
+</li>
+<li>
+<p><strong>Parallel actions</strong>: Multiple actions within the same phase may execute in parallel.</p>
+</li>
+<li>
+<p><strong>Phase completion</strong>: All actions in a phase must complete before moving to the next phase.</p>
+</li>
+<li>
+<p><strong>Failure handling</strong>: If any action fails, subsequent phases are skipped and error handlers execute.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_registering_lifecycle_actions"><a class="anchor" href="#_registering_lifecycle_actions"></a>Registering lifecycle actions</h3>
+<div class="paragraph">
+<p>You can register actions to execute in any phase:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public void handle(CreateOrderCommand command,
+                   ProcessingContext context) {
+    // Asynchronous action registration...
+    context.onCommit(
+            ctx -&gt; saveToDatabase(order).thenApply(result -&gt; {
+                logger.info("Order saved: {}", result);
+                return null;
+            })
+    );
+    // Synchronous action registration...
+    context.runOnAfterCommit(
+            ctx -&gt; notificationService.sendOrderConfirmation(command.orderId())
+    );
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>All lifecycle methods come in two variants:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Async variant</strong> (<code>on*</code>) - For actions that return <code>CompletableFuture&lt;?&gt;</code></p>
+</li>
+<li>
+<p><strong>Sync variant</strong> (<code>runOn*</code>) - For simple actions with no return value</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Available lifecycle methods:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerPhaseHandlers(ProcessingContext context) {
+    // Async variants
+    context.onPreInvocation(ctx -&gt; doAsyncSetup());
+    context.onInvocation(ctx -&gt; handleAsync())
+    context.onPostInvocation(ctx -&gt; doAsyncPostProcessing());
+    context.onPrepareCommit(ctx -&gt; validateBeforeCommit());
+    context.onCommit(ctx -&gt; commitTransaction());
+    context.onAfterCommit(ctx -&gt; sendNotifications());
+
+    // Sync variants
+    context.runOnPreInvocation(ctx -&gt; doSetup());
+    context.runOnInvocation(ctx -&gt; handleSync());
+    context.runOnPostInvocation(ctx -&gt; doPostProcessing());
+    context.runOnPrepareCommit(ctx -&gt; validate());
+    context.runOnCommit(ctx -&gt; commit());
+    context.runOnAfterCommit(ctx -&gt; notify());
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For synchronous actions that need to return a value to be passed to a following step, wrap the result in a <code>CompletableFuture</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerSyncResultHandlerInFuture(ProcessingContext context) {
+    context.onCommit(ctx -&gt; {
+        String result = performSyncOperation();
+        return CompletableFuture.completedFuture(result);
+    });
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_error_and_completion_handlers"><a class="anchor" href="#_error_and_completion_handlers"></a>Error and completion handlers</h3>
+<div class="paragraph">
+<p>Beyond the standard phases, you can register handlers for errors and completion:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(OrderPlacedEvent event, ProcessingContext context) {
+    // Register error handler - invoked when any phase fails
+    context.onError((ctx, phase, error) -&gt; {
+        logger.error("Processing failed in phase {}: {}", phase, error.getMessage());
+        rollbackChanges();
+        publishErrorEvent(event, error);
+    });
+
+    // Register completion handler - invoked when all phases succeed
+    context.whenComplete(ctx -&gt; {
+        logger.info("Processing completed successfully");
+        updateMetrics();
+    });
+
+    // Register finally handler - invoked regardless of success or failure
+    context.doFinally(ctx -&gt; {
+        releaseResources();
+        cleanupTempFiles();
+    });
+
+    processEvent(event);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Execution order for error scenarios:</strong></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Normal phases execute until one fails, then</p>
+</li>
+<li>
+<p><code>onError</code> handlers execute, then</p>
+</li>
+<li>
+<p><code>whenComplete</code> handlers are <strong>skipped</strong>, then</p>
+</li>
+<li>
+<p><code>doFinally</code> handlers execute.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><strong>Execution order for success scenarios:</strong></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>All normal phases execute successfully, then</p>
+</li>
+<li>
+<p><code>onError</code> handlers are <strong>skipped</strong>, then</p>
+</li>
+<li>
+<p><code>whenComplete</code> handlers execute, then</p>
+</li>
+<li>
+<p><code>doFinally</code> handlers execute.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_resource_management"><a class="anchor" href="#_resource_management"></a>Resource management</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> provides type-safe resource management for storing and retrieving resources needed during message processing. This allows Axon Framework to add resources in an early phase of the <code>ProcessingContext</code>, which is then accessed during a later phase of the context&#8217;s lifecycle.</p>
+</div>
+<div class="sect2">
+<h3 id="_resource_keys"><a class="anchor" href="#_resource_keys"></a>Resource keys</h3>
+<div class="paragraph">
+<p>Resources are identified using type-safe keys:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.Context.ResourceKey;
+
+// Define resource keys
+ResourceKey&lt;EntityManager&gt; EM_KEY = ResourceKey.withLabel("EntityManager");
+ResourceKey&lt;Connection&gt; DB_CONN = ResourceKey.withLabel("DatabaseConnection");
+ResourceKey&lt;List&lt;String&gt;&gt; TAGS = ResourceKey.withLabel("Tags");</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using typed keys prevents casting errors and provides IDE auto-completion support.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_storing_and_retrieving_resources"><a class="anchor" href="#_storing_and_retrieving_resources"></a>Storing and retrieving resources</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public void handle(CreateOrderCommand command, ProcessingContext context) {
+    // Add or replace resource
+    EntityManager em = entityManagerFactory.createEntityManager();
+    context.putResource(EM_KEY, em);
+
+    // Get resource
+    EntityManager retrieved = context.getResource(EM_KEY);
+
+    // Check if resource exists
+    if (context.containsResource(EM_KEY)) {
+        // Resource is available
+    }
+
+    // Get or create resource (compute if absent)
+    Connection conn = context.computeResourceIfAbsent(
+            DB_CONN, () -&gt; dataSource.getConnection()
+    );
+
+    // Register cleanup
+    context.doFinally(ctx -&gt; {
+        EntityManager manager = ctx.removeResource(EM_KEY);
+        if (manager != null) {
+            manager.close();
+        }
+    });
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_resource_lifecycle_pattern"><a class="anchor" href="#_resource_lifecycle_pattern"></a>Resource lifecycle pattern</h3>
+<div class="paragraph">
+<p>A common pattern for managing resources:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Note that this is an advanced example!
+// Axon Framework typically deals with transaction and connection details for you, so you don't have too.
+// That makes thi example useful ONLY if you are using a storage solution that is not supported by Axon Framework out of the box.
+public class TransactionInterceptor implements MessageHandlerInterceptor&lt;CommandMessage&gt; {
+
+    private static final ResourceKey&lt;Transaction&gt; TX_KEY = ResourceKey.withLabel("Transaction");
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnHandle(
+            CommandMessage command,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain&lt;CommandMessage&gt; chain
+    ) {
+        // Create resource in pre-invocation
+        context.runOnPreInvocation(ctx -&gt; {
+            Transaction tx = transactionManager.beginTransaction();
+            ctx.putResource(TX_KEY, tx);
+        });
+
+        // Commit in commit phase
+        context.onCommit(ctx -&gt; {
+            Transaction tx = ctx.getResource(TX_KEY);
+            return tx.commitAsync();
+        });
+
+        // Rollback on error
+        context.onError((ctx, phase, error) -&gt; {
+            Transaction tx = ctx.getResource(TX_KEY);
+            if (tx != null) {
+                tx.rollback();
+            }
+        });
+
+        // Cleanup in finally
+        context.doFinally(ctx -&gt; {
+            Transaction tx = ctx.removeResource(TX_KEY);
+            if (tx != null) {
+                tx.close();
+            }
+        });
+
+        return chain.proceed(command, context);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_updating_resources"><a class="anchor" href="#_updating_resources"></a>Updating resources</h3>
+<div class="paragraph">
+<p>You can update existing resources using the update method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(OrderPlacedEvent event, ProcessingContext context) {
+    // Process event...
+    // and update resource using a function
+    context.updateResource(TAGS, tags -&gt; {
+        if (tags == null) {
+            tags = new ArrayList&lt;&gt;();
+        }
+        tags.add("processed");
+        return tags;
+    });
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_accessing_the_current_message"><a class="anchor" href="#_accessing_the_current_message"></a>Accessing the current message</h3>
+<div class="paragraph">
+<p>One of the default resources Axon Framework adds for you to the <code>ProcessingContext</code>, is the entire <code>Message</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public void handle(MyCommand command, ProcessingContext context) {
+    // Retrieve the current message
+    Message message = Message.fromContext(context);
+
+    // Cast to specific message type if needed
+    CommandMessage commandMessage = (CommandMessage) message;
+
+    // Access message properties
+    String messageId = message.identifier();
+    Metadata metadata = message.metadata();
+    Instant timestamp = ((EventMessage) message).timestamp(); // For events
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_accessing_configured_components"><a class="anchor" href="#_accessing_configured_components"></a>Accessing configured components</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> provides access to components registered in the Axon Framework configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(OrderPlacedEvent event, ProcessingContext context) {
+    // Access framework components
+    EventBus eventBus = context.component(EventBus.class);
+    CommandGateway gateway = context.component(CommandGateway.class);
+
+    // Access named components
+    QueryBus queryBus = context.component(QueryBus.class, "myQueryBus");
+
+    // Use components
+    gateway.send(new ProcessOrderCommand(event.getOrderId()));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is particularly useful in interceptors or custom infrastructure components where you need to access framework services.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_context_propagation"><a class="anchor" href="#_context_propagation"></a>Context propagation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When dispatching new messages from within a handler, it is strongly recommended you do some from <em>with</em> the active <code>ProcessingContext</code> to maintain <a href="../message-correlation/" class="xref page">correlation data</a> and share resources.</p>
+</div>
+<div class="sect2">
+<h3 id="_using_eventappender"><a class="anchor" href="#_using_eventappender"></a>Using <code>EventAppender</code></h3>
+<div class="paragraph">
+<p><code>EventAppender</code> automatically uses the current processing context when publishing events:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public void handle(PlaceOrderCommand command,
+                   EventAppender appender) {
+    // EventAppender uses the context automatically
+    // Metadata and correlation data from context are propagated
+    appender.append(new OrderPlacedEvent(command.getOrderId()));
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_using_commanddispatcher"><a class="anchor" href="#_using_commanddispatcher"></a>Using <code>CommandDispatcher</code></h3>
+<div class="paragraph">
+<p><code>CommandDispatcher</code> is automatically context-aware when injected into handlers:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public CompletableFuture&lt;Void&gt; on(OrderPlacedEvent event,
+                                  CommandDispatcher commandDispatcher) {
+    // CommandDispatcher is already bound to the current ProcessingContext
+    // Correlation data propagates automatically
+    CommandResult result = commandDispatcher.send(
+        new ProcessOrderCommand(event.getOrderId())
+    );
+
+    // Return the CompletableFuture so the handler only completes when the command finishes
+    return result.toCompletableFuture()
+                 .thenAccept(r -&gt; logger.info("Command processed successfully"))
+                 .exceptionally(ex -&gt; {
+                     logger.error("Command failed: {}", ex.getMessage());
+                     return null;
+                 });
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_creating_branched_contexts"><a class="anchor" href="#_creating_branched_contexts"></a>Creating branched contexts</h3>
+<div class="paragraph">
+<p>You can create a new context that shares resources from a parent context:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(OrderCreatedEvent event, ProcessingContext context) {
+    // Create branched context with additional resource
+    ProcessingContext enrichedContext = context.withResource(
+        CORRELATION_ID_KEY,
+        event.getOrderId()
+    );
+
+    // The enriched context has all resources from the original context
+    // plus the new correlation ID
+    // Lifecycle callbacks registered on either context affect both
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_advanced_usage"><a class="anchor" href="#_advanced_usage"></a>Advanced usage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Although using the <code>ProcessingContext</code> directly already counts as an advanced use case for the typical Axon Framework users, there are even more advanced usages when you are interacting with it directly.</p>
+</div>
+<div class="sect2">
+<h3 id="_custom_phases"><a class="anchor" href="#_custom_phases"></a>Custom phases</h3>
+<div class="paragraph">
+<p>You can define custom phases to insert logic at specific points in the lifecycle. As Axon Framework itself will never use your custom phases to register operation, you are certain <strong>your</strong> tasks are the only ones running during that point in time:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class CustomPhaseInterceptor implements MessageHandlerInterceptor&lt;Message&gt; {
+
+    @Nonnull
+    @Override
+    public MessageStream&lt;?&gt; interceptOnHandle(
+            @Nonnull Message message,
+            @Nonnull ProcessingContext context,
+            @Nonnull MessageHandlerInterceptorChain&lt;Message&gt; chain
+    ) {
+        // Order between PRE_INVOCATION (order = -10000) and INVOCATION (order = 0) phase.
+        ProcessingLifecycle.Phase customPhase = () -&gt; -5000;
+
+        context.on(customPhase, ctx -&gt; {
+            // Custom logic here
+            performCustomSetup();
+            return CompletableFuture.completedFuture(null);
+        });
+        return chain.proceed(message, context);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_checking_lifecycle_state"><a class="anchor" href="#_checking_lifecycle_state"></a>Checking lifecycle state</h3>
+<div class="paragraph">
+<p>You can query the current state of the processing context:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(OrderPlacedEvent event, ProcessingContext context) {
+    if (context.isStarted()) {
+        // Processing has started
+    }
+
+    if (context.isError()) {
+        // An error occurred during processing
+    }
+
+    if (context.isCommitted()) {
+        // Processing committed successfully
+    }
+
+    if (context.isCompleted()) {
+        // Processing completed (success or failure)
+    }
+    // Process event...
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../exception-handling/">Exception Handling</a></span>
+  <span class="next"><a href="../../commands/">Commands</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

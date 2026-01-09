@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Command Dispatchers</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/commands/command-dispatchers/">
+    <link rel="prev" href="../command-handlers/">
+    <link rel="next" href="../infrastructure/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/development/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Commands</a></li>
+    <li><a href="./">Dispatching</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/reference-guide/modules/commands/pages/command-dispatchers.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Command%20Dispatchers" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Command%20Dispatchers%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BCommand%20Dispatchers%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.0%2Fcommands%2Fcommand-dispatchers%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.0</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/commands/command-dispatchers/">development</a>
+    <a class="version item is-current" href="./">5.0</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.0">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Command Dispatchers</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The dispatching of a command is the starting point of such a message.
+Commands have to be dispatched, just like any type of message, before they can be handled.
+To that end Axon provides three interfaces:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The <a href="#command-bus">CommandBus</a>,</p>
+</li>
+<li>
+<p>the <a href="#command-gateway">CommandGateway</a>, and</p>
+</li>
+<li>
+<p>the <a href="#command-dispatcher">CommandDispatcher</a>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>This page shows how and when to use these components.
+How to configure and specifics of the gateway, dispatcher, and bus are discussed in the <a href="../infrastructure/" class="xref page">infrastructure section</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="command-bus"><a class="anchor" href="#command-bus"></a>The <code>CommandBus</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>CommandBus</code> is the mechanism that dispatches commands to their respective command handlers.
+As such, it is the infrastructure component that is aware of which component can handle which command.</p>
+</div>
+<div class="paragraph">
+<p>Each command is always sent to exactly one command handler.
+If no command handler is available for the dispatched command, a <code>NoHandlerForCommandException</code> exception is thrown.</p>
+</div>
+<div class="paragraph">
+<p>The <code>CommandBus</code> provides a single <code>dispatch</code> method that is async-native and returns a <code>CompletableFuture</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>CommandBus</code> is a low-level infrastructure component.
+For typical application code, prefer using the <a href="#command-gateway">CommandGateway</a> (when dispatching from outside a handler) or the <a href="#command-dispatcher">CommandDispatcher</a> (when dispatching from within a handler).
+These components provide a more convenient API and handle message creation for you.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>If you do need to use the <code>CommandBus</code> directly, you must manually create a <code>CommandMessage</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private CommandBus commandBus; <i class="conum" data-value="1"></i><b>(1)</b>
+
+public void dispatchCommands() {
+    <i class="conum" data-value="2"></i><b>(2)</b>
+    MessageType commandType = new MessageType(IssueCardCommand.class);
+    IssueCardCommand payload = new IssueCardCommand(UUID.randomUUID().toString(), 100, "shopId");
+    CommandMessage commandMessage = new GenericCommandMessage(commandType, payload);
+
+    <i class="conum" data-value="3"></i><b>(3)</b>
+    CompletableFuture&lt;CommandResultMessage&gt; resultFuture = commandBus.dispatch(
+            commandMessage,
+            null <i class="conum" data-value="4"></i><b>(4)</b>
+    );
+
+    <i class="conum" data-value="5"></i><b>(5)</b>
+    resultFuture.whenComplete((resultMsg, exception) -&gt; {
+        if (exception != null) {
+            // Handle exception
+        } else if (resultMsg.isExceptional()) {
+            Throwable throwable = resultMsg.exceptionResult();
+            // Handle command execution failure
+        } else {
+            String commandResult = resultMsg.getPayload();
+            // Handle successful result
+        }
+    });
+}
+// omitted class and constructor</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The command dispatching example above exemplifies several important aspects:</p>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>CommandBus</code> interface providing the functionality to dispatch command messages.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>To dispatch a command on the <code>CommandBus</code>, you must manually create a <code>CommandMessage</code>.
+This requires creating a <code>MessageType</code> (which identifies the command type) and wrapping your command payload in a <code>GenericCommandMessage</code>.
+You can also add <a href="../../messaging-concepts/anatomy-message/#meta-data" class="xref page">metadata</a> by using the appropriate constructor.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The <code>CommandBus#dispatch(CommandMessage, ProcessingContext)</code> method dispatches the provided <code>CommandMessage</code> on the bus for delivery to a command handler.
+It returns a <code>CompletableFuture&lt;CommandResultMessage&gt;</code> that completes when command handling finishes.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The second parameter is the <code>ProcessingContext</code>, which is <strong>optional</strong> when dispatching commands.
+Pass <code>null</code> when dispatching from outside a message handler (for example, from an HTTP endpoint).
+If you are dispatching from within a message handler and have access to a <code>ProcessingContext</code>, you can pass it to propagate correlation data.
+See the <a href="#command-dispatcher">CommandDispatcher</a> section for a more convenient approach when dispatching from handlers.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Use the <code>CompletableFuture#whenComplete</code> method (or other <code>CompletableFuture</code> methods) to handle the result.
+The <code>CommandResultMessage</code> provides the API to verify whether command execution was exceptional or successful.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>When dispatching commands from within a message handler, prefer using the <a href="#command-dispatcher">CommandDispatcher</a> instead of the <code>CommandBus</code> directly.
+The <code>CommandDispatcher</code> automatically provides the current <code>ProcessingContext</code> and offers a more convenient API.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="command-gateway"><a class="anchor" href="#command-gateway"></a>The <code>CommandGateway</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The 'command gateway' is a convenience approach towards dispatching commands.
+It abstracts certain aspects for you when dispatching a command, while using the <code>CommandBus</code> underneath to perform the actual dispatching of the message.
+While you are not required to use a gateway to dispatch commands, it is generally the easiest option to do so.</p>
+</div>
+<div class="paragraph">
+<p>The <code>CommandGateway</code> interface provides two sets of methods: <code>send</code> (for asynchronous dispatch) and <code>sendAndWait</code> (for synchronous dispatch).</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>CommandGateway</code> accepts plain command objects (POJOs) and automatically wraps them in a <code>CommandMessage</code> for you.
+You don&#8217;t need to manually create <code>CommandMessage</code> instances when using the gateway.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_asynchronous_command_dispatching_with_send"><a class="anchor" href="#_asynchronous_command_dispatching_with_send"></a>Asynchronous command dispatching with <code>send</code></h3>
+<div class="paragraph">
+<p>The <code>send</code> methods return immediately without waiting for command handling to complete:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private CommandGateway commandGateway; <i class="conum" data-value="1"></i><b>(1)</b>
+
+public void sendCommand() {
+    String cardId = UUID.randomUUID().toString();
+
+    <i class="conum" data-value="2"></i><b>(2)</b>
+    CommandResult result = commandGateway.send(new IssueCardCommand(cardId, 100, "shopId"));
+
+    <i class="conum" data-value="3"></i><b>(3)</b>
+    result.onSuccess(String.class, cardNumber -&gt; {
+        System.out.println("Card issued with number: " + cardNumber);
+    }).onError(exception -&gt; {
+        System.err.println("Command failed: " + exception.getMessage());
+    });
+
+    <i class="conum" data-value="4"></i><b>(4)</b>
+    CompletableFuture&lt;String&gt; futureResult = result.resultAs(String.class);
+}
+// omitted class and constructor</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>CommandGateway</code> interface providing the functionality to dispatch command messages.
+It internally leverages the <code>CommandBus</code> interface to dispatch messages.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>send(Object)</code> method requires a single parameter: the command object.
+This is an asynchronous approach to dispatching commands.
+The response is a <code>CommandResult</code> that allows you to attach callbacks or retrieve a <code>CompletableFuture</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>You can attach success and error handlers directly to the <code>CommandResult</code> using <code>onSuccess()</code> and <code>onError()</code> methods.
+These methods return the <code>CommandResult</code> itself, allowing method chaining.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>To get a <code>CompletableFuture</code>, use the <code>resultAs(Class)</code> method, which converts the result to the expected type.
+This allows for chaining of follow-up operations after the command result has been returned.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The gateway automatically wraps your command object in a <code>CommandMessage</code> and handles metadata management for you.</p>
+</div>
+<div class="sect3">
+<h4 id="_alternative_send_variants"><a class="anchor" href="#_alternative_send_variants"></a>Alternative <code>send</code> variants</h4>
+<div class="paragraph">
+<p>The <code>CommandGateway</code> provides several variants of the <code>send</code> method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Send with metadata
+CommandResult result = commandGateway.send(command, Metadata.with("userId", "12345"));
+
+// Send with ProcessingContext (when dispatching from within a handler)
+CommandResult result = commandGateway.send(command, processingContext);
+
+// Send with both metadata and ProcessingContext
+CommandResult result = commandGateway.send(command, metadata, processingContext);
+
+// Send and get CompletableFuture directly
+CompletableFuture&lt;String&gt; future = commandGateway.send(command, String.class);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When dispatching from outside a message handler (for example, from an HTTP endpoint), use the variants without <code>ProcessingContext</code> or pass <code>null</code>.
+When dispatching from within a handler, you can provide the <code>ProcessingContext</code> to propagate correlation data.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>When dispatching commands from within a message handler, prefer using the <a href="#command-dispatcher">CommandDispatcher</a> instead of the <code>CommandGateway</code>.
+The <code>CommandDispatcher</code> automatically provides the current <code>ProcessingContext</code> for you.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_synchronous_command_dispatching_with_sendandwait"><a class="anchor" href="#_synchronous_command_dispatching_with_sendandwait"></a>Synchronous command dispatching with <code>sendAndWait</code></h3>
+<div class="paragraph">
+<p>For scenarios where you need to wait for the command result before continuing, use the <code>sendAndWait</code> methods:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private CommandGateway commandGateway;
+
+public void sendCommandAndWaitOnResult() {
+    IssueCardCommand commandPayload = new IssueCardCommand(UUID.randomUUID().toString(), 100, "shopId");
+
+    <i class="conum" data-value="1"></i><b>(1)</b>
+    String result = commandGateway.sendAndWait(commandPayload, String.class);
+
+    <i class="conum" data-value="2"></i><b>(2)</b>
+    Object genericResult = commandGateway.sendAndWait(commandPayload);
+}
+// omitted class and constructor</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>CommandGateway#sendAndWait(Object, Class)</code> method takes the command object and the expected result type.
+It blocks the current thread until command handling completes.
+If command handling throws an exception, it is rethrown (wrapped in a <code>CommandExecutionException</code> for checked exceptions).</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>If you don&#8217;t need the result or don&#8217;t know the result type, you can use <code>sendAndWait(Object)</code> which returns <code>Object</code>.
+The result will be <code>null</code> if the command handler doesn&#8217;t return a value.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>sendAndWait</code> methods block the calling thread until command handling completes.
+Use these methods only when you genuinely need to wait for the result.
+For most use cases, the asynchronous <code>send</code> methods are preferred.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="command-dispatcher"><a class="anchor" href="#command-dispatcher"></a>The <code>CommandDispatcher</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>CommandDispatcher</code> is the <strong>preferred</strong> way to dispatch commands from within a message handler (for example, from within a command handler, event handler, or query handler).</p>
+</div>
+<div class="paragraph">
+<p>The key advantage of the <code>CommandDispatcher</code> is that it automatically uses the current <code>ProcessingContext</code>, ensuring that correlation data flows from one message to another.
+This is important for features like distributed tracing and correlation IDs.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Like the <code>CommandGateway</code>, the <code>CommandDispatcher</code> accepts plain command objects (POJOs) and automatically wraps them in a <code>CommandMessage</code>.
+You don&#8217;t need to manually create <code>CommandMessage</code> instances.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_injecting_the_commanddispatcher"><a class="anchor" href="#_injecting_the_commanddispatcher"></a>Injecting the <code>CommandDispatcher</code></h3>
+<div class="paragraph">
+<p>The <code>CommandDispatcher</code> can be injected as a parameter in any message handler:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced
+public class GiftCard {
+
+    @CommandHandler
+    public void handle(RedeemCardCommand command, EventAppender eventAppender, CommandDispatcher dispatcher) { <i class="conum" data-value="1"></i><b>(1)</b>
+        // Validate and apply event
+        eventAppender.append(new CardRedeemedEvent(command.cardId(), command.amount()));
+
+        // Dispatch another command using the dispatcher
+        dispatcher.send(new SendThankYouEmailCommand(command.cardId())); <i class="conum" data-value="2"></i><b>(2)</b>
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>CommandDispatcher</code> is injected as a parameter alongside the command.
+The framework automatically provides it with the current <code>ProcessingContext</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>When you use the <code>dispatcher.send()</code> method, it automatically includes the current <code>ProcessingContext</code>, ensuring correlation data is propagated.</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_commanddispatcher_api"><a class="anchor" href="#_commanddispatcher_api"></a><code>CommandDispatcher</code> API</h3>
+<div class="paragraph">
+<p>The <code>CommandDispatcher</code> provides a simple API for dispatching commands:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Send command and get CommandResult
+CommandResult result = dispatcher.send(command);
+
+// Send command with metadata
+CommandResult result = dispatcher.send(command, metadata);
+
+// Send command and get CompletableFuture with expected type
+CompletableFuture&lt;String&gt; future = dispatcher.send(command, String.class);
+
+// Attach handlers to the result
+dispatcher.send(command)
+         .onSuccess(String.class, cardNumber -&gt; {
+             // Handle success
+         })
+         .onError(exception -&gt; {
+             // Handle error
+         });</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice that the <code>CommandDispatcher</code> API does <strong>not</strong> have a <code>ProcessingContext</code> parameter.
+This is because the <code>CommandDispatcher</code> is created for a specific <code>ProcessingContext</code> and automatically uses it for all dispatched commands.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Use the <code>CommandDispatcher</code> whenever you dispatch commands from within a message handler.
+Use the <code>CommandGateway</code> (with <code>null</code> for <code>ProcessingContext</code>) when dispatching from outside a handler (for example, from an HTTP endpoint).</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_command_dispatching_results"><a class="anchor" href="#_command_dispatching_results"></a>Command dispatching results</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dispatching commands will generally have two possible outcomes:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Command handled successfully, and</p>
+</li>
+<li>
+<p>command handled exceptionally</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The outcome depends on the implementation of the command handler.
+If the <code>@CommandHandler</code> annotated function throws an exception due to some business logic, it will be that exception which will be the result of dispatching the command.</p>
+</div>
+<div class="sect2">
+<h3 id="_return_values_from_command_handlers"><a class="anchor" href="#_return_values_from_command_handlers"></a>Return values from command handlers</h3>
+<div class="paragraph">
+<p>Command handlers can return values, and the framework will propagate these through the <code>CommandResultMessage</code> (or directly through <code>CommandResult</code>/<code>CompletableFuture</code> depending on the API used).
+However, it&#8217;s important to understand the intent behind commands versus queries:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Commands</strong> express an intent to change application state.
+The primary goal of dispatching a command is to execute that state change, not to retrieve information.</p>
+</li>
+<li>
+<p><strong>Queries</strong> are designed specifically for retrieving information from the application.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If the primary purpose of sending a message is to obtain a result value, consider whether it should be designed as a <a href="../../queries/" class="xref page">query message</a> instead of a command.</p>
+</div>
+<div class="paragraph">
+<p>That said, there are legitimate cases where command handlers return values:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Entity identifiers</strong>: Returning the identifier of a newly created aggregate or entity is a common pattern.
+The framework has built-in support for this: when a <code>@CommandHandler</code> annotated static handler executes successfully, the value of the <code>@AggregateIdentifier</code> annotated field is automatically returned.</p>
+</li>
+<li>
+<p><strong>Confirmation data</strong>: Sometimes you may need to return confirmation information or generated values (such as reference numbers, timestamps, or other data produced during command handling).</p>
+</li>
+<li>
+<p><strong>Synchronous workflows</strong>: In certain integration scenarios, returning a value from a command handler may be necessary for synchronous processing flows.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When command handlers don&#8217;t return a value, the result will be <code>null</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_command_routing"><a class="anchor" href="#_command_routing"></a>Command routing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Commands are routed to their handlers based on a <strong>routing key</strong>.
+This routing mechanism is important for efficiency, as it helps avoid optimistic concurrency conflicts when multiple commands affect the same state.</p>
+</div>
+<div class="sect2">
+<h3 id="_why_routing_keys_matter"><a class="anchor" href="#_why_routing_keys_matter"></a>Why routing keys matter</h3>
+<div class="paragraph">
+<p>When multiple instances of a command handler exist (for example, in a distributed system or when using load balancing), commands targeting the same state should be routed to the same handler instance.
+The routing key ensures this happens consistently.</p>
+</div>
+<div class="paragraph">
+<p>For example, if two commands both modify the same entity (identified by <code>giftCardId</code>), they should use the same routing key (the <code>giftCardId</code> value) to ensure they are routed to the same destination where that entity is loaded.
+The framework can handle concurrent modifications through optimistic locking.
+However, routing commands with the same routing key to the same instance avoids these conflicts in the first place.
+This is more efficient than detecting and resolving conflicts after the fact.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuring_routing_keys_with_command"><a class="anchor" href="#_configuring_routing_keys_with_command"></a>Configuring routing keys with <code>@Command</code></h3>
+<div class="paragraph">
+<p>The simplest way to specify a routing key is using the <code>routingKey</code> attribute on the <code>@Command</code> annotation:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Command(routingKey = "cardId") <i class="conum" data-value="1"></i><b>(1)</b>
+public record IssueCardCommand(String cardId, int amount, String shopId) {
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>routingKey</code> attribute specifies which property of the command should be used as the routing key.
+In this example, the <code>cardId</code> property will be extracted and used as the routing key.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The framework will automatically extract the value from the specified property (field or method) and use it as the routing key when dispatching the command.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In Axon 4, the <code>@TargetAggregateIdentifier</code> annotation was used to specify routing keys.
+In Axon 5, this is replaced with the <code>routingKey</code> attribute on the <code>@Command</code> annotation for a more explicit and flexible approach.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_custom_routing_strategies"><a class="anchor" href="#_custom_routing_strategies"></a>Custom routing strategies</h3>
+<div class="paragraph">
+<p>For more advanced routing scenarios, you can configure a custom <code>RoutingStrategy</code>.
+The <code>RoutingStrategy</code> is used by the <code>CommandGateway</code> when building the <code>CommandMessage</code> to determine the routing key.</p>
+</div>
+<div class="sect3">
+<h4 id="_built_in_routing_strategies"><a class="anchor" href="#_built_in_routing_strategies"></a>Built-in routing strategies</h4>
+<div class="paragraph">
+<p>Axon provides several routing strategy implementations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>AnnotationRoutingStrategy</code> - Extracts the routing key from a property specified in the <code>@Command</code> annotation&#8217;s <code>routingKey</code> attribute (this is the default)</p>
+</li>
+<li>
+<p><code>MetadataRoutingStrategy</code> - Extracts the routing key from a specific metadata entry</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_configuring_a_custom_routing_strategy"><a class="anchor" href="#_configuring_a_custom_routing_strategy"></a>Configuring a custom routing strategy</h4>
+<div class="paragraph">
+<p>You can register a custom <code>RoutingStrategy</code> using the configuration API:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Using Configuration API
+public ApplicationConfigurer configureRouting(ApplicationConfigurer configurer) {
+    return configurer.messagingConfigurer(messagingConfigurer -&gt;
+        messagingConfigurer.registerComponent(
+            RoutingStrategy.class,
+            config -&gt; new MetadataRoutingStrategy("tenantId") <i class="conum" data-value="1"></i><b>(1)</b>
+        )
+    );
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>This example uses <code>MetadataRoutingStrategy</code> to extract the routing key from metadata with key <code>"tenantId"</code>.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>When using Spring Boot, you can register a custom <code>RoutingStrategy</code> as a Spring bean:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
+public class AxonConfig {
+
+    @Bean
+    public RoutingStrategy routingStrategy() {
+        return new MetadataRoutingStrategy("tenantId"); <i class="conum" data-value="1"></i><b>(1)</b>
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Spring Boot auto-configuration will automatically detect and use this <code>RoutingStrategy</code>.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>You can also implement your own <code>RoutingStrategy</code> for completely custom routing logic:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CustomRoutingStrategy implements RoutingStrategy {
+
+    @Override
+    public String getRoutingKey(CommandMessage command) {
+        // Custom logic to determine routing key
+        MyCommand payload = command.payload();
+        return payload.tenantId() + ":" + payload.entityId(); <i class="conum" data-value="1"></i><b>(1)</b>
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>This example creates a composite routing key from multiple properties.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The routing key must have a consistent <code>toString()</code> implementation.
+Inconsistent <code>toString()</code> methods may result in different handler instances receiving commands that should go to the same instance.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_understanding_processingcontext_in_command_dispatching"><a class="anchor" href="#_understanding_processingcontext_in_command_dispatching"></a>Understanding <code>ProcessingContext</code> in command dispatching</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> is a key concept in Axon that coordinates all components involved in processing a message.
+Understanding when to provide it is important:</p>
+</div>
+<div class="paragraph">
+<p><strong>When dispatching commands:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ProcessingContext</code> is <strong>optional</strong> on the dispatching side.</p>
+</li>
+<li>
+<p>Pass <code>null</code> (or use method variants without the parameter) when dispatching from outside a handler, such as from an HTTP endpoint.</p>
+</li>
+<li>
+<p>When dispatching from within a handler, you <em>can</em> provide the <code>ProcessingContext</code> to propagate correlation data (such as trace IDs) to the command being dispatched.</p>
+</li>
+<li>
+<p>The easiest way to dispatch from a handler is to use the <a href="#command-dispatcher">CommandDispatcher</a>, which automatically provides the current <code>ProcessingContext</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>When handling commands:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ProcessingContext</code> is <strong>mandatory</strong> on the handling side.</p>
+</li>
+<li>
+<p>Axon always creates a <code>ProcessingContext</code> when processing a message.</p>
+</li>
+<li>
+<p>The <code>ProcessingContext</code> can be injected as a parameter in command handlers.</p>
+</li>
+<li>
+<p>All components involved in handling the command must receive and use the same <code>ProcessingContext</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For more details on <code>ProcessingContext</code>, see <a href="../../messaging-concepts/processing-context/" class="xref page">Processing Context</a>.</p>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../command-handlers/">Handling</a></span>
+  <span class="next"><a href="../infrastructure/">Infrastructure</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
