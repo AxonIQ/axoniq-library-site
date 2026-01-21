@@ -142,6 +142,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../migration/understanding-architecture-principles/">Understanding Choices</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/paths/">Migration Paths</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -491,6 +494,218 @@ You can override any auto-configured bean by defining your own in a <code>@Confi
 </div>
 <div class="paragraph">
 <p>For detailed configuration options, see the specific sections in this reference guide for commands, events, queries, and entities.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_event_processor_configuration"><a class="anchor" href="#_event_processor_configuration"></a>Event processor configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Boot provides multiple approaches to configure event processors, ranging from simple properties-based configuration to programmatic type-safe configuration.</p>
+</div>
+<div class="sect2">
+<h3 id="_configuration_approaches"><a class="anchor" href="#_configuration_approaches"></a>Configuration approaches</h3>
+<div class="sect3">
+<h4 id="_properties_based_configuration"><a class="anchor" href="#_properties_based_configuration"></a>Properties-based configuration</h4>
+<div class="paragraph">
+<p>The simplest approach for basic configuration using <code>application.properties</code> or <code>application.yml</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.mode=pooled-streaming
+axon.eventhandling.processors.my-processor.initial-segment-count=4
+axon.eventhandling.processors.my-processor.batch-size=100
+axon.eventhandling.processors.my-processor.thread-count=16</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This approach is ideal for:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Simple processor configuration</p>
+</li>
+<li>
+<p>Environment-specific settings (dev, test, prod)</p>
+</li>
+<li>
+<p>Quick prototyping</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_programmatic_configuration_with_processordefinition"><a class="anchor" href="#_programmatic_configuration_with_processordefinition"></a>Programmatic configuration with <code>ProcessorDefinition</code></h4>
+<div class="paragraph">
+<p>For advanced configuration and type safety, use <code>ProcessorDefinition</code> beans:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public ProcessorDefinition orderProcessor() {
+        return ProcessorDefinition.pooledStreamingProcessor("order-processor")
+                .assigningHandlers(descriptor -&gt;
+                    descriptor.beanName().startsWith("order"))
+                .withConfiguration(config -&gt; config
+                    .initialSegmentCount(4)
+                    .batchSize(100));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>ProcessorDefinition</code> API provides:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Type-safe configuration</strong> - Compile-time checking of configuration options</p>
+</li>
+<li>
+<p><strong>Fluent API</strong> - Chain configuration methods for readability</p>
+</li>
+<li>
+<p><strong>Handler selection</strong> - Define which event handlers belong to each processor using predicates</p>
+</li>
+<li>
+<p><strong>Full configuration access</strong> - All processor settings available programmatically</p>
+</li>
+<li>
+<p><strong>IDE support</strong> - Better autocompletion and refactoring support</p>
+</li>
+</ul>
+</div>
+<div class="sect4">
+<h5 id="_handler_selection"><a class="anchor" href="#_handler_selection"></a>Handler selection</h5>
+<div class="paragraph">
+<p>The <code>assigningHandlers()</code> method provides access to an <code>EventHandlerDescriptor</code> with the following properties:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>beanName()</code> - The Spring bean name</p>
+</li>
+<li>
+<p><code>beanType()</code> - The event handler class (use for package-based selection)</p>
+</li>
+<li>
+<p><code>beanDefinition()</code> - The Spring bean definition</p>
+</li>
+<li>
+<p><code>component()</code> - The component builder</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This allows flexible handler assignment based on naming conventions, package structure, or custom criteria:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// By bean name prefix
+.assigningHandlers(d -&gt; d.beanName().startsWith("order"))
+
+// By package
+.assigningHandlers(d -&gt; d.beanType().getPackageName().startsWith("com.example.orders"))
+
+// By bean name pattern
+.assigningHandlers(d -&gt; d.beanName().contains("Handler"))</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_configuration_options"><a class="anchor" href="#_configuration_options"></a>Configuration options</h5>
+<div class="paragraph">
+<p>Use <code>withConfiguration()</code> to customize processor settings, or <code>withDefaultSettings()</code> when you only need handler assignment:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// With custom configuration
+ProcessorDefinition.pooledStreamingProcessor("custom-processor")
+    .assigningHandlers(descriptor -&gt; descriptor.beanName().startsWith("custom"))
+    .withConfiguration(config -&gt; config
+        .initialSegmentCount(16)
+        .batchSize(100)
+        .tokenClaimInterval(5000));
+
+// With default settings (only handler assignment)
+ProcessorDefinition.pooledStreamingProcessor("default-processor")
+    .assigningHandlers(descriptor -&gt; descriptor.beanName().startsWith("default"))
+    .withDefaultSettings();</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_configuration_precedence"><a class="anchor" href="#_configuration_precedence"></a>Configuration precedence</h4>
+<div class="paragraph">
+<p>When using multiple configuration approaches:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>ProcessorDefinition</code> beans take precedence over properties-based configuration</p>
+</li>
+<li>
+<p>If a handler matches multiple <code>ProcessorDefinition</code> selectors, an <code>AxonConfigurationException</code> is thrown at startup</p>
+</li>
+<li>
+<p>Handlers not matched by any <code>ProcessorDefinition</code> are assigned based on their package name (default behavior)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>To avoid conflicts, ensure each handler is matched by at most one <code>ProcessorDefinition</code> using mutually exclusive selectors.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_when_to_use_each_approach"><a class="anchor" href="#_when_to_use_each_approach"></a>When to use each approach</h4>
+<div class="paragraph">
+<p>Use <strong>properties-based configuration</strong> when:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Configuration is simple and doesn&#8217;t require custom logic</p>
+</li>
+<li>
+<p>Settings may vary per environment</p>
+</li>
+<li>
+<p>You&#8217;re prototyping or getting started</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Use <strong>ProcessorDefinition</strong> when:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>You need fine-grained control over handler assignment</p>
+</li>
+<li>
+<p>Configuration requires conditional logic</p>
+</li>
+<li>
+<p>Type safety and IDE support are important</p>
+</li>
+<li>
+<p>You want to share configuration between environments programmatically</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For comprehensive event processor configuration examples and detailed information, see <a href="../events/event-processors/streaming/" class="xref page">Event Processors</a>.</p>
+</div>
+</div>
 </div>
 </div>
 </div>
