@@ -348,19 +348,22 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>Interesting metrics in a message centric system come in several forms and flavors, like count, capacity, and latency for example.
-Axon Framework allows you to retrieve such measurements through the use of the <code>axon-metrics</code> or <code>axon-micrometer</code> module.
-With these modules you can register a number of <code>MessageMonitor</code> implementations to your messaging components, like the <a href="../../commands/command-dispatchers/#command-bus" class="xref page"><code>CommandBus</code></a>, <a href="../../events/infrastructure/#event_bus" class="xref page"><code>EventBus</code></a>, <a href="../../queries/query-dispatchers/#query-bus-and-gateway" class="xref page"><code>QueryBus</code></a> and <a href="../../events/event-processors/" class="xref page"><code>EventProcessors</code></a>.</p>
+Axon Framework allows you to retrieve such measurements through the use of the extension modules <code>axon-metrics-dropwizard</code> and <code>axon-metrics-micrometer</code>.</p>
 </div>
 <div class="paragraph">
-<p><code>axon-metrics</code> module uses <a href="https://metrics.dropwizard.io/">Dropwizard Metrics</a> for registering the measurements correctly.
-That means that <code>MessageMonitors</code> are registered against the Dropwizard <code>MetricRegistry</code>.</p>
+<p>With these modules you can register a number of <code>MessageMonitor</code> implementations to your messaging components, like the <a href="../../commands/command-dispatchers/#command-bus" class="xref page"><code>CommandBus</code></a>, <a href="../../events/infrastructure/#event_bus" class="xref page"><code>EventBus</code></a>, <a href="../../queries/query-dispatchers/#query-bus-and-gateway" class="xref page"><code>QueryBus</code></a> and <a href="../../events/event-processors/" class="xref page"><code>EventProcessors</code></a>.</p>
+</div>
+<div id="axon-metrics-dropwizard" class="paragraph">
+<p>As the name suggests, the <code>axon-metrics-dropwizard</code> module uses <a href="https://metrics.dropwizard.io/">Dropwizard Metrics</a> for registering the measurements of your infrastructure components.
+Hence, the <code>MessageMonitors</code> provided by this module are registered against the Dropwizard <code>MetricRegistry</code>.</p>
+</div>
+<div id="axon-metrics-micrometer" class="paragraph">
+<p>Furthermore, the <code>axon-metrics-micrometer</code> module uses <a href="https://micrometer.io/">Micrometer</a> for measurements.
+This is a dimensional-first metrics collection facade, whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.
+Furthermore, the <code>MessageMonitors</code> provided by this module are registered against the Micrometer <code>MeterRegistry</code>.</p>
 </div>
 <div class="paragraph">
-<p><code>axon-micrometer</code> module uses <a href="https://micrometer.io/">Micrometer</a> which is a dimensional-first metrics collection facade whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.
-That means that <code>MessageMonitors</code> are registered against the Micrometer <code>MeterRegistry</code>.</p>
-</div>
-<div class="paragraph">
-<p>The following monitor implementations are currently provided:</p>
+<p>The following monitor implementations are available through <strong>both</strong> modules:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -379,103 +382,184 @@ Note that <a href="../../events/event-processors/streaming/#replaying-events" cl
 <li>
 <p><code>MessageTimerMonitor</code> - Keeps a timer for all successful, failed and ignored messages, as well as an overall timer for all three combined.</p>
 </li>
-<li>
-<p><code>PayloadTypeMessageMonitorWrapper</code> - A special <code>MessageMonitor</code> implementation which allows setting a monitor per message type instead of per message publishing/handling component.</p>
-</li>
 </ol>
 </div>
 <div class="paragraph">
+<p>The <code>axon-metrics-dropwizard</code> module has one unique <code>MessageMonitor</code>, called the <code>PayloadTypeMessageMonitorWrapper</code>. This is a <code>MessageMonitor</code> implementation that allows setting a monitor per message type instead of per message publishing/handling component. This monitor is not mandatory for <code>axon-metrics-micrometer</code> due to Micrometer&#8217;s dimensional-first support. As a result, any measurement can be tagged with the payload type automatically.</p>
+</div>
+<div class="paragraph">
 <p>You are free to configure any combination of <code>MessageMonitors</code> through constructors on your messaging components, simply by using the Configuration API.
-The <code>GlobalMetricRegistry</code> contained in the <code>axon-metrics</code> and <code>axon-micrometer</code> modules provides a set of sensible defaults per type of messaging component.
+The <code>GlobalMetricRegistry</code> contained in the <code>axon-metrics-dropwizard</code> and <code>axon-metrics-micrometer</code> modules provides a set of sensible defaults per type of messaging component.
 The following example shows you how to configure default metrics for your message handling components:</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_dropwizard"><a class="anchor" href="#_dropwizard"></a>Dropwizard</h2>
+<h2 id="_configuring_message_monitors"><a class="anchor" href="#_configuring_message_monitors"></a>Configuring message monitors</h2>
 <div class="sectionbody">
-<div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
+<div class="paragraph">
+<p>For configuring <code>MessageMonitors</code> in your application, please read the section for <a href="#dropwizard">Dropwizard</a> or <a href="#micrometer">Micrometer</a>.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Spring Boot Property-based disabling</div>
+<div class="paragraph">
+<p>When using Spring Boot, you can disable metrics entirely by setting the following property:</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MetricsConfiguration {
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.metrics.auto-configuration.enabled=false</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This property will influence both <a href="#dropwizard">Dropwizard</a> and <a href="#micrometer">Micrometer</a> metrics.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="dropwizard"><a class="anchor" href="#dropwizard"></a>Dropwizard</h3>
+<div class="paragraph">
+<p>You need to include a dependency to <code>axon-metrics-dropwizard</code> to enable Dropwizard metrics:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_maven" class="tab">
+<p>Maven</p>
+</li>
+<li id="_tabs_1_gradle" class="tab">
+<p>Gradle</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_maven--panel" class="tabpanel" aria-labelledby="_tabs_1_maven">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.axonframework.extensions.metrics&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-metrics-dropwizard&lt;/artifactId&gt;
+    &lt;version&gt;${axon.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_gradle--panel" class="tabpanel" aria-labelledby="_tabs_1_gradle">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">implementation 'org.axonframework.extensions.metrics:axon-metrics-dropwizard:${axonVersion}'</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>With the dependency in place the default <code>MessageMonitors</code> will be set for all <code>CommandBus</code>, <code>EventSink</code>, <code>EventProcessor</code>, and <code>QueryBus</code> implementations present in the application.
+If you need to specify the <code>MetricRegistry</code> used, please check the following examples:</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import com.codahale.metrics.MetricRegistry;
+import org.axonframework.extension.metrics.dropwizard.MetricsConfigurationEnhancer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
-    public Configurer buildConfigurer() {
-        return DefaultConfigurer.defaultConfiguration();
-    }
+class MetricsConfiguration {
 
-    // The MetricRegistry is a class from the Dropwizard Metrics framework
-    public void configureDefaultMetrics(Configurer configurer, MetricRegistry metricRegistry) {
-        GlobalMetricRegistry globalMetricRegistry = new GlobalMetricRegistry(metricRegistry);
-        // We register the default monitors to our messaging components by doing the following
-        globalMetricRegistry.registerWithConfigurer(configurer);
+    public void configureDefaultMetrics(MessagingConfigurer configurer,
+                                        MetricRegistry metricRegistry) {
+        configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerEnhancer(
+                new MetricsConfigurationEnhancer(metricRegistry)
+        ));
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration"><a class="anchor" href="#_spring_boot_auto_configuration"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text"># The default value is `true`. Thus you will have Metrics configured if `axon-metrics` and `io.dropwizard.metrics` are on your classpath.
-axon.metrics.auto-configuration.enabled=true</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_micrometer"><a class="anchor" href="#_micrometer"></a>Micrometer</h2>
-<div class="sectionbody">
-<div class="sect3">
-<h4 id="_axon_configuration_api_without_tags"><a class="anchor" href="#_axon_configuration_api_without_tags"></a>Axon Configuration API - without tags</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MetricsConfiguration {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import com.codahale.metrics.MetricRegistry;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-    public Configurer buildConfigurer() {
-        return DefaultConfigurer.defaultConfiguration();
-    }
+@Configuration
+class MetricsConfiguration {
 
-    // The MeterRegistry is a class from the Micrometer library
-    public void configureDefaultMetrics(Configurer configurer, MeterRegistry meterRegistry) {
-        GlobalMetricRegistry globalMetricRegistry = new GlobalMetricRegistry(meterRegistry);
-        globalMetricRegistry.registerWithConfigurer(configurer);
+    @Bean
+    public MetricRegistry metricRegistry() {
+        return new MetricRegistry();
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_with_tags"><a class="anchor" href="#_axon_configuration_api_with_tags"></a>Axon Configuration API - with tags</h4>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="micrometer"><a class="anchor" href="#micrometer"></a>Micrometer</h3>
+<div class="paragraph">
+<p>You need to include a dependency to <code>axon-metrics-micrometer</code> to enable Micrometer metrics:</p>
+</div>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_maven" class="tab">
+<p>Maven</p>
+</li>
+<li id="_tabs_3_gradle" class="tab">
+<p>Gradle</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_maven--panel" class="tabpanel" aria-labelledby="_tabs_3_maven">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MetricsConfiguration {
-
-    public Configurer buildConfigurer() {
-        return DefaultConfigurer.defaultConfiguration();
-    }
-
-    // The MeterRegistry is a class from the Micrometer library
-    public void configureDefaultMetrics(Configurer configurer, MeterRegistry meterRegistry) {
-        GlobalMetricRegistry globalMetricRegistry = new GlobalMetricRegistry(meterRegistry);
-        globalMetricRegistry.registerWithConfigurerWithDefaultTags(configurer);
-    }
-}</code></pre>
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.axonframework.extensions.metrics&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-metrics-micrometer&lt;/artifactId&gt;
+    &lt;version&gt;${axon.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_without_tags"><a class="anchor" href="#_spring_boot_auto_configuration_without_tags"></a>Spring Boot auto configuration - without tags</h4>
+<div id="_tabs_3_gradle--panel" class="tabpanel" aria-labelledby="_tabs_3_gradle">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># The default value is `true`.
-# Thus you will have Metrics configured if `axon-micrometer` and
-#  appropriate metric implementation (for example: `micrometer-registry-prometheus`) are on your classpath.
-axon.metrics.auto-configuration.enabled=true
-
-# Spring Boot metrics enabled
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">implementation 'org.axonframework.extensions.metrics:axon-metrics-micrometer:${axonVersion}'</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>With the dependency in place the default <code>MessageMonitors</code> will be set for all <code>CommandBus</code>, <code>EventSink</code>, <code>EventProcessor</code>, and <code>QueryBus</code> implementations present in the application.
+If you are using an automated configuration flow, as with Spring, be sure to set the following properties:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Spring Boot metrics enabled
 management.endpoint.metrics.enabled=true
 
 # Spring Boot (Prometheus) endpoint (`/actuator/prometheus`) enabled and exposed
@@ -483,152 +567,190 @@ management.metrics.export.prometheus.enabled=true
 management.endpoint.prometheus.enabled=true</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>Furthermore, Micrometer offers to option to enable dimensions to your measurements. This allows you to filter the measurements on, for example, the payload type of messages:</p>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_with_tags"><a class="anchor" href="#_spring_boot_auto_configuration_with_tags"></a>Spring Boot auto configuration - with tags</h4>
+<div id="_tabs_4" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_4_declarative_configuration" class="tab">
+<p>Declarative configuration</p>
+</li>
+<li id="_tabs_4_automated_configuration_spring_boot" class="tab">
+<p>Automated configuration - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_4_declarative_configuration--panel" class="tabpanel" aria-labelledby="_tabs_4_declarative_configuration">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># The default value is `true`.
-# Thus you will have Metrics configured if `axon-micrometer` and
-#  appropriate metric implementation (for example: `micrometer-registry-prometheus`) are on your classpath.
-axon.metrics.auto-configuration.enabled=true
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.micrometer.core.instrument.MeterRegistry;
+import org.axonframework.extension.metrics.micrometer.MetricsConfigurationEnhancer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
-# The default value is `false`.
+class MetricsConfiguration {
+
+    public void configureDefaultMetrics(MessagingConfigurer configurer,
+                                        MeterRegistry meterRegistry) {
+        boolean useDimensions = true;
+        configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerEnhancer(
+                new MetricsConfigurationEnhancer(meterRegistry, useDimensions)
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_4_automated_configuration_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_4_automated_configuration_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># The default value is `false`.
 # By enabling this property you will have message (event, command, query)
 #   payload type set as a micrometer tag/dimension by default.
 # Additionally, the processor name will be a tag/dimension instead of it being part of the metric name.
-axon.metrics.micrometer.dimensional=true
-
-# Spring Boot metrics enabled
-management.endpoint.metrics.enabled=true
-
-# Spring Boot (Prometheus) endpoint (`/actuator/prometheus`) enabled and exposed
-management.metrics.export.prometheus.enabled=true
-management.endpoint.prometheus.enabled=true</code></pre>
+axon.metrics.micrometer.dimensional=true</code></pre>
 </div>
 </div>
-<hr>
+</div>
+</div>
+</div>
 <div class="paragraph">
-<p>The scenario might occur that more fine-grained control over which <code>MessageMonitor</code> instance are defined is necessary.
-The following snippet provides as sample if you want to have more specific metrics on any of the message handling components:</p>
+<p>Lastly, if you need to specify the <code>MetricRegistry</code> used, please check the following examples:</p>
+</div>
+<div id="_tabs_5" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_5_declarative_configuration" class="tab">
+<p>Declarative configuration</p>
+</li>
+<li id="_tabs_5_automated_configuration_spring_boot" class="tab">
+<p>Automated configuration - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_5_declarative_configuration--panel" class="tabpanel" aria-labelledby="_tabs_5_declarative_configuration">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.micrometer.core.instrument.MeterRegistry;
+import org.axonframework.extension.metrics.micrometer.MetricsConfigurationEnhancer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+class MetricsConfiguration {
+
+    public void configureDefaultMetrics(MessagingConfigurer configurer,
+                                        MeterRegistry meterRegistry) {
+        configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerEnhancer(
+                new MetricsConfigurationEnhancer(meterRegistry)
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_5_automated_configuration_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_5_automated_configuration_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+class MetricsConfiguration {
+
+    @Bean
+    public MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuring_custom_message_monitors"><a class="anchor" href="#_configuring_custom_message_monitors"></a>Configuring (custom) message monitors</h3>
+<div class="paragraph">
+<p>The scenario might occur that more fine-grained control over which <code>MessageMonitor</code> instances are defined is necessary.
+The <code>MessagingConfigurer</code> provides dedicated methods to register monitors per message type:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>registerMessageMonitor(&#8230;&#8203;)</code> - Registers a monitor for all message types.</p>
+</li>
+<li>
+<p><code>registerCommandMonitor(&#8230;&#8203;)</code> - Registers a monitor specifically for command messages.</p>
+</li>
+<li>
+<p><code>registerEventMonitor(&#8230;&#8203;)</code> - Registers a monitor specifically for event messages.</p>
+</li>
+<li>
+<p><code>registerQueryMonitor(&#8230;&#8203;)</code> - Registers a monitor specifically for query messages.</p>
+</li>
+<li>
+<p><code>registerSubscriptionQueryUpdateMonitor(&#8230;&#8203;)</code> - Registers a monitor for subscription query update messages.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Multiple monitors can be registered for the same message type.
+When retrieving a monitor, all registered monitors are combined into a <code>MultiMessageMonitor</code>, which delegates message ingestion and callbacks to all of them.</p>
+</div>
+<div class="paragraph">
+<p>The following snippet shows how to register custom message monitors using the <code>MessagingConfigurer</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Java (Spring Boot Configuration) - Micrometer example
-@Configuration
-public class MetricsConfig {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 
-    @Bean
-    public ConfigurerModule metricConfigurer(MeterRegistry meterRegistry) {
-        return configurer -&gt; {
-            instrumentEventStore(meterRegistry, configurer);
-            instrumentEventProcessors(meterRegistry, configurer);
-            instrumentCommandBus(meterRegistry, configurer);
-            instrumentQueryBus(meterRegistry, configurer);
-        };
+class MetricsConfiguration {
+
+    public void configureCustomMonitors(MessagingConfigurer configurer) {
+        // Register a monitor for all message types
+        configurer.registerMessageMonitor(config -&gt; new MyCustomMessageMonitor());
+
+        // Register monitors for specific message types
+        configurer.registerCommandMonitor(config -&gt; new MyCommandMonitor());
+        configurer.registerEventMonitor(config -&gt; new MyEventMonitor());
+        configurer.registerQueryMonitor(config -&gt; new MyQueryMonitor());
     }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If registering <code>MessageMonitors</code> per message type is not fine-grained enough, we recommend the registration of a component decorator. Axon&#8217;s decorator registration allows you to wrap infrastructure components with custom logic, including monitoring. It is actually how Axon Framework itself attaches the <code>MessageMonitors</code> as a special type of <a href="../../messaging-concepts/message-intercepting/" class="xref page">interceptor</a> to the right infrastructure components.</p>
+</div>
+<div class="paragraph">
+<p>The following example shows how to create register a decorator specifically for an <code>EventSink</code> to include a specific <code>MessageMonitor</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.InterceptingEventSink;
+import org.axonframework.messaging.monitoring.MessageMonitor;
+import org.axonframework.messaging.monitoring.interception.MonitoringEventDispatchInterceptor;
 
-    private void instrumentEventStore(MeterRegistry meterRegistry, Configurer configurer) {
-        MessageMonitorFactory messageMonitorFactory = (configuration, componentType, componentName) -&gt; {
-            MessageCountingMonitor messageCounter = MessageCountingMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -&gt; Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-                                   .and(message.getMetaData().entrySet().stream()
-                                               .map(s -&gt; Tag.of(s.getKey(), s.getValue().toString()))
-                                               .collect(Collectors.toList()))
-            );
-            // Naming the Timer monitor/meter with the name of the component (eventStore)
-            // Registering the Timer with custom tags: payloadType.
-            MessageTimerMonitor messageTimer = MessageTimerMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -&gt; Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
-            return new MultiMessageMonitor&lt;&gt;(messageCounter, messageTimer);
-        };
-        configurer.configureMessageMonitor(EventStore.class, messageMonitorFactory);
-    }
+import java.util.List;
 
-    private void instrumentEventProcessors(MeterRegistry meterRegistry, Configurer configurer) {
-        MessageMonitorFactory messageMonitorFactory = (configuration, componentType, componentName) -&gt; {
+class AxonConfig {
 
-            // Naming the Counter monitor/meter with the fixed name `eventProcessor`.
-            // Registering the Counter with custom tags: payloadType and processorName.
-            MessageCountingMonitor messageCounter = MessageCountingMonitor.buildMonitor(
-                    "eventProcessor", meterRegistry,
-                    message -&gt; Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            TagsUtil.PROCESSOR_NAME_TAG, componentName
-                    )
-            );
-            // Naming the Timer monitor/meter with the fixed name `eventProcessor`.
-            // Registering the Timer with custom tags: payloadType and processorName.
-            MessageTimerMonitor messageTimer = MessageTimerMonitor.buildMonitor(
-                    "eventProcessor", meterRegistry,
-                    message -&gt; Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            TagsUtil.PROCESSOR_NAME_TAG, componentName
-                    )
-            );
-            // Naming the Capacity/Gauge monitor/meter with the fixed name `eventProcessor`.
-            // Registering the Capacity/Gauge with custom tags: payloadType and processorName.
-            CapacityMonitor capacityMonitor1Minute = CapacityMonitor.buildMonitor(
-                    "eventProcessor", meterRegistry,
-                    message -&gt; Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            TagsUtil.PROCESSOR_NAME_TAG, componentName
-                    )
-            );
-
-            return new MultiMessageMonitor&lt;&gt;(messageCounter, messageTimer, capacityMonitor1Minute);
-        };
-        configurer.configureMessageMonitor(TrackingEventProcessor.class, messageMonitorFactory);
-    }
-
-    private void instrumentCommandBus(MeterRegistry meterRegistry, Configurer configurer) {
-        MessageMonitorFactory messageMonitorFactory = (configuration, componentType, componentName) -&gt; {
-            MessageCountingMonitor messageCounter = MessageCountingMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -&gt; Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            "messageId", message.getIdentifier()
-                    )
-            );
-            MessageTimerMonitor messageTimer = MessageTimerMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -&gt; Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
-
-            CapacityMonitor capacityMonitor1Minute = CapacityMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -&gt; Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
-
-            return new MultiMessageMonitor&lt;&gt;(messageCounter, messageTimer, capacityMonitor1Minute);
-        };
-        configurer.configureMessageMonitor(CommandBus.class, messageMonitorFactory);
-    }
-
-    private void instrumentQueryBus(MeterRegistry meterRegistry, Configurer configurer) {
-        MessageMonitorFactory messageMonitorFactory = (configuration, componentType, componentName) -&gt; {
-            MessageCountingMonitor messageCounter = MessageCountingMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -&gt; Tags.of(
-                            TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName(),
-                            "messageId", message.getIdentifier()
-                    )
-            );
-            MessageTimerMonitor messageTimer = MessageTimerMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -&gt; Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
-            CapacityMonitor capacityMonitor1Minute = CapacityMonitor.buildMonitor(
-                    componentName, meterRegistry,
-                    message -&gt; Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
-            );
-
-            return new MultiMessageMonitor&lt;&gt;(messageCounter, messageTimer, capacityMonitor1Minute);
-        };
-        configurer.configureMessageMonitor(QueryBus.class, messageMonitorFactory);
+    public void registerMonitorDecorator(MessagingConfigurer configurer,
+                                         MessageMonitor&lt;? super EventMessage&gt; eventMonitor) {
+        configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerDecorator(
+                EventSink.class,
+                0,
+                (config, name, delegate) -&gt; new InterceptingEventSink(
+                        delegate,
+                        List.of(new MonitoringEventDispatchInterceptor(eventMonitor))
+                )
+        ));
     }
 }</code></pre>
 </div>

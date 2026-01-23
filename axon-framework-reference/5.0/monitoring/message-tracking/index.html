@@ -348,9 +348,12 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>Tracking messages in your system can be useful to analyze what the cause of a message was.
-There are several ways to track messages in your system.
-You can correlate messages to each other with a Correlation Data Provider
-or log the messages being handled and dispatched.</p>
+There are several ways to track messages in your system.</p>
+</div>
+<div class="paragraph">
+<p>A clear solution to this, is <a href="../tracing/" class="xref page">tracing</a>, albeit slightly involved.
+Other options you have through Axon Framework, are <a href="../../messaging-concepts/message-correlation/" class="xref page">correlation data providers</a> or straight out logging in <a href="../../messaging-concepts/message-intercepting/" class="xref page">interceptors</a>
+You can correlate messages to each other with a Correlation Data Provider or log the messages being handled and dispatched.</p>
 </div>
 </div>
 </div>
@@ -359,17 +362,13 @@ or log the messages being handled and dispatched.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The framework provides the <code>CorrelationDataProvider</code>, as described <a href="../../messaging-concepts/message-correlation/" class="xref page">here</a>.
-This interface and its implementations provide you the means to populate the meta-data of a message based on the message
-that is currently being handled.
-For instance, you could use this to store the command that triggered the event in the metadata of the event itself,
-allowing you to track the cause of it.</p>
+This interface and its implementations provide you the means to populate the meta-data of a message based on the message that is currently being handled.
+For instance, you could use this to store the command that triggered the event in the metadata of the event itself, allowing you to track the cause of it.</p>
 </div>
 <div class="paragraph">
-<p>Axon Framework provides a <code>MessageOriginProvider</code> provider out of the box,
-which adds a <code>trace-id</code> and <code>correlation-id</code> to all messages.
-The <code>trace-id</code> is the same over all messages that are triggered because of the same origin,
-while <code>correlation-id</code> contains the message identifier of the previous message.
-We can see the effect of this in the following table.</p>
+<p>Axon Framework provides a <code>MessageOriginProvider</code> provider out of the box, which adds a <code>correlationId</code> and <code>causationId</code> to all messages.
+The <code>correlationId-id</code> is the same over all messages that are triggered because of the same origin, while <code>causationId</code> contains the message identifier of the previous message.
+We can see the effect of this in the following table:</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -382,8 +381,8 @@ We can see the effect of this in the following table.</p>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Message identifier</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Type</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>trace-id</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>correlation-id</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>correlationId</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>causationId</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
@@ -412,8 +411,7 @@ We can see the effect of this in the following table.</p>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Check out the <a href="../../messaging-concepts/message-correlation/" class="xref page">message correlation page</a>
-to find out more about the <code>MessageOriginProvider</code>.</p>
+<p>Check out the <a href="../../messaging-concepts/message-correlation/" class="xref page">message correlation page</a> to find out more about the <code>MessageOriginProvider</code>.</p>
 </div>
 </div>
 </div>
@@ -421,10 +419,10 @@ to find out more about the <code>MessageOriginProvider</code>.</p>
 <h2 id="_interceptor_logging"><a class="anchor" href="#_interceptor_logging"></a>Interceptor logging</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>You can also track the flow of messages through your application using logging.
-You can leverage <a href="../../messaging-concepts/message-intercepting/" class="xref page">Handler- and DispatchInterceptors</a> to achieve this.
-The <code>LoggingInterceptor</code> is provided out-of-the-box solution to log any type of message to SLF4J,
-but also provides a simple overridable template to set up your own desired logging format.</p>
+<p>You can track the flow of messages through your application using logging.
+To that end, you can leverage Axon&#8217;s <a href="../../messaging-concepts/message-intercepting/" class="xref page">handler- and dispatch interceptors</a>.
+Although a custom interceptor can be constructed, Axon Framework provides the <code>LoggingInterceptor</code> out of the box for this purpose.
+The <code>LoggingInterceptor</code> acts as both a <a href="../../messaging-concepts/message-intercepting/#dispatch-interceptor" class="xref page">dispatch</a> and <a href="../../messaging-concepts/message-intercepting/#handler-interceptor" class="xref page">handler interceptor</a>, logging <em>any</em> type of message to SLF4J.</p>
 </div>
 </div>
 </div>
