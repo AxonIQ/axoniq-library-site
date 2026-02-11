@@ -105,6 +105,7 @@
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">development</a>
     <a class="version item" href="../../../../5.0/events/event-processors/streaming/">5.0</a>
+    <a class="version item" href="../../../../4.13/events/event-processors/streaming/">4.13</a>
     <a class="version item" href="../../../../4.12/events/event-processors/streaming/">4.12</a>
     <a class="version item" href="../../../../4.11/events/event-processors/streaming/">4.11</a>
     <a class="version item" href="../../../../4.10/events/event-processors/streaming/">4.10</a>
@@ -2562,23 +2563,6 @@ public class AxonConfig {
 <div class="sect1">
 <h2 id="_multiple_event_sources"><a class="anchor" href="#_multiple_event_sources"></a>Multiple event sources</h2>
 <div class="sectionbody">
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-<div class="title">Multiple event sources not available in Axon Framework 5.0</div>
-<div class="paragraph">
-<p>The <code>MultiStreamableEventSource</code> feature is not yet available in Axon Framework 5.0.
-It will be reintroduced in Axon Framework 5.2.0.
-The documentation below describes the multiple event sources concepts for reference and future use.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
 <div class="paragraph">
 <p>You can configure a Streaming Event Processor to use multiple sources to process events from.
 When required to process events from several sources, we can configure a specific type of <code>StreamableEventSource</code>: the <code>MultiStreamableEventSource</code>.
@@ -2603,13 +2587,6 @@ Therefore, you can specify a <code>Comparator</code> to choose between them.
 The default implementation chooses the event with the oldest timestamp (that is, the event waiting for the longest).</p>
 </div>
 <div class="paragraph">
-<p>Using multiple sources also means that the streaming processor&#8217;s polling interval needs to be divided between sources.
-Some sources might use a strategy to optimize event discovery, thus minimizing overhead in establishing costly connections to the data sources.
-To that end, you can choose which source the processor does most of the polling on using the <code>longPollingSource()</code> method in the builder.
-This operation ensures one source consumes most of the polling interval while also checking intermittently for events on the other sources.
-The <code>MultiStreamableEventSource</code> defaults the <code>longPollingSource</code> to the last configured source.</p>
-</div>
-<div class="paragraph">
 <p>Consider the following sample when constructing a <code>MultiStreamableEventSource</code>:</p>
 </div>
 <div class="listingblock">
@@ -2617,22 +2594,31 @@ The <code>MultiStreamableEventSource</code> defaults the <code>longPollingSource
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
     public MultiStreamableEventSource buildMultiStreamableEventSource(
-            StreamableEventSource&lt;TrackedEventMessage&lt;?&gt;&gt; eventSourceA,
-            StreamableEventSource&lt;TrackedEventMessage&lt;?&gt;&gt; eventSourceB,
-            Comparator&lt;Map.Entry&lt;String, TrackedEventMessage&lt;?&gt;&gt;&gt; priorityA
+            StreamableEventSource eventSourceA,
+            StreamableEventSource eventSourceB,
+            Comparator&lt;MessageStream.Entry&lt;EventMessage&gt;&gt; priorityA
     ) {
-        return MultiStreamableEventSource.builder()
-                                           .addMessageSource("eventSourceA", eventSourceA)
-                                           .addMessageSource("eventSourceB", eventSourceB)
-                                           .longPollingSource("eventSourceA") // Overrides eventSourceB as the longPollingStream
-                                           .trackedEventComparator(priorityA) // Where 'priorityA' is a comparator prioritizing events from eventSourceA
-                                           .build();
+        return MultiStreamableEventSource.combining("eventSourceA", eventSourceA)
+                                           .and("eventSourceB", eventSourceB)
+                                           .comparingUsing(priorityA); // Where 'priorityA' is a comparator prioritizing events from eventSourceA
     }
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Assuming a <code>buildMultiStreamableEventSource(&#8230;&#8203;)</code> method is present, we can use the outcome to register a processor with the configuring <code>EventProcessingConfigurer</code>:</p>
+<p>For simple cases using the default timestamp-based comparison, you can use the <code>comparingTimestamps()</code> method:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Simple case using default timestamp comparison
+MultiStreamableEventSource source = MultiStreamableEventSource
+    .combining("localEventStore", localEventStore)
+    .and("remoteEventStore", remoteEventStore)
+    .comparingTimestamps();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Assuming a <code>buildMultiStreamableEventSource(&#8230;&#8203;)</code> method is present, we can use the outcome to register a processor with the <code>PooledStreamingEventProcessorsConfigurer</code>:</p>
 </div>
 <div id="_tabs_9" class="openblock tabs is-loading">
 <div class="content">
@@ -2654,9 +2640,15 @@ The <code>MultiStreamableEventSource</code> defaults the <code>longPollingSource
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
-    public void configurePooledStreamingProcessor(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.registerPooledStreamingEventProcessor(
-                "example-processor", config -&gt; buildMultiStreamableEventSource(/*...*/)
+    private PooledStreamingEventProcessorsConfigurer configurePooledStreamingProcessor(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer.processor(
+                "example-processor",
+                config -&gt; config.eventHandlingComponents(this::configureHandlingComponent)
+                                .customize((c, pooledStreamingConfig) -&gt; pooledStreamingConfig
+                                        .eventSource(buildMultiStreamableEventSource(/*...*/))
+                                )
         );
     }
 }</code></pre>
@@ -2670,9 +2662,8 @@ The <code>MultiStreamableEventSource</code> defaults the <code>longPollingSource
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.ProcessorDefinition;
-import org.axonframework.messaging.eventhandling.MultiStreamableEventSource;
-import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.tokenstore.StreamableEventSource;
+import org.axonframework.messaging.eventstreaming.MultiStreamableEventSource;
+import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -2681,14 +2672,12 @@ public class EventProcessorConfig {
 
     @Bean
     public MultiStreamableEventSource multiEventSource(
-            StreamableEventSource&lt;TrackedEventMessage&lt;?&gt;&gt; eventSourceA,
-            StreamableEventSource&lt;TrackedEventMessage&lt;?&gt;&gt; eventSourceB
+            StreamableEventSource eventSourceA,
+            StreamableEventSource eventSourceB
     ) {
-        return MultiStreamableEventSource.builder()
-                .addMessageSource("eventSourceA", eventSourceA)
-                .addMessageSource("eventSourceB", eventSourceB)
-                .longPollingSource("eventSourceA")
-                .build();
+        return MultiStreamableEventSource.combining("eventSourceA", eventSourceA)
+                .and("eventSourceB", eventSourceB)
+                .comparingTimestamps();
     }
 
     @Bean
@@ -2726,16 +2715,13 @@ public class AxonConfig {
     // omitting other configuration methods...
     @Bean
     public MultiStreamableEventSource multiStreamableEventSource(
-            StreamableEventSource&lt;TrackedEventMessage&lt;?&gt;&gt; eventSourceA,
-            StreamableEventSource&lt;TrackedEventMessage&lt;?&gt;&gt; eventSourceB,
-            Comparator&lt;Map.Entry&lt;String, TrackedEventMessage&lt;?&gt;&gt;&gt; priorityA
+            StreamableEventSource eventSourceA,
+            StreamableEventSource eventSourceB,
+            Comparator&lt;MessageStream.Entry&lt;EventMessage&gt;&gt; priorityA
     ) {
-        return MultiStreamableEventSource.builder()
-                                           .addMessageSource("eventSourceA", eventSourceA)
-                                           .addMessageSource("eventSourceB", eventSourceB)
-                                           .longPollingSource("eventSourceA")
-                                           .trackedEventComparator(priorityA)
-                                           .build();
+        return MultiStreamableEventSource.combining("eventSourceA", eventSourceA)
+                                           .and("eventSourceB", eventSourceB)
+                                           .comparingUsing(priorityA);
     }
 }</code></pre>
 </div>

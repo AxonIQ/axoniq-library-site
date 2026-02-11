@@ -104,6 +104,7 @@
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item" href="../../../development/monitoring/metrics/">development</a>
     <a class="version item is-current" href="./">5.0</a>
+    <a class="version item" href="../../../4.13/monitoring/metrics/">4.13</a>
     <a class="version item" href="../../../4.12/monitoring/metrics/">4.12</a>
     <a class="version item" href="../../../4.11/monitoring/metrics/">4.11</a>
     <a class="version item" href="../../../4.10/monitoring/metrics/">4.10</a>
@@ -144,7 +145,13 @@
     <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -369,7 +376,7 @@ Furthermore, the <code>MessageMonitors</code> provided by this module are regist
 <ol class="arabic">
 <li>
 <p><code>CapacityMonitor</code> - Measures message capacity by keeping track of the total time spent on message handling compared to total time it is active.
-This returns a number between 0 and n number of threads.
+This returns a number between 0 and n, n being the number of threads.
 Thus, if there are 4 threads working, the maximum capacity is 4 if every thread is active 100% of the time.</p>
 </li>
 <li>
@@ -385,12 +392,64 @@ Note that <a href="../../events/event-processors/streaming/#replaying-events" cl
 </ol>
 </div>
 <div class="paragraph">
-<p>The <code>axon-metrics-dropwizard</code> module has one unique <code>MessageMonitor</code>, called the <code>PayloadTypeMessageMonitorWrapper</code>. This is a <code>MessageMonitor</code> implementation that allows setting a monitor per message type instead of per message publishing/handling component. This monitor is not mandatory for <code>axon-metrics-micrometer</code> due to Micrometer&#8217;s dimensional-first support. As a result, any measurement can be tagged with the payload type automatically.</p>
+<p>The <code>axon-metrics-dropwizard</code> module has one unique <code>MessageMonitor</code>, called the <code>PayloadTypeMessageMonitorWrapper</code>.
+This is a <code>MessageMonitor</code> implementation that allows setting a monitor per message type instead of per message publishing/handling component.
+This monitor is not mandatory for <code>axon-metrics-micrometer</code> due to Micrometer&#8217;s dimensional-first support.
+As a result, any measurement can be tagged with the payload type automatically.</p>
 </div>
 <div class="paragraph">
 <p>You are free to configure any combination of <code>MessageMonitors</code> through constructors on your messaging components, simply by using the Configuration API.
-The <code>GlobalMetricRegistry</code> contained in the <code>axon-metrics-dropwizard</code> and <code>axon-metrics-micrometer</code> modules provides a set of sensible defaults per type of messaging component.
-The following example shows you how to configure default metrics for your message handling components:</p>
+The <code>MetricsConfigurationEnhancer</code> contained in both the <code>axon-metrics-dropwizard</code> and <code>axon-metrics-micrometer</code> modules provides a set of sensible defaults per type of messaging component.</p>
+</div>
+<div id="monitor-defaults" class="paragraph">
+<p>The following table shows the default <code>MessageMonitor</code> implementations registered for each component type, including the registered metric&#8217;s name:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Component Type</th>
+<th class="tableblock halign-left valign-top">Default Message Monitors</th>
+<th class="tableblock halign-left valign-top">Metric Name Pattern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CommandBus</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageCountingMonitor</code>, <code>MessageTimerMonitor</code>, <code>CapacityMonitor</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{name}.messageCounter</code>, <code>{name}.messageTimer</code>, <code>{name}.capacity</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>EventSink</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageCountingMonitor</code>, <code>MessageTimerMonitor</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{name}.messageCounter</code>, <code>{name}.messageTimer</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>EventProcessor</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageCountingMonitor</code>, <code>MessageTimerMonitor</code>, <code>CapacityMonitor</code>, <code>EventProcessorLatencyMonitor</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{name}.messageCounter</code>, <code>{name}.messageTimer</code>, <code>{name}.capacity</code>, <code>{name}.latency</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageCountingMonitor</code>, <code>MessageTimerMonitor</code>, <code>CapacityMonitor</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{name}.messageCounter</code>, <code>{name}.messageTimer</code>, <code>{name}.capacity</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus</code> (Subscription Query Updates)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageCountingMonitor</code>, <code>MessageTimerMonitor</code>, <code>CapacityMonitor</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{name}-emitter.messageCounter</code>, <code>{name}-emitter.messageTimer</code>, <code>{name}-emitter.capacity</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The <code>{name}</code> placeholder is either the configured component name or the simple class name of the component type (for example, <code>CommandBus</code>, <code>QueryBus</code>) if the infrastructure component was registered without a name.</p>
+</div>
+<div class="paragraph">
+<p>The following example shows you how to configure default metrics for your message handling components:</p>
 </div>
 </div>
 </div>
@@ -413,7 +472,7 @@ The following example shows you how to configure default metrics for your messag
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.metrics.auto-configuration.enabled=false</code></pre>
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.metrics.enabled=false</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -461,7 +520,7 @@ The following example shows you how to configure default metrics for your messag
 </div>
 </div>
 <div class="paragraph">
-<p>With the dependency in place the default <code>MessageMonitors</code> will be set for all <code>CommandBus</code>, <code>EventSink</code>, <code>EventProcessor</code>, and <code>QueryBus</code> implementations present in the application.
+<p>With the dependency in place the <a href="#monitor-defaults">default</a> <code>MessageMonitors</code> will be set for all <code>CommandBus</code>, <code>EventSink</code>, <code>EventProcessor</code>, and <code>QueryBus</code> implementations present in the application.
 If you need to specify the <code>MetricRegistry</code> used, please check the following examples:</p>
 </div>
 <div id="_tabs_2" class="openblock tabs is-loading">
@@ -554,7 +613,7 @@ class MetricsConfiguration {
 </div>
 </div>
 <div class="paragraph">
-<p>With the dependency in place the default <code>MessageMonitors</code> will be set for all <code>CommandBus</code>, <code>EventSink</code>, <code>EventProcessor</code>, and <code>QueryBus</code> implementations present in the application.
+<p>With the dependency in place the <a href="#monitor-defaults">default</a> <code>MessageMonitors</code> will be set for all <code>CommandBus</code>, <code>EventSink</code>, <code>EventProcessor</code>, and <code>QueryBus</code> implementations present in the application.
 If you are using an automated configuration flow, as with Spring, be sure to set the following properties:</p>
 </div>
 <div class="listingblock">
@@ -568,7 +627,10 @@ management.endpoint.prometheus.enabled=true</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Furthermore, Micrometer offers to option to enable dimensions to your measurements. This allows you to filter the measurements on, for example, the payload type of messages:</p>
+<p>Furthermore, Micrometer offers to option to enable/disable dimensions to your measurements.
+This allows you to filter the measurements on, for example, the payload type of messages.
+By default, dimensions are enabled.
+If you want to adjust this, please check the following examples:</p>
 </div>
 <div id="_tabs_4" class="openblock tabs is-loading">
 <div class="content">
@@ -593,9 +655,9 @@ class MetricsConfiguration {
 
     public void configureDefaultMetrics(MessagingConfigurer configurer,
                                         MeterRegistry meterRegistry) {
-        boolean useDimensions = true;
+        boolean disableDimensions = false;
         configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerEnhancer(
-                new MetricsConfigurationEnhancer(meterRegistry, useDimensions)
+                new MetricsConfigurationEnhancer(meterRegistry, disableDimensions)
         ));
     }
 }</code></pre>
@@ -605,11 +667,11 @@ class MetricsConfiguration {
 <div id="_tabs_4_automated_configuration_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_4_automated_configuration_spring_boot">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># The default value is `false`.
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># The default value is `true`.
 # By enabling this property you will have message (event, command, query)
 #   payload type set as a micrometer tag/dimension by default.
 # Additionally, the processor name will be a tag/dimension instead of it being part of the metric name.
-axon.metrics.micrometer.dimensional=true</code></pre>
+axon.metrics.micrometer.dimensional=false</code></pre>
 </div>
 </div>
 </div>
@@ -723,34 +785,33 @@ class MetricsConfiguration {
 </div>
 </div>
 <div class="paragraph">
-<p>If registering <code>MessageMonitors</code> per message type is not fine-grained enough, we recommend the registration of a component decorator. Axon&#8217;s decorator registration allows you to wrap infrastructure components with custom logic, including monitoring. It is actually how Axon Framework itself attaches the <code>MessageMonitors</code> as a special type of <a href="../../messaging-concepts/message-intercepting/" class="xref page">interceptor</a> to the right infrastructure components.</p>
+<p>If registering <code>MessageMonitors</code> per message type is not fine-grained enough, we recommend the registration of a <code>MessageMonitorFactory</code>.
+A <code>MessageMonitorFactory</code> is a functional interface that builds a <code>MessageMonitor</code> for a specific component type and component name.
+This allows for fine-grained control over which monitors are created based on the component being monitored.
+It is this <code>MessageMonitorFactory</code> which Axon Framework uses to set the <a href="#monitor-defaults">default monitors</a> in the <code>MetricsConfigurationEnhancer</code>.</p>
 </div>
 <div class="paragraph">
-<p>The following example shows how to create register a decorator specifically for an <code>EventSink</code> to include a specific <code>MessageMonitor</code>:</p>
+<p>The following example shows how to register a <code>MessageMonitorFactory</code> that only creates a monitor for a specific <code>EventProcessor</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.InterceptingEventSink;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.messaging.monitoring.interception.MonitoringEventDispatchInterceptor;
-
-import java.util.List;
 
 class AxonConfig {
 
-    public void registerMonitorDecorator(MessagingConfigurer configurer,
-                                         MessageMonitor&lt;? super EventMessage&gt; eventMonitor) {
-        configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerDecorator(
-                EventSink.class,
-                0,
-                (config, name, delegate) -&gt; new InterceptingEventSink(
-                        delegate,
-                        List.of(new MonitoringEventDispatchInterceptor(eventMonitor))
-                )
-        ));
+    public void registerEventProcessorMonitorFactory(MessagingConfigurer configurer) {
+        configurer.registerEventMonitor((config, componentType, componentName) -&gt; {
+            // Only create a monitor for EventProcessors with a specific name
+            if (EventProcessor.class.isAssignableFrom(componentType)
+                    &amp;&amp; "my-processor".equals(componentName)) {
+                return new MyCustomEventMonitor();
+            }
+            // Return null to skip monitoring for other components
+            return null;
+        });
     }
 }</code></pre>
 </div>

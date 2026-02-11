@@ -105,6 +105,7 @@
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item" href="../../../../development/events/event-processors/subscribing/">development</a>
     <a class="version item is-current" href="./">5.0</a>
+    <a class="version item" href="../../../../4.13/events/event-processors/subscribing/">4.13</a>
     <a class="version item" href="../../../../4.12/events/event-processors/subscribing/">4.12</a>
     <a class="version item" href="../../../../4.11/events/event-processors/subscribing/">4.11</a>
     <a class="version item" href="../../../../4.10/events/event-processors/subscribing/">4.10</a>
@@ -145,7 +146,13 @@
     <a class="nav-link" href="../../../migration/understanding-architecture-principles/">Understanding Choices</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../migration/paths/messages/">Messages</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -428,7 +435,7 @@ Hence, think twice before deciding on scenario two!</p>
 <p><a href="#declarative_config_plain">Declarative configuration</a> - Using the Configuration API directly</p>
 </li>
 <li>
-<p><a href="#bean_based_config_spring">Bean-based configuration</a> - Using <code>ProcessorDefinition</code> beans in Spring Boot</p>
+<p><a href="#bean_based_config_spring">Bean-based configuration</a> - Using <code>EventProcessorDefinition</code> beans in Spring Boot</p>
 </li>
 <li>
 <p><a href="#autodetected_config_spring_properties_plain">Properties-based configuration</a> - Using Spring Boot properties files</p>
@@ -511,12 +518,12 @@ public class AxonConfig {
 </div>
 <div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
 <div id="bean_based_config_spring" class="paragraph">
-<p>When using Spring Boot, you can define <code>ProcessorDefinition</code> beans to configure subscribing event processors.
+<p>When using Spring Boot, you can define <code>EventProcessorDefinition</code> beans to configure subscribing event processors.
 This approach provides programmatic control over which event handlers are assigned to each processor and how each processor is configured.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.ProcessorDefinition;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -525,12 +532,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition(EventBus eventBus) {
-        return ProcessorDefinition.subscribingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition(EventBus eventBus) {
+        return EventProcessorDefinition.subscribing("example-processor")
                 .assigningHandlers(descriptor -&gt;
                     descriptor.beanType().getPackageName()
                               .equals("com.example.eventhandlers"))
-                .withConfiguration(config -&gt; config
+                .customized(config -&gt; config
                     .eventSource(eventBus));
     }
 }</code></pre>
@@ -579,7 +586,7 @@ public class EventProcessorConfig {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.ProcessorDefinition;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -591,13 +598,13 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition advancedProcessorDefinition(
+    public EventProcessorDefinition advancedProcessorDefinition(
             EventBus eventBus,
             MessageHandlerInterceptor&lt;? super EventMessage&gt; interceptor) {
-        return ProcessorDefinition.subscribingProcessor("advanced-processor")
+        return EventProcessorDefinition.subscribing("advanced-processor")
                 .assigningHandlers(descriptor -&gt;
                     descriptor.beanName().startsWith("advanced"))
-                .withConfiguration(config -&gt; config
+                .customized(config -&gt; config
                     .eventSource(eventBus)
                     .withInterceptor(interceptor)
                     .errorHandler(PropagatingErrorHandler.INSTANCE));
@@ -617,13 +624,13 @@ public class EventProcessorConfig {
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><code>ProcessorDefinition</code> beans take precedence over properties-based configuration for assigned handlers</p>
+<p><code>EventProcessorDefinition</code> beans take precedence over properties-based configuration for assigned handlers</p>
 </li>
 <li>
-<p>If a handler matches multiple <code>ProcessorDefinition</code> selectors, an <code>AxonConfigurationException</code> is thrown</p>
+<p>If a handler matches multiple <code>EventProcessorDefinition</code> selectors, an <code>AxonConfigurationException</code> is thrown</p>
 </li>
 <li>
-<p>Handlers not matched by any <code>ProcessorDefinition</code> are assigned to a processor named after their package</p>
+<p>Handlers not matched by any <code>EventProcessorDefinition</code> are assigned to a processor named after their package</p>
 </li>
 </ol>
 </div>
@@ -722,7 +729,7 @@ The state of the stream is maintained in Axon Server.</p>
 <div class="sect2">
 <h3 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h3>
 <div class="paragraph">
-<p>For a specific Event Processor to be a Subscribing instance using a persistent stream, you can use the Configuration API, Spring Boot with <code>ProcessorDefinition</code>, or Spring Boot properties files.
+<p>For a specific Event Processor to be a Subscribing instance using a persistent stream, you can use the Configuration API, Spring Boot with <code>EventProcessorDefinition</code>, or Spring Boot properties files.
 The event source for the event processor must be a <code>PersistentStreamMessageSource</code>.</p>
 </div>
 <div class="paragraph">
@@ -876,7 +883,7 @@ public class AxonConfig {
 </div>
 <div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
 <div class="paragraph">
-<p>When using Spring Boot, you can define <code>ProcessorDefinition</code> beans along with a <code>PersistentStreamMessageSource</code> bean:</p>
+<p>When using Spring Boot, you can define <code>EventProcessorDefinition</code> beans along with a <code>PersistentStreamMessageSource</code> bean:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -884,7 +891,7 @@ public class AxonConfig {
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 
 import java.util.ArrayList;
@@ -924,13 +931,13 @@ public class EventProcessorConfig {
     }
 
     @Bean
-    public ProcessorDefinition persistentStreamProcessor(
+    public EventProcessorDefinition persistentStreamProcessor(
             PersistentStreamMessageSource persistentStreamSource) {
-        return ProcessorDefinition.subscribingProcessor("persistent-stream-processor")
+        return EventProcessorDefinition.subscribing("persistent-stream-processor")
                 .assigningHandlers(descriptor -&gt;
                     descriptor.beanType().getPackageName()
                               .equals("com.example.streaming"))
-                .withConfiguration(config -&gt; config
+                .customized(config -&gt; config
                     .eventSource(persistentStreamSource));
     }
 }</code></pre>

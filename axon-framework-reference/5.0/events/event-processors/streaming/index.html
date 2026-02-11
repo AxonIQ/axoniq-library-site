@@ -105,6 +105,7 @@
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item" href="../../../../development/events/event-processors/streaming/">development</a>
     <a class="version item is-current" href="./">5.0</a>
+    <a class="version item" href="../../../../4.13/events/event-processors/streaming/">4.13</a>
     <a class="version item" href="../../../../4.12/events/event-processors/streaming/">4.12</a>
     <a class="version item" href="../../../../4.11/events/event-processors/streaming/">4.11</a>
     <a class="version item" href="../../../../4.10/events/event-processors/streaming/">4.10</a>
@@ -145,7 +146,13 @@
     <a class="nav-link" href="../../../migration/understanding-architecture-principles/">Understanding Choices</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../migration/paths/messages/">Messages</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -595,9 +602,9 @@ axon.eventhandling.processors[example.processor].source=eventStore</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="bean_based_config_pooled"><a class="anchor" href="#bean_based_config_pooled"></a>Bean-based configuration - Spring Boot with ProcessorDefinition</h3>
+<h3 id="bean_based_config_pooled"><a class="anchor" href="#bean_based_config_pooled"></a>Bean-based configuration - Spring Boot with EventProcessorDefinition</h3>
 <div class="paragraph">
-<p>For programmatic, type-safe configuration of event processors, Spring Boot users can define <code>ProcessorDefinition</code> beans.
+<p>For programmatic, type-safe configuration of event processors, Spring Boot users can define <code>EventProcessorDefinition</code> beans.
 This approach provides several advantages:</p>
 </div>
 <div class="ulist">
@@ -618,7 +625,7 @@ This approach provides several advantages:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.ProcessorDefinition;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -626,12 +633,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor -&gt;
                     descriptor.beanType().getPackageName()
                               .equals("com.example.orders"))
-                .withConfiguration(config -&gt; config
+                .customized(config -&gt; config
                     .initialSegmentCount(4)
                     .batchSize(100)
                     .claimExtensionThreshold(5000)
@@ -663,13 +670,13 @@ public class EventProcessorConfig {
 <p>This allows flexible handler selection based on naming conventions, packages, types, or other criteria.</p>
 </div>
 <div class="paragraph">
-<p>Use <code>withDefaultSettings()</code> instead of <code>withConfiguration()</code> when you don&#8217;t need custom processor settings but still want explicit handler assignment:</p>
+<p>Use <code>notCustomized()</code> instead of <code>customized()</code> when you don&#8217;t need custom processor settings but still want explicit handler assignment:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ProcessorDefinition.pooledStreamingProcessor("example-processor")
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">EventProcessorDefinition.pooledStreaming("example-processor")
         .assigningHandlers(descriptor -&gt; descriptor.beanName().startsWith("order"))
-        .withDefaultSettings();</code></pre>
+        .notCustomized();</code></pre>
 </div>
 </div>
 <div class="admonitionblock important">
@@ -688,18 +695,18 @@ public class EventProcessorConfig {
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><code>ProcessorDefinition</code> beans take precedence over properties-based configuration</p>
+<p><code>EventProcessorDefinition</code> beans take precedence over properties-based configuration</p>
 </li>
 <li>
-<p>If a handler matches multiple <code>ProcessorDefinition</code> selectors, an <code>AxonConfigurationException</code> is thrown at startup</p>
+<p>If a handler matches multiple <code>EventProcessorDefinition</code> selectors, an <code>AxonConfigurationException</code> is thrown at startup</p>
 </li>
 <li>
-<p>Handlers not matched by any <code>ProcessorDefinition</code> are assigned to a processor based on their package name (default behavior)</p>
+<p>Handlers not matched by any <code>EventProcessorDefinition</code> are assigned to a processor based on their package name (default behavior)</p>
 </li>
 </ol>
 </div>
 <div class="paragraph">
-<p>To avoid conflicts, ensure each handler is matched by at most one <code>ProcessorDefinition</code> using mutually exclusive selectors.</p>
+<p>To avoid conflicts, ensure each handler is matched by at most one <code>EventProcessorDefinition</code> using mutually exclusive selectors.</p>
 </div>
 </td>
 </tr>
@@ -940,11 +947,11 @@ public class AxonConfig {
 </div>
 <div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
 <div class="paragraph">
-<p>When using <code>ProcessorDefinition</code>, the initial token can be configured through the <code>initialToken()</code> method:</p>
+<p>When using <code>EventProcessorDefinition</code>, the initial token can be configured through the <code>initialToken()</code> method:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.ProcessorDefinition;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -952,12 +959,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor -&gt;
                     descriptor.beanType().getPackageName()
                               .equals("com.example.eventhandlers"))
-                .withConfiguration(config -&gt; config
+                .customized(config -&gt; config
                     .initialToken(source -&gt; source.latestToken(null)));
     }
 }</code></pre>
@@ -1053,11 +1060,11 @@ public class AxonConfig {
 </div>
 <div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
 <div class="paragraph">
-<p>When using <code>ProcessorDefinition</code>, configure token claim settings through the configuration methods:</p>
+<p>When using <code>EventProcessorDefinition</code>, configure token claim settings through the configuration methods:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.ProcessorDefinition;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -1065,11 +1072,11 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor -&gt;
                     descriptor.beanName().startsWith("example"))
-                .withConfiguration(config -&gt; config
+                .customized(config -&gt; config
                     .claimExtensionThreshold(2500)
                     .tokenClaimInterval(7500));
     }
@@ -1455,11 +1462,11 @@ public class AxonConfig {
 <p>The default number of segments for the <code>PooledStreamingEventProcessor</code> is sixteen.</p>
 </div>
 <div class="paragraph">
-<p>When using <code>ProcessorDefinition</code>, you can configure the initial segment count programmatically:</p>
+<p>When using <code>EventProcessorDefinition</code>, you can configure the initial segment count programmatically:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.ProcessorDefinition;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -1467,12 +1474,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor -&gt;
                     descriptor.beanType().getPackageName()
                               .equals("com.example.eventhandlers"))
-                .withConfiguration(config -&gt; config
+                .customized(config -&gt; config
                     .initialSegmentCount(32));
     }
 }</code></pre>
@@ -1908,12 +1915,12 @@ public class AxonConfig {
 </div>
 <div id="_tabs_7_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_7_spring_boot">
 <div class="paragraph">
-<p>When using <code>ProcessorDefinition</code>, you can configure custom thread pools for the coordinator and worker executors:</p>
+<p>When using <code>EventProcessorDefinition</code>, you can configure custom thread pools for the coordinator and worker executors:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -1923,12 +1930,12 @@ import java.util.concurrent.Executors;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor -&gt;
                     descriptor.beanType().getPackageName()
                               .startsWith("com.example"))
-                .withConfiguration(config -&gt; config
+                .customized(config -&gt; config
                     .coordinatorExecutor(Executors.newScheduledThreadPool(
                         1, new AxonThreadFactory("Coordinator - example-processor")
                     ))
@@ -2626,11 +2633,11 @@ The <code>MultiStreamableEventSource</code> defaults the <code>longPollingSource
 </div>
 <div id="_tabs_9_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_9_spring_boot">
 <div class="paragraph">
-<p>When using <code>ProcessorDefinition</code>, first create a <code>MultiStreamableEventSource</code> bean, then reference it in your processor configuration:</p>
+<p>When using <code>EventProcessorDefinition</code>, first create a <code>MultiStreamableEventSource</code> bean, then reference it in your processor configuration:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.ProcessorDefinition;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.messaging.eventhandling.MultiStreamableEventSource;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.eventhandling.tokenstore.StreamableEventSource;
@@ -2653,11 +2660,11 @@ public class EventProcessorConfig {
     }
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition(MultiStreamableEventSource multiEventSource) {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition(MultiStreamableEventSource multiEventSource) {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor -&gt;
                     descriptor.beanName().contains("multi"))
-                .withConfiguration(config -&gt; config
+                .customized(config -&gt; config
                     .eventSource(multiEventSource));
     }
 }</code></pre>
