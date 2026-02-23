@@ -151,6 +151,27 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -359,42 +380,232 @@
 </div>
 </div>
 <div class="sect1">
-<h2 id="_duplicate_command_handler_registration"><a class="anchor" href="#_duplicate_command_handler_registration"></a>Duplicate command handler registration</h2>
+<h2 id="command-sequencing"><a class="anchor" href="#command-sequencing"></a>Command sequencing</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>As described in the <a href="../../messaging-concepts/" class="xref page">Messaging Concepts</a> page, a command is always routed to a single destination. This means that during the <a href="../../commands/configuration/#registering-a-command-handler" class="xref page">registration of a command handler</a> within a given JVM, a second registration of an identical command handler method should be dealt with in a desirable manner.</p>
+<p>Command sequencing ensures that commands that aim to modify the same entities are processed sequentially, preventing optimistic locking in high-throughput applications. This feature is enabled by default in Axon Framework and operates transparently without requiring changes to existing command handlers.</p>
+</div>
+<div class="sect2">
+<h3 id="_why_command_sequencing"><a class="anchor" href="#_why_command_sequencing"></a>Why command sequencing?</h3>
+<div class="paragraph">
+<p>In high-throughput applications, multiple commands may target the same entities concurrently. Without sequencing, concurrent state modifications on the entities will lead to optimistic locking failures with a high probability. When two commands attempt to update the same entities simultaneously, subsequent commands will fail to commit their modifications, requiring custom retry logic to be implemented.</p>
 </div>
 <div class="paragraph">
-<p>How an Axon application reacts to such a duplicate registration is defined by the <code>DuplicateCommandHandlerResolver</code>. This resolver is a functional interface ingesting a command name and a registered candidate command handler method; a single command handler method is the return value. By default, the <code>LoggingDuplicateCommandHandlerResolver</code> is used, which will log a warning and returns the candidate handler.</p>
-</div>
-<div class="paragraph">
-<p>To configure the used <code>DuplicateCommandHandlerResolver</code> it is suggested to use the <code>DuplicateCommandHandlerResolution</code>, as this class gives a handle to all provided implementations. To configure the duplicate resolver to, for example, throw a <code>DuplicateCommandHandlerSubscriptionException</code> as a warning, the following approach can be taken:</p>
-</div>
-<div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
-<div class="paragraph">
-<p>Somewhere in a configuration class:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">DefaultConfigurer.defaultConfiguration().registerComponent(
-    DuplicateCommandHandlerResolution.class,
-    config -&gt; DuplicateCommandHandlerResolution.rejectDuplicates()
-);</code></pre>
-</div>
+<p>Command sequencing solves this problem by ensuring that commands targeting the same entities execute sequentially while maintaining full concurrency for commands targeting different entities. This eliminates conflicts without sacrificing overall system throughput.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_spring_boot_auto_configuration"><a class="anchor" href="#_spring_boot_auto_configuration"></a>Spring Boot auto configuration</h3>
+<h3 id="_default_behavior"><a class="anchor" href="#_default_behavior"></a>Default behavior</h3>
 <div class="paragraph">
-<p>Somewhere in a configuration class:</p>
+<p>Command sequencing is enabled by default in Axon Framework. The framework automatically configures a <code>CommandSequencingInterceptor</code> with the <code>RoutingKeySequencingPolicy</code>, which sequences commands based on their routing key.</p>
+</div>
+<div class="paragraph">
+<p>The default behavior provides an optimal balance between consistency and performance:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Commands with the <strong>same routing key</strong> (typically part of the targeted entity identifier) execute sequentially - one must complete before the next begins</p>
+</li>
+<li>
+<p>Commands with <strong>different routing keys</strong> can execute concurrently - no waiting is required</p>
+</li>
+<li>
+<p>Commands with <strong>no routing key</strong> or an <strong>empty routing key</strong> are not sequenced and can execute concurrently</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This means your application benefits from command sequencing immediately upon using Axon Framework, with no configuration required. The feature operates transparently at the handler interceptor level, after command routing has occurred.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How it works</h3>
+<div class="paragraph">
+<p>Command sequencing is implemented through the <code>CommandSequencingInterceptor</code>, a handler interceptor that manages execution order:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Sequence identification</strong>: When a command arrives, the interceptor consults the configured <code>SequencingPolicy</code> to extract a sequence identifier</p>
+</li>
+<li>
+<p><strong>Lock management</strong>: The interceptor maintains a lock for each unique sequence identifier</p>
+</li>
+<li>
+<p><strong>Sequential execution</strong>: Commands with the same sequence identifier wait for the previous command to complete before proceeding</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Because sequencing happens at the handler interceptor level (after routing), it has no impact on command dispatch or routing logic. The sequencing is completely transparent to your command handlers - no code changes are required.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_sequencingpolicy_interface"><a class="anchor" href="#_the_sequencingpolicy_interface"></a>The <code>SequencingPolicy</code> interface</h3>
+<div class="paragraph">
+<p>The <code>SequencingPolicy</code> interface determines which commands should be sequenced together:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
-public DuplicateCommandHandlerResolver duplicateCommandHandlerResolver() {
-    return DuplicateCommandHandlerResolution.rejectDuplicates();
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface SequencingPolicy {
+
+    Optional&lt;Object&gt; sequenceIdentifierFor(CommandMessage command,
+                                              ProcessingContext context);
 }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axon Framework provides the following implementations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong><code>RoutingKeySequencingPolicy</code> (default)</strong>: Sequences commands by their routing key, which typically corresponds to the entity identifier. Commands with null or empty routing keys are not sequenced and thus can execute concurrently. This is the default policy and works well for most applications.</p>
+</li>
+<li>
+<p><strong><code>NoOpSequencingPolicy</code></strong>: Disables all command sequencing. Use this policy when you want to opt-out from command sequencing.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can implement the <code>SequencingPolicy</code> interface to create custom sequencing logic based on command metadata, payload properties, or any other criteria to set up your own sequencing logic.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h3>
+<div class="sect3">
+<h4 id="_custom_sequencing_policy"><a class="anchor" href="#_custom_sequencing_policy"></a>Custom sequencing policy</h4>
+<div class="paragraph">
+<p>You can implement custom sequencing logic by implementing the <code>SequencingPolicy</code> interface. For example, to sequence commands by tenant ID from metadata:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class TenantBasedSequencingPolicy implements SequencingPolicy {
+
+    @Override
+    public Optional&lt;Object&gt; sequenceIdentifierFor(CommandMessage command,
+                                                     ProcessingContext context) {
+        // Sequence commands by tenant ID from metadata
+        return Optional.ofNullable(command.metadata().get("tenantId"));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Register your custom policy:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_axon_configuration_api" class="tab">
+<p>Axon Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot_auto_configuration" class="tab">
+<p>Spring Boot auto configuration</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_axon_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCommandSequencingPolicy(MessagingConfigurer configurer) {
+    configurer.componentRegistry(cr -&gt; cr.registerComponent(SequencingPolicy.class,
+            MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+            c -&gt; new TenantBasedSequencingPolicy()));
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_spring_boot_auto_configuration--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot_auto_configuration">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
+public class AxonConfig {
+
+    @Bean
+    public SequencingPolicy&lt;? super CommandMessage&gt; commandSequencingPolicy() {
+        return new TenantBasedSequencingPolicy();
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also implement selective sequencing. For example, to skip certain command types:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SelectiveSequencingPolicy implements SequencingPolicy&lt;CommandMessage&gt; {
+
+    private final SequencingPolicy&lt;? super CommandMessage&gt; defaultPolicy;
+    private final List&lt;String&gt; skipTypes;
+
+    public SelectiveSequencingPolicy(SequencingPolicy&lt;? super CommandMessage&gt; defaultPolicy, List&lt;String&gt; skipTypes) {
+        this.defaultPolicy = defaultPolicy;
+        this.skipTypes = skipTypes;
+    }
+
+    @Override
+    public Optional&lt;Object&gt; sequenceIdentifierFor(CommandMessage command,
+                                                     ProcessingContext context) {
+        // Skip sequencing for read-only commands
+        if (skipTypes.contains(command.payloadType().getSimpleName())) {
+            return Optional.empty();
+        }
+        // Use default policy for other commands
+        return defaultPolicy.sequenceIdentifierFor(command, context);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_disabling_command_sequencing"><a class="anchor" href="#_disabling_command_sequencing"></a>Disabling command sequencing</h4>
+<div class="paragraph">
+<p>If you need to disable command sequencing entirely, register a <code>NoOpSequencingPolicy</code>:</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_axon_configuration_api" class="tab">
+<p>Axon Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot_auto_configuration" class="tab">
+<p>Spring Boot auto configuration</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_axon_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCommandSequencingPolicy(MessagingConfigurer configurer) {
+    configurer.componentRegistry(cr -&gt; cr.registerComponent(SequencingPolicy.class,
+            MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+            c -&gt; NoOpCommandSequencingPolicy.INSTANCE));
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_spring_boot_auto_configuration--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot_auto_configuration">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
+public class AxonConfig {
+
+    @Bean
+    public SequencingPolicy&lt;? super CommandMessage&gt; commandSequencingPolicy() {
+        return NoOpSequencingPolicy.INSTANCE;
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>

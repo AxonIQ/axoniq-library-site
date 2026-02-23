@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Aggregate Migration</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/migration/paths/aggregates/">
+    <link rel="prev" href="../messages/">
+    <link rel="next" href="configuration-migration/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../../_'</script>
+
+
+<link rel="icon" href="../../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../../axon-server-reference/development/">Axon Server</a>
+                <a class="navbar-item" href="../../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../../">Axon Framework Reference</a></li>
+    <li><a href="../../">Migration Guide</a></li>
+    <li><a href="../">Migration Paths</a></li>
+    <li><a href="./">Aggregates</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.0.x/docs/reference-guide/modules/migration/pages/paths/aggregates/index.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Aggregate%20Migration" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Aggregate%20Migration%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BAggregate%20Migration%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.0%2Fmigration%2Fpaths%2Faggregates%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.0</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-missing" href="../../../../development/">development</a>
+    <a class="version item is-current" href="./">5.0</a>
+    <a class="version item is-missing" href="../../../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.0">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../messages/">Messages</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="./">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../test-fixtures/">Test Fixtures</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Aggregate Migration</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The focus of this guide is to help you migrate your existing Axon Framework 4 aggregate-based applications to Axon Framework 5 with minimal architectural changes. While we encourage exploring the benefits of DCB for new development or significant refactorings, the following steps provide an "architecture-neutral" path to get your code running on the new version. Switching to DCB can be done incrementally after the initial migration and is not required for Axon Framework 5.</p>
+</div>
+<div class="paragraph">
+<p>Throughout this documentation, we will refer to <strong>entities</strong> instead of aggregates to align with the new API, but the underlying patterns of state-encapsulation and command handling remain familiar.</p>
+</div>
+<div class="paragraph">
+<p><strong>The aggregate migration is broken down into several key topics:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><a href="#import-and-package-changes">Import and package changes</a></dt>
+<dd>
+<p>General considerations regarding java imports and dependency management.</p>
+</dd>
+<dt class="hdlist1"><a href="configuration-migration/" class="xref page">Entity configuration</a></dt>
+<dd>
+<p>How to register entities and declare modules using the new <a href="../../understanding-architecture-principles/#improved_configuration_architecture" class="xref page">configurer API</a>.</p>
+</dd>
+<dt class="hdlist1"><a href="#static-factory-methods-for-creation">Static factory methods for creation</a></dt>
+<dd>
+<p>No more command handling constructors.</p>
+</dd>
+<dt class="hdlist1"><a href="#eventappender-instead-of-aggregatelifecycle">EventAppender vs. AggregateLifecycle</a></dt>
+<dd>
+<p>Do not use static/thread local references any more.</p>
+</dd>
+<dt class="hdlist1"><a href="#entitycreator-annotation">The @EntityCreator annotation</a></dt>
+<dd>
+<p>Required for entity construction.</p>
+</dd>
+<dt class="hdlist1"><a href="multi-entity-migration/" class="xref page">Multi-Entity Migration</a></dt>
+<dd>
+<p>How to migrate aggregates with child entities and use <code>@EntityMember</code>.</p>
+</dd>
+<dt class="hdlist1"><a href="polymorphism-migration/" class="xref page">Polymorphic Entities</a></dt>
+<dd>
+<p>How to configure polymorphic/hierarchical entities.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_simple_eventsourcedentity_example"><a class="anchor" href="#_simple_eventsourcedentity_example"></a>Simple <code>EventSourcedEntity</code> example</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To visualize the shift for a "simple" entity, here is a side-by-side comparison of a standard <code>GiftCard</code> implementation. This represents the minimal, architecture-neutral way to move from Axon Framework 4 to 5.</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_axon_framework_5" class="tab">
+<p>Axon Framework 5</p>
+</li>
+<li id="_tabs_1_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity <i class="conum" data-value="1"></i><b>(1)</b>
+public class GiftCard {
+
+    private String cardId;
+    private int remainingValue;
+
+    @EntityCreator <i class="conum" data-value="2"></i><b>(2)</b>
+    public GiftCard() {
+    }
+
+    @CommandHandler <i class="conum" data-value="3"></i><b>(3)</b>
+    public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
+        eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
+    }
+
+    @CommandHandler <i class="conum" data-value="4"></i><b>(4)</b>
+    public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
+        if (cmd.amount() &gt; remainingValue) {
+            throw new IllegalStateException("Insufficient funds");
+        }
+        eventAppender.append(new CardRedeemedEvent(cardId, cmd.amount()));
+    }
+
+    @EventSourcingHandler <i class="conum" data-value="5"></i><b>(5)</b>
+    public void on(CardIssuedEvent event) {
+        this.cardId = event.cardId();
+        this.remainingValue = event.amount();
+    }
+
+    @EventSourcingHandler
+    public void on(CardRedeemedEvent event) {
+        this.remainingValue -= event.amount();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>@EventSourcedEntity</code> replaces <code>@Aggregate</code> (or <code>@AggregateRoot</code>).</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>@EntityCreator</code> is mandatory and replaces the <code>@CommandHandler</code> constructor for instantiation.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Command Handlers that create a new instance are now <strong>static</strong> and use <code>EventAppender</code> to publish the initial event.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Command Handlers now accept an <code>EventAppender</code> parameter to publish events.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td><code>@EventSourcingHandler</code> remains the way to update the entity state from events, keeping the logic encapsulated.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@AggregateRoot <i class="conum" data-value="1"></i><b>(1)</b>
+public class GiftCard {
+
+    @AggregateIdentifier <i class="conum" data-value="2"></i><b>(2)</b>
+    private String cardId;
+    private int remainingValue;
+
+    public GiftCard() { <i class="conum" data-value="3"></i><b>(3)</b>
+        // Required by Axon
+    }
+
+    @CommandHandler <i class="conum" data-value="4"></i><b>(4)</b>
+    public GiftCard(IssueCardCommand cmd) {
+        AggregateLifecycle.apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount())); <i class="conum" data-value="5"></i><b>(5)</b>
+    }
+
+    @CommandHandler
+    public void handle(RedeemCardCommand cmd) {
+        if (cmd.getAmount() &gt; remainingValue) {
+            throw new IllegalStateException("Insufficient funds");
+        }
+        AggregateLifecycle.apply(new CardRedeemedEvent(cardId, cmd.getAmount()));
+    }
+
+    @EventSourcingHandler <i class="conum" data-value="6"></i><b>(6)</b>
+    public void on(CardIssuedEvent event) {
+        this.cardId = event.getCardId();
+        this.remainingValue = event.getAmount();
+    }
+
+    @EventSourcingHandler
+    public void on(CardRedeemedEvent event) {
+        this.remainingValue -= event.getAmount();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>@AggregateRoot</code>  marks the class as the root of the consistency boundary.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>@AggregateIdentifier</code> is required on the field that uniquely identifies the aggregate instance.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>A <strong>no-arg constructor</strong> is mandatory for Axon to instantiate the aggregate when loading it from the event store.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Creation commands are handled via an <strong>annotated constructor</strong>, which creates the initial state.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Static <code>AggregateLifecycle.apply()</code> is used to publish events within the aggregate&#8217;s scope (using <code>ThreadLocal</code>).</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td><code>@EventSourcingHandler</code> updates the internal state based on published events to allow reconstruction of the aggregate.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_core_concepts_in_axon_framework_5"><a class="anchor" href="#_core_concepts_in_axon_framework_5"></a>Core concepts in Axon Framework 5</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before diving into the specific changes, it is helpful to understand the primary components that replace the aggregate-centric API in Axon Framework 4.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong><code>@EventSourcedEntity</code></strong>: The replacement for <code>@AggregateRoot</code>. It marks a class as an event-sourced entity, signaling to the framework that its state should be managed and reconstructed from an event stream. (Note: In Spring environments, instead of <code>@Aggregate</code> you use <code>@EventSourced</code>, which is meta-annotated with <code>@EventSourcedEntity</code>).</p>
+</li>
+<li>
+<p><strong><code>@EntityCreator</code></strong>: A mandatory annotation that tells Axon how to instantiate your entity. In Axon Framework 4, the framework often relied on a <code>@CommandHandler</code> constructor; in Axon Framework 5, the instantiation is decoupled from the command handling logic.</p>
+</li>
+<li>
+<p><strong><code>EventAppender</code></strong>: The interface that replaces <code>AggregateLifecycle.apply()</code>. It is passed as an argument to command handlers, making the side-effect of publishing events explicit and easier to test.</p>
+</li>
+<li>
+<p><strong><code>@EntityMember</code></strong>: The replacement for <code>@AggregateMember</code>. It is used to mark fields or collections that contain child entities within a larger entity (aggregate) structure.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="import-and-package-changes"><a class="anchor" href="#import-and-package-changes"></a>Import and package changes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The location of <code>@CommandHandler</code> and <code>@EventSourcingHandler</code> has changed to better reflect their role in the messaging and event sourcing modules.
+For a more comprehensive list of package changes, see the <a href="../#import-and-package-changes" class="xref page">general import changes</a> section.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Changes (AF4 to AF5)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Command Handler annotation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.modelling.command.CommandHandler</code></p>
+<p class="tableblock">to</p>
+<p class="tableblock"><code>org.axonframework.messaging.commandhandling.annotation.CommandHandler</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Sourcing Handler annotation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.eventsourcing.EventSourcingHandler</code></p>
+<p class="tableblock">to</p>
+<p class="tableblock"><code>org.axonframework.eventsourcing.annotation.EventSourcingHandler</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="static-factory-methods-for-creation"><a class="anchor" href="#static-factory-methods-for-creation"></a><code>@EntityCreator</code> and static factory methods</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework 5 removes <code>@AggregateIdentifier</code> and favors <strong>static factory methods</strong> for command handling of creation commands.
+These methods are combined with the <span class="anchor=entitycreator-annotation">@EntityCreator</span> annotation, which is a <strong>hard requirement</strong> for instance instantiation. It tells Axon how to create an initial instance of the entity before applying events to it.</p>
+</div>
+<div class="paragraph">
+<p>The identifier is then typically set in the <code>@EventSourcingHandler</code> of the creation event or injected into the <code>@EntityCreator</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4
+@Aggregate
+public class GiftCard {
+    @AggregateIdentifier
+    private String cardId;
+
+    @CommandHandler
+    public GiftCard(IssueCardCommand cmd) {
+        apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
+    }
+}
+
+// AF5
+@EventSourcedEntity
+public class GiftCard {
+    private String cardId; // No annotation needed on the field
+
+    @EntityCreator
+    public GiftCard() { } <i class="conum" data-value="1"></i><b>(1)</b>
+
+    @CommandHandler
+    public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
+        eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>When using a no-arg <code>@EntityCreator</code>, the framework instantiates the entity, and the identifier is typically set in the <code>@EventSourcingHandler</code> of the creation event.</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="entitycreator-annotation"><a class="anchor" href="#entitycreator-annotation"></a>Patterns of <code>@EntityCreator</code> usage</h3>
+<div class="paragraph">
+<p>There are three common patterns for using <code>@EntityCreator</code> that you can apply to your setup based on preference:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Pattern 1: No-arg constructor</strong> (Recommended for most migrations)</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EntityCreator
+public GiftCard() { }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axon creates an empty instance. The identifier and other relevant states are then initialized in the <code>@EventSourcingHandler</code> of the first event.</p>
+</div>
+</li>
+<li>
+<p><strong>Pattern 2: Identifier-only constructor</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EntityCreator
+public GiftCard(@InjectEntityId String cardId) {
+    this.cardId = cardId;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axon resolves the identifier from the first event and injects it into the constructor. Note the mandatory <code>@InjectEntityId</code> annotation.</p>
+</div>
+</li>
+<li>
+<p><strong>Pattern 3: Creation from origin event</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EntityCreator
+public GiftCard(CardIssuedEvent event) {
+    this.cardId = event.cardId();
+    this.remainingValue = event.amount();
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axon uses the first event&#8217;s payload to construct the initial instance directly.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="eventappender-instead-of-aggregatelifecycle"><a class="anchor" href="#eventappender-instead-of-aggregatelifecycle"></a><code>EventAppender</code> instead of <code>AggregateLifecycle</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>AggregateLifecycle.apply()</code> method is replaced by the <code>EventAppender</code> interface, which is passed as a parameter to your command handling methods. This makes the dependency on the event publishing mechanism explicit. This decision is documented in more detail in the <a href="../../solved-architecture-choices/#remove_threadlocal_usage" class="xref page">ThreadLocal usage prevents proper asynchronous and reactive programming</a> section.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Axon Framework 4
+@CommandHandler
+public void handle(RedeemCardCommand cmd) {
+    AggregateLifecycle.apply(new CardRedeemedEvent(id, cmd.getAmount()));
+}
+
+// Axon Framework 5
+@CommandHandler
+public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
+    eventAppender.append(new CardRedeemedEvent(id, cmd.amount()));
+}</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_removal_of_creationpolicy"><a class="anchor" href="#_removal_of_creationpolicy"></a>Removal of <code>@CreationPolicy</code></h3>
+<div class="paragraph">
+<p>The <code>@CreationPolicy</code> annotation was removed in Axon Framework 5. You can use stateful/stateless command handlers to replace its functionality.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong><code>CreationPolicy.ALWAYS</code></strong></p>
+<div class="paragraph">
+<p>The recommended flow is to use a <strong>static <code>@CommandHandler</code></strong> for creation. If the command should only succeed if the entity doesn&#8217;t exist, the static handler naturally handles this as it is called when no instance is present.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public static void handle(IssueGiftCard cmd, EventAppender eventAppender) {
+    eventAppender.append(new GiftCardIssued(cmd.cardId(), cmd.amount()));
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><strong><code>CreationPolicy.CREATE_IF_MISSING</code></strong></p>
+<div class="paragraph">
+<p>If you need "only create if missing" logic, you can implement it within the static handler by checking for the existence of an optional state parameter.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public static void handle(IssueGiftCard cmd,
+                          EventAppender eventAppender,
+                          @InjectState @Nullable GiftCard giftCard) {
+    if (giftCard != null) {
+        throw new IllegalStateException("GiftCard already exists");
+    }
+    eventAppender.append(new GiftCardIssued(cmd.cardId(), cmd.amount()));
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><strong><code>CreationPolicy.NEVER</code></strong></p>
+<div class="paragraph">
+<p>New entites are created when a command appends an event that can be routed to an <code>@EntityCreator</code>. So any <code>@CommandHandler</code> that does not append such an event will implicitly follow the <code>NEVER</code> policy.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For more information on the new modeling patterns, including how to use the <code>@EventCriteriaBuilder</code> and immutable entities, please refer to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="../../../commands/command-handlers/#stateful-command-handlers" class="xref page">Stateful Command Handlers</a></p>
+</li>
+<li>
+<p><a href="../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">Architecture Principles: Moving away from Aggregates</a></p>
+</li>
+<li>
+<p><a href="../../../events/event-store-internals/" class="xref page">Event Store Internals and DCB</a></p>
+</li>
+<li>
+<p><a href="https://www.axoniq.io/blog/dcb-in-af-5">Dynamic Consistency Boundary Blog Post</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../messages/">Messages</a></span>
+  <span class="next"><a href="configuration-migration/">Configuration Migration</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../../_/js/site.js" data-ui-root-path="../../../../../_"></script>
+<script async src="../../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../../.." data-snippet-length="100" data-stylesheet="../../../../../_/css/search.css"></script>
+<script async src="../../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

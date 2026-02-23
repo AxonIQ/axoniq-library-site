@@ -152,6 +152,27 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../../migration/paths/messages/">Messages</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -1565,7 +1586,7 @@ Note that if the policy returns an <code>Optional#empty</code> as the sequence i
 </div>
 <div class="paragraph">
 <p>By default, a <code>HierarchicalSequencingPolicy</code> is configured, which first tries for the <code>SequentialPerAggregatePolicy</code>.
-If that fails, because the events don&#8217;t contain events, it falls back to the <code>SequentialPolicy</code>.
+If that fails, because the events don&#8217;t contain aggregate information, it falls back to the <code>SequentialPolicy</code>.
 This policy handles events in the order they&#8217;ve been published within a <strong>single</strong> segment, thus eliminating any possibility for parallel processing.</p>
 </div>
 <div class="paragraph">
@@ -1586,7 +1607,7 @@ For the policies Axon provides out of the box and how to configure them, we reco
 From there, Axon guarantees that Events that are part of the same segment are processed sequentially.</p>
 </div>
 <div class="paragraph">
-<p>The framework provides several policies you can use out of the box:</p>
+<p>The framework provides several policies you can use out of the box for sequencing your events:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -1678,8 +1699,8 @@ Hence, for the <code>PropertySequencingPolicy</code>, you are able to omit the f
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 
 @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"studentId"})
 class CustomEventHandlingComponent {
@@ -1719,8 +1740,8 @@ Thus, if you have an Event Handling Component with a <code>@SequencingPolicy</co
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 
 @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"studentId"})
 class CustomEventHandlingComponent {
@@ -1758,7 +1779,7 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 
 public class AxonConfig {
 
@@ -1804,13 +1825,13 @@ public class AxonConfig {
 <div class="paragraph">
 <p>If the available policies do not suffice, you can define your own.
 To that end, we should implement the <code>SequencingPolicy</code> interface.
-This interface defines a single method, <code>getSequenceIdentifierFor(EventMessage, ProcessingContext)</code>, that returns an <code>Optional</code> of the sequence identifier for the given event and context:</p>
+This interface defines a single method, <code>sequenceIdentifierFor(EventMessage, ProcessingContext)</code>, that returns an <code>Optional</code> of the sequence identifier for the given event and context:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface SequencingPolicy {
 
-    Optional&lt;Object&gt; getSequenceIdentifierFor(EventMessage event, ProcessingContext context);
+    Optional&lt;Object&gt; sequenceIdentifierFor(EventMessage event, ProcessingContext context);
 }</code></pre>
 </div>
 </div>

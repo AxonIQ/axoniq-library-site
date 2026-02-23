@@ -419,6 +419,9 @@ It connects to Axon Server to send and receive queries in a distributed way, all
 <li>
 <p><strong>Query prioritization</strong>: Support for query priority to ensure critical queries are processed first</p>
 </li>
+<li>
+<p><strong>Local handler shortcut</strong>: When enabled (default), queries for which a local handler is registered are executed locally without going through the connector, improving performance by avoiding network overhead</p>
+</li>
 </ul>
 </div>
 <div class="admonitionblock note">
@@ -435,6 +438,35 @@ It connects to Axon Server to send and receive queries in a distributed way, all
 </tr>
 </table>
 </div>
+<div class="sect3">
+<h4 id="_configuring_the_distributed_query_bus"><a class="anchor" href="#_configuring_the_distributed_query_bus"></a>Configuring the distributed query bus</h4>
+<div class="paragraph">
+<p>The <code>DistributedQueryBus</code> can be configured using the <code>DistributedQueryBusConfiguration</code> class, which provides a fluent API for customizing query processing behavior.</p>
+</div>
+<div class="paragraph">
+<p>Available configuration options:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Query threads</strong>: Number of threads used for query processing (default: 10)</p>
+</li>
+<li>
+<p><strong>Query queue capacity</strong>: Capacity of the priority queue for query processing tasks (default: 1000)</p>
+</li>
+<li>
+<p><strong>Custom executor service</strong>: Provide a custom <code>ExecutorService</code> for query processing</p>
+</li>
+<li>
+<p><strong>Local query handler preference</strong>: Enable or disable the local handler shortcut (default: enabled)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The local handler shortcut, when enabled, allows the distributed query bus to use local query handlers directly when available, bypassing remote dispatch. This improves performance by avoiding network overhead when a handler is available locally. Only when no local handler is available will the query be dispatched remotely through the connector.</p>
+</div>
+<div class="sect4">
+<h5 id="_configuration_examples"><a class="anchor" href="#_configuration_examples"></a>Configuration examples</h5>
 <div id="_tabs_1" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
@@ -448,6 +480,87 @@ It connects to Axon Server to send and receive queries in a distributed way, all
 </ul>
 </div>
 <div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
+<div class="paragraph">
+<p>Customize the distributed query bus configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
+
+public class AxonConfig {
+    public void configureQueryBus(MessagingConfigurer configurer) {
+        // Customize the configuration
+        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration()
+                .queryThreads(20)                        // Set number of query processing threads
+                .queryQueueCapacity(2000)                // Set queue capacity
+                .preferLocalQueryHandler(true);         // Enable local handler shortcut (default)
+
+        // Register the custom configuration
+        configurer.registerComponent(DistributedQueryBusConfiguration.class, c -&gt; config);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To disable the local handler shortcut:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration()
+        .preferLocalQueryHandler(false);  // Force all queries through connector</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div class="paragraph">
+<p>When using Spring Boot with Axon Server, configure the query bus through application properties:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Configure query processing threads
+axon.axonserver.query-threads=20
+
+# Or configure programmatically</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
+
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public DistributedQueryBusConfiguration queryBusConfiguration() {
+        return new DistributedQueryBusConfiguration()
+                .queryThreads(20)
+                .preferLocalQueryHandler(true);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_default_configuration"><a class="anchor" href="#_default_configuration"></a>Default configuration</h5>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
 <div class="paragraph">
 <p>Declare dependencies:</p>
 </div>
@@ -484,7 +597,7 @@ public class AxonApp {
 </div>
 </div>
 </div>
-<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
 <div class="paragraph">
 <p>By simply declaring dependency to <code>axon-spring-boot-starter</code>, Axon will automatically configure the <code>AxonServerQueryBusConnector</code>:</p>
 </div>
@@ -517,6 +630,8 @@ public class AxonApp {
 </table>
 </div>
 </div>
+</div>
+</div>
 <div class="sect2">
 <h3 id="SimpleQueryBus"><a class="anchor" href="#SimpleQueryBus"></a><code>SimpleQueryBus</code></h3>
 <div class="paragraph">
@@ -544,19 +659,19 @@ public class AxonApp {
 <div class="paragraph">
 <p>To configure a <code>SimpleQueryBus</code> (instead of an <code>AxonServerQueryBus</code>):</p>
 </div>
-<div id="_tabs_2" class="openblock tabs is-loading">
+<div id="_tabs_3" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
 <ul>
-<li id="_tabs_2_configuration_api" class="tab">
+<li id="_tabs_3_configuration_api" class="tab">
 <p>Configuration API</p>
 </li>
-<li id="_tabs_2_spring_boot" class="tab">
+<li id="_tabs_3_spring_boot" class="tab">
 <p>Spring Boot</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
@@ -574,7 +689,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.springframework.context.annotation.Bean;

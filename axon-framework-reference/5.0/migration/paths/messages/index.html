@@ -6,7 +6,7 @@
     <title>Message Migration</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/migration/paths/messages/">
     <link rel="prev" href="../">
-    <link rel="next" href="../../../messaging-concepts/">
+    <link rel="next" href="../aggregates/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
@@ -151,6 +151,27 @@
 <ul class="nav-list">
   <li class="nav-item is-current-page" data-depth="3">
     <a class="nav-link" href="./">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../test-fixtures/">Test Fixtures</a>
   </li>
 </ul>
   </li>
@@ -365,7 +386,7 @@ This path covers the message-model migration from Axon Framework 4.x annotations
 <div class="sectionbody">
 <div class="paragraph">
 <p>In Axon Framework 4, the type of a message was often implicitly determined by its class or by how it was dispatched.
-AF5 introduces dedicated annotations to explicitly define the nature of your message objects.</p>
+Axon Framework 5 introduces dedicated annotations to explicitly define the nature of your message objects.</p>
 </div>
 <div class="paragraph">
 <p>The following table summarizes the primary annotation changes:</p>
@@ -387,12 +408,12 @@ AF5 introduces dedicated annotations to explicitly define the nature of your mes
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>@TargetAggregateIdentifier</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>@TargetEntityId</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">AF5 moves from the "Aggregate" terminology towards a more general "Entity" model. This aligns with the Dynamic Consistency Boundary (DCB) principles where boundaries are more fluid. See the <a href="../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">architecture principles</a> for more details.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Framework 5 moves from the "Aggregate" terminology towards a more general "Entity" model. This aligns with the Dynamic Consistency Boundary (DCB) principles where boundaries are more fluid. See the <a href="../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">architecture principles</a> for more details.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>@Revision</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>@Event(version = "&#8230;&#8203;")</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Consolidation of message metadata. The version is now part of the <code>MessageType</code>, which is a core concept in AF5 for message identification and conversion.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Consolidation of message metadata. The version is now part of the <code>MessageType</code>, which is a core concept in Axon Framework 5 for message identification and conversion.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>@RoutingKey</code></p></td>
@@ -407,7 +428,9 @@ AF5 introduces dedicated annotations to explicitly define the nature of your mes
 <h2 id="_explicit_message_types"><a class="anchor" href="#_explicit_message_types"></a>Explicit message types</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>One of the most significant changes in AF5 is the introduction of <a href="../../../messaging-concepts/anatomy-message/#message_type" class="xref page"><code>MessageType</code></a>, which introduces the <code>QualifiedName</code> and decouples the logical name and version of a message from its implementing class.</p>
+<p>One of the most significant changes in Axon Framework 5 is the introduction of <code>MessageType</code>.
+It decouples the logical name and version of a message from its Java class.
+One of the most significant changes in AF5 is the introduction of <a href="../../../messaging-concepts/anatomy-message/#message_type" class="xref page"><code>MessageType</code></a>, which introduces the <code>QualifiedName</code> and decouples the logical name and version of a message from its implementing class.</p>
 </div>
 <div class="paragraph">
 <p>To embrace this, you should use the <code>@Command</code>, <code>@Event</code>, and <code>@Query</code> annotations on your message classes.</p>
@@ -493,7 +516,7 @@ Instead of using the <code>@Revision</code> annotation, you now specify the vers
 <h3 id="_target_entity_identification"><a class="anchor" href="#_target_entity_identification"></a>Target entity identification</h3>
 <div class="paragraph">
 <p>When sending a command to an entity (formerly aggregate), you previously used <code>@TargetAggregateIdentifier</code>.
-In AF5, this is replaced by <code>@TargetEntityId</code>. This shift is part of the broader move towards Dynamic Consistency Boundaries. See the <a href="../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">architecture principles</a> for more context.</p>
+In Axon Framework 5, this is replaced by <code>@TargetEntityId</code>. This shift is part of the broader move towards Dynamic Consistency Boundaries. See the <a href="../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">architecture principles</a> for more context.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -532,7 +555,7 @@ public class MyCommand {
 </div>
 </div>
 <div class="paragraph">
-<p>Note that in AF5, the <code>routingKey</code> property in the annotation refers to the <strong>name of the property</strong> (field or method) in the class that should be used for routing.
+<p>Note that in Axon Framework 5, the <code>routingKey</code> property in the annotation refers to the <strong>name of the property</strong> (field or method) in the class that should be used for routing.
 If a method name is provided, it can be the actual method name (<code>getCardId</code>) or the property name (<code>cardId</code>).
 For more details, see the <a href="../../../commands/command-dispatchers/#configuring-routing-keys-with-command" class="xref page">Configuring routing keys with @Command</a> section in the Command Dispatching guide.</p>
 </div>
@@ -579,7 +602,7 @@ For more details on how tagging works, see the <a href="../../../events/event-pu
 </div>
         <nav class="pagination">
   <span class="prev"><a href="../">Migration Paths</a></span>
-  <span class="next"><a href="../../../messaging-concepts/">Messaging Concepts</a></span>
+  <span class="next"><a href="../aggregates/">Aggregates</a></span>
 </nav>
     </article>
   </div>
