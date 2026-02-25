@@ -932,7 +932,6 @@ The <code>@EntityCreator</code> is mandatory when writing annotation-based entit
 public class GiftCard {
 
     private String id;
-    private boolean created = false;
     private int remainingValue;
 
     @EntityCreator <i class="conum" data-value="1"></i><b>(1)</b>
@@ -941,16 +940,12 @@ public class GiftCard {
 
     @CommandHandler <i class="conum" data-value="2"></i><b>(2)</b>
     public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
-        if (created) {
-            throw new IllegalStateException("Card already issued");
-        }
         eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
     }
 
     @EventSourcingHandler
     private void on(CardIssuedEvent event) {
         this.id = event.id();
-        this.created = true;
         this.remainingValue = event.amount();
     }
 }</code></pre>
@@ -983,26 +978,20 @@ The entity identifier is required to be annotated with <code>@InjectEntityId</co
 public class GiftCard {
 
     private String id;
-    private boolean created;
     private int remainingValue;
 
     @EntityCreator <i class="conum" data-value="1"></i><b>(1)</b>
     public GiftCard(@InjectEntityId String id) { <i class="conum" data-value="2"></i><b>(2)</b>
         this.id = id;
-        this.created = false;
     }
 
     @CommandHandler <i class="conum" data-value="3"></i><b>(3)</b>
     public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
-        if (created) {
-            throw new IllegalStateException("Card already issued");
-        }
         eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
     }
 
     @EventSourcingHandler
     private void on(CardIssuedEvent event) {
-        this.created = true;
         this.remainingValue = event.amount();
     }
 }</code></pre>
