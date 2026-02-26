@@ -167,6 +167,9 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
   </li>
   <li class="nav-item" data-depth="3">
@@ -443,7 +446,7 @@ class AccountTest {
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-Always call <code>fixture.stop()</code> in your <code>@AfterEach</code> method to properly release resources.
+Always call <code>fixture.stop()</code> in your <code>@AfterEach</code> method to properly release resources. You can use the <a href="#junit_extension"><code>AxonFrameworkExtension</code></a> with JUnit to automate this process.
 </td>
 </tr>
 </table>
@@ -1948,6 +1951,111 @@ class AccountTest {
 <div class="paragraph">
 <p>This structure provides a number of benefits you can utilize.
 Like being able to reuse the previous test&#8217;s state, validating a sequence of operations, or to verify your workflows are up to par.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="junit_extension"><a class="anchor" href="#junit_extension"></a>JUnit <code>AxonFrameworkExtension</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you use JUnit for testing, you can simplify the lifecycle management of the <code>AxonTestFixture</code> by using the <code>AxonFrameworkExtension</code>.
+This extension automatically creates and stops the fixture for you, so you do not have to worry about that in your tests.</p>
+</div>
+<div class="paragraph">
+<p>To use the extension, simply annotate your test class with <code>@ExtendWith(AxonFrameworkExtension.class)</code> and declare a <code>AxonTestFixture</code> field in your test class. The extension will automatically inject the fixture into your test class and manage its lifecycle.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@ExtendWith(AxonFrameworkExtension.class) <i class="conum" data-value="1"></i><b>(1)</b>
+class AccountEntityTest {
+
+    @ProvideAxonTestFixture <i class="conum" data-value="2"></i><b>(2)</b>
+    private AxonTestFixtureProvider provider = () -&gt; AxonTestFixture.with(
+            EventSourcingConfigurer.create().registerEntity(
+                EventSourcedEntityModule.autodetected(
+                        String.class, Account.class)));
+
+
+    @Test
+    void accountLifecycleReactsAsExpected(AxonTestFixture fixture) { <i class="conum" data-value="3"></i><b>(3)</b>
+        //....
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>@ExtendWith(AxonFrameworkExtension.class)</code> annotation tells JUnit to use the <code>AxonFrameworkExtension</code> for this test.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>@ProvideAxonTestFixture</code> annotation indicates that the <code>provider</code> field can create a new instance of an  <code>AxonTestFixture</code> for every test run.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Use parameter injection to get the <code>AxonTestFixture</code> instance in your test method. The extension will automatically create and inject the fixture for you, so you can focus on writing your tests without worrying about fixture lifecycle management.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<code>@ProvidedAxonTestFixture</code> cannot be applied on static fields, as this breaks the lifecycle contract of getting a new instance of the fixture on every test run. You can however use <code>@ProvideAxonTestFixture</code> on static and non-static methods if you want.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Alternatively, you can also parameterize <code>@ProvideAxonTestFixture</code> with a class value implementing the <code>@AxonTestFixtureProvider</code> interface. By doing so, you can reuse the same provider across multiple test classes, or even share it across your entire test suite by using a common base class.
+By using the <code>@ProvideAxonTestFixture</code> directly on a test method, you can override the default configured on class level.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@ExtendWith(AxonFrameworkExtension.class)
+@ProvideAxonTestFixture(GlobalFixtureProvider.class) <i class="conum" data-value="1"></i><b>(1)</b>
+class AccountEntityTest {
+
+    @Test <i class="conum" data-value="2"></i><b>(2)</b>
+    void testUsingGlobalProvider(AxonTestFixture fixture) {
+        // This test will use the GlobalFixtureProvider to create the fixture instance
+    }
+
+    @Test
+    @ProvideAxonTestFixture(SpecificFixtureProvider.class) <i class="conum" data-value="3"></i><b>(3)</b>
+    void testUsingSpecificProvider(AxonTestFixture fixture) {
+        // This test will use the SpecificFixtureProvider to create the fixture instance
+    }
+}
+
+class GlobalFixtureProvider implements AxonTestFixtureProvider {
+    @Override
+    public AxonTestFixture createFixture() {
+        return AxonTestFixture.with(...);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>@ProvideAxonTestFixture(MyFixtureProvider.class)</code> annotation tells the extension to use the <code>MyFixtureProvider</code> class to create new instances of the <code>AxonTestFixture</code> for every test run. This allows you to centralize your fixture configuration in one place and reuse it across multiple test classes.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>This test method will use the <code>GlobalFixtureProvider</code> to create the fixture instance, as it is the default provider configured at the class level.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>This test method will use the <code>SpecificFixtureProvider</code> to create the fixture instance.</td>
+</tr>
+</table>
 </div>
 </div>
 </div>

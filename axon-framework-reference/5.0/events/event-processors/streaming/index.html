@@ -168,6 +168,9 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../../migration/paths/event-store/">Event Store</a>
   </li>
   <li class="nav-item" data-depth="3">
@@ -2644,8 +2647,11 @@ The <code>MultiStreamableEventSource</code> defaults the <code>longPollingSource
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
     public void configurePooledStreamingProcessor(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.registerPooledStreamingEventProcessor(
-                "example-processor", config -&gt; buildMultiStreamableEventSource(/*...*/)
+        processingConfigurer.pooledStreaming(
+                pooledStreaming -&gt; pooledStreaming.defaultProcessor(
+                        "example-processor",
+                        components -&gt; components.autodetected(config -&gt; buildMultiStreamableEventSource(/*...*/))
+                )
         );
     }
 }</code></pre>
