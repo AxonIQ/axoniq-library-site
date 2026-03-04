@@ -101,27 +101,27 @@ const redirectFallback = "/home/"
 const latestDefinitions = [
     {
         baseFolder: "axon-framework-reference",
-        latestVersion: "4.12"
+        latestVersion: "5.0"
     },
     {
         baseFolder: "message-handler-customization-guide",
-        latestVersion: "4.12"
+        latestVersion: "5.0"
     },
     {
         baseFolder: "meta-annotations-guide",
-        latestVersion: "4.12"
+        latestVersion: "5.0"
     },
     {
         baseFolder: "identifier-generation-guide",
-        latestVersion: "4.12"
+        latestVersion: "5.0"
     },
     {
         baseFolder: "deadlines-guide",
-        latestVersion: "4.12"
+        latestVersion: "5.0"
     },
     {
         baseFolder: "dead-letter-queue-guide",
-        latestVersion: "4.12"
+        latestVersion: "5.0"
     },
     {
         baseFolder: "axon-server-reference",
