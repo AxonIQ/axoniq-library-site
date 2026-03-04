@@ -424,32 +424,43 @@ If an autodetected flow is used, as with Spring, be sure to check out the <a hre
 <h2 id="testing-with-spring-boot"><a class="anchor" href="#testing-with-spring-boot"></a>Testing with Spring Boot</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>If you are using Spring Boot, you will not construct the <code>ApplicationConfigurer</code> yourself.
-Axon Framework will take care of that for you.
-However, that does not mean the <code>ApplicationConfigurer</code> does not exist in your application.</p>
+<p>If you are using Spring Boot, Axon Framework builds and starts the <code>AxonConfiguration</code> for you as part of the application context lifecycle.
+In your tests, you can inject this configuration directly and use it to create an <code>AxonTestFixture</code>.</p>
 </div>
 <div class="paragraph">
-<p>If you adjust your test case to be a Spring Boot test, you can inject the autoconfigured <code>ApplicationConfigurer</code> right in your fixture:</p>
+<p>Note that the <code>MessagesRecordingConfigurationEnhancer</code> must be registered as a bean so that the fixture can capture dispatched commands and published events.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ApplicationConfigurer;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 
 @SpringBootTest
 class AccountSpringTest {
 
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        public MessagesRecordingConfigurationEnhancer recordingEnhancer() {
+            return new MessagesRecordingConfigurationEnhancer();
+        }
+    }
+
     @Autowired
-    private ApplicationConfigurer configurer;
+    private AxonConfiguration configuration;
 
     private AxonTestFixture fixture;
 
     @BeforeEach
     void setUp() {
-        fixture = AxonTestFixture.with(configurer);
+        fixture = new AxonTestFixture(configuration, new AxonTestFixture.Customization());
     }
 
     @Test
@@ -475,6 +486,111 @@ class AccountSpringTest {
 Be sure to check out the <a href="#testing-with-axon-server-testcontainer">tests with Testcontainers</a> section for that.</p>
 </div>
 <div class="sect2">
+<h3 id="_using_axonspringboottest"><a class="anchor" href="#_using_axonspringboottest"></a>Using @AxonSpringBootTest</h3>
+<div class="paragraph">
+<p>The <code>@AxonSpringBootTest</code> annotation simplifies Spring Boot testing by eliminating the manual fixture setup shown above.
+It automatically:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Registers the <code>MessagesRecordingConfigurationEnhancer</code> (required for the fixture to capture commands and events).</p>
+</li>
+<li>
+<p>Exposes an <code>AxonTestFixture</code> bean that can be injected directly.</p>
+</li>
+<li>
+<p>Manages the fixture lifecycle (no <code>@BeforeEach</code> / <code>@AfterEach</code> needed).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To use it, add the <code>axon-spring-boot-starter-test</code> dependency:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.axonframework.extensions.spring&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-spring-boot-starter-test&lt;/artifactId&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then annotate your test class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.springboot.test.AxonSpringBootTest;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@AxonSpringBootTest(properties = "axon.axonserver.enabled=false")
+class AccountSpringBootTest {
+
+    @Autowired
+    private AxonTestFixture fixture;
+
+    @Test
+    void testWithSpringConfiguration() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 100.00));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The fixture&#8217;s <code>Customization</code> is derived automatically from the Spring environment.
+When <code>axon.axonserver.enabled</code> is <code>false</code>, the fixture disables Axon Server; when <code>true</code> or absent, it remains enabled.</p>
+</div>
+<div class="paragraph">
+<p>To override the default customization, declare a <code>Customization</code> bean in the test:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.springboot.test.AxonSpringBootTest;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+
+@AxonSpringBootTest
+class AccountCustomizedTest {
+
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        public AxonTestFixture.Customization customization() {
+            return new AxonTestFixture.Customization().disableAxonServer();
+        }
+    }
+
+    @Autowired
+    private AxonTestFixture fixture;
+
+    @Test
+    void testWithCustomization() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new CreateAccountCommand("account-1", 500.00))
+               .then()
+               .success()
+               .events(new AccountCreatedEvent("account-1", 500.00));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_verifying_mocked_spring_beans"><a class="anchor" href="#_verifying_mocked_spring_beans"></a>Verifying (mocked) Spring beans</h3>
 <div class="paragraph">
 <p>As suggested in the <a href="#integration_testing">integration testing</a> section, the <a href="../basic-testing/#then_expect" class="xref page">then-expect</a> method provides access to the configuration.
@@ -483,28 +599,17 @@ As such, by using <code>expect(consumer&lt;Configuration&gt;)</code>, you are ab
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ApplicationConfigurer;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.springboot.test.AxonSpringBootTest;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@AxonSpringBootTest(properties = "axon.axonserver.enabled=false")
 class AccountSpringTest {
-
-    @Autowired
-    private ApplicationConfigurer configurer;
-
-    private AxonTestFixture fixture;
-
-    @BeforeEach
-    void setUp() {
-        fixture = AxonTestFixture.with(configurer);
-    }
 
     @TestConfiguration
     static class TestConfig {
@@ -514,6 +619,9 @@ class AccountSpringTest {
             return mock(MyService.class);
         }
     }
+
+    @Autowired
+    private AxonTestFixture fixture;
 
     @Test
     void testWithSpringConfigurationAndMockedBean() {
@@ -528,11 +636,6 @@ class AccountSpringTest {
                    MyService myService = config.getComponent(MyService.class);
                    verify(myService).invoked();
                });
-    }
-
-    @AfterEach
-    void tearDown() {
-        fixture.stop();
     }
 }</code></pre>
 </div>
@@ -668,20 +771,16 @@ Thus, if we add the <code>@ServiceConnection</code> to the <code>AxonServerConta
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ApplicationConfigurer;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.springboot.test.AxonSpringBootTest;
 import org.axonframework.test.fixture.AxonTestFixture;
-import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.context.annotation.Bean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
+@AxonSpringBootTest
 @Testcontainers
 class AccountAxonServerAndSpringBootTest {
 
@@ -690,23 +789,7 @@ class AccountAxonServerAndSpringBootTest {
     static AxonServerContainer axonServer = new AxonServerContainer();
 
     @Autowired
-    private ApplicationConfigurer configurer;
-
     private AxonTestFixture fixture;
-
-    @TestConfiguration
-    static class TestConfig {
-
-        @Bean
-        public MessagesRecordingConfigurationEnhancer recordingConfigurationEnhancer() {
-            return new MessagesRecordingConfigurationEnhancer();
-        }
-    }
-
-    @BeforeEach
-    void setUp() {
-        fixture = AxonTestFixture.with(configurer);
-    }
 
     @Test
     void testWithAxonServer() {
@@ -717,11 +800,6 @@ class AccountAxonServerAndSpringBootTest {
                .then()
                .success()
                .events(new AccountCreatedEvent("account-1", 500.00));
-    }
-
-    @AfterEach
-    void tearDown() {
-        fixture.stop();
     }
 }</code></pre>
 </div>
