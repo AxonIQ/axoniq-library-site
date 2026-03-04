@@ -84,10 +84,31 @@ const fullReplaceMappings = {
     // The quickstart no longer exists, redirect to the demo
     "/getting-started/quick-start": "/bikerental-demo/main",
     "/axon-server/migration": `/axon-server-reference/latest/axon-server/migration`,
-    // This page no longer exists, redirect to its parent
-    "/axon-framework/axon-framework-commands/modeling": "/axon-framework-reference/latest/axon-framework-commands",
+    '/bikerental-console-demo': `/axoniq-console-reference/`,
+
     // Old console documentation that is so out of date we redirect to reference
-    '/bikerental-console-demo': `/axoniq-console-reference/`
+    "/axoniq-console-reference": "/axoniq-platform-reference",
+
+    // this is really obsolete, so we redirect to old documentation
+    "/axon-framework/upgrading-to-4-7": "/axon-framework-reference/4.13/upgrading-to-4-7/",
+    // these pages have been restructures as part of the Axon 5 documentation rewrite. These are possibly the best redirects
+    "/axon-framework/axon-framework-commands": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/aggregate": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/multi-entity-aggregates": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/state-stored-aggregates": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/aggregate-creation-from-another-aggregate": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/aggregate-polymorphism": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/conflict-resolution": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/command-dispatchers": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/command-handlers": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/infrastructure": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/configuration": "/axon-framework-reference/latest/commands",
+    "/axon-framework/events/event-dispatchers": "/axon-framework-reference/latest/events/event-publishing",
+    "/axon-framework/events/event-bus-and-event-store": "/axon-framework-reference/latest/events/infrastructure",
+    "/axon-framework/queries/implementations": "/axon-framework-reference/latest/queries/query-handlers",
+    "/axon-framework/testing/commands-events": "/axon-framework-reference/latest/testing",
+    "/axon-framework/testing/sagas-1": "/axon-framework-reference/latest/testing",
 }
 
 // Redirect all unknown URLs to the home page
