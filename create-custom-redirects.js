@@ -105,23 +105,23 @@ const latestDefinitions = [
     },
     {
         baseFolder: "message-handler-customization-guide",
-        latestVersion: "5.0"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "meta-annotations-guide",
-        latestVersion: "5.0"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "identifier-generation-guide",
-        latestVersion: "5.0"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "deadlines-guide",
-        latestVersion: "5.0"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "dead-letter-queue-guide",
-        latestVersion: "5.0"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "axon-server-reference",
