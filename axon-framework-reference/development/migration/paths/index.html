@@ -6,7 +6,7 @@
     <title>Migration Paths</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/migration/paths/">
     <link rel="prev" href="../understanding-architecture-principles/">
-    <link rel="next" href="../../messaging-concepts/">
+    <link rel="next" href="messages/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -145,7 +145,40 @@
     <a class="nav-link" href="../understanding-architecture-principles/">Understanding Choices</a>
   </li>
   <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
     <a class="nav-link" href="./">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="serializers/">Serializer Migration</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -366,6 +399,12 @@ This section outlines the common migration tasks and provides detailed "paths" f
 <li>
 <p>Module Restructuring</p>
 </li>
+<li>
+<p>Startup Event</p>
+</li>
+<li>
+<p>Axon Framework BOM</p>
+</li>
 </ul>
 </div>
 </li>
@@ -374,25 +413,28 @@ This section outlines the common migration tasks and provides detailed "paths" f
 <div class="ulist">
 <ul>
 <li>
-<p><em>Message changes [@EventTag,@Event/@Command/@Query] (Coming soon)</em></p>
+<p><a href="messages/" class="xref page">Message Migration (@Event, @Command, @Query)</a></p>
 </li>
 <li>
-<p><em>Aggregate to Entity (Coming soon)</em></p>
+<p><a href="aggregates/" class="xref page">Aggregate Migration</a></p>
 </li>
 <li>
-<p><em>Event Processor configuration in AF5 (Coming soon)</em></p>
+<p><a href="event-store/" class="xref page">Event Store migration</a></p>
 </li>
 <li>
-<p><em>Test fixtures (Coming soon)</em></p>
+<p><a href="projectors-event-processors/" class="xref page">Event Processor configuration</a></p>
 </li>
 <li>
-<p><em>Serializer to Converter configuration changes (Coming soon)</em></p>
+<p><a href="test-fixtures/" class="xref page">Test Fixture migration</a></p>
+</li>
+<li>
+<p><a href="serializers/" class="xref page">Serializer migration</a></p>
 </li>
 <li>
 <p><em>ConfigurerModule to ConfigurationEnhancers (Coming soon)</em></p>
 </li>
 <li>
-<p><em>Message Interceptors in AF5 (Coming soon)</em></p>
+<p><em>Message Interceptors in Axon Framework 5 (Coming soon)</em></p>
 </li>
 </ul>
 </div>
@@ -414,7 +456,7 @@ This section outlines the common migration tasks and provides detailed "paths" f
 <p>Every user migrating from Axon Framework 4.x to 5.x will encounter a set of base changes. These primarily involve package renames and module restructurings.</p>
 </div>
 <div class="sect2">
-<h3 id="_import_and_package_changes"><a class="anchor" href="#_import_and_package_changes"></a>Import and package changes</h3>
+<h3 id="import-and-package-changes"><a class="anchor" href="#import-and-package-changes"></a>Import and package changes</h3>
 <div class="paragraph">
 <p>Many classes have been moved to better align with the new modular structure. The most notable change is the move of Spring-specific and monitoring components into their own extension namespaces, and the nesting of core messaging components under the <code>org.axonframework.messaging</code> package.</p>
 </div>
@@ -573,7 +615,7 @@ This section outlines the common migration tasks and provides detailed "paths" f
 </div>
 </div>
 <div class="paragraph">
-<p>For an exhaustive list of all class-level renames and moves, please refer to the <code>api-changes.md</code> file in the root of the Axon Framework repository.</p>
+<p>For an exhaustive list of all class-level renames and moves, please refer to the <a href="https://github.com/AxonFramework/AxonFramework/blob/main/axon-5/api-changes.md"><code>api-changes.md</code></a> file in the root of the Axon Framework repository.</p>
 </div>
 </div>
 <div class="sect2">
@@ -672,6 +714,13 @@ This section outlines the common migration tasks and provides detailed "paths" f
 </div>
 </div>
 <div class="sect2">
+<h3 id="_startup_event"><a class="anchor" href="#_startup_event"></a>Startup event</h3>
+<div class="paragraph">
+<p>In Axon Framework 4, the internal AxonStartedEvent was used to ensure the application was fully loaded before processing began.
+In Axon Framework 5, this responsibility shifts to Spring: components are initialized at startup, and ApplicationStartedEvent is the signal that the application is ready</p>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_axon_framework_bom"><a class="anchor" href="#_axon_framework_bom"></a>Axon Framework BOM</h3>
 <div class="paragraph">
 <p>For ease of dependency management, it is highly recommended to use the Axon Framework Bill of Materials (BOM). This ensures that all Axon modules in your project use the same compatible version.</p>
@@ -747,7 +796,7 @@ This section outlines the common migration tasks and provides detailed "paths" f
 </div>
 </div>
 <div class="sect1">
-<h2 id="_missing_a_migration_path"><a class="anchor" href="#_missing_a_migration_path"></a>Missing a migration path?</h2>
+<h2 id="missing-a-migration-path"><a class="anchor" href="#missing-a-migration-path"></a>Missing a migration path?</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>We aim to cover the most common migration scenarios in the following subsections. However, every application is unique.</p>
@@ -772,7 +821,7 @@ This section outlines the common migration tasks and provides detailed "paths" f
 </div>
         <nav class="pagination">
   <span class="prev"><a href="../understanding-architecture-principles/">Understanding Choices</a></span>
-  <span class="next"><a href="../../messaging-concepts/">Messaging Concepts</a></span>
+  <span class="next"><a href="messages/">Messages</a></span>
 </nav>
     </article>
   </div>

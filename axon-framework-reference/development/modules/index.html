@@ -144,7 +144,40 @@
     <a class="nav-link" href="../migration/understanding-architecture-principles/">Understanding Choices</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -558,6 +591,12 @@ Visit <a href="https://central.sonatype.com/search?q=axonframework%20extensions"
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.extensions.tracing</code></p></td>
 <td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-tracing-opentelemetry">available</a></p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#axon-reactor">Axon Reactor</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-reactor</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.extensions.reactor</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-reactor">available</a></p></td>
+</tr>
 </tbody>
 </table>
 <div class="sect3">
@@ -592,6 +631,57 @@ It is explained in more details <a href="../spring-boot-integration/" class="xre
 <h4 id="_axon_tracing_opentelemetry"><a class="anchor" href="#_axon_tracing_opentelemetry"></a>Axon Tracing OpenTelemetry</h4>
 <div class="paragraph">
 <p>This extension contains the components needed to <a href="../../5.0/monitoring/tracing/" class="xref page">enable tracing with OpenTelemetry</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="axon-reactor"><a class="anchor" href="#axon-reactor"></a>Axon Reactor</h4>
+<div class="paragraph">
+<p>This extension provides reactive gateways for Axon Framework&#8217;s command, event, and query buses using <a href="https://projectreactor.io/">Project Reactor</a>.
+It includes <code>ReactorCommandGateway</code>, <code>ReactorEventGateway</code>, and <code>ReactorQueryGateway</code>, the reactor counterparts to Axon&#8217;s standard gateways that return <code>Mono</code> and <code>Flux</code> instead of <code>CompletableFuture</code>.</p>
+</div>
+<div class="paragraph">
+<p>The key feature is that reactive dispatch interceptors run inside the Reactor subscription chain.
+This gives interceptors access to the Reactor context, enabling integration with reactive context holders such as Spring Security&#8217;s <code>ReactiveSecurityContextHolder</code>.
+This is particularly useful in Spring WebFlux applications where thread-local context holders are not available.</p>
+</div>
+<div class="paragraph">
+<p>The reactive gateways are auto-configured when the <code>axon-reactor</code> extension is on the classpath.
+In Spring Boot applications, reactor dispatch interceptors declared as Spring beans are automatically discovered and registered.</p>
+</div>
+<div class="paragraph">
+<p>To add the extension to your project:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_maven" class="tab">
+<p>Maven</p>
+</li>
+<li id="_tabs_1_gradle" class="tab">
+<p>Gradle</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_maven--panel" class="tabpanel" aria-labelledby="_tabs_1_maven">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.axonframework.extensions.reactor&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-reactor&lt;/artifactId&gt;
+    &lt;version&gt;${axon.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_gradle--panel" class="tabpanel" aria-labelledby="_tabs_1_gradle">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">implementation 'org.axonframework.extensions.reactor:axon-reactor:${axonVersion}'</code></pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -673,19 +763,19 @@ As such, it is the recommended approach towards defining the overall Axon versio
 <div class="paragraph">
 <p>For using the BOM, you would add the <code>axon-bom</code> dependency to your dependency management system:</p>
 </div>
-<div id="_tabs_1" class="openblock tabs is-loading">
+<div id="_tabs_2" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
 <ul>
-<li id="_tabs_1_maven" class="tab">
+<li id="_tabs_2_maven" class="tab">
 <p>Maven</p>
 </li>
-<li id="_tabs_1_gradle" class="tab">
+<li id="_tabs_2_gradle" class="tab">
 <p>Gradle</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_1_maven--panel" class="tabpanel" aria-labelledby="_tabs_1_maven">
+<div id="_tabs_2_maven--panel" class="tabpanel" aria-labelledby="_tabs_2_maven">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--...--&gt;
@@ -707,7 +797,7 @@ As such, it is the recommended approach towards defining the overall Axon versio
 </div>
 </div>
 </div>
-<div id="_tabs_1_gradle--panel" class="tabpanel" aria-labelledby="_tabs_1_gradle">
+<div id="_tabs_2_gradle--panel" class="tabpanel" aria-labelledby="_tabs_2_gradle">
 <div class="paragraph">
 <p>For usage with <strong>Gradle Version 4.x</strong> and below, apply the dependency-management-plugin like so:</p>
 </div>

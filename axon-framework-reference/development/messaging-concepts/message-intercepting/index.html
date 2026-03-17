@@ -145,7 +145,40 @@
     <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -371,7 +404,7 @@ They can perform actions before and after handling, and are aware of the active 
 They can alter the message by adding metadata or block it by not proceeding with the chain.
 These interceptors are always invoked on the thread that dispatches the message.</p>
 </div>
-<div class="paragraph">
+<div id="dispatch-interceptor" class="paragraph">
 <p>The <code>MessageDispatchInterceptor</code> interface defines a single method:</p>
 </div>
 <div class="listingblock">
@@ -391,7 +424,7 @@ These interceptors are always invoked on the thread that dispatches the message.
 <p>In turn, message handler interceptors can take action both before and after message <strong>handling</strong>.
 Interceptors can even block message processing altogether, for example for security reasons.</p>
 </div>
-<div class="paragraph">
+<div id="handler-interceptor" class="paragraph">
 <p>The <code>MessageHandlerInterceptor</code> interface also defines a single method:</p>
 </div>
 <div class="listingblock">
@@ -664,6 +697,24 @@ Interceptors can even block command processing altogether, for example for secur
 }</code></pre>
 </div>
 </div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Built-in command sequencing</div>
+<div class="paragraph">
+<p>Axon Framework provides built-in command sequencing through the <code>CommandSequencingInterceptor</code>, which is automatically configured by default. This interceptor prevents optimistic locking failures by ensuring commands targeting the same entities execute sequentially.</p>
+</div>
+<div class="paragraph">
+<p>See <a href="../../tuning/command-processing/#command-sequencing" class="xref page">Command sequencing</a> for details.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
@@ -865,13 +916,141 @@ Therefore, this interceptor is generally placed at the front of the interceptor 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerEventHandlerInterceptor(MessagingConfigurer configurer) {
-    configurer.registerEventHandlerInterceptor(
-            config -&gt; new EventSecurityInterceptor()
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerQueryHandlerInterceptor(MessagingConfigurer configurer) {
+    configurer.registerQueryHandlerInterceptor(
+            config -&gt; new QuerySecurityInterceptor()
     );
 }</code></pre>
 </div>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="reactive-dispatch-interceptors"><a class="anchor" href="#reactive-dispatch-interceptors"></a>Reactor dispatch interceptors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When using the <a href="../../../5.0/modules/#axon-reactor" class="xref page">Reactor extension</a>, reactor gateways provide their own interceptor type: <code>ReactorMessageDispatchInterceptor</code>.
+Unlike the standard <code>MessageDispatchInterceptor</code>, the reactor variant runs inside the Reactor subscription chain.
+This means interceptors can access Reactor context using <code>Mono.deferContextual()</code>, enabling integration with reactive context holders such as Spring Security&#8217;s <code>ReactiveSecurityContextHolder</code>.</p>
+</div>
+<div class="paragraph">
+<p>The following example shows a reactor dispatch interceptor that extracts the authenticated user from Reactor context and attaches it as metadata:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SecurityReactorInterceptor
+        implements ReactorMessageDispatchInterceptor&lt;CommandMessage&gt; {
+
+    @Override
+    public Mono&lt;?&gt; interceptOnDispatch(
+            CommandMessage message,
+            ProcessingContext context, <i class="conum" data-value="1"></i><b>(1)</b>
+            ReactorMessageDispatchInterceptorChain&lt;CommandMessage&gt; chain
+    ) {
+        return Mono.deferContextual(ctx -&gt; { <i class="conum" data-value="2"></i><b>(2)</b>
+            SecurityContext secCtx = ctx.get(SecurityContext.class);
+            String userId = secCtx.getAuthentication().getName();
+            return chain.proceed( <i class="conum" data-value="3"></i><b>(3)</b>
+                    message.andMetadata(Metadata.with("userId", userId)),
+                    context
+            );
+        });
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>ProcessingContext</code> is passed through from the gateway call.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>Mono.deferContextual()</code> accesses the Reactor context from the subscriber.
+In a Spring WebFlux application, this is where <code>ReactiveSecurityContextHolder</code> stores the authenticated user.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The interceptor enriches the message metadata and proceeds through the chain.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Register the interceptor:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+<li id="_tabs_1_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div class="paragraph">
+<p>Declare the interceptor as a Spring bean.
+The Reactor auto-configuration discovers <code>ReactorMessageDispatchInterceptor</code> beans and registers them on the <code>ReactorDispatchInterceptorRegistry</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+ReactorMessageDispatchInterceptor&lt;CommandMessage&gt; securityInterceptor() {
+    return new SecurityReactorInterceptor();
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
+<div class="paragraph">
+<p>Decorate the <code>ReactorDispatchInterceptorRegistry</code> component to register interceptors:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.componentRegistry(cr -&gt; cr.registerDecorator(
+        ReactorDispatchInterceptorRegistry.class,
+        0,
+        (config, name, registry) -&gt;
+                registry.registerCommandInterceptor(c -&gt; new SecurityReactorInterceptor())
+));</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>This pattern extracts context at the reactive gateway boundary and attaches it as message metadata.
+Handlers can then read it using <code>@MetadataValue</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public void handle(MyCommand command,
+                   @MetadataValue(value = "userId", required = false) String userId) {
+    // userId was extracted from Reactor context by the dispatch interceptor
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Reactor context is only available at the gateway boundary, inside the reactive dispatch interceptor chain.
+Once the message crosses into the imperative bus, Reactor context is no longer accessible.
+The interceptor-to-metadata pattern shown above is the recommended approach for propagating context to handlers.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>

@@ -145,7 +145,40 @@
     <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -522,7 +555,7 @@ If a command only performs validation or queries without changing state, conside
 </div>
 </div>
 <div class="sect1">
-<h2 id="_stateful_command_handlers"><a class="anchor" href="#_stateful_command_handlers"></a>Stateful command handlers</h2>
+<h2 id="stateful-command-handlers"><a class="anchor" href="#stateful-command-handlers"></a>Stateful command handlers</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Stateful command handlers maintain state in the handler itself across command invocations.
@@ -905,7 +938,6 @@ The <code>@EntityCreator</code> is mandatory when writing annotation-based entit
 public class GiftCard {
 
     private String id;
-    private boolean created = false;
     private int remainingValue;
 
     @EntityCreator <i class="conum" data-value="1"></i><b>(1)</b>
@@ -914,16 +946,12 @@ public class GiftCard {
 
     @CommandHandler <i class="conum" data-value="2"></i><b>(2)</b>
     public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
-        if (created) {
-            throw new IllegalStateException("Card already issued");
-        }
         eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
     }
 
     @EventSourcingHandler
     private void on(CardIssuedEvent event) {
         this.id = event.id();
-        this.created = true;
         this.remainingValue = event.amount();
     }
 }</code></pre>
@@ -956,26 +984,20 @@ The entity identifier is required to be annotated with <code>@InjectEntityId</co
 public class GiftCard {
 
     private String id;
-    private boolean created;
     private int remainingValue;
 
     @EntityCreator <i class="conum" data-value="1"></i><b>(1)</b>
     public GiftCard(@InjectEntityId String id) { <i class="conum" data-value="2"></i><b>(2)</b>
         this.id = id;
-        this.created = false;
     }
 
     @CommandHandler <i class="conum" data-value="3"></i><b>(3)</b>
     public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
-        if (created) {
-            throw new IllegalStateException("Card already issued");
-        }
         eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
     }
 
     @EventSourcingHandler
     private void on(CardIssuedEvent event) {
-        this.created = true;
         this.remainingValue = event.amount();
     }
 }</code></pre>
@@ -1158,10 +1180,10 @@ This decouples the logical identity of a command from its (Java) representation.
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Command(
-    namespace = "com.example.giftcard",  <i class="conum" data-value="1"></i><b>(1)</b>
-    name = "IssueCard",                   <i class="conum" data-value="2"></i><b>(2)</b>
-    version = "1.0.0",                    <i class="conum" data-value="3"></i><b>(3)</b>
-    routingKey = "cardId"                 <i class="conum" data-value="4"></i><b>(4)</b>
+    namespace = "giftcard", <i class="conum" data-value="1"></i><b>(1)</b>
+    name = "IssueCard",     <i class="conum" data-value="2"></i><b>(2)</b>
+    version = "1.0.0",      <i class="conum" data-value="3"></i><b>(3)</b>
+    routingKey = "cardId"   <i class="conum" data-value="4"></i><b>(4)</b>
 )
 public record IssueCardCommand(String cardId, int amount, String shopId) {
 }</code></pre>
@@ -1171,8 +1193,7 @@ public record IssueCardCommand(String cardId, int amount, String shopId) {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The <code>namespace</code> typically represents the bounded context.
-Defaults to the package name of the class.</td>
+<td>The <code>namespace</code> typically represents the bounded context. When no <code>namespace</code> is specified on <code>@Command</code>, Axon searches for the presence of the <code>@Namespace</code> annotation (as described <a href="../../messaging-concepts/anatomy-message/#namespace-annotation" class="xref page">her</a>). When no <code>@Namespace</code> annotation is found, then <code>namespace</code> falls back to the package name of the class.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>

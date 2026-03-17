@@ -145,7 +145,40 @@
     <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -588,7 +621,7 @@ This allows you to explicitly define its name, namespace, and version:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Event(
-    namespace = "com.example.orders",   // Defaults to package name
+    namespace = "orders",               <i class="conum" data-value="1"></i><b>(1)</b>
     name = "OrderPlaced",               // Local name; defaults to simple class name
     version = "1.0.0"                   // Defaults to "0.0.1"
 )
@@ -599,8 +632,16 @@ public record OrderPlacedEvent(
 }</code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>When <code>namespace</code> is not specified on <code>@Event</code>, Axon first searches for the presence of the <code>@Namespace</code> annotation (as described <a href="../../messaging-concepts/anatomy-message/#namespace-annotation" class="xref page">here</a>). When no <code>@Namespace</code> annotation is found, it falls back to the package name of the class.</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
-<p>The event handler&#8217;s name is composed of <code>namespace</code> + <code>name</code> (for example, <code>"com.example.orders.OrderPlaced"</code>).
+<p>The event handler&#8217;s name is composed of <code>namespace</code> and <code>name</code> (for example, <code>"orders.OrderPlaced"</code>).
 Now let&#8217;s assume we have an <code>@EventHandler</code> handling the <code>OrderPlacedEvent</code>:</p>
 </div>
 <div class="listingblock">
@@ -621,9 +662,9 @@ The component in charge of this resolution is the <code>MessageTypeResolver</cod
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler(eventName = "com.example.orders.OrderPlaced")
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler(eventName = "orders.OrderPlaced")
 public void handleOrderPlaced(Map&lt;String, Object&gt; eventData) {
-    // Handles events with qualified name "com.example.orders.OrderPlaced"
+    // Handles events with qualified name "orders.OrderPlaced"
     // Payload is converted to Map at handling time
 }</code></pre>
 </div>
