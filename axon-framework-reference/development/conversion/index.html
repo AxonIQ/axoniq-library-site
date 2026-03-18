@@ -535,6 +535,37 @@ The conversion happens automatically based on the handler&#8217;s parameter type
 </ul>
 </div>
 </div>
+<div class="sect2">
+<h3 id="converter_attachment_at_message_loading_time"><a class="anchor" href="#converter_attachment_at_message_loading_time"></a>Converter attachment at message loading time</h3>
+<div class="paragraph">
+<p>To make the automatic conversion above possible without requiring handler code to reference a converter, Axon attaches the appropriate <code>Converter</code> to every message at the moment it is loaded from a serialized state (received over the wire, loaded from a database, loaded from a store, etc.).
+The converter is attached to the message, so calling <code>payloadAs(SomeType.class)</code> in a handler converts the payload to the expected type without the need to explicitly reference a converter from that handler.</p>
+</div>
+<div class="paragraph">
+<p>For example, the following handler receives the raw event message and converts its payload without needing to know which converter is configured:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(EventMessage&lt;?&gt; event) {
+    // Works without passing a converter — Axon attached one when loading the event
+    UserRegisteredEvent payload = event.payloadAs(UserRegisteredEvent.class);
+    userRepository.save(new User(payload.getUserId(), payload.getEmail()));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When building custom infrastructure that produces <code>Message</code> instances, call <code>withConverter(Converter)</code> before the message reaches any handler to enable the same behavior:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">GenericEventMessage messageWithConverter = rawMessage.withConverter(eventConverter);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This ensures all downstream code like command handlers, event processors, dead-letter queue processors and query handlers can convert the payload without requiring the converter to be passed explicitly.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">

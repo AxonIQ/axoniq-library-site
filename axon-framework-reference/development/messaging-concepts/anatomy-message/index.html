@@ -762,11 +762,22 @@ While the message type describes what the message means (for example, "OrderPlac
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>payloadAs(Type)</code> method converts the payload to the required type at the moment you need it.
-In most cases, you don&#8217;t need to pass a <code>Converter</code> explicitly - if the message has passed through converter-aware components (which is typical in Axon), the conversion happens automatically.</p>
+<p>The <code>payloadAs(Class&lt;T&gt;)</code> method attempts to convert the message payload into the required type as you access it.</p>
 </div>
 <div class="paragraph">
-<p>If you need explicit control over conversion, you can provide a converter:</p>
+<p>In cases where a message originates outside the JVM (Axon Server, Database, Store), Axon attaches an applicable <a href="../../conversion/#converter_attachment_at_message_loading_time" class="xref page">converter</a> to the message before passing it on for handling. This applies for <code>CommandMessages</code>, <code>CommandResultMessages</code>, <code>EventMessages</code>, <code>QueryMessages</code> and <code>QueryResponseMessages</code> and makes those messages conversion aware, so handler code usually does not need to reference a converter directly when using a generic message type for handling:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(EventMessage event) {
+    // Converter is already attached — no need to pass it explicitly
+    OrderPlacedEvent order = event.payloadAs(OrderPlacedEvent.class);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you need explicit control over conversion or if you are working with a message that was not produced by Axon&#8217;s infrastructure, you can still supply a converter directly:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -776,7 +787,12 @@ In most cases, you don&#8217;t need to pass a <code>Converter</code> explicitly 
 </div>
 </div>
 <div class="paragraph">
-<p>This is useful when you need the same message in different formats at different points in your processing logic.</p>
+<p>When building custom infrastructure that produces <code>Message</code> instances (for example <code>GenericMessage</code>, <code>GenericCommandMessage</code>, <code>GenericEventMessage</code>, <code>GenericQueryMessage</code>, etc.), you can call <code>withConverter(Converter)</code> to attach the converter so downstream handlers benefit from the same automatic conversion:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">GenericEventMessage messageWithConverter = rawMessage.withConverter(eventConverter);</code></pre>
+</div>
 </div>
 </div>
 <div class="sect2">
