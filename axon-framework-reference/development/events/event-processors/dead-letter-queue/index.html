@@ -381,28 +381,12 @@
                 <h1 class="page">Dead-Letter Queue</h1>
             <div id="preamble">
 <div class="sectionbody">
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-<div class="title">Dead-Letter Queue not available in Axon Framework 5.0</div>
-<div class="paragraph">
-<p>The Dead-Letter Queue feature is not yet available in Axon Framework 5.0.
-It will be reintroduced in Axon Framework 5.1.
-The documentation below describes the Dead-Letter Queue concepts for reference and future use.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
 <div class="paragraph">
 <p>When configuring <a href="../../../../5.0/events/event-processors/#error-handling" class="xref page">error handling</a> for your event processors, you might want to consider a Dead-Letter Queue to park events that you were unable to handle.</p>
 </div>
 <div class="paragraph">
-<p>Instead of either logging the error and continuing, or infinitely retrying the current event, a Dead-Letter Queue will park the event in the queue so you can decide to try and handle it again later. In addition, it will prevent handling of later events in the same sequence until the failed event is successfully processed.</p>
+<p>Instead of either logging the error and continuing, or infinitely retrying the current event, a Dead-Letter Queue will park the event in the queue so you can decide to try and handle it again later.
+In addition, it will prevent handling of later events in the same sequence until the failed event is successfully processed, preserving correct event ordering.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -411,7 +395,7 @@ The documentation below describes the Dead-Letter Queue concepts for reference a
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-<div class="title">Insight and Management</div>
+<div class="title">Insight and management</div>
 <a href="../../../../../axoniq-platform-reference/" class="xref page">Axoniq Platform</a> provides insight into the Dead-Letter Queue and tools for its management.
 It&#8217;s straightforward to see the dead letters in the queue and decide to retry them or remove them from the queue.
 You can find more information on the <a href="../../../../../axoniq-platform-reference/features/dlq/" class="xref page">Dead-Letter Queue page of Axoniq Platform</a>.
@@ -419,30 +403,26 @@ You can find more information on the <a href="../../../../../axoniq-platform-ref
 </tr>
 </table>
 </div>
-<div class="paragraph">
-<p>Note that you <em>cannot</em> share a dead-letter queue between different processors.
-Hence, each processor you want to enable this behavior for should receive a unique dead-letter queue instance.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="title">Dead-Letter Queues do not support Sagas</div>
+</div>
+<div class="sect1">
+<h2 id="_queue_scoping_and_naming"><a class="anchor" href="#_queue_scoping_and_naming"></a>Queue scoping and naming</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>Currently, there is <em>no</em> support for using a dead-letter queue for <a href="../../../sagas/" class="xref page">sagas</a>.
-We&#8217;ve taken this decision as we cannot support a sequenced dead lettering approach as we do for regular event handling.</p>
+<p>Each Event Handling Component within a processor receives its own dead-letter queue instance.
+This ensures dead letters are scoped to a single component, preventing interference between different event handlers.
+Each queue is identified by a name following the pattern <code>DeadLetterQueue[processorName][componentName]</code>, where <code>processorName</code> is the name of the event processor and <code>componentName</code> is the name of the Event Handling Component within that processor.
+This naming convention is also used as the <code>processingGroup</code> when creating queue instances through the <code>SequencedDeadLetterQueueFactory</code>.</p>
 </div>
 <div class="paragraph">
-<p>Furthermore, we cannot do this, as a saga&#8217;s associations can vary widely between events.
-Due to this, the sequence of events may change, breaking this level of support.
-Hence, there&#8217;s no way of knowing whether a next event in the stream does or does not belong to a saga.</p>
+<p>The <code>componentName</code> is the name you provide when registering Event Handling Components.
+With the Configuration API, this is the name passed to <code>declarative("myHandler", &#8230;&#8203;)</code> or <code>autodetected("myHandler", &#8230;&#8203;)</code>.
+With Spring Boot, it is the Spring bean name of the event handler.
+It is important to keep component names stable, as they are part of the queue identifier used to persist dead letters.
+Changing a component name would effectively orphan any previously dead-lettered events.</p>
 </div>
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p>For example, given a processor named <code>order-processor</code> with a component registered as <code>orderProjection</code>, the queue name would be <code>DeadLetterQueue[order-processor][orderProjection]</code>.</p>
 </div>
 </div>
 </div>
@@ -451,15 +431,14 @@ Hence, there&#8217;s no way of knowing whether a next event in the stream does o
 <div class="sectionbody">
 <div class="paragraph">
 <p>Axon Framework&#8217;s event processors maintain the ordering of events within the same sequence, even when you configure <a href="../streaming/#parallel_processing" class="xref page">parallel processing</a>.
-A perfect example when this is a requirement is the need to handle events of the same aggregate in their publishing order.
-Simply dead lettering one failed event would cause later events in the sequence to be applied to inconsistent state.</p>
+A typical example is handling events for the same entity in publishing order: if one event fails, applying subsequent events to that entity would produce inconsistent state.</p>
 </div>
 <div class="paragraph">
-<p>So it&#8217;s important that a dead-letter queue for events enqueues an event and any following events in the sequence. To that end, the supported dead-letter queue is a so-called <code>SequencedDeadLetterQueue</code>.</p>
+<p>Therefore, a Dead-Letter Queue must enqueue both the failed event and all subsequent events in the same sequence.
+To that end, the supported dead-letter queue is a <code>SequencedDeadLetterQueue</code>.</p>
 </div>
 <div class="paragraph">
-<p>Integral to its design is to allow for queueing failed events and events that belong to a faulty sequence.
-It does so by maintaining a sequence identifier for each event, determined by the <a href="../streaming/#sequential-processing" class="xref page">sequencing policy</a>.</p>
+<p>It tracks sequences by associating each event with a sequence identifier, which is determined by the <a href="../streaming/#sequential-processing" class="xref page">sequencing policy</a>.</p>
 </div>
 </div>
 </div>
@@ -467,7 +446,7 @@ It does so by maintaining a sequence identifier for each event, determined by th
 <h2 id="_implementations"><a class="anchor" href="#_implementations"></a>Implementations</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>We currently provide the following dead-letter queue implementations:</p>
+<p>The following dead-letter queue implementations are available:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -477,22 +456,15 @@ Useful for testing purposes, but as it does not persist dead letters, it is unsu
 </li>
 <li>
 <p><code>JpaSequencedDeadLetterQueue</code> - JPA variant of the dead-letter queue.
-It constructs a <code>dead_letter_entry</code> table where it persists failed-events in.
-The JPA dead-letter queue is a suitable option for production environments by persisting the dead letters.</p>
+It persists failed events in a <code>dead_letter_entry</code> table.
+The JPA dead-letter queue is a suitable option for production environments.</p>
 </li>
 <li>
 <p><code>JdbcSequencedDeadLetterQueue</code> - JDBC variant of the dead-letter queue.
-It constructs a <code>dead_letter_entry</code> table where it persists failed-events in.
-The JDBC dead-letter queue is a suitable option for production environments by persisting the dead letters.</p>
-</li>
-<li>
-<p><code>MongoSequencedDeadLetterQueue</code> - Mongo variant of the dead-letter queue, available via the <a href="../../../../../mongodb-extension-reference/4.11/" class="xref page">Mongo Extension</a>.</p>
+It persists failed events in a <code>dead_letter_entry</code> table.
+The JDBC dead-letter queue is a suitable option for production environments and allows customization of the SQL dialect via a <code>DeadLetterStatementFactory</code>.</p>
 </li>
 </ul>
-</div>
-<div class="paragraph">
-<p>It constructs a <code>deadletters</code> collection where it persists failed-events in.
-The MongoDB dead-letter queue is a suitable option for production environments by persisting the dead letters.</p>
 </div>
 </div>
 </div>
@@ -502,14 +474,12 @@ The MongoDB dead-letter queue is a suitable option for production environments b
 <div class="paragraph">
 <p>Before configuring a <code>SequencedDeadLetterQueue</code> it is vital to validate whether your event handling functions are idempotent.
 As a processor consists of several Event Handling Components (as explained in the intro of this chapter), some handlers may succeed in event handling while others will not.
-As a configured dead-letter queue does not stall event handling, a failure in one Event Handling Component does not cause a rollback for other event handlers.
-Furthermore, as the dead-letter support is on the processor level, <a href="#_processing_sequences">dead-letter processing</a> will invoke <em>all</em> event handlers for that event within the processor.</p>
+A configured dead-letter queue does not stall event handling, so a failure in one Event Handling Component does not cause a rollback for other event handlers.
+Furthermore, when the failed event is retried later via <a href="#_processing_sequences">dead-letter processing</a>, only the Event Handling Component that originally failed is invoked again. However, all event handlers within that component that match the event are invoked.</p>
 </div>
 <div class="paragraph">
-<p>Thus, if your event handlers are not idempotent, processing letters may result in undesired side effects.</p>
-</div>
-<div class="paragraph">
-<p>Hence, we strongly recommend making your event handlers idempotent when using the dead-letter queue.</p>
+<p>If your event handlers are not idempotent, retrying dead letters may produce undesired side effects.
+We strongly recommend making your event handlers idempotent when using the dead-letter queue.</p>
 </div>
 <div class="paragraph">
 <p>The principle of <strong>exactly once</strong> delivery is no longer guaranteed; at-least-once delivery is the reality to cope with.</p>
@@ -520,7 +490,8 @@ Furthermore, as the dead-letter support is on the processor level, <a href="#_pr
 <h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A <code>JpaSequencedDeadLetterQueue</code> configuration example:</p>
+<p>Dead-letter queue configuration happens through the <code>DeadLetterQueueConfiguration</code> class, which provides a fluent API for enabling and customizing the queue.
+The configuration is applied on the <code>PooledStreamingEventProcessorConfiguration</code> using the <code>deadLetterQueue</code> method.</p>
 </div>
 <div id="_tabs_1" class="openblock tabs is-loading">
 <div class="content">
@@ -537,31 +508,57 @@ Furthermore, as the dead-letter support is on the processor level, <a href="#_pr
 <div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureDeadLetterQueue(EventProcessingConfigurer processingConfigurer) {
-        // Replace "my-processor" for the processor you want to configure the DLQ on.
-        processingConfigurer.registerDeadLetterQueue(
-                "my-processor",
-                config -&gt; JpaSequencedDeadLetterQueue.builder()
-                                                     .processingGroup("my-processor")
-                                                     .maxSequences(256)
-                                                     .maxSequenceSize(256)
-                                                     .entityManagerProvider(config.getComponent(EntityManagerProvider.class))
-                                                     .transactionManager(config.getComponent(TransactionManager.class))
-                                                     .serializer(config.converter())
-                                                     .build()
-        );
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
+public class AxonConfig {
+
+    public void configureDeadLetterQueue() {
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(ep -&gt; ep.pooledStreaming(ps -&gt; ps
+                .processor(
+                        EventProcessorModule
+                                .pooledStreaming("my-processor")
+                                .eventHandlingComponents(components -&gt; components
+                                        .declarative("myHandler", cfg -&gt; myHandlerComponent))
+                                .customized((cfg, processorConfig) -&gt; processorConfig
+                                        .deadLetterQueue(dlq -&gt; dlq.enabled()))
+                )
+        ));
     }
 }</code></pre>
 </div>
 </div>
 </div>
 <div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div class="paragraph">
+<p>In Spring Boot, enabling the dead-letter queue for a specific processor only requires a property:</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// TODO #4053 - Introduce Event Processor Specification bean example.</code></pre>
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.dlq.enabled=true</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Spring Boot auto-configuration will automatically detect whether JPA or JDBC is available and create the appropriate <code>SequencedDeadLetterQueueFactory</code> bean.
+If both JPA and JDBC are available, the auto-configuration creates a JPA-based queue by default.
+No additional bean definitions are needed for the default setup.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Enabling the DLQ via properties enables it for <strong>all</strong> Event Handling Components assigned to that processor.
+Each component gets its own separate queue instance (see <a href="#_queue_scoping_and_naming">Queue scoping and naming</a>), but the enabled/disabled setting applies uniformly to the entire processor.
+To selectively enable or disable the DLQ for individual components, use the Configuration API or an <code>EventProcessorDefinition</code> bean with a custom factory.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -572,17 +569,11 @@ If either of these thresholds is exceeded, the queue will throw a <code>DeadLett
 This exception means the processor will stop processing new events altogether.
 Thus, the processor moves back to the behavior described at the start of the <a href="../../#error-handling" class="xref page">Error Handling</a> section.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_configuration_through_a_provider"><a class="anchor" href="#_configuration_through_a_provider"></a>Configuration through a provider</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_using_a_custom_factory"><a class="anchor" href="#_using_a_custom_factory"></a>Using a custom factory</h3>
 <div class="paragraph">
-<p>To make it easier to use a dead-letter queue on multiple processors, it&#8217;s possible to set a dead-letter queue provider.
-The provider is a function that takes a processor name, and returns either <code>null</code>, meaning it will not be configured using a dead-letter queue, or a function that takes the <code>Configuration</code> and returns a new dead-letter queue.</p>
-</div>
-<div class="paragraph">
-<p>Here is a <code>JpaSequencedDeadLetterQueue</code> configuration example that uses a collection to determine if a dead-letter queue should be created for a given processor:</p>
+<p>To customize how the dead-letter queue is created (for example, to set <code>maxSequences</code> or <code>maxSequenceSize</code>), you can provide a custom <code>SequencedDeadLetterQueueFactory</code>.
+The Configuration API example below uses <code>InMemorySequencedDeadLetterQueue</code> to keep it concise; for production, replace it with <code>JpaSequencedDeadLetterQueue</code> or <code>JdbcSequencedDeadLetterQueue</code> as shown in the Spring Boot tab:</p>
 </div>
 <div id="_tabs_2" class="openblock tabs is-loading">
 <div class="content">
@@ -599,46 +590,237 @@ The provider is a function that takes a processor name, and returns either <code
 <div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureDeadLetterQueue(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.registerDeadLetterQueueProvider(
-                processorName -&gt; {
-                    //dlqEnabledProcessors is a collection with the processors that should have a dlq
-                    if (dlqEnabledProcessors.contains(processorName)) {
-                        return config -&gt; JpaSequencedDeadLetterQueue.builder()
-                                                             .processingGroup(processorName)
-                                                             .entityManagerProvider(config.getComponent(
-                                                                     EntityManagerProvider.class
-                                                             ))
-                                                             .transactionManager(config.getComponent(
-                                                                     TransactionManager.class
-                                                             ))
-                                                             .serializer(config.converter())
-                                                             .build();
-                    } else {
-                        return null;
-                    }
-                }
-        );
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
+public class AxonConfig {
+
+    public void configureDeadLetterQueue() {
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(ep -&gt; ep.pooledStreaming(ps -&gt; ps
+                .processor(
+                        EventProcessorModule
+                                .pooledStreaming("my-processor")
+                                .eventHandlingComponents(components -&gt; components
+                                        .declarative("myHandler", cfg -&gt; myHandlerComponent))
+                                .customized((cfg, processorConfig) -&gt; processorConfig
+                                        .deadLetterQueue(dlq -&gt; dlq
+                                                .enabled()
+                                                .factory((name, config) -&gt;
+                                                        InMemorySequencedDeadLetterQueue.builder()
+                                                                .maxSequences(256)
+                                                                .maxSequenceSize(256)
+                                                                .build())))
+                )
+        ));
     }
 }</code></pre>
 </div>
 </div>
 </div>
 <div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
+<div class="paragraph">
+<p>Define a custom <code>SequencedDeadLetterQueueFactory</code> bean and enable the DLQ via properties.
+The factory receives the queue name (following the <code>DeadLetterQueue[processorName][beanName]</code> pattern from <a href="#_queue_scoping_and_naming">Queue scoping and naming</a>, where <code>beanName</code> is the Spring bean name of the event handler) as its first parameter, and is called once per Event Handling Component.
+When this bean is present, it replaces the Spring Boot auto-configured factory for all processors where the DLQ is enabled:</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// TODO #4053 - Introduce Event Processor Specification bean example.</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
+import jakarta.persistence.EntityManagerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class DlqConfig {
+
+    @Bean
+    SequencedDeadLetterQueueFactory myDeadLetterQueueFactory(
+            EntityManagerFactory entityManagerFactory,
+            EventConverter eventConverter,
+            Converter converter
+    ) {
+        return (processingGroup, config) -&gt;
+                JpaSequencedDeadLetterQueue.builder()
+                        .processingGroup(processingGroup)
+                        .maxSequences(256)
+                        .maxSequenceSize(256)
+                        .transactionalExecutorProvider(
+                                new JpaTransactionalExecutorProvider(entityManagerFactory))
+                        .eventConverter(eventConverter)
+                        .genericConverter(converter)
+                        .build();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.dlq.enabled=true</code></pre>
 </div>
 </div>
 </div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_sequence_identifier_caching"><a class="anchor" href="#_sequence_identifier_caching"></a>Sequence identifier caching</h3>
+<div class="paragraph">
+<p>To speed up event processing, the framework caches the sequence identifiers of sequences that are currently in the dead-letter queue.
+Before processing each event, it checks this cache to determine whether the event&#8217;s sequence is already dead-lettered. If it is, the event must be enqueued rather than processed normally.
+This avoids a database round-trip for every healthy event that is <em>not</em> dead-lettered.
+Internally, the dead-letter queue is wrapped with a <code>CachingSequencedDeadLetterQueue</code> to provide this optimization.</p>
+</div>
+<div class="paragraph">
+<p>Size the cache to match the maximum number of distinct failing sequences you expect at any given time.
+Increase it if you regularly have more concurrent failing sequences than the default of 1024.
+Set it to 0 to disable caching entirely. This is useful when memory is constrained or when failing sequences are highly dynamic and cache hits would be rare:</p>
+</div>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_3_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
+public class AxonConfig {
+
+    public void configureDeadLetterQueue() {
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(ep -&gt; ep.pooledStreaming(ps -&gt; ps
+                .processor(
+                        EventProcessorModule
+                                .pooledStreaming("my-processor")
+                                .eventHandlingComponents(/* ... */)
+                                .customized((cfg, processorConfig) -&gt; processorConfig
+                                        .deadLetterQueue(dlq -&gt; dlq
+                                                .enabled()
+                                                .cacheMaxSize(4096)))) // Set a larger cache
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.dlq.enabled=true
+axon.eventhandling.processors.my-processor.dlq.cache.size=4096</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>If you are using Spring Boot, a default dead-letter queue provider will be set if using JPA, JDBC, or Mongo.
-The default dead-letter queue provider will use the <code>axon.eventhandling.processors.my-processor.dlq.enabled</code> property to determine whether to return <code>null</code> or a dead-letter queue factory method.
-For example, by setting the <code>axon.eventhandling.processors.my-processor.dlq.enabled</code> to true you would enable the dead-letter queue for the <code>my-processor</code> processor.</p>
+<p>To disable caching entirely:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.dlq.cache.size=0</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_applying_defaults_across_processors"><a class="anchor" href="#_applying_defaults_across_processors"></a>Applying defaults across processors</h3>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>This feature is available through the Configuration API only.
+In Spring Boot, configure each processor individually using <code>axon.eventhandling.processors.&lt;name&gt;.dlq.enabled=true</code> and the related cache and overflow properties.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>You can set dead-letter queue defaults that apply to all pooled streaming processors, which individual processors can then override:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
+public class AxonConfig {
+
+    public void configureDeadLetterQueue() {
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(ep -&gt; ep.pooledStreaming(ps -&gt; ps
+                // Enable DLQ for all pooled streaming processors by default
+                .defaults(d -&gt; d.deadLetterQueue(dlq -&gt; dlq
+                        .enabled()
+                        .cacheMaxSize(2048)))
+                // This processor inherits the defaults
+                .processor(EventProcessorModule
+                        .pooledStreaming("processor-with-dlq")
+                        .eventHandlingComponents(/* ... */)
+                        .notCustomized())
+                // This processor explicitly disables DLQ
+                .processor(EventProcessorModule
+                        .pooledStreaming("processor-without-dlq")
+                        .eventHandlingComponents(/* ... */)
+                        .customized((cfg, c) -&gt; c
+                                .deadLetterQueue(dlq -&gt; dlq.disabled())))
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuring_dlq_with_an_eventprocessordefinition_bean"><a class="anchor" href="#_configuring_dlq_with_an_eventprocessordefinition_bean"></a>Configuring DLQ with an <code>EventProcessorDefinition</code> bean</h3>
+<div class="paragraph">
+<p>When using Spring Boot with <code>EventProcessorDefinition</code> beans, you can apply custom DLQ configuration through the <code>customized</code> step.
+When enabled, the framework creates a separate dead-letter queue for each Spring bean matched by <code>assigningHandlers</code>, using the bean name as the component name.
+For example, if <code>assigningHandlers</code> matches beans <code>orderProjection</code> and <code>orderNotifier</code>, the factory will create queues named <code>DeadLetterQueue[order-processor][orderProjection]</code> and <code>DeadLetterQueue[order-processor][orderNotifier]</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ProcessorConfig {
+
+    @Bean
+    EventProcessorDefinition orderProcessor() {
+        return EventProcessorDefinition.pooledStreaming("order-processor")
+                .assigningHandlers(descriptor -&gt;
+                        descriptor.beanName().startsWith("order"))
+                .customized(config -&gt; config
+                        .deadLetterQueue(dlq -&gt; dlq
+                                .enabled()
+                                .cacheMaxSize(2048)));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Properties-based DLQ configuration (<code>axon.eventhandling.processors.&lt;name&gt;.dlq.enabled=true</code>) is applied <em>before</em> the <code>EventProcessorDefinition</code> customization.
+The <code>EventProcessorDefinition</code> always takes precedence: calling <code>.deadLetterQueue(dlq &#8594; dlq.enabled())</code> or <code>.deadLetterQueue(dlq &#8594; dlq.disabled())</code> explicitly overrides the property in either direction.</p>
+</div>
 </div>
 </div>
 </div>
@@ -646,23 +828,19 @@ For example, by setting the <code>axon.eventhandling.processors.my-processor.dlq
 <h2 id="_processing_sequences"><a class="anchor" href="#_processing_sequences"></a>Processing sequences</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Once you resolve the problem that led to dead lettering events, we can start processing the dead letters.
-We recommend using the <code>SequencedDeadLetterProcessor</code> interface for this, as it processes an entire dead-letter <em>sequence</em> instead of single dead-letter entries.
-It will thus ensure the event order is maintained during the retry.</p>
-</div>
-<div class="paragraph">
-<p>The <code>SequencedDeadLetterProcessor</code> provides two operations to process dead letters:</p>
+<p>Once you resolve the problem that led to dead lettering events, you can start processing the dead letters.
+The <code>SequencedDeadLetterProcessor</code> interface provides two operations:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><code>boolean processAny()</code> - Process the oldest dead-letter sequence.
-Returns <code>true</code> if it processes a sequence successfully.</p>
+<p><code>CompletableFuture&lt;Boolean&gt; processAny()</code> - Processes the oldest dead-letter sequence.
+Returns <code>true</code> if a sequence was processed successfully.</p>
 </li>
 <li>
-<p><code>boolean process(Predicate&lt;DeadLetter&lt;? extends EventMessage&lt;?&gt;&gt;)</code> - Process the oldest dead-letter sequence matching the predicate.
-Note that the predicate only filters based on a sequence&#8217;s <em>first</em> entry.
-Returns <code>true</code> if it processes a sequence successfully.</p>
+<p><code>CompletableFuture&lt;Boolean&gt; process(Predicate&lt;DeadLetter&lt;? extends EventMessage&gt;&gt;)</code> - Processes the oldest dead-letter sequence whose <em>first</em> entry matches the predicate.
+The predicate only tests the first entry because sequences are processed as a unit: matching the first entry selects the entire sequence.
+Returns <code>true</code> if a matching sequence was processed successfully.</p>
 </li>
 </ol>
 </div>
@@ -671,88 +849,107 @@ Returns <code>true</code> if it processes a sequence successfully.</p>
 How the dead-lettering process reacts to this depends on the <a href="#_enqueue_policy">enqueue policy</a>.</p>
 </div>
 <div class="paragraph">
-<p>You can retrieve a <code>SequencedDeadLetterProcessor</code> from the <code>EventProcessingConfiguration</code> based on a processor name <em>if</em> you have configured a dead-letter queue for this processor.
-Below are a couple of examples of how to process dead-letter sequences:</p>
+<p>You can retrieve <code>SequencedDeadLetterProcessor</code> instances from the <code>Configuration</code> based on the processor name and the component name.
+Each Event Handling Component with DLQ enabled is registered as a <code>SequencedDeadLetterProcessor</code>.
+Below are examples of how to process dead-letter sequences for a specific component:</p>
 </div>
-<div id="_tabs_3" class="openblock tabs is-loading">
+<div id="_tabs_4" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
 <ul>
-<li id="_tabs_3_process_the_oldest_dead_letter_sequence_matching_errorevent" class="tab">
-<p>Process the oldest dead-letter sequence matching <code>ErrorEvent</code></p>
+<li id="_tabs_4_process_the_oldest_dead_letter_sequence_matching_a_message_name" class="tab">
+<p>Process the oldest dead-letter sequence matching a message name</p>
 </li>
-<li id="_tabs_3_process_the_oldest_dead_letter_sequence_in_the_queue" class="tab">
+<li id="_tabs_4_process_the_oldest_dead_letter_sequence_in_the_queue" class="tab">
 <p>Process the oldest dead-letter sequence in the queue</p>
 </li>
-<li id="_tabs_3_process_all_dead_letter_sequences_in_the_queue" class="tab">
+<li id="_tabs_4_process_all_dead_letter_sequences_in_the_queue" class="tab">
 <p>Process all dead-letter sequences in the queue</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_3_process_the_oldest_dead_letter_sequence_matching_errorevent--panel" class="tabpanel" aria-labelledby="_tabs_3_process_the_oldest_dead_letter_sequence_matching_errorevent">
+<div id="_tabs_4_process_the_oldest_dead_letter_sequence_matching_a_message_name--panel" class="tabpanel" aria-labelledby="_tabs_4_process_the_oldest_dead_letter_sequence_matching_a_message_name">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class DeadletterProcessor {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import java.util.concurrent.TimeUnit;
 
-    private EventProcessingConfiguration config;
+public class DeadLetterProcessor {
 
-    public void retryErrorEventSequence(String processingGroup) {
-        config.sequencedDeadLetterProcessor(processingGroup)
-              .ifPresent(letterProcessor -&gt; letterProcessor.process(
-                      deadLetter -&gt; deadLetter.message().getPayload() instanceof ErrorEvent
-              ));
+    private static final QualifiedName ERROR_EVENT_NAME =
+            new QualifiedName("YourApplicationEvent");
+
+    private final Configuration configuration;
+
+    public void retryErrorEventSequence(String processorName, String componentName) {
+        configuration.getModuleConfiguration(processorName)
+                .map(m -&gt; m.getComponents(SequencedDeadLetterProcessor.class))
+                .map(processors -&gt; processors.get(componentName))
+                .ifPresent(dlp -&gt;
+                        dlp.process(letter -&gt; letter.message()
+                                                    .type()
+                                                    .qualifiedName()
+                                                    .equals(ERROR_EVENT_TYPE))
+                           .orTimeout(30, TimeUnit.SECONDS)
+                           .join());
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div id="_tabs_3_process_the_oldest_dead_letter_sequence_in_the_queue--panel" class="tabpanel" aria-labelledby="_tabs_3_process_the_oldest_dead_letter_sequence_in_the_queue">
+<div id="_tabs_4_process_the_oldest_dead_letter_sequence_in_the_queue--panel" class="tabpanel" aria-labelledby="_tabs_4_process_the_oldest_dead_letter_sequence_in_the_queue">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class DeadletterProcessor {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import java.util.concurrent.TimeUnit;
 
-    private EventProcessingConfiguration config;
+public class DeadLetterProcessor {
 
-    public void retryAnySequence(String processingGroup) {
-        config.sequencedDeadLetterProcessor(processingGroup)
-              .ifPresent(SequencedDeadLetterProcessor::processAny);
+    private final Configuration configuration;
+
+    public void retryAnySequence(String processorName, String componentName) {
+        configuration.getModuleConfiguration(processorName)
+                .map(m -&gt; m.getComponents(SequencedDeadLetterProcessor.class))
+                .map(processors -&gt; processors.get(componentName))
+                .ifPresent(dlp -&gt;
+                        dlp.processAny()
+                           .orTimeout(30, TimeUnit.SECONDS)
+                           .join());
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div id="_tabs_3_process_all_dead_letter_sequences_in_the_queue--panel" class="tabpanel" aria-labelledby="_tabs_3_process_all_dead_letter_sequences_in_the_queue">
+<div id="_tabs_4_process_all_dead_letter_sequences_in_the_queue--panel" class="tabpanel" aria-labelledby="_tabs_4_process_all_dead_letter_sequences_in_the_queue">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class DeadletterProcessor {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import java.util.concurrent.TimeUnit;
 
-    private EventProcessingConfiguration config;
+public class DeadLetterProcessor {
 
-    public void retryAllSequences(String processingGroup) {
-        Optional&lt;SequencedDeadLetterProcessor&lt;EventMessage&lt;?&gt;&gt;&gt; optionalLetterProcessor =
-                config.sequencedDeadLetterProcessor(processingGroup);
-        if (!optionalLetterProcessor.isPresent()) {
-            return;
+    private final Configuration configuration;
+
+    public void retryAllSequences(String processorName, String componentName) {
+        configuration.getModuleConfiguration(processorName)
+                .map(m -&gt; m.getComponents(SequencedDeadLetterProcessor.class))
+                .map(processors -&gt; processors.get(componentName))
+                .ifPresent(this::processUntilEmpty);
+    }
+
+    private void processUntilEmpty(SequencedDeadLetterProcessor&lt;?&gt; dlp) {
+        boolean processed = true;
+        while (processed) {
+            processed = dlp.processAny()
+                           .orTimeout(30, TimeUnit.SECONDS)
+                           .join();
         }
-        SequencedDeadLetterProcessor&lt;EventMessage&lt;?&gt;&gt; letterProcessor = optionalLetterProcessor.get();
-
-        // Retrieve all the dead lettered event sequences:
-       Iterable&lt;Iterable&lt;DeadLetter&lt;? extends EventMessage&lt;?&gt;&gt;&gt;&gt; deadLetterSequences =
-               config.deadLetterQueue(processingGroup)
-                     .map(SequencedDeadLetterQueue::deadLetters)
-                     .orElseThrow(() -&gt; new IllegalArgumentException("No such processor"));
-
-       // Iterate over all sequences:
-       for (Iterable&lt;DeadLetter&lt;? extends EventMessage&lt;?&gt;&gt;&gt; sequence : deadLetterSequences) {
-           Iterator&lt;DeadLetter&lt;? extends EventMessage&lt;?&gt;&gt;&gt; sequenceIterator = sequence.iterator();
-           String firstLetterId = sequenceIterator.next()
-                                                  .message()
-                                                  .getIdentifier();
-
-           // SequencedDeadLetterProcessor#process automatically retries an entire sequence.
-           // Hence, we only need to filter on the first entry of the sequence:
-          letterProcessor.process(deadLetter -&gt; deadLetter.message().getIdentifier().equals(firstLetterId));
-       }
     }
 }</code></pre>
 </div>
@@ -760,34 +957,44 @@ Below are a couple of examples of how to process dead-letter sequences:</p>
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_detecting_dead_letter_processing_in_handlers"><a class="anchor" href="#_detecting_dead_letter_processing_in_handlers"></a>Detecting dead-letter processing in handlers</h3>
 <div class="paragraph">
-<p>For some event handlers, it is beneficial to know if the event it is processing is dead-lettered.
-To that end, you can include a parameter of type <code>DeadLetter&lt;EventMessage&lt;T&gt;&gt;</code> to your event handling methods.
-The generic refers to the type of event handled by the event handler.
-The injected <code>DeadLetter</code> parameter exposes several <a href="#Dead-letter attributes">attributes</a>, like the <code>cause()</code> and <code>diagnostics()</code>, for example.</p>
+<p>Some event handlers benefit from knowing whether the event being processed is a dead letter, for example to adjust logging or apply different recovery logic.
+Inject a <code>DeadLetter</code> parameter into the event handling method to get this information.
+The parameter exposes several <a href="#_attributes">attributes</a>, such as <code>cause()</code> and <code>diagnostics()</code>.</p>
 </div>
 <div class="paragraph">
-<p>Do note that the <code>DeadLetter</code> parameter is <em>nullable</em>.
-When the injected <code>DeadLetter</code> is <code>null</code>, you deal with a non-dead-lettered event.
-If it is <em>not</em> <code>null</code>, the event handling occurs as a follow-up of invoking the <code>process(Predicate&lt;DeadLetter&lt;? extends EventMessage&lt;?&gt;&gt;)</code> or <code>processAny()</code> methods on the <code>SequencedDeadLetterProcessor</code>.</p>
-</div>
-<div class="paragraph">
-<p>For added clarity, here&#8217;s an event handler sample containing a <code>DeadLetter</code> parameter:</p>
+<p>The <code>DeadLetter</code> parameter is <em>nullable</em>: it is <code>null</code> during normal event handling, and non-<code>null</code> when the event is being retried as part of dead-letter processing.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@ProcessingGroup("my-processor")
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+
 class MyEventHandler {
-    // omitted services and other event handlers for simplicity...
+
+    // SomeEvent is your application-defined event class.
     @EventHandler
-    public void on(SomeEvent event, DeadLetter&lt;EventMessage&lt;SomeEvent&gt;&gt; deadLetter) {
+    public void on(SomeEvent event, DeadLetter&lt;EventMessage&gt; deadLetter) {
         if (deadLetter != null) {
-            // dead-letter processing...
-        } else {
-            // regular event handling...
+            // Retrying a dead letter: inspect why it was parked and how many times it was tried
+            int retries = (int) deadLetter.diagnostics().getOrDefault("retries", 0);
+            deadLetter.cause().ifPresent(cause -&gt;
+                    log.warn("Retrying dead-lettered {} (attempt {}): {} - {}",
+                             event.getClass().getSimpleName(),
+                             retries + 1,
+                             cause.type(),
+                             cause.message()));
         }
+
+        // The same handler logic runs for both initial processing and retries.
+        // Ensure this method is idempotent.
+        updateProjection(event);
     }
 }</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -806,21 +1013,25 @@ class MyEventHandler {
 </colgroup>
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">attribute</th>
-<th class="tableblock halign-left valign-top">type</th>
-<th class="tableblock halign-left valign-top">description</th>
+<th class="tableblock halign-left valign-top">Attribute</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>message</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>EventMessage</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>EventMessage</code> for which handling failed. The message contains your event, among other <code>Message</code> properties.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>EventMessage</code> for which handling failed.
+The message contains your event, among other <code>Message</code> properties.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cause</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Optional&lt;Cause&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The cause for the message to be dead lettered. Empty if the letter is enqueued because it is part of a sequence.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The cause for the message to be dead lettered.
+Empty if the letter was enqueued because it belongs to a failing sequence (the failure occurred in an earlier letter in that sequence, not in this one).
+Updated to reflect the most recent failure on each retry attempt.
+<code>Cause</code> exposes <code>.type()</code> (the fully qualified exception class name) and <code>.message()</code> (the exception message).</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>enqueuedAt</code></p></td>
@@ -830,12 +1041,20 @@ class MyEventHandler {
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>lastTouched</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Instant</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The moment in time when this letter was last touched. Will equal the <code>enqueuedAt</code> value if this letter is enqueued for the first time.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The moment in time when this letter was last touched.
+Will equal the <code>enqueuedAt</code> value if this letter is enqueued for the first time.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>diagnostics</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MetaData</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The diagnostic <code>MetaData</code> concerning this letter. Filled through the <a href="#_enqueue_policy">enqueue policy</a>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Metadata</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The diagnostic <code>Metadata</code> concerning this letter.
+Filled through the <a href="#_enqueue_policy">enqueue policy</a>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>context</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Context</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The captured processing context from the moment of failure.
+Contains resources like the tracking token and sequence identifier.</p></td>
 </tr>
 </tbody>
 </table>
@@ -850,35 +1069,47 @@ However, you might not want all event failures to result in dead-lettered entrie
 Similarly, when <a href="#_processing_sequences">letter processing</a> fails, you might want to reconsider whether you want to enqueue the letter again.</p>
 </div>
 <div class="paragraph">
-<p>To that end, you can configure a so-called <code>EnqueuePolicy</code>.
-The enqueue policy ingests a <code>DeadLetter</code> and a cause (<code>Throwable</code>) and returns an <code>EnqueueDecision</code>.
-The <code>EnqueueDecision</code>, in turn, describes if the framework should or should not enqueue the dead letter.
-It&#8217;s also possible to change the exception, for example to be sure that it will fit in the database, as the cause will be stored.</p>
+<p>Configure an <code>EnqueuePolicy</code> to control this behavior.
+The policy receives a <code>DeadLetter</code> and the failure cause (<code>Throwable</code>), and returns an <code>EnqueueDecision</code>.
+The <code>EnqueueDecision</code> tells the framework whether to enqueue, re-queue, or evict the letter.
+You can also modify the stored exception, for example, to truncate a cause that would otherwise exceed a database column limit.</p>
 </div>
 <div class="paragraph">
-<p>You can customize the dead-letter policy to exclude some events when handling fails.
-As a consequence, these events will be skipped.
-Note that Axon Framework invokes the policy on initial event handling <em>and</em> on <a href="#Processing dead-letter sequences">dead-letter processing</a>.</p>
+<p>You can customize the policy to exclude some events when handling fails.
+As a consequence, these events will be skipped.</p>
 </div>
 <div class="paragraph">
-<p>Reevaluating the policy after processing failed may be essential to ensure a dead letter isn&#8217;t stuck in the queue forever.
-To deal with this scenario, you can attach additional diagnostic information to the dead letter through the policy.
-For example to add a number of retries to the dead letter to base your decision on.
-See the sample <code>EnqueuePolicy</code> below for this:</p>
+<p>Axon Framework evaluates the policy at two points: when initial event handling fails, and again when <a href="#_processing_sequences">dead-letter processing</a> fails.
+This means a letter that keeps failing can be evicted or enriched with additional diagnostic metadata (such as a retry count) rather than staying in the queue forever.</p>
+</div>
+<div class="paragraph">
+<p>See the sample <code>EnqueuePolicy</code> below for an example of retry-count-based eviction:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CustomEnqueuePolicy implements EnqueuePolicy&lt;EventMessage&lt;?&gt;&gt; {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.eventhandling.EventMessage;
+
+// ErrorEvent is your application-defined event class.
+public class CustomEnqueuePolicy implements EnqueuePolicy&lt;EventMessage&gt; {
+
+    private static final QualifiedName ERROR_EVENT_TYPE =
+            new QualifiedName(ErrorEvent.class);
 
     @Override
-    public EnqueueDecision&lt;EventMessage&lt;?&gt;&gt; decide(DeadLetter&lt;? extends EventMessage&lt;?&gt;&gt; letter, Throwable cause) {
+    public EnqueueDecision&lt;EventMessage&gt; decide(DeadLetter&lt;? extends EventMessage&gt; letter,
+                                                Throwable cause) {
         if (cause instanceof NullPointerException) {
             // It's pointless:
             return Decisions.doNotEnqueue();
         }
 
-        final int retries = (int) letter.diagnostics().getOrDefault("retries", -1);
-        if (letter.message().getPayload() instanceof ErrorEvent) {
+        int retries = (int) letter.diagnostics().getOrDefault("retries", -1);
+        if (letter.message().type().qualifiedName().equals(ERROR_EVENT_TYPE)) {
             // Important and new entry:
             return Decisions.enqueue(cause);
         }
@@ -894,38 +1125,100 @@ See the sample <code>EnqueuePolicy</code> below for this:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>Decisions</code> utility class provides the most reasonable decisions, but you are free to construct your own <code>EnqueueDecision</code> when necessary.
-See the following example for configuring our custom policy:</p>
+<p>The <code>Decisions</code> utility class provides factory methods for the five possible outcomes:</p>
 </div>
-<div id="_tabs_4" class="openblock tabs is-loading">
+<div class="ulist">
+<ul>
+<li>
+<p><code>Decisions.enqueue(cause)</code>:Create a new dead letter for an event that failed during initial handling.
+Pass the failure <code>Throwable</code> so it is stored as the letter&#8217;s <code>cause</code> for inspection during retries.</p>
+</li>
+<li>
+<p><code>Decisions.requeue(cause, diagnosticsUpdater)</code>:Re-queue a letter that failed again during retry processing.
+The <code>diagnosticsUpdater</code> function transforms the letter&#8217;s current diagnostics metadata, making it the right place to track retry counts or other state.
+The key difference from <code>enqueue</code>: <code>requeue</code> updates an <em>existing</em> letter, whereas <code>enqueue</code> creates a new one.</p>
+</li>
+<li>
+<p><code>Decisions.ignore()</code>:Leave an existing letter in the queue unchanged.
+Use this when you want to keep the letter for future retry without updating its cause or diagnostics.</p>
+</li>
+<li>
+<p><code>Decisions.doNotEnqueue()</code>:Skip the failed event entirely during initial handling.
+The event is never added to the queue; handlers that already succeeded keep their results.</p>
+</li>
+<li>
+<p><code>Decisions.evict()</code>:Remove an existing letter from the queue permanently during retry processing.
+Use this when a letter has exhausted its retries or is otherwise no longer relevant.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>doNotEnqueue()</code> and <code>evict()</code> are semantically distinct: <code>doNotEnqueue()</code> prevents a letter from ever being created, while <code>evict()</code> removes a letter that already exists.</p>
+</div>
+<div class="paragraph">
+<p>You are free to construct your own <code>EnqueueDecision</code> implementation when none of these fits.</p>
+</div>
+<div class="paragraph">
+<p>See the following example for configuring a custom policy:</p>
+</div>
+<div id="_tabs_5" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
 <ul>
-<li id="_tabs_4_configuration_api" class="tab">
+<li id="_tabs_5_configuration_api" class="tab">
 <p>Configuration API</p>
 </li>
-<li id="_tabs_4_spring_boot" class="tab">
+<li id="_tabs_5_spring_boot" class="tab">
 <p>Spring Boot</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_4_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_4_configuration_api">
+<div id="_tabs_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_5_configuration_api">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureEnqueuePolicy(EventProcessingConfigurer configurer) {
-        // Replace "my-processor" for the processor you want to configure the policy on.
-        configurer.registerDeadLetterPolicy("my-processing-group", config -&gt; new MyEnqueuePolicy());
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
+public class AxonConfig {
+
+    public void configureDeadLetterQueue() {
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(ep -&gt; ep.pooledStreaming(ps -&gt; ps
+                .processor(
+                        EventProcessorModule
+                                .pooledStreaming("my-processor")
+                                .eventHandlingComponents(/* ... */)
+                                .customized((cfg, processorConfig) -&gt; processorConfig
+                                        .deadLetterQueue(dlq -&gt; dlq
+                                                .enabled()
+                                                .enqueuePolicy(new CustomEnqueuePolicy()))))
+        ));
     }
 }</code></pre>
 </div>
 </div>
 </div>
-<div id="_tabs_4_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_4_spring_boot">
+<div id="_tabs_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_5_spring_boot">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// TODO #4053 - Introduce Event Processor Specification bean example.</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ProcessorConfig {
+
+    @Bean
+    EventProcessorDefinition myProcessor() {
+        return EventProcessorDefinition.pooledStreaming("my-processor")
+                .assigningHandlers(descriptor -&gt;
+                        descriptor.beanName().startsWith("my"))
+                .customized(config -&gt; config
+                        .deadLetterQueue(dlq -&gt; dlq
+                                .enabled()
+                                .enqueuePolicy(new CustomEnqueuePolicy())));
+    }
+}</code></pre>
 </div>
 </div>
 </div>
