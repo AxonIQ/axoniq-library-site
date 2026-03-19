@@ -423,10 +423,10 @@
 </div>
 </div>
 <div class="sect1">
-<h2 id="_messagehandlerinterceptor_interface_changes"><a class="anchor" href="#_messagehandlerinterceptor_interface_changes"></a>MessageHandlerInterceptor interface changes</h2>
+<h2 id="_messagedispatchinterceptor_interface_changes"><a class="anchor" href="#_messagedispatchinterceptor_interface_changes"></a>MessageDispatchInterceptor interface changes</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>MessageHandlerInterceptor</code> interface has been redesigned to support async-first processing and explicit context management.</p>
+<p>Dispatch interceptors are invoked when a message is dispatched/published on a bus, eventually even before a <code>ProcessingContext</code> is created.</p>
 </div>
 <div id="_tabs_1" class="openblock tabs is-loading">
 <div class="content">
@@ -443,122 +443,6 @@
 <div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyHandlerInterceptor implements MessageHandlerInterceptor&lt;CommandMessage&lt;?&gt;&gt; {
-
-    @Override
-    public Object handle(UnitOfWork&lt;? extends CommandMessage&lt;?&gt;&gt; unitOfWork,
-                        InterceptorChain interceptorChain) throws Exception {
-        // Pre-processing
-        unitOfWork.onCommit(uow -&gt; {
-            // Post-commit logic
-        });
-
-        // Continue chain synchronously
-        return interceptorChain.proceed();
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Key characteristics:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>UnitOfWork</code> provided via ThreadLocal (<code>CurrentUnitOfWork.get()</code>)</p>
-</li>
-<li>
-<p>Synchronous <code>proceed()</code> method</p>
-</li>
-<li>
-<p>Direct return of handler result</p>
-</li>
-</ul>
-</div>
-</div>
-<div id="_tabs_1_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyHandlerInterceptor implements MessageHandlerInterceptor&lt;CommandMessage&gt; {
-
-    @Override
-    public MessageStream&lt;?&gt; interceptOnHandle(CommandMessage message,
-                                              ProcessingContext context,
-                                              MessageHandlerInterceptorChain&lt;CommandMessage&gt; chain) {
-        // Pre-processing
-        context.runOnAfterCommit(ctx -&gt; {
-            // Post-commit logic
-        });
-
-        // Continue chain - returns MessageStream
-        return chain.proceed(message, context);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Key changes:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Method name</strong>: <code>handle()</code> → <code>interceptOnHandle()</code></p>
-</li>
-<li>
-<p><strong>Parameters</strong>: Receives <code>message</code> and <code>context</code> explicitly</p>
-</li>
-<li>
-<p><strong>Return type</strong>: <code>MessageStream&lt;?&gt;</code> instead of <code>Object</code></p>
-</li>
-<li>
-<p><strong>Chain proceed</strong>: Must pass <code>message</code> and <code>context</code> to <code>chain.proceed()</code></p>
-</li>
-<li>
-<p><strong>ProcessingContext</strong>: Mandatory parameter, never null during handling</p>
-<div class="paragraph">
-<p>The <code>ProcessingContext</code> provides lifecycle hooks similar to <code>UnitOfWork</code>:</p>
-</div>
-</li>
-<li>
-<p><code>runOnStart(Consumer&lt;ProcessingContext&gt;)</code> - Execute when context starts</p>
-</li>
-<li>
-<p><code>runOnAfterCommit(Consumer&lt;ProcessingContext&gt;)</code> - Execute after successful commit</p>
-</li>
-<li>
-<p><code>runOnRollback(Consumer&lt;ProcessingContext&gt;)</code> - Execute on rollback</p>
-</li>
-<li>
-<p><code>onError(ProcessingErrorHandler)</code> - Handle errors during processing</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_messagedispatchinterceptor_interface_changes"><a class="anchor" href="#_messagedispatchinterceptor_interface_changes"></a>MessageDispatchInterceptor interface changes</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Dispatch interceptors intercept messages <strong>before</strong> they reach the handler, even before a <code>ProcessingContext</code> is created.</p>
-</div>
-<div id="_tabs_2" class="openblock tabs is-loading">
-<div class="content">
-<div class="ulist tablist">
-<ul>
-<li id="_tabs_2_axon_framework_4" class="tab">
-<p>Axon Framework 4</p>
-</li>
-<li id="_tabs_2_axon_framework_5" class="tab">
-<p>Axon Framework 5</p>
-</li>
-</ul>
-</div>
-<div id="_tabs_2_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_4">
-<div class="listingblock">
-<div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyDispatchInterceptor implements MessageDispatchInterceptor&lt;CommandMessage&lt;?&gt;&gt; {
 
     @Override
@@ -573,7 +457,7 @@
 </div>
 </div>
 </div>
-<div id="_tabs_2_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_5">
+<div id="_tabs_1_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyDispatchInterceptor implements MessageDispatchInterceptor&lt;CommandMessage&gt; {
@@ -634,6 +518,119 @@
 </td>
 </tr>
 </table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_messagehandlerinterceptor_interface_changes"><a class="anchor" href="#_messagehandlerinterceptor_interface_changes"></a>MessageHandlerInterceptor interface changes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>MessageHandlerInterceptor</code> interface has been redesigned to support async-first processing and explicit context management.</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_2_axon_framework_5" class="tab">
+<p>Axon Framework 5</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_4">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyHandlerInterceptor implements MessageHandlerInterceptor&lt;CommandMessage&lt;?&gt;&gt; {
+
+    @Override
+    public Object handle(UnitOfWork&lt;? extends CommandMessage&lt;?&gt;&gt; unitOfWork,
+                        InterceptorChain interceptorChain) throws Exception {
+        // Pre-processing
+        unitOfWork.onCommit(uow -&gt; {
+            // Post-commit logic
+        });
+
+        // Continue chain synchronously
+        return interceptorChain.proceed();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Key characteristics:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>UnitOfWork</code> provided via ThreadLocal (<code>CurrentUnitOfWork.get()</code>)</p>
+</li>
+<li>
+<p>Synchronous <code>proceed()</code> method</p>
+</li>
+<li>
+<p>Direct return of handler result</p>
+</li>
+</ul>
+</div>
+</div>
+<div id="_tabs_2_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_5">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyHandlerInterceptor implements MessageHandlerInterceptor&lt;CommandMessage&gt; {
+
+    @Override
+    public MessageStream&lt;?&gt; interceptOnHandle(CommandMessage message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain&lt;CommandMessage&gt; chain) {
+        // Pre-processing
+        context.runOnAfterCommit(ctx -&gt; {
+            // Post-commit logic
+        });
+
+        // Continue chain - returns MessageStream
+        return chain.proceed(message, context);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Key changes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Method name</strong>: <code>handle()</code> → <code>interceptOnHandle()</code></p>
+</li>
+<li>
+<p><strong>Parameters</strong>: Receives <code>message</code> and <code>context</code> explicitly</p>
+</li>
+<li>
+<p><strong>Return type</strong>: <code>MessageStream&lt;?&gt;</code> instead of <code>Object</code></p>
+</li>
+<li>
+<p><strong>Chain proceed</strong>: Must pass <code>message</code> and <code>context</code> to <code>chain.proceed()</code></p>
+</li>
+<li>
+<p><strong>ProcessingContext</strong>: Mandatory parameter, never null during handling</p>
+<div class="paragraph">
+<p>The <code>ProcessingContext</code> provides lifecycle hooks similar to <code>UnitOfWork</code>:</p>
+</div>
+</li>
+<li>
+<p><code>runOnPreInvocation(Consumer&lt;ProcessingContext&gt;)</code> - Execute when context starts</p>
+</li>
+<li>
+<p><code>runOnAfterCommit(Consumer&lt;ProcessingContext&gt;)</code> - Execute after successful commit</p>
+</li>
+<li>
+<p><code>onError(ProcessingErrorHandler)</code> - Handle errors during processing</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -821,6 +818,22 @@ public class MyCommandDispatchInterceptor implements MessageDispatchInterceptor&
 <p>Applies them to the corresponding message buses</p>
 </li>
 </ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Be aware that interceptors are registered on all applicable components based on their generic type.
+That means, defining a <code>MessageDispatchInterceptor&lt;Message&lt;?&gt;&gt;</code> or <code>MessageHandlerInterceptor&lt;Message&lt;?&gt;&gt;</code> with for
+example <code>Message</code> as the generic type will register the interceptor for commands, events and queries.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock tip">
 <table>
