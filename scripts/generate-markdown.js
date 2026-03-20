@@ -83,19 +83,17 @@ const nhm = new NodeHtmlMarkdown(
  *   </div>
  *
  * After:
- *   <blockquote><p><strong>⚠️ WARNING</strong></p>...content...</blockquote>
+ *   <blockquote><p><strong>WARNING</strong></p>...content...</blockquote>
  */
 const ADMONITION_TYPES = ['note', 'tip', 'warning', 'caution', 'important'];
-const ADMONITION_EMOJI = { note: '📝', tip: '💡', warning: '⚠️', caution: '🔥', important: '❗' };
 
 function preprocessAdmonitions($, article) {
   article.find('.admonitionblock').each((_, el) => {
     const classes = ($(el).attr('class') || '').split(/\s+/);
     const type    = classes.find(c => ADMONITION_TYPES.includes(c)) || 'note';
-    const emoji   = ADMONITION_EMOJI[type] || '';
     const content = $(el).find('td.content').html() || '';
     $(el).replaceWith(
-      `<blockquote><p><strong>${emoji} ${type.toUpperCase()}</strong></p>${content}</blockquote>`
+      `<blockquote><p><strong>${type.toUpperCase()}</strong></p>${content}</blockquote>`
     );
   });
 }
