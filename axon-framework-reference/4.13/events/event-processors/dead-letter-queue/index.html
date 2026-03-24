@@ -457,13 +457,10 @@ It constructs a <code>dead_letter_entry</code> table where it persists failed-ev
 The JDBC dead-letter queue is a suitable option for production environments by persisting the dead letters.</p>
 </li>
 <li>
-<p><code>MongoSequencedDeadLetterQueue</code> - Mongo variant of the dead-letter queue, available via the <a href="../../../../../mongodb-extension-reference/4.11/" class="xref page">Mongo Extension</a>.</p>
+<p><code>MongoSequencedDeadLetterQueue</code> - Mongo variant of the dead-letter queue, available via the <a href="../../../../../mongodb-extension-reference/4.11/" class="xref page">Mongo Extension</a>. It constructs a <code>deadletters</code> collection where it persists failed-events in.
+The MongoDB dead-letter queue is a suitable option for production environments by persisting the dead letters.</p>
 </li>
 </ul>
-</div>
-<div class="paragraph">
-<p>It constructs a <code>deadletters</code> collection where it persists failed-events in.
-The MongoDB dead-letter queue is a suitable option for production environments by persisting the dead letters.</p>
 </div>
 </div>
 </div>
@@ -891,11 +888,13 @@ See the sample <code>EnqueuePolicy</code> below for this:</p>
             return Decisions.doNotEnqueue();
         }
 
-        final int retries = (int) letter.diagnostics().getOrDefault("retries", -1);
         if (letter.message().getPayload() instanceof ErrorEvent) {
-            // Important and new entry:
+            // Always enqueue this:
             return Decisions.enqueue(cause);
         }
+
+        // All others retry max 10 times:
+        final int retries = (int) letter.diagnostics().getOrDefault("retries", -1);
         if (retries &lt; 10) {
             // Let's continue and increase retries:
             return Decisions.requeue(cause, l -&gt; l.diagnostics().and("retries", retries + 1));
