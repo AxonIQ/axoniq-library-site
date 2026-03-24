@@ -347,7 +347,8 @@
 <!-- vale Google.We = NO -->
 <!-- vale Google.Will = NO -->
 <!-- vale Google.EnDash = NO -->
-<!-- vale AxonIQ.AcronymCase = NO --></p>
+<!-- vale AxonIQ.AcronymCase = NO -->
+<!-- vale AxonIQ.Headings = NO --></p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -385,8 +386,8 @@ Upon creation of a context you can specify a different location.</p>
 </div>
 <div class="paragraph">
 <p>The <a href="../../clustering/cluster-basics/" class="xref page">clustering</a> section details the creation of the <em>admin and default contexts_ when a new Axon Server cluster is created.
-The </em>admin_ context <strong>is used to process all configuration changes in Axon Server, so it contains the master configuration from which all contexts get their information.
-The</strong> <em>_admin</em> context does not have an event store and the configuration information is stored in a control database.
+The </em>admin_ context *s used to process all configuration changes in Axon Server, so it contains the master configuration from which all contexts get their information.
+The <em>_admin</em> context does not have an event store and the configuration information is stored in a control database.
 The <em>default</em> context is the context used by clients when they have not specified any context information.
 In case you would like to create a cluster without creating a default context, it is recommended to use the <a href="../../clustering/cluster-basics/#automatic-initialization" class="xref page">Automatic-Initialization</a> feature where you can control explicitly which contexts can be created or not.</p>
 </div>
@@ -831,6 +832,125 @@ The operations listed above are possible through the console.</p>
 <div class="paragraph">
 <p>Axon Server provides a REST API to perform context maintenance operations.
 The API is accessible at http:[server]:[port]/swagger-ui.html and offers the <em>context-rest-controller</em> to help perform context maintenance operations</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_dynamic_consistency_boundary_dcb_contexts"><a class="anchor" href="#_dynamic_consistency_boundary_dcb_contexts"></a>Dynamic Consistency Boundary (DCB) contexts</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This feature is available from Axon Server 2025.2 onwards.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Axon Server supports the creation of Dynamic Consistency Boundary (DCB) contexts.
+These contexts allow for more flexible consistency boundaries for commands and queries, enabling better scalability and fault tolerance.
+DCB contexts can be created and managed using the same tools as regular contexts, such as the CLI, UI, and REST API. There is a new flag to indicate that a context is a DCB context.</p>
+</div>
+<div class="paragraph">
+<p>DCB contexts use a different index format. Axon Server creates the following directories below the <em>context</em> directory:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>index</strong></p>
+</li>
+<li>
+<p><strong>labels</strong></p>
+</li>
+<li>
+<p><strong>labelupdates</strong></p>
+</li>
+<li>
+<p><strong>snapshots</strong></p>
+</li>
+<li>
+<p><strong>snapshotupdates</strong></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Note that the backup mechanism for DCB contexts is different from regular contexts. It is recommended to use the Axon Server backup and restore features to ensure data integrity. For more information, refer to the <a href="../backups/" class="xref page">Backups</a> section.</p>
+</div>
+<div class="sect2">
+<h3 id="_context_migration_to_dcb"><a class="anchor" href="#_context_migration_to_dcb"></a>Context migration to DCB</h3>
+<div class="paragraph">
+<p>To migrate from a regular context to a DCB context, you can use the migration operations. This is a two-step process:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Prepare migration: This step starts to build the necessary structures for the DCB context, based on the current data. This operation can take some time, depending on the size of the event store. It runs while the regular context is still operational.</p>
+</li>
+<li>
+<p>Complete migration: This step finalizes the migration, switching the context to DCB mode. During this operation, the context will be temporarily unavailable.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In the UI console, you can find the migration options in the context view. Initially, only the "Prepare Migration" button is available.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="../../../_images/migration_prepare.png" alt="Prepare Migration button"></span> (the middle button here)</p>
+</div>
+<div class="paragraph">
+<p>When you click the "Prepare Migration" button, you can specify options for the migration:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Migrate snapshots: If enabled, snapshots will also be migrated to the DCB format.</p>
+</li>
+<li>
+<p>Last snapshot only: If enabled, only the latest snapshot per aggregate will be migrated.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>While the migration is being prepared, you can see the progress using the migration status button.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="../../../_images/migration_in_progress.png" alt="Migration status button"></span> (the middle button here)</p>
+</div>
+<div class="paragraph">
+<p>After the preparation is complete, the "Complete Migration" button becomes available.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="../../../_images/migration_complete.png" alt="Complete Migration button"></span> (the middle button here)</p>
+</div>
+<div class="paragraph">
+<p>The migration operations require the global administrator role (ADMIN@_admin).</p>
+</div>
+<div class="paragraph">
+<p>To disable all migration operations from the UI, you can set the following property in the Axon Server configuration:</p>
+</div>
+<div class="paragraph">
+<p><strong>axoniq.axonserver.migration-enabled=false</strong></p>
+</div>
+<div class="paragraph">
+<p>The following limitations apply for migration:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>It is not possible to add nodes to a replication group during the migration of one of its contexts.</p>
+</li>
+<li>
+<p>It is not possible to migrate a context that is multi-tier with secondary storage locations</p>
+</li>
+<li>
+<p>It is not possible to migrate a context where the events were transformed using the event transformer feature.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>

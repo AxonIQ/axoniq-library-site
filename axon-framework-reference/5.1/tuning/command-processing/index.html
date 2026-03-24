@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Command Processing</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/tuning/command-processing/">
+    <link rel="prev" href="../event-processing/">
+    <link rel="next" href="../rdbms-tuning/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../5.0/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/">Axon Server</a>
+                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Tuning</a></li>
+    <li><a href="./">Command Processing</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonFramework/AxonFramework/edit/axon-5.1.x/docs/reference-guide/modules/tuning/pages/command-processing.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Command%20Processing" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Command%20Processing%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BCommand%20Processing%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.1%2Ftuning%2Fcommand-processing%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.1</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/tuning/command-processing/">development</a>
+    <a class="version item is-current" href="./">5.1</a>
+    <a class="version item" href="../../../5.0/tuning/command-processing/">5.0</a>
+    <a class="version item" href="../../../4.13/tuning/command-processing/">4.13</a>
+    <a class="version item" href="../../../4.12/tuning/command-processing/">4.12</a>
+    <a class="version item" href="../../../4.11/tuning/command-processing/">4.11</a>
+    <a class="version item" href="../../../4.10/tuning/command-processing/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.1">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-snapshots/">Event Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Command Processing</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page provides specifics around tuning the command processing within an Axon application.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="command-sequencing"><a class="anchor" href="#command-sequencing"></a>Command sequencing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Command sequencing ensures that commands that aim to modify the same entities are processed sequentially, preventing optimistic locking in high-throughput applications. This feature is enabled by default in Axon Framework and operates transparently without requiring changes to existing command handlers.</p>
+</div>
+<div class="sect2">
+<h3 id="_why_command_sequencing"><a class="anchor" href="#_why_command_sequencing"></a>Why command sequencing?</h3>
+<div class="paragraph">
+<p>In high-throughput applications, multiple commands may target the same entities concurrently. Without sequencing, concurrent state modifications on the entities will lead to optimistic locking failures with a high probability. When two commands attempt to update the same entities simultaneously, subsequent commands will fail to commit their modifications, requiring custom retry logic to be implemented.</p>
+</div>
+<div class="paragraph">
+<p>Command sequencing solves this problem by ensuring that commands targeting the same entities execute sequentially while maintaining full concurrency for commands targeting different entities. This eliminates conflicts without sacrificing overall system throughput.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_default_behavior"><a class="anchor" href="#_default_behavior"></a>Default behavior</h3>
+<div class="paragraph">
+<p>Command sequencing is enabled by default in Axon Framework. The framework automatically configures a <code>CommandSequencingInterceptor</code> with the <code>RoutingKeySequencingPolicy</code>, which sequences commands based on their routing key.</p>
+</div>
+<div class="paragraph">
+<p>The default behavior provides an optimal balance between consistency and performance:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Commands with the <strong>same routing key</strong> (typically part of the targeted entity identifier) execute sequentially - one must complete before the next begins</p>
+</li>
+<li>
+<p>Commands with <strong>different routing keys</strong> can execute concurrently - no waiting is required</p>
+</li>
+<li>
+<p>Commands with <strong>no routing key</strong> or an <strong>empty routing key</strong> are not sequenced and can execute concurrently</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This means your application benefits from command sequencing immediately upon using Axon Framework, with no configuration required. The feature operates transparently at the handler interceptor level, after command routing has occurred.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How it works</h3>
+<div class="paragraph">
+<p>Command sequencing is implemented through the <code>CommandSequencingInterceptor</code>, a handler interceptor that manages execution order:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Sequence identification</strong>: When a command arrives, the interceptor consults the configured <code>SequencingPolicy</code> to extract a sequence identifier</p>
+</li>
+<li>
+<p><strong>Lock management</strong>: The interceptor maintains a lock for each unique sequence identifier</p>
+</li>
+<li>
+<p><strong>Sequential execution</strong>: Commands with the same sequence identifier wait for the previous command to complete before proceeding</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Because sequencing happens at the handler interceptor level (after routing), it has no impact on command dispatch or routing logic. The sequencing is completely transparent to your command handlers - no code changes are required.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_sequencingpolicy_interface"><a class="anchor" href="#_the_sequencingpolicy_interface"></a>The <code>SequencingPolicy</code> interface</h3>
+<div class="paragraph">
+<p>The <code>SequencingPolicy</code> interface determines which commands should be sequenced together:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface SequencingPolicy {
+
+    Optional&lt;Object&gt; sequenceIdentifierFor(CommandMessage command,
+                                              ProcessingContext context);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axon Framework provides the following implementations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong><code>RoutingKeySequencingPolicy</code> (default)</strong>: Sequences commands by their routing key, which typically corresponds to the entity identifier. Commands with null or empty routing keys are not sequenced and thus can execute concurrently. This is the default policy and works well for most applications.</p>
+</li>
+<li>
+<p><strong><code>NoOpSequencingPolicy</code></strong>: Disables all command sequencing. Use this policy when you want to opt-out from command sequencing.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can implement the <code>SequencingPolicy</code> interface to create custom sequencing logic based on command metadata, payload properties, or any other criteria to set up your own sequencing logic.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h3>
+<div class="sect3">
+<h4 id="_custom_sequencing_policy"><a class="anchor" href="#_custom_sequencing_policy"></a>Custom sequencing policy</h4>
+<div class="paragraph">
+<p>You can implement custom sequencing logic by implementing the <code>SequencingPolicy</code> interface. For example, to sequence commands by tenant ID from metadata:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class TenantBasedSequencingPolicy implements SequencingPolicy {
+
+    @Override
+    public Optional&lt;Object&gt; sequenceIdentifierFor(CommandMessage command,
+                                                     ProcessingContext context) {
+        // Sequence commands by tenant ID from metadata
+        return Optional.ofNullable(command.metadata().get("tenantId"));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Register your custom policy:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_axon_configuration_api" class="tab">
+<p>Axon Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot_auto_configuration" class="tab">
+<p>Spring Boot auto configuration</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_axon_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCommandSequencingPolicy(MessagingConfigurer configurer) {
+    configurer.componentRegistry(cr -&gt; cr.registerComponent(SequencingPolicy.class,
+            MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+            c -&gt; new TenantBasedSequencingPolicy()));
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_spring_boot_auto_configuration--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot_auto_configuration">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
+public class AxonConfig {
+
+    @Bean
+    public SequencingPolicy&lt;? super CommandMessage&gt; commandSequencingPolicy() {
+        return new TenantBasedSequencingPolicy();
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also implement selective sequencing. For example, to skip certain command types:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SelectiveSequencingPolicy implements SequencingPolicy&lt;CommandMessage&gt; {
+
+    private final SequencingPolicy&lt;? super CommandMessage&gt; defaultPolicy;
+    private final List&lt;String&gt; skipTypes;
+
+    public SelectiveSequencingPolicy(SequencingPolicy&lt;? super CommandMessage&gt; defaultPolicy, List&lt;String&gt; skipTypes) {
+        this.defaultPolicy = defaultPolicy;
+        this.skipTypes = skipTypes;
+    }
+
+    @Override
+    public Optional&lt;Object&gt; sequenceIdentifierFor(CommandMessage command,
+                                                     ProcessingContext context) {
+        // Skip sequencing for read-only commands
+        if (skipTypes.contains(command.payloadType().getSimpleName())) {
+            return Optional.empty();
+        }
+        // Use default policy for other commands
+        return defaultPolicy.sequenceIdentifierFor(command, context);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_disabling_command_sequencing"><a class="anchor" href="#_disabling_command_sequencing"></a>Disabling command sequencing</h4>
+<div class="paragraph">
+<p>If you need to disable command sequencing entirely, register a <code>NoOpSequencingPolicy</code>:</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_axon_configuration_api" class="tab">
+<p>Axon Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot_auto_configuration" class="tab">
+<p>Spring Boot auto configuration</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_axon_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCommandSequencingPolicy(MessagingConfigurer configurer) {
+    configurer.componentRegistry(cr -&gt; cr.registerComponent(SequencingPolicy.class,
+            MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+            c -&gt; NoOpCommandSequencingPolicy.INSTANCE));
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_spring_boot_auto_configuration--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot_auto_configuration">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
+public class AxonConfig {
+
+    @Bean
+    public SequencingPolicy&lt;? super CommandMessage&gt; commandSequencingPolicy() {
+        return NoOpSequencingPolicy.INSTANCE;
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../event-processing/">Event Processing</a></span>
+  <span class="next"><a href="../rdbms-tuning/">Relational Databases</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
