@@ -1237,10 +1237,7 @@ public class DeadLetterProcessor {
 
     public void retryAnySequence(String processorName, String componentName) {
         configuration.getModuleConfiguration(processorName)
-                .map(m -&gt; m.getComponents(SequencedDeadLetterProcessor.class))
-                // processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
-                .map(processors -&gt; processors.get(
-                            processors.keySet().stream().filter(name -&gt; name.contains(componentName)).findFirst()))
+                .flatMap(m -&gt; m.getOptionalComponent(SequencedDeadLetterProcessor.class, "EventHandlingComponent[" + processorName + "][" + componentName + "]"))
                 .ifPresent(dlp -&gt;
                         dlp.processAny()
                            .orTimeout(30, TimeUnit.SECONDS)
