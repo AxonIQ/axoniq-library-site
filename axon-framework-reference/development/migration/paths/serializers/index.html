@@ -6,7 +6,7 @@
     <title>Serializer Migration</title>
     <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.0/migration/paths/serializers/">
     <link rel="prev" href="../test-fixtures/">
-    <link rel="next" href="../interceptors/">
+    <link rel="next" href="../dlq/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
@@ -181,7 +181,13 @@
     <a class="nav-link" href="./">Serializer Migration</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../dlq/">Dead-Letter Queue Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/">Configuration Migration</a>
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../sequencing-policies/">Sequencing Policy Migration</a>
@@ -316,7 +322,10 @@
     <a class="nav-link" href="../../../tuning/">Tuning</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../tuning/event-snapshots/">Event Snapshots</a>
+    <a class="nav-link" href="../../../tuning/snapshotting/">Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/caching/">Caching</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../tuning/event-processing/">Event Processing</a>
@@ -527,7 +536,7 @@ public void configure(Configurer configurer) {
 public void configure(MessagingConfigurer configurer, ObjectMapper objectMapper) {
     configurer.componentRegistry(registry -&gt; {
         Converter generalConverter = new JacksonConverter(objectMapper);
-        registry.registerComponent(Converter.class, c -&gt; generalConverter);
+        registry.registerComponent(GeneralConverter.class, c -&gt; new DelegatingGeneralConverter(generalConverter));
         registry.registerComponent(MessageConverter.class, c -&gt; new DelegatingMessageConverter(generalConverter));
         registry.registerComponent(EventConverter.class, c -&gt; new DelegatingEventConverter(generalConverter));
     });
@@ -557,12 +566,12 @@ public class SerializationConfig {
 public class ConversionConfig {
     @Bean
     @Primary
-    public Converter converter(ObjectMapper objectMapper) {
-        return new JacksonConverter(objectMapper);
+    public GeneralConverter converter(ObjectMapper objectMapper) {
+        return new DelegatingGeneralConverter(new JacksonConverter(objectMapper));
     }
 
     @Bean
-    public MessageConverter messageConverter(Converter generalConverter) {
+    public MessageConverter messageConverter(GeneralConverter generalConverter) {
         return new DelegatingMessageConverter(generalConverter);
     }
 
@@ -626,7 +635,7 @@ axon:
 </div>
         <nav class="pagination">
   <span class="prev"><a href="../test-fixtures/">Test Fixtures</a></span>
-  <span class="next"><a href="../interceptors/">Interceptor Migration</a></span>
+  <span class="next"><a href="../dlq/">Dead-Letter Queue Migration</a></span>
 </nav>
     </article>
   </div>
