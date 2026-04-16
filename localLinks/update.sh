@@ -14,7 +14,8 @@ cloneOrPullMaster () {
 }
 
 # Axon Framework has two branches: master and 4.10.x
-cloneOrPullMaster "AxonFramework" "https://github.com/AxonFramework/AxonFramework.git" "axon-4.11.x"
+cloneOrPullMaster "AxonFramework" "https://github.com/AxonIQ/AxonFramework.git" "main"
+cloneOrPullMaster "AxoniqFramework" "https://github.com/AxonIQ/axoniq-framework.git" "main"
 cloneOrPullMaster "extension-amqp" "https://github.com/AxonFramework/extension-amqp.git" "axon-amqp-4.11.x"
 cloneOrPullMaster "extension-jgroups" "https://github.com/AxonFramework/extension-jgroups.git" "axon-jgroups-4.11.x"
 cloneOrPullMaster "extension-jobrunrpro" "https://github.com/AxonFramework/extension-jobrunrpro.git" "axon-jobrunrpro-4.11.x"
@@ -31,5 +32,6 @@ cloneOrPullMaster "axon-server-image-build" "https://github.com/AxonIQ/axon-serv
 cloneOrPullMaster "axon-synapse" "https://github.com/AxonIQ/axon-synapse.git" "synapse-0.11"
 cloneOrPullMaster "axoniq-platform" "https://github.com/AxonIQ/axoniq-platform.git" "main"
 cloneOrPullMaster "bike-rental-quick-start" "https://github.com/AxonIQ/bike-rental-quick-start.git" "main"
+cloneOrPullMaster "axoniq-playbook" "https://github.com/AxonIQ/axoniq-playbook.git" "main"
 
 echo "You should be up-to-date now!"
