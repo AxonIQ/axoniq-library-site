@@ -30,7 +30,6 @@ cloneOrPullMaster "extension-tracing" "https://github.com/AxonFramework/extensio
 cloneOrPullMaster "axon-server" "https://github.com/AxonIQ/axon-server.git" "axonserver-ee-2024.1.x"
 cloneOrPullMaster "axon-server-image-build" "https://github.com/AxonIQ/axon-server-image-build.git" "main"
 cloneOrPullMaster "axoniq-platform" "https://github.com/AxonIQ/axoniq-platform.git" "main"
-cloneOrPullMaster "bike-rental-quick-start" "https://github.com/AxonIQ/bike-rental-quick-start.git" "main"
 cloneOrPullMaster "axoniq-playbook" "https://github.com/AxonIQ/axoniq-playbook.git" "main"
 
 echo "You should be up-to-date now!"
