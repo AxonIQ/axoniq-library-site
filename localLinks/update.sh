@@ -29,6 +29,7 @@ cloneOrPullMaster "extension-spring-aot" "https://github.com/AxonFramework/exten
 cloneOrPullMaster "extension-springcloud" "https://github.com/AxonFramework/extension-springcloud.git" "axon-springcloud-4.11.x"
 cloneOrPullMaster "extension-tracing" "https://github.com/AxonFramework/extension-tracing.git" "axon-tracing-4.11.x"
 cloneOrPullMaster "axon-server" "https://github.com/AxonIQ/axon-server.git" "axonserver-ee-2024.1.x"
+cloneOrPullMaster "axon-server-proxy" "https://github.com/AxonIQ/axon-server-proxy.git" "main"
 cloneOrPullMaster "axon-server-image-build" "https://github.com/AxonIQ/axon-server-image-build.git" "main"
 cloneOrPullMaster "axoniq-platform" "https://github.com/AxonIQ/axoniq-platform.git" "main"
 cloneOrPullMaster "axoniq-playbook" "https://github.com/AxonIQ/axoniq-playbook.git" "main"
