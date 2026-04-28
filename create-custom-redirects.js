@@ -82,7 +82,7 @@ const fullReplaceMappings = {
     // Redirect any unknown release notes to extension overview
     "/release-notes/rn-extensions": "/axon-framework-extensions/",
     // The quickstart no longer exists, redirect to the demo
-    "/getting-started/quick-start": "/bikerental-demo/main",
+    "/getting-started/quick-start": "/axon-framework-5-getting-started/",
     "/axon-server/migration": `/axon-server-reference/latest/axon-server/migration`,
     '/bikerental-console-demo': `/axoniq-console-reference/`,
 
