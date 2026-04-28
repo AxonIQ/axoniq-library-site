@@ -17,6 +17,7 @@ cloneOrPullMaster () {
 cloneOrPullMaster "AxonFramework" "https://github.com/AxonIQ/AxonFramework.git" "main"
 cloneOrPullMaster "AxoniqFramework" "https://github.com/AxonIQ/axoniq-framework.git" "main"
 cloneOrPullMaster "extension-workflow" "https://github.com/AxonIQ/extension-workflow.git" "main"
+cloneOrPullMaster "extension-data-protection" "https://github.com/AxonIQ/extension-data-protection.git" "main"
 cloneOrPullMaster "extension-amqp" "https://github.com/AxonFramework/extension-amqp.git" "axon-amqp-4.11.x"
 cloneOrPullMaster "extension-jgroups" "https://github.com/AxonFramework/extension-jgroups.git" "axon-jgroups-4.11.x"
 cloneOrPullMaster "extension-jobrunrpro" "https://github.com/AxonFramework/extension-jobrunrpro.git" "axon-jobrunrpro-4.11.x"
