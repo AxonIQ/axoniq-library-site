@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Annotations</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.1/data-protection/annotations/">
+    <link rel="prev" href="../installation/">
+    <link rel="next" href="../configuration/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/v2025.2/">Axon Server</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Data Protection</a></li>
+    <li><a href="./">Annotations</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Annotations" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Annotations%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BAnnotations%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.1%2Fdata-protection%2Fannotations%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.1</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/data-protection/annotations/">development</a>
+    <a class="version item is-current" href="./">5.1</a>
+    <a class="version item is-missing" href="../../../5.0/">5.0</a>
+    <a class="version item is-missing" href="../../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.1">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/snapshotting/">Snapshotting</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/dlq/">Dead-Letter Queue Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Data Protection</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../installation/">Installation</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../snapshotting/">Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../caching/">Caching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../advanced-release-notes/major-releases/">Axoniq Framework Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../advanced-release-notes/minor-releases/">Axoniq Framework Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Annotations</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Data Protection provides annotations to mark fields for encryption. These annotations work on both regular classes and Java records.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_datasubjectid_annotation"><a class="anchor" href="#_the_datasubjectid_annotation"></a>The @DataSubjectId annotation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This field annotation is used to mark the field that identifies the key to be used for encrypting other fields. In its simplest form, it can be used like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@DataSubjectId
+private UUID id;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axon Data Protection will derive a key identifier from the field&#8217;s value by invoking the <code>toString()</code> method, which means that key values should have a meaningful, deterministic implementation of <code>toString()</code>. This is already the case for <code>@AggregateIdentifier</code> fields in Framework applications. Axon Data Protection doesn&#8217;t try to enforce this restriction though, since there isn&#8217;t a sufficiently reliable way of doing so. A field annotated with <code>@DataSubjectId</code> should not hold a <code>null</code> value upon encryption/decryption - this will cause an exception.</p>
+</div>
+<div class="paragraph">
+<p>In some cases, you may need to use a key identifier which is not present as a field value. For these cases, it is possible to include those key identifiers in the call to <code>FieldEncrypter</code>. This is further explained in <a href="../configuration/#presetencryptioncontexts" class="xref page">preset encryption contexts</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_the_group_attribute"><a class="anchor" href="#_the_group_attribute"></a>The group attribute</h3>
+<div class="paragraph">
+<p>The <code>@DataSubjectId</code> annotation has an optional <code>String</code> attribute <code>group</code>. This can be used to define multiple keys within the same object, which would allow later on to selectively delete individual (groups of) fields. For instance, a class could look like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class NewCustomerEvent {
+    @DataSubjectId(group = "name")
+    private int idForName;
+
+    @PersonalData(group = "name")
+    private String name;
+
+    @DataSubjectId(group = "address")
+    private int idForAddress;
+
+    @PersonalData(group = "address")
+    private String address;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This would now lead to two different keys (assuming <code>idForName</code> and <code>idForAddress</code> hold different values). These keys can be deleted individually, effectively deleting the <code>name</code> and <code>address</code> fields individually. Of course, there may only be one natural id field. In the next section, we&#8217;ll see an elegant solution for this situation using the <code>prefix</code> attribute.</p>
+</div>
+<div class="paragraph">
+<p>If <code>group</code> is not specified, it defaults to the group identified by the empty string.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_prefix_attribute"><a class="anchor" href="#_the_prefix_attribute"></a>The prefix attribute</h3>
+<div class="paragraph">
+<p>The <code>@DataSubjectId</code> annotation has an optional <code>String</code> attribute <code>prefix</code>. This value of this attribute will be used to determine the id of the key in the keystore. The actual key id will consist of the value of the field prefixed by the value of <code>prefix</code>. If not specified, this defaults to the empty string.</p>
+</div>
+<div class="paragraph">
+<p>As an illustration, see this example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@DataSubjectId(prefix = "aaa")
+private int id;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the field <code>id</code> holds a value of <code>4</code>, the derived key id will be <code>aaa4</code>.</p>
+</div>
+<div class="paragraph">
+<p>This can be combined with the <code>group</code> attribute described earlier. The name/address segregation could be achieved like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class NewCustomerEvent {
+    @DataSubjectId(group = "name", prefix = "name-")
+    @DataSubjectId(group = "address", prefix = "address-")
+    private int id;
+
+    @PersonalData(group = "name")
+    private String name;
+
+    @PersonalData(group = "address")
+    private String address;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now, if the value of <code>id</code> is <code>913</code>, there will be 2 different keys in key store, with ids <code>name-913</code> and <code>address-913</code>. They can be deleted individually to delete individual fields.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_map_fields_and_the_scope_attribute"><a class="anchor" href="#_map_fields_and_the_scope_attribute"></a>Map fields and the scope attribute</h3>
+<div class="paragraph">
+<p>The <code>@DataSubjectId</code> annotation has an optional attribute <code>scope</code> of the type <code>io.axoniq.dataprotection.api.Scope</code>. This is an enum with values <code>DEFAULT</code>, <code>KEY</code>, <code>VALUE</code>, and <code>BOTH</code>. If the attribute isn&#8217;t specified, it will be <code>DEFAULT</code>.</p>
+</div>
+<div class="paragraph">
+<p>For a field type that doesn&#8217;t implement the <code>java.util.Map</code> interface, the value must always be <code>DEFAULT</code>. For a field type that does implement the <code>java.util.Map</code> interface, the only allowed value is <code>KEY</code>. This has the effect that the value of any map key will be treated as a <code>@DataSubjectId</code> field for the purpose of processing the corresponding map value.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_limitations_and_inheritance"><a class="anchor" href="#_limitations_and_inheritance"></a>Limitations and inheritance</h3>
+<div class="paragraph">
+<p>The value of the key identifier in a particular group must always be unambiguous. Therefore, there can be no two <code>@DataSubjectId</code> annotations with the same <code>group</code> attribute in the same class. The exception to this rule is in <code>Map</code> fields where the annotation is applied with <code>KEY</code> scope. In this case, the annotation on the map key gets precedence over the annotation on another field when processing the associated map value, which removes the ambiguity. Of course, on the same map field, there can&#8217;t more than one <code>@DataSubjectId</code> annotation with the same <code>group</code>.</p>
+</div>
+<div class="paragraph">
+<p>In a class hierarchy, a subclass may have <code>@DataSubjectId</code> fields with the same group as used in the superclass. In this case, the deepest annotation will 'override' the superclass behaviour and thus take precedence.</p>
+</div>
+<div class="paragraph">
+<p>Although more than one <code>@DataSubjectId</code> annotation may be present on the same field assuming they have different <code>group</code> attributes, the <code>@DataSubjectId</code> annotation cannot be combined with any other Axon Data Protection annotation with the same <code>scope</code> on the same field.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_personaldata_annotation"><a class="anchor" href="#_the_personaldata_annotation"></a>The <code>@PersonalData</code> annotation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This annotation identifies fields to be wholly encrypted by Axon Data Protection. It can be applied on those fields where the module can store the encrypted value in the same Java type as the clear text value. Because of this, it doesn&#8217;t need any secondary place for storage. We call this concept <em>type-preserving encryption</em>. Currently, the module supports the following types for <code>@PersonalData</code>:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>byte[]</code></p>
+</li>
+<li>
+<p><code>String</code></p>
+</li>
+<li>
+<p>A <code>scala.Option</code> with a supported type as its generic type.</p>
+</li>
+<li>
+<p>An array with a supported type as its component type.</p>
+</li>
+<li>
+<p>Any class implementing <code>java.util.Collection</code> or <code>scala.collection.Iterable</code> with a supported type as the type parameter, or a supported type as an upper bound in a wildcard type parameter.</p>
+</li>
+<li>
+<p>Any class implementing <code>java.util.Map</code> or <code>scala.collection.Map</code> with a supported type as the <code>Map</code> type parameter for the scope of the annotation (<code>KEY</code>, <code>VALUE</code> or <code>BOTH</code>), or again a supported type as an upper bound in a wildcard type parameter.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Please note that rules 3 - 6 work recursively, so for instance the following is legal:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@PersonalData
+List&lt;? extends Set&lt;String[]&gt;&gt; b;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When directly encrypting a <code>String</code> or <code>byte[]</code> field annotated with <code>@PersonalData</code>, Axon Data Protection will replace the value of the field. When encrypting an array, <code>Collection</code>, or <code>scala.collection.Iterable</code>, a few different cases may occur.</p>
+</div>
+<div class="paragraph">
+<p>If as a result of the operation, the array/<code>Collection</code>/<code>Iterable</code> doesn&#8217;t have to be changed itself, it will be left as-is. This may be the case if it&#8217;s empty, if it was already encrypted when trying encryption, or when its elements are again collections which can be modified without being recreated.</p>
+</div>
+<div class="paragraph">
+<p>If the collection does have to be changed, there is a different strategy for Java and Scala:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Java</dt>
+<dd>
+<p>Java collections are generally mutable. If needed, the <code>FieldEncrypter</code> will clear the Java collection and then add the new encrypted elements (thus preserving order). In some cases, Java collections are immutable, such as the ones returned by <code>Collections.unmodifiableList</code>. By default, the module will try to modify these collections anyhow by performing reflection and directly modifying the internals. This is configurable behavior, which you may turn off by calling <code>setModifyImmutableCollections(false)</code> on the <code>FieldEncrypter</code>.</p>
+</dd>
+<dt class="hdlist1">Scala</dt>
+<dd>
+<p>Scala has a more systematic hierarchy of mutable and immutable collections. If a collection is mutable (specifically if it implements <code>scala.collection.generic.Growable</code>), the module will clear the collection and add the new encrypted elements, like in the Java case. If a collection does not implement this interface, it is assumed immutable, and the module will create a new copy of the collection by calling the <code>newBuilder()</code> method on the original collection. The value of the <code>modifyImmutableCollections</code> property doesn&#8217;t play a role when processing Scala collections.</p>
+</dd>
+</dl>
+</div>
+<div class="sect2">
+<h3 id="_the_group_attribute_2"><a class="anchor" href="#_the_group_attribute_2"></a>The group attribute</h3>
+<div class="paragraph">
+<p>The <code>@PersonalData</code> annotation has an optional <code>group</code> attribute which defaults to the empty string. Please see the <code>@DataSubjectId</code> group attribute discussion above for details.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_scope_attribute"><a class="anchor" href="#_the_scope_attribute"></a>The scope attribute</h3>
+<div class="paragraph">
+<p>The <code>@PersonalData</code> annotation has an optional attribute <code>scope</code> of the type <code>io.axoniq.dataprotection.api.Scope</code>. This is an enum with values <code>DEFAULT</code>, <code>KEY</code>, <code>VALUE</code>, and <code>BOTH</code>. If the attribute isn&#8217;t specified, it will be <code>DEFAULT</code>.</p>
+</div>
+<div class="paragraph">
+<p>For a field type that doesn&#8217;t implement the <code>java.util.Map</code> or <code>scala.collection.Map</code> interface, the value must always be <code>DEFAULT</code>. For a field type that does implement the <code>java.util.Map</code> or <code>scala.collection.Map</code> interface, it must always be something other than <code>DEFAULT</code>. When used on a <code>Map</code>, the value of this attribute determines which part of the map entry (key, value or both) get encrypted.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_replacement_attribute"><a class="anchor" href="#_the_replacement_attribute"></a>The replacement attribute</h3>
+<div class="paragraph">
+<p>The <code>@PersonalData</code> annotation has an optional <code>replacement</code> attribute which defaults to the empty string. This attribute is intended to control the replacement value, that is, the value that the module will put in field if it is deleted (because it notices upon decryption that the required key is no longer available).</p>
+</div>
+<div class="paragraph">
+<p>When <code>@PersonalData</code> is used on a <code>String</code> field, the default <code>ReplacementValueProvider</code> will use the value of the <code>replacement</code> attribute in this case. On all other field types, it will be ignored by default, but it can be used in some way by a custom <code>ReplacementValueProvider</code>. See <a href="../advanced/#replacementvalueprovider" class="xref page">ReplacementValueProvider</a> for examples.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_multiple_personaldata_annotations_and_the_reencrypt_attribute"><a class="anchor" href="#_multiple_personaldata_annotations_and_the_reencrypt_attribute"></a>Multiple @PersonalData annotations and the reencrypt attribute</h3>
+<div class="paragraph">
+<p>Normally speaking, <code>@PersonalData</code> is used under the following two assumptions:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>There is only one <code>@PersonalData</code> annotation per field (or per Map-side in case of a Map-field).</p>
+</li>
+<li>
+<p>Encryption and decryption are <em>idempotent</em>: encrypting something which is already encrypted doesn&#8217;t change the data, and vice versa.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>For the main Axon Data Protection use case, cryptographic erasure, this is fine. The idempotency property makes implementation and data migration easier since a data store can contain mixed encrypted/non-encrypted data without problems.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ve identified a use case where the assumption don&#8217;t hold and different behaviour is needed. This is the case when Axon Data Protection is used in two roles at the same time: to enable cryptographic erasure <em>and</em> to encrypt sensitive personal data to protect confidentiality. In this case, we may want to encrypt first with a key to protect confidentiality, and then another time to enable cryptographic erasure of the encrypted data. We use two <code>@PersonalData</code> annotations. The following rules apply:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>During encryption, annotations are processed from right to left (so the annotation closest to the field is processed first). During decryption, this is reversed.</p>
+</li>
+<li>
+<p>To make sure that the second round of encryption is actually executed, the <code>reencrypt</code> attribute must be set to <code>true</code>. This disables the check that is normally done to implement the idempotency on encryption. Decryption is unaffected.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>As an example, this could be used as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class NewPersonCreated {
+    @DataSubjectId
+    UUID id;
+
+    @PersonalData
+    String name;
+
+    @PersonalData(reencrypt = true)
+    @PersonalData(group = "sensitive")
+    String somethingSecret;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When processing this class, first, the value of <code>somethingSecret</code> will be encrypted with the key belong to group <code>sensitive</code>. (Which would have to be pre-provided since we didn&#8217;t map it to a <code>@DataSubjectId</code> - see <a href="../configuration/#presetencryptioncontexts" class="xref page">preset encryption contexts</a>.) After that, the <code>name</code> and the already encrypted form of <code>somethingSecret</code> will be encrypted in the default group, using the key identified by <code>id</code>. Now, deleting key <code>id</code> is sufficient to enable cryptographic erasure of all fields. To get access to the value of <code>somethingSecret</code>, the user must also have access to the <code>sensitive</code> key.</p>
+</div>
+<div class="paragraph">
+<p>Instead of performing all encrypting operations at the same time, the module can be used to perform the operations on a subset of the groups. See <a href="../configuration/#partialencryption" class="xref page">partial encryption</a> for details.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_serializedpersonaldata_annotation"><a class="anchor" href="#_the_serializedpersonaldata_annotation"></a>The @SerializedPersonalData annotation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This annotation identifies fields to be wholly encrypted. It can be applied on fields where type-preserving encryption isn&#8217;t possible and therefore the <code>@PersonalData</code> annotation is not allowed. If this annotation is present, Axon Data Protection will use the following procedure for encryption:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The value of the field will be serialized using the configured serializer.</p>
+</li>
+<li>
+<p>This serialized value gets encrypted.</p>
+</li>
+<li>
+<p>The encrypted value gets stored in a separate <em>storage</em> field, which must be <code>String</code> or <code>byte[]</code> typed and by default has the name of the value field suffixed by 'Encrypted'.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>For instance, a <code>LocalDate</code> field might be encrypted like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SerializedPersonalData
+LocalDate dateOfBirth;
+byte[] dateOfBirthEncrypted;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Compared to <code>@PersonalData</code>, this has the advantage that we can now encrypt any field type, however it comes at the cost of having to introduce an additional field, and it incurs some additional CPU and storage overhead.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="../_images/serializedenc.png" alt="Serialized object encryption process">
+</div>
+</div>
+<div class="paragraph">
+<p>A difference with <code>@PersonalData</code> and <code>@DeepPersonalData</code> is that a <code>@SerializedPersonalData</code> field will never be examined recursively by going into the elements of an array, collection or map. It will always be encrypted entirely regardless of its type. This also creates a difference in what exactly is erasable: if you use <code>@PersonalData</code> or <code>@DeepPersonalData</code> on a collection, the individual elements are encrypted and therefore erasable, but the <em>number</em> of elements is in the clear. By using <code>@SerializedPersonalData</code>, you may obscure this as well (even though the length of the resulting ciphertext may still provide an indication).</p>
+</div>
+<div class="sect2">
+<h3 id="_the_group_attribute_3"><a class="anchor" href="#_the_group_attribute_3"></a>The group attribute</h3>
+<div class="paragraph">
+<p>The <code>@SerializedPersonalData</code> annotation has an optional <code>group</code> attribute which defaults to the empty string. Please see the <code>@DataSubjectId</code> group attribute discussion above for details.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_replacement_attribute_2"><a class="anchor" href="#_the_replacement_attribute_2"></a>The replacement attribute</h3>
+<div class="paragraph">
+<p>The <code>@SerializedPersonalData</code> annotation has an optional <code>replacement</code> attribute which defaults to the empty string. This attribute is intended to control the replacement value, that is, the value that the module will put in field if it is deleted (because it notices upon decryption that the required key is no longer available). On a <code>@SerializedPersonalData</code> field, this attribute is ignored by the default <code>ReplacementValueProvider</code> but it can be used by a custom version. See <a href="../advanced/#replacementvalueprovider" class="xref page">ReplacementValueProvider</a> for more details about this.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_storagefield_attribute"><a class="anchor" href="#_the_storagefield_attribute"></a>The <code>storageField</code> attribute</h3>
+<div class="paragraph">
+<p>The <code>@SerializedPersonalData</code> annotation has an optional <code>storageField</code> attribute which defaults to the empty string. This can be used to control the actual field it uses for storage. If this attribute is empty, the module will look for the field name suffixed by 'Encrypted' as a storage field. This can be overridden by explicitly setting a storage field name with this annotation. For instance, the following might be used:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SerializedPersonalData(storageField = "dobSecret")
+LocalDate dateOfBirth;
+byte[] dobSecret;</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_deeppersonaldata_annotation"><a class="anchor" href="#_the_deeppersonaldata_annotation"></a>The <code>@DeepPersonalData</code> annotation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>@DeepPersonalData</code> annotation is used for those cases where a field shouldn&#8217;t be encrypted in its entirety, but should instead be recursively examined for Axon Data Protection annotations and processed accordingly. In this way, the the module can process more complex object graphs. An example use case would be this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class Person {
+    @DataSubjectId UUID id;
+    @PersonalData String name;
+    @DeepPersonalData Address address;
+}
+
+public class Address {
+    @PersonalData String line1;
+    @PersonalData String line2;
+    String country;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this case, while processing a <code>Person</code>, the module would recurse into the <code>Address</code> object. As a result, the <code>Address.line1</code> and <code>Address.line2</code> fields would get encrypted and can be deleted. The <code>Address.country</code> field would remain clear. Note that we don&#8217;t need another <code>@DataSubjectId</code> field in the <code>Address</code> class - this will be available from the context of processing the <code>Person</code> object. Of course, the <code>Address</code> class <em>could</em> have overridden the key id by having its own <code>@DataSubjectId</code> field.</p>
+</div>
+<div class="paragraph">
+<p>The <code>@DeepPersonalData</code> annotation is allowed on fields with a type that carries at least one of the Axon Data Protection annotations (by itself or through a supertype), and any arrays/collections thereof (following the exact same recursion rules as described for <code>@PersonalData</code>).</p>
+</div>
+<div class="sect2">
+<h3 id="_the_scope_attribute_2"><a class="anchor" href="#_the_scope_attribute_2"></a>The scope attribute</h3>
+<div class="paragraph">
+<p>The <code>@DeepPersonalData</code> annotation has an optional <code>scope</code> attribute which functions exactly as for <code>@PersonalData</code>, described above.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_personaldatatype_annotation"><a class="anchor" href="#_the_personaldatatype_annotation"></a>The <code>@PersonalDataType</code> annotation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>@PersonalDataType</code> annotation is a seldom used class annotation (all other Axon Data Protection annotations are field annotations). It is used in those cases where we want to use <code>@DeepPersonalData</code> on a field of a particular type, in cases when that type as such doesn&#8217;t carry any other Axon Data Protection annotations. The reason for still using <code>@DeepPersonalData</code> would be that we know that some or all of the subtypes do or may have such annotations. By the rules of <code>@DeepPersonalData</code>, this wouldn&#8217;t be allowed. This can be fixed by annotating the supertype with the <code>@PersonalDataType</code> annotation.</p>
+</div>
+<div class="paragraph">
+<p>For example, we could write the following to model that a <code>Person</code> has a set of relations; each <code>Relation</code> may be another <code>Person</code> or a <code>Pet</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@PersonalDataType
+public interface Relation {
+}
+
+public class Person implements Relation {
+    @DataSubjectId UUID id;
+    @DeepPersonalData Set&lt;Relation&gt; relations;
+}
+
+public class Pet implements Relation {
+    String name;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Without the <code>@PersonalDataType</code> annotation on the first line, the module wouldn&#8217;t accept the <code>@DeepPersonalData</code> on the <code>relations</code> field, because the <code>Relation</code> type doesn&#8217;t have any other Axon Data Protection field annotations.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_meta_annotations"><a class="anchor" href="#_meta_annotations"></a>Meta-annotations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All annotations from Axon Data Protection can also be used as <em>meta-annotations</em>: you can define your own annotation types, put one or more Axon Data Protection annotations on the annotation definition, and then whenever you apply that annotation it is as if the Axon Data Protection annotation gets applied. For instance, if you prefer the name <code>Erasable</code> over <code>PersonalData</code>, you might write:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@PersonalData
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Erasable {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and then apply this in your own code like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class NewCustomerEvent {
+    @DataSubjectId private int id;
+    @Erasable private String name;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_scala_support"><a class="anchor" href="#_scala_support"></a>Scala support</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Although the annotations defined by the module, as described in the previous sections, can in principle be used directly in Scala applications, they suffer from two disadvantages:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>When applied on a Scala class parameter (which is a common use case, since it&#8217;s natural to model events as Scala case classes), the annotation would by default only apply to the constructor parameter and not to the implied field. As a result, the annotation would not be detected by the <code>FieldEncrypter</code>. This can be fixed by applying <code>scala.annotation.meta.field</code>, but it leads to ugly code if that has to be applied every time.</p>
+</li>
+<li>
+<p>Conventionally, Scala prefers lower camel case annotation names rather than upper camel case.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To overcome the second disadvantage (naming convention), the module includes a Scala package object for <code>io.axoniq.dataprotection.api</code> with lower camel case type aliases for all 5 annotations defined by the module.</p>
+</div>
+<div class="sect2">
+<h3 id="_option_1_using_the_field_meta_annotation_directly"><a class="anchor" href="#_option_1_using_the_field_meta_annotation_directly"></a>Option 1: Using the @field meta-annotation directly</h3>
+<div class="paragraph">
+<p>When using Axon Data Protection annotations in Scala case classes, you must apply the <code>@field</code> meta-annotation to ensure the annotation targets the generated field rather than the constructor parameter:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-scala hljs" data-lang="scala">import io.axoniq.framework.dataprotection.api.{DataSubjectId, PersonalData, DeepPersonalData, SerializedPersonalData}
+import scala.annotation.meta.field
+import java.time.LocalDate
+
+case class NewCustomerEvent(
+    @(DataSubjectId @field) id: Int,
+    @(PersonalData @field)(group = "customer") name: String,
+    @(DeepPersonalData @field) address: Address,
+    @(SerializedPersonalData @field)(group = "customer") dateOfBirth: LocalDate,
+    dateOfBirthEncrypted: Array[Byte]
+)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The syntax <code>@(AnnotationName @field)</code> applies the <code>@field</code> meta-annotation to ensure proper field targeting. Without <code>@field</code>, the annotation would only apply to the constructor parameter and would be ignored by the <code>FieldEncrypter</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Important</strong>: Always use <code>@field</code> when annotating case class parameters. This is a requirement, not optional.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_option_2_using_lower_camel_case_type_aliases_alternative"><a class="anchor" href="#_option_2_using_lower_camel_case_type_aliases_alternative"></a>Option 2: Using lower camel case type aliases (Alternative)</h3>
+<div class="paragraph">
+<p>Using the type aliases provided in the Scala package object, the application code can use lower camel case naming:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-scala hljs" data-lang="scala">import io.axoniq.dataprotection.api.{dataSubjectId, personalData}
+import scala.annotation.meta.field
+
+case class NewCustomerEvent(
+    @(dataSubjectId @field) id: Int,
+    @(personalData @field) name: String
+)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Important</strong>: The type aliases do NOT include the <code>@field</code> meta-annotation automatically. You must still apply <code>@field</code> manually when using case class parameters.</p>
+</div>
+<div class="paragraph">
+<p><strong>Important note on annotation parameters</strong>: Scala requires compile-time constants for annotation parameters. When using constants defined in Java classes, they must be <code>public static final</code> fields with literal string values (not computed values like <code>GROUP_NAME + "-"</code>). This is a Scala language requirement.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_scala_class_vs_case_class"><a class="anchor" href="#_scala_class_vs_case_class"></a>Scala class vs case class</h3>
+<div class="paragraph">
+<p>When using mutable Scala classes (not case classes), apply annotations to var fields:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-scala hljs" data-lang="scala">import scala.beans.BeanProperty
+
+class CustomerSummary {
+    @BeanProperty
+    @(PersonalData @field)(group = CustomerPersonalDataGroup.GROUP_NAME)
+    var name: String = _
+
+    @BeanProperty
+    @(DeepPersonalData @field)
+    var address: Address = _
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Please note that Java annotations are completely separate from Scala annotations, and the module only deals with Java annotations. The lower camel case versions of the annotations are Scala type aliases to Java annotations rather than Scala annotations. The module will <em>not</em> detect Axon Data Protection annotations attached as meta-annotations to Scala annotations.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_encryption_process_diagrams"><a class="anchor" href="#_encryption_process_diagrams"></a>Encryption process diagrams</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>String encryption:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="../_images/string_encryption.png" alt="String encryption process">
+</div>
+</div>
+<div class="paragraph">
+<p>Byte array encryption:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="../_images/bytearrayenc.png" alt="Byte array encryption process">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps"><a class="anchor" href="#_next_steps"></a>Next steps</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="../configuration/" class="xref page">Configure the module in Spring Boot</a></p>
+</li>
+<li>
+<p><a href="../java-records/" class="xref page">Learn about Java records support</a></p>
+</li>
+<li>
+<p><a href="../advanced/" class="xref page">Explore advanced encryption scenarios</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../installation/">Installation</a></span>
+  <span class="next"><a href="../configuration/">Configuration</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
