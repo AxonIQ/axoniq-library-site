@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Understanding Steps</title>
+    <link rel="prev" href="../waiting-for-events/">
+    <link rel="next" href="../workflow-lifecycle/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../5.1/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/v2025.2/">Axon Server</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Workflows</a></li>
+    <li>Steps</li>
+    <li><a href="./">Understanding Steps</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Understanding%20Steps" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Understanding%20Steps%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BUnderstanding%20Steps%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fworkflows%2Funderstanding-steps%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">development</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-current" href="./">development</a>
+    <a class="version item is-missing" href="../../../5.1/">5.1</a>
+    <a class="version item is-missing" href="../../../5.0/">5.0</a>
+    <a class="version item is-missing" href="../../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="development">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/dlq/">Dead-Letter Queue Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../dead-letter-queue/">Dead-Letter Queue</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Workflows</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Steps</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../execute-steps/">Execute Steps</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../waiting-for-events/">Waiting for Events</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="./">Understanding Steps</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#step-primitives">Step Primitives</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#workflow-step-result">WorkflowStepResult</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#timeouts">Timeouts</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#payload-reducers">Payload Reducers</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#error-handling">Error Handling</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#cancelling-a-step">Cancelling a Step</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#execution-semantics">Execution Semantics</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#retries">Retries</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#event-name-customization">Event Name Customization</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="#kotlin-dsl-equivalents">Kotlin DSL</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflow-lifecycle/">Workflow Lifecycle</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflow-lifecycle/#_the_workflow_context">Workflow Context</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflow-lifecycle/#fail-vs-cancel">fail() vs cancel()</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflow-lifecycle/#_unhandled_exceptions">Unhandled Exceptions</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflow-lifecycle/#_lifecycle_listeners">Lifecycle Listeners</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../step-orchestration/">Step Orchestration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../step-orchestration/#_non_blocking_execution">Non-blocking Execution</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../step-orchestration/#_anymatch_first_match_wins">anyMatch</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../step-orchestration/#_allmatch_all_must_succeed">allMatch</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../step-orchestration/#_nonematch_no_failures_allowed">noneMatch</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../step-orchestration/#_inspecting_sub_results">Inspecting Sub-results</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../step-orchestration/#_parallel_workflows">Parallel Workflows</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../common-patterns/">Common Patterns</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../common-patterns/#_fan_out_fan_in">Fan-out / Fan-in</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../common-patterns/#_saga_compensating_transactions">Saga</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../common-patterns/#_scatter_gather">Scatter-gather</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../common-patterns/#_human_in_the_loop">Human-in-the-loop</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../common-patterns/#_circuit_breaker">Circuit Breaker</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../common-patterns/#_scheduled_delayed_steps">Scheduled Steps</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../common-patterns/#_sub_workflows">Sub-workflows</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../payload-and-state/">Payload &amp; State</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../configuration/">Configuration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/#_the_workflowmodule_builder">WorkflowModule Builder</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/#_start_conditions">Start Conditions</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/#_workflow_id_provider">Workflow ID Provider</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/#_customization_options">Customization Options</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/#metadata-and-correlation-data">Metadata &amp; Correlation Data</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/#custom-workflow-context">Custom Workflow Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing-workflows/">Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../snapshotting/">Snapshots</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../caching/">Caching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../advanced-release-notes/major-releases/">Axoniq Framework Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../advanced-release-notes/minor-releases/">Axoniq Framework Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Understanding Steps</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In the previous sections you saw <code>awaitExecute</code> and <code>awaitEvent</code> in action.
+This section covers the full configuration available across all step types—timeouts, payload mapping, event naming, error handling, and execution semantics.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Everything in this section applies to all step primitives—unless noted otherwise.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Primitives cannot be nested.
+Do not call <code>execute</code>, <code>awaitExecute</code>, <code>awaitEvent</code>, <code>sleep</code>, <code>fail</code>, or <code>cancel</code> from <strong>inside</strong> an action passed to another primitive.
+Each primitive must be called directly from the workflow method—the engine tracks execution through the top-level call sequence, and nesting would break event ordering and replay.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// WRONG — do not nest primitives
+ctx.awaitExecute("outer", Map.of(), (pc, payload) -&gt; {
+    ctx.awaitExecute("inner", ...);  // this will not work correctly
+    return Map.of();
+});
+
+// CORRECT — call primitives sequentially from the workflow method
+ctx.awaitExecute("stepA", Map.of(), ServiceA::doWork);
+ctx.awaitExecute("stepB", Map.of(), ServiceB::doWork);</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">In this section</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="#step-primitives">Step primitives at a glance</a>—all primitives at a glance</p>
+</li>
+<li>
+<p><a href="#workflow-step-result"><code>WorkflowStepResult</code></a>—inspecting, waiting for, and cancelling async results</p>
+</li>
+<li>
+<p><a href="#timeouts">Timeouts</a>—defaults, per-step overrides, crash recovery</p>
+</li>
+<li>
+<p><a href="#payload-reducers">Payload reducers</a>—controlling data flow in and out of steps</p>
+</li>
+<li>
+<p><a href="#error-handling">Error handling</a>—try/catch, checking results, compensating actions</p>
+</li>
+<li>
+<p><a href="#cancelling-a-step">Cancelling a step</a>—cancelling individual steps</p>
+</li>
+<li>
+<p><a href="#execution-semantics">Execution semantics</a>—at least once, exactly once (planned)</p>
+</li>
+<li>
+<p><a href="#retries">Retries</a>—retry policies, backoff, crash recovery</p>
+</li>
+<li>
+<p><a href="#event-name-customization">Event name customization</a>—namespaces, suffixes, inheritance, builders</p>
+</li>
+<li>
+<p><a href="#kotlin-dsl-equivalents">Kotlin DSL equivalents</a>—Kotlin syntax for all of the above</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="step-primitives"><a class="anchor" href="#step-primitives"></a>Step primitives at a glance</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Primitive</th>
+<th class="tableblock halign-left valign-top">Blocking</th>
+<th class="tableblock halign-left valign-top">Returns</th>
+<th class="tableblock halign-left valign-top">Covered in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Typed result</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="../execute-steps/" class="xref page">Execute Steps</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>execute</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WorkflowStepResult</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="../execute-steps/" class="xref page">Execute Steps</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitEvent</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Typed event</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="../waiting-for-events/" class="xref page">Waiting for Events</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>waitForEvent</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WorkflowStepResult</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="../waiting-for-events/" class="xref page">Waiting for Events</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sleep</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">void</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="../waiting-for-events/" class="xref page">Waiting for Events</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sleepAsync</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WorkflowStepResult</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="../waiting-for-events/" class="xref page">Waiting for Events</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>For <code>awaitExecute</code> and <code>execute</code> overloads, usage examples, and Kotlin equivalents, see <a href="../execute-steps/" class="xref page">Execute Steps</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="workflow-step-result"><a class="anchor" href="#workflow-step-result"></a><code>WorkflowStepResult</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>WorkflowStepResult</code> returned by <code>execute</code> and <code>waitForEvent</code> lets you inspect, wait for, or cancel a running step.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Blocking methods—wait until the step reaches a terminal state</caption>
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Method</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>await()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Blocks until the step finishes. Use when you don&#8217;t need the outcome, just the guarantee it&#8217;s done.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>success()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Blocks, then returns <code>true</code> if the step completed successfully.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>failure()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Blocks, then returns <code>true</code> if the step threw an exception.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>timeout()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Blocks, then returns <code>true</code> if the step exceeded its timeout.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canceled()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Blocks, then returns <code>true</code> if the step was cancelled.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 2. Non-blocking methods—return immediately</caption>
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Method</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>getStepName()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returns the step name.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>isCompleted()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returns <code>true</code> if the step has already reached a terminal state.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>result()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returns <code>Optional&lt;T&gt;</code> with the result payload. Empty if the step hasn&#8217;t finished yet.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>error()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returns <code>Optional&lt;StepFailedException&gt;</code>. Empty if the step hasn&#8217;t finished or didn&#8217;t fail.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cancel()</code> / <code>cancel(reason)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cancels the step if still running. No-op if already in a terminal state. See <a href="#cancelling-a-step">Cancelling a step</a>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Both <code>execute</code> and <code>waitForEvent</code> return a <code>WorkflowStepResult</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// non-blocking execute
+var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
+        ShippingService::shipOrder,
+        Duration.ofMinutes(5), defaults());
+
+// non-blocking wait for event
+var approval = ctx.waitForEvent("awaitApproval",
+        ManagerApproved.class, Duration.ofMinutes(30));
+
+// check and wait on either
+if (shipping.isCompleted()) {
+    logger.info("Shipping already done!");
+}
+
+approval.await(); // block until the event arrives or times out
+
+if (approval.timeout()) {
+    logger.warn("Approval timed out!");
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="timeouts"><a class="anchor" href="#timeouts"></a>Timeouts</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every step has a timeout. If the action doesn&#8217;t complete in time, the engine records a TIMED_OUT event and the step is considered failed.
+This applies to <code>awaitExecute</code>, <code>execute</code>, and <code>awaitEvent</code> alike.</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Default
+</td>
+<td class="hdlist2">
+<p><strong>5 seconds</strong>—used when you don&#8217;t pass an explicit <code>Duration</code>.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Override per step
+</td>
+<td class="hdlist2">
+<p>Pass a <code>Duration</code> parameter to <code>awaitExecute</code>, <code>execute</code>, or <code>awaitEvent</code>.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Uses the default 5-second timeout
+ctx.awaitExecute("quickCheck", Boolean.class, QuickService::check);
+
+// Explicit 30-second timeout for an action
+ctx.awaitExecute("slowOperation", ctx.workflowPayload(),
+                 SlowService::process,
+                 Duration.ofSeconds(30), defaults());
+
+// Explicit 15-minute timeout for waiting on an external event
+ctx.awaitEvent("awaitPayment", PaymentConfirmed.class,
+               Duration.ofMinutes(15));</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The timeout is measured from the timestamp of the STARTED event—that is the step&#8217;s start time.
+On replay after a crash, the remaining timeout is recalculated: <code>startTime + timeout - now</code>.
+If the remaining time is already negative, the step times out immediately.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="payload-reducers"><a class="anchor" href="#payload-reducers"></a>Payload reducers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every workflow has a <strong>global payload</strong>—the shared state that lives for the entire workflow.
+When you call a step, you can also pass a <strong>local payload</strong>—data specific to that step.</p>
+</div>
+<div class="paragraph">
+<p>The question is: what does the step&#8217;s action actually receive as input, and what happens to the step&#8217;s result?
+That&#8217;s what payload reducers control.</p>
+</div>
+<div class="sect2">
+<h3 id="_the_two_reducers"><a class="anchor" href="#_the_two_reducers"></a>The two reducers</h3>
+<div class="paragraph">
+<p>Each step has two reducers:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<code>parameterMapping</code>
+</td>
+<td class="hdlist2">
+<p>Controls the <strong>input</strong>—what payload the step&#8217;s action receives.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<code>resultMapping</code>
+</td>
+<td class="hdlist2">
+<p>Controls the <strong>output</strong>—what happens to the step&#8217;s result after it completes.</p>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_available_options"><a class="anchor" href="#_available_options"></a>Available options</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Reducer</th>
+<th class="tableblock halign-left valign-top">As input (<code>parameterMapping</code>)</th>
+<th class="tableblock halign-left valign-top">As output (<code>resultMapping</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LOCAL_ONLY</code> <em>(default for input)</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The action receives only the local payload you passed in. It doesn&#8217;t see the global workflow state.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only the local result is kept. The global payload is untouched.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GLOBAL_ONLY</code> <em>(default for output)</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The action receives only the global workflow payload. The local payload is ignored.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The step&#8217;s result is discarded. The global payload stays as-is.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>COMBINE_GLOBAL_AND_LOCAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The action receives both merged—local values overwrite global values with the same key.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The step&#8217;s result is merged back into the global payload.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_why_does_this_matter"><a class="anchor" href="#_why_does_this_matter"></a>Why does this matter?</h3>
+<div class="paragraph">
+<p>With the defaults (<code>LOCAL_ONLY</code> input, <code>GLOBAL_ONLY</code> output), steps are isolated—they only see what you explicitly pass them, and their results don&#8217;t leak into the global state. This keeps things predictable.</p>
+</div>
+<div class="paragraph">
+<p>Sometimes you want a step to see the full workflow context, or you want the result to update the global payload for subsequent steps. That&#8217;s when you change the reducer.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_example"><a class="anchor" href="#_example"></a>Example</h3>
+<div class="paragraph">
+<p>Imagine a workflow with a global payload <code>{orderId=123, customerId=456, email=<a href="mailto:joe@example.com">joe@example.com</a>}</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Default behavior: step only sees the local payload
+ctx.awaitExecute("reserveStock",
+        payload("customerId", customerId).getValues(), <i class="conum" data-value="1"></i><b>(1)</b>
+        InventoryService::reserveStock);</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The action receives <code>{customerId=456}</code> only—it can&#8217;t see <code>orderId</code> or <code>email</code>.</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">// Step sees everything: global + local merged
+awaitExecute(
+    "processOrder",
+    { payload -&gt;
+        // payload = {orderId=123, customerId=456, email=joe@example.com, priority=high}
+        OrderService.process(payload)
+    },
+    local = mapOf("priority" to "high"),
+    parameterMapping = PayloadReducer.COMBINE_GLOBAL_AND_LOCAL, <i class="conum" data-value="1"></i><b>(1)</b>
+    resultMapping = PayloadReducer.COMBINE_GLOBAL_AND_LOCAL     <i class="conum" data-value="2"></i><b>(2)</b>
+)</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The action receives the global payload merged with the local <code>priority</code> field.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The step&#8217;s result is merged back into the global payload, so subsequent steps can see it.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In Java, the full-form <code>awaitExecute</code> with <code>PayloadProcessor</code> uses <code>LOCAL_ONLY</code> for input and <code>GLOBAL_ONLY</code> for output by default.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="error-handling"><a class="anchor" href="#error-handling"></a>Error handling</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When a step fails, you need to decide: recover with a compensating action, or terminate the workflow?
+The approach depends on whether you&#8217;re using blocking (<code>awaitExecute</code>) or non-blocking (<code>execute</code>) steps.</p>
+</div>
+<div class="sect2">
+<h3 id="_blocking_stepstrycatch"><a class="anchor" href="#_blocking_stepstrycatch"></a>Blocking steps—try/catch</h3>
+<div class="paragraph">
+<p><code>awaitExecute</code> throws a <code>StepFailedException</code> when a step fails.
+Catch it to run a compensating action, or let it propagate to fail the workflow:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">try {
+    ctx.awaitExecute("chargePayment",
+            payload("customerId", customerId, "amount", amount).getValues(),
+            PaymentService::charge);
+} catch (StepFailedException e) {
+    // Compensating action: refund the reserved stock
+    ctx.awaitExecute("releaseStock",
+            payload("customerId", customerId).getValues(),
+            InventoryService::releaseStock);
+
+    ctx.fail(new RuntimeException("Payment failed: " + e.getMessage())); <i class="conum" data-value="1"></i><b>(1)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>After the compensating action, explicitly fail the workflow. Without this, the workflow would continue to the next step.</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_non_blocking_stepscheck_the_result"><a class="anchor" href="#_non_blocking_stepscheck_the_result"></a>Non-blocking steps—check the result</h3>
+<div class="paragraph">
+<p>With <code>execute</code> and <code>waitForEvent</code>, steps run asynchronously. Check the result to handle errors:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var paymentConfirmation = ctx.waitForEvent("awaitPayment",
+        PaymentConfirmed.class, Duration.ofMinutes(15));
+
+var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
+        ShippingService::shipOrder,
+        Duration.ofMinutes(5), defaults());
+
+if (paymentConfirmation.timeout()) { // blocks until terminal state
+    ctx.fail(new RuntimeException("Payment confirmation timed out"));
+}
+
+if (shipping.failure()) { // blocks until shipping reaches a terminal state
+    // Compensating action for failed shipping
+    ctx.awaitExecute("refundPayment",
+            payload("customerId", customerId).getValues(),
+            PaymentService::refund);
+
+    ctx.fail(new RuntimeException("Shipping failed: " + shipping.error().get().getMessage()));
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_what_gets_thrown"><a class="anchor" href="#_what_gets_thrown"></a>What gets thrown?</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Scenario</th>
+<th class="tableblock halign-left valign-top">Exception</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step action throws an exception</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>StepFailedException</code> wrapping the original cause</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step times out</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>StepFailedException</code> (for <code>awaitExecute</code>), or check <code>result.timeout()</code> (for <code>execute</code>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step is cancelled</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>StepCancellationException</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Workflow is failed via <code>ctx.fail()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WorkflowFailedException</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Workflow is cancelled via <code>ctx.cancel()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WorkflowCancelledException</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Any exception thrown during step execution is wrapped in <code>StepFailedException</code>.
+Use <code>getCause()</code> to access the original exception.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="cancelling-a-step"><a class="anchor" href="#cancelling-a-step"></a>Cancelling a step</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can cancel a running step in two ways:</p>
+</div>
+<div class="paragraph">
+<p><strong>Via the result handle:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var approval = ctx.waitForEvent("awaitApproval",
+        ManagerApproved.class, Duration.ofMinutes(30));
+
+// later — manager rejected, no longer need approval
+approval.cancel("Manager rejected the request"); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Cancels the wait. The workflow continues executing—only this step is affected.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><strong>Via the context:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.cancelStep("awaitApproval");                            // default message: "Step cancelled"
+ctx.cancelStep("awaitApproval", "Manager rejected");        // custom reason
+ctx.cancelStep("awaitApproval", someException);              // wrap an existing exception</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Both approaches produce a CANCELLED event in the event store:</p>
+</div>
+<div class="et-player" data-autoplay>
+  <div class="et-src" data-title="Without reason">
+1 cancelled AwaitApprovalCancelled
+  </div>
+  <div class="et-src" data-title="With reason">
+1 cancelled AwaitApprovalCancelled {"reason": "StepCancellationException: Manager rejected"}
+  </div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Step cancellation only affects the individual step.
+The workflow keeps running—other steps are not touched.
+This is different from <code>ctx.cancel()</code> or <code>ctx.fail()</code>, which terminate the entire workflow and cancel <em>all</em> running steps.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Cancelling a step interrupts the running action by throwing a <code>StepCancellationException</code>.
+You can catch this in your action to perform cleanup before the step terminates.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The event name follows the step&#8217;s <code>EventNameCustomizer</code>.
+If the step was started with a custom namespace or base name, the CANCELLED event uses the same customization.
+See <a href="#step-level-customizer">Step-level customizer</a> for how to control event naming, including the CANCELLED suffix.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>For workflow-level termination (<code>ctx.fail()</code>, <code>ctx.cancel()</code>), terminal states, unhandled exceptions, and lifecycle listeners (<code>@OnSuccess</code>, <code>@OnFailure</code>, etc.), see <a href="../workflow-lifecycle/" class="xref page">Workflow Lifecycle</a>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="execution-semantics"><a class="anchor" href="#execution-semantics"></a>Execution semantics</h2>
+<div class="sectionbody">
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Steps currently execute with <strong>at least once</strong> semantics.
+If the application crashes after a step&#8217;s action completes but <em>before</em> the COMPLETED event is persisted, the action may be re-executed on recovery.</p>
+</div>
+<div class="paragraph">
+<p>Design your step actions to be <strong>idempotent</strong>—safe to run more than once with the same input.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><strong>Exactly once semantics</strong> are planned for a future version.
+The engine will use consistency markers to guarantee that each step action executes exactly once, even across crashes and replays.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="retries"><a class="anchor" href="#retries"></a>Retries</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>RetryPolicy</code> API lets you configure retries per step—max attempts, backoff strategy, and programmatic control:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Simple: retry up to 3 times (uses default timeout and event names)
+ctx.awaitExecute("reserveInventory",
+        payload("orderId", orderId).getValues(),
+        InventoryService::reserve,
+        RetryPolicy.maxRetries(3));                                       <i class="conum" data-value="1"></i><b>(1)</b>
+
+// With fixed backoff: wait 500ms between retries
+ctx.awaitExecute("chargePayment",
+        payload("orderId", orderId, "amount", amount).getValues(),
+        PaymentGateway::charge,
+        RetryPolicy.maxRetries(3)
+                .withBackoff(BackoffStrategy.fixed(Duration.ofMillis(500))));
+
+// With exponential backoff (base 200ms, capped at 5s)
+ctx.awaitExecute("notifyCarrier",
+        payload("shipmentId", shipmentId).getValues(),
+        CarrierService::notify,
+        RetryPolicy.maxRetries(5)
+                .withBackoff(BackoffStrategy.exponential(Duration.ofMillis(200), Duration.ofSeconds(5))));
+
+// With retry handler and conditional stop
+ctx.awaitExecute("validateAddress",
+        payload("address", address).getValues(),
+        AddressService::validate,
+        RetryPolicy.maxRetries(5)
+                .onRetry(retryCtx -&gt; logger.warn("Retry {}/{} for {}: {}",       <i class="conum" data-value="2"></i><b>(2)</b>
+                        retryCtx.attempt(), retryCtx.maxRetries(),
+                        retryCtx.stepName(), retryCtx.error().getMessage()))
+                .retryWhile(retryCtx -&gt; isTransient(retryCtx.error())));          <i class="conum" data-value="3"></i><b>(3)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>If the step fails, the engine retries up to 3 times before marking it as FAILED. <code>maxRetries=3</code> means up to 4 total executions (1 initial + 3 retries).</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>onRetry</code> is called before each retry—use it for logging, metrics, or alerts.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td><code>retryWhile</code> continues retrying as long as the predicate returns true—here, only transient errors are retried (for example, a 404 is not retried).</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>reserveInventory</code> step with <code>RetryPolicy.maxRetries(3)</code>—fails twice, succeeds on the third attempt:</p>
+</div>
+<div class="et-player" data-autoplay>
+  <div class="et-src" data-title="reserveInventory with retry">
+1 started   ReserveInventoryStarted
+2 retrying  ReserveInventoryRetrying  {"attempt": 1, "maxRetries": 3, "error": "InventoryUnavailableException"}
+3 retrying  ReserveInventoryRetrying  {"attempt": 2, "maxRetries": 3, "error": "InventoryUnavailableException"}
+4 completed ReserveInventoryCompleted {"reserved": true}
+  </div>
+</div>
+<div class="sect2">
+<h3 id="_backoff_strategies"><a class="anchor" href="#_backoff_strategies"></a>Backoff strategies</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Strategy</th>
+<th class="tableblock halign-left valign-top">Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>BackoffStrategy.NONE</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No delay between retries (default).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>BackoffStrategy.fixed(Duration)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Constant delay between retries.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>BackoffStrategy.linear(Duration base)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delay increases linearly: <code>base * attempt</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>BackoffStrategy.exponential(Duration base, Duration max)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delay doubles each attempt: <code>base * 2^(attempt-1)</code>, capped at <code>max</code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_cancellation_during_retry"><a class="anchor" href="#_cancellation_during_retry"></a>Cancellation during retry</h3>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If a step throws <code>StepCancellationException</code> during any retry attempt, the step immediately transitions to <code>CANCELLED</code>—remaining retries are skipped.
+Cancellation always takes precedence over the retry policy.
+This also applies when the step is cancelled externally via <code>ctx.cancelStep()</code> or when the workflow itself is cancelled—any in-flight backoff delay is interrupted and the step moves to a terminal state.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_crash_recovery"><a class="anchor" href="#_crash_recovery"></a>Crash recovery</h3>
+<div class="paragraph">
+<p>Retries are event-sourced—on crash recovery, the engine replays retry events and recalculates backoff from persisted timestamps.
+If the process restarts while a step is in <code>RETRYING</code> state, the engine resumes from the correct attempt number with the remaining backoff delay.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="event-name-customization"><a class="anchor" href="#event-name-customization"></a>Event name customization</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every step produces events named <code>[namespace].[BaseName][Suffix]</code>.
+The <code>EventNameCustomizer</code> controls each part.
+You can set it at the <strong>workflow level</strong> (applies to all steps) or override it on <strong>individual steps</strong>.</p>
+</div>
+<div class="sect2">
+<h3 id="_workflow_level_customizer"><a class="anchor" href="#_workflow_level_customizer"></a>Workflow-level customizer</h3>
+<div class="paragraph">
+<p>The simplest way is via the <code>@Workflow</code> annotation:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId",
+          startOnEvent = "OrderPlaced",
+          workflowNamespace = "io.myapp.orders")  <i class="conum" data-value="1"></i><b>(1)</b>
+public void execute(SimpleWorkflowContext ctx) {
+    ctx.awaitExecute("reserveStock", Boolean.class,
+                      InventoryService::reserveStock); <i class="conum" data-value="2"></i><b>(2)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Sets the namespace for all events in this workflow.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>This step&#8217;s events will be <code>io.myapp.orders.ReserveStockStarted</code> and <code>io.myapp.orders.ReserveStockCompleted</code>—no per-step configuration needed.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>For more control (for example, custom suffixes), use the declarative configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">return d -&gt; d
+        .declarative(c -&gt; workflow::execute)
+        .workflowName("OrderFulfillment")
+        .on(EventConditions.fromType(OrderPlacedEvent.class))
+        .customized((c, w) -&gt; w
+                .eventNameCustomizer(
+                        namespace("io.myapp.orders")
+                                .stepCompleted("Done")
+                                .workflowBaseName("OrderFulfillment"))
+                .workflowIdProvider(fromPayloadAttribute(c, "orderId"))
+        );</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With this configuration, all steps produce events like <code>io.myapp.orders.ReserveStockDone</code>—without having to specify the namespace or suffix on every step.</p>
+</div>
+<div class="paragraph">
+<p>For the full declarative configuration API—workflow modules, start conditions, ID providers, and more—see <a href="../configuration/" class="xref page">Configuration</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_step_level_customizer"><a class="anchor" href="#_step_level_customizer"></a>Step-level customizer</h3>
+<div class="paragraph">
+<p>Override the customizer on a specific step when you need different naming:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitExecute("initiatePayment",
+                 payload("amount", amount).getValues(),
+                 PaymentService::initiatePayment,
+                 Duration.ofSeconds(30),
+                 namespace("io.myapp.payments")); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>This step&#8217;s events use <code>io.myapp.payments</code> while all other steps still use the workflow-level namespace.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Step-level customizers also control CANCELLED event names consistently.
+If a step uses a custom namespace, its cancellation event uses the same namespace:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.execute("shipOrder", ctx.workflowPayload(),
+        ShippingService::shipOrder,
+        Duration.ofMinutes(5),
+        namespace("io.shipping"));
+
+// If cancelled, the event will be: io.shipping.ShipOrderCancelled</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The CANCELLED suffix itself can also be customized via <code>stepCancelled(&#8230;&#8203;)</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">defaults().stepCancelled("Aborted")
+// produces: io.namespace.ShipOrderAborted</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you don&#8217;t pass a customizer (or pass <code>defaults()</code>), the step inherits from the workflow-level customizer.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_defaults_and_inheritance"><a class="anchor" href="#_defaults_and_inheritance"></a>Defaults and Inheritance</h3>
+<div class="paragraph">
+<p>Axon Workflows defines sensible defaults for naming workflow events. The workflow-level customizer propagates selected properties to steps via <code>forStepInheritance()</code>.
+When a step also has its own customizer, the two are merged—<strong>step-level wins</strong> when it differs from defaults, otherwise the workflow-level value is used.
+The table below explains the naming settings defaults and inheritance in detail.</p>
+</div>
+<div class="paragraph">
+<p>The workflow-level customizer propagates selected properties to steps via <code>forStepInheritance()</code>.
+When a step also has its own customizer, the two are merged—<strong>step-level wins</strong> when it differs from defaults, otherwise the workflow-level value is used.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 3. What steps inherit from the workflow customizer</caption>
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default</th>
+<th class="tableblock halign-left valign-top">Inherited?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>namespace</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The prefix for all event names (for example, <code>io.myapp.orders</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.workflow</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes—set it once, all steps use it</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>capitalizeSimpleName</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Whether step names are capitalized in event names (<code>reserveStock</code> &#8594; <code>ReserveStock</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step status suffixes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The suffix appended for each status (<code>stepStarted</code>, <code>stepCompleted</code>, <code>stepFailed</code>, <code>stepTimedOut</code>, <code>stepCancelled</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Started</code>, <code>Completed</code>, <code>Failed</code>, <code>TimedOut</code>, <code>Cancelled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>baseName</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replaces the step name in the event name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The step name itself</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No—each step uses its own step name</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflowBaseName</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Base name for workflow-level events (for example, <code>OrderFulfillmentWorkflow#ExecuteStarted</code>, <code>OrderFulfillmentWorkflow#ExecuteCompleted</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No—workflow-specific</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>appendToBaseName</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to include the step name before the suffix</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No—resets to default per step</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Workflow status suffixes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Suffixes for workflow-level events (<code>workflowStarted</code>, <code>workflowCompleted</code>, etc.)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Started</code>, <code>Completed</code>, <code>Failed</code>, <code>TimedOut</code>, <code>Cancelled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No—workflow-specific</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>payloadCustomization</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dynamic event naming based on payload content</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">None</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No—workflow-specific</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>Example:</strong> Set the namespace and suffix globally, then override one step:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Workflow-level: all steps use io.myapp namespace and "Done" suffix
+.customized((c, w) -&gt; w.eventNameCustomizer(
+        namespace("io.myapp").stepCompleted("Done")
+))</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Step 1: inherits workflow customizer — no override needed
+ctx.awaitExecute("reserveStock", Boolean.class,
+                  InventoryService::reserveStock);
+
+// Step 2: overrides namespace for this step only
+ctx.awaitExecute("initiatePayment",
+                 payload("amount", amount).getValues(),
+                 PaymentService::initiatePayment,
+                 Duration.ofSeconds(30),
+                 namespace("io.payments"));</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Resulting events:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">io.myapp.ReserveStockStarted
+io.myapp.ReserveStockDone          <i class="conum" data-value="1"></i><b>(1)</b>
+io.payments.InitiatePaymentStarted <i class="conum" data-value="2"></i><b>(2)</b>
+io.payments.InitiatePaymentDone    <i class="conum" data-value="3"></i><b>(3)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Inherited <code>io.myapp</code> namespace and <code>Done</code> suffix from the workflow customizer.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Step-level <code>namespace("io.payments")</code> overrides the workflow namespace.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The <code>Done</code> suffix is still inherited—only the namespace was overridden.</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_builder_methods"><a class="anchor" href="#_builder_methods"></a>Builder methods</h3>
+<div class="paragraph">
+<p>These static methods from <code>DefaultEventNameCustomizer.Builder</code> create a customizer with one option changed:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 50%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Builder method</th>
+<th class="tableblock halign-left valign-top">Effect</th>
+<th class="tableblock halign-left valign-top">Example result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>defaults()</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default naming: namespace <code>io.axoniq.workflow</code>, capitalized step name + suffix</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.workflow.ReserveStockCompleted</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>namespace("io.payments")</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Changes the namespace prefix</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.payments.ReserveStockCompleted</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>baseName("ProcessPayment")</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replaces the step name in the event name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.workflow.ProcessPaymentCompleted</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>capitalizeSimpleName(false)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Keeps the step name lowercase</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.workflow.reserveStockCompleted</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>appendToBaseName(false)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Omits the step name entirely, leaving only the suffix</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.workflow.Completed</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>All builders return a <code>DefaultEventNameCustomizer</code> that supports fluent chaining:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">namespace("io.myapp").stepCompleted("Done").stepFailed("Errored")</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_customizing_suffixes"><a class="anchor" href="#_customizing_suffixes"></a>Customizing suffixes</h3>
+<div class="paragraph">
+<p>You can rename the status suffixes for steps:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">defaults()
+    .stepStarted("Initiated")
+    .stepCompleted("Done")
+    .stepFailed("Errored")
+    .stepTimedOut("Expired")
+    .stepCancelled("Aborted")</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With <code>stepName = "payment"</code>, this produces events like <code>PaymentInitiated</code>, <code>PaymentDone</code>, <code>PaymentErrored</code>, etc.</p>
+</div>
+<div class="paragraph">
+<p>Workflow-level suffixes can be customized separately via <code>workflowStarted(&#8230;&#8203;)</code>, <code>workflowCompleted(&#8230;&#8203;)</code>, <code>workflowFailed(&#8230;&#8203;)</code>, <code>workflowTimedOut(&#8230;&#8203;)</code>, and <code>workflowCancelled(&#8230;&#8203;)</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_payload_based_customization"><a class="anchor" href="#_payload_based_customization"></a>Payload-based customization</h3>
+<div class="paragraph">
+<p>For dynamic event names based on payload content:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">payloadCustomization(pc -&gt; {
+    var priority = pc.payload().getOrDefault("priority", "normal");
+    return new QualifiedName(pc.namespaceTemplate(),
+                             priority + pc.localNameTemplate());
+})</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This would produce <code>PriorityPaymentCompleted</code> or <code>NormalPaymentCompleted</code> depending on the payload.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="kotlin-dsl-equivalents"><a class="anchor" href="#kotlin-dsl-equivalents"></a>Kotlin DSL equivalents</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Kotlin DSL exposes the same options as named parameters:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">// Non-blocking execute with all options
+execute(
+    "shipOrder",
+    action = { pc, p -&gt; ShippingService.shipOrder(pc, p) },
+    local = mapOf("address" to address),
+    parameterMapping = PayloadReducer.LOCAL_ONLY,
+    resultMapping = PayloadReducer.GLOBAL_ONLY,
+    timeout = 5.minutes,
+    eventNameCustomizer = namespace("io.shipping")
+)
+
+// Blocking awaitExecute with all options
+val result = awaitExecute(
+    "reserveStock",
+    action = { InventoryService.reserveStock() },
+    local = mapOf("customerId" to customerId),
+    timeout = 10.seconds,
+    eventNameCustomizer = baseName("ReservingStock")
+)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Kotlin&#8217;s named parameters and default values mean you only specify what you need—everything else falls back to sensible defaults.</p>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../waiting-for-events/">Waiting for Events</a></span>
+  <span class="next"><a href="../workflow-lifecycle/">Workflow Lifecycle</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
