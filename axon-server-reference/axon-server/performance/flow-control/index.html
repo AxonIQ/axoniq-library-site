@@ -59,10 +59,9 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="../../../../home/reference/">Reference</a>
           <div class="navbar-dropdown card">
-                <a class="navbar-item" href="../../../../axon-framework-reference/5.0/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-reference/5.1/">Axon Framework</a>
                 <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
                 <a class="navbar-item" href="../../../v2025.2/">Axon Server</a>
-                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
                 <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
           </div>
         </div>
@@ -102,6 +101,7 @@
   <button class="version-menu-toggle" title="Show other versions of page">master</button>
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">master</a>
+    <a class="version item" href="../../../v2026.0/axon-server/performance/flow-control/">v2026.0</a>
     <a class="version item" href="../../../v2025.2/axon-server/performance/flow-control/">v2025.2</a>
     <a class="version item" href="../../../v2025.1/axon-server/performance/flow-control/">v2025.1</a>
     <a class="version item" href="../../../v2025.0/axon-server/performance/flow-control/">v2025.0</a>
@@ -273,10 +273,10 @@
     <a class="nav-link" href="../../security/access-control-api/">Access Control on the REST and gRPC APIs</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../security/access-control-ldap/">Axon Server EE - LDAP Extension</a>
+    <a class="nav-link" href="../../security/access-control-ldap/">LDAP Authentication</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../security/access-control-oauth2/">Axon Server EE - OAuth Extension</a>
+    <a class="nav-link" href="../../security/access-control-oauth2/">OAuth2 Authentication</a>
   </li>
 </ul>
   </li>
@@ -412,6 +412,51 @@ The initial request amount is {prefetch}*5, and subsequent (or replenishing) req
 <p><code>axoniq.axonserver.queryFlowControl.new-permits-threshold</code> [5000] - when replica reaches this threshold in remaining messages, it sends a request with additional number of messages to receive.</p>
 </li>
 </ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_grpc_executor_thread_pools"><a class="anchor" href="#_grpc_executor_thread_pools"></a>gRPC executor thread pools</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Server processes gRPC requests through three separate executor thread pools.
+Separating the pools prevents client-side load from starving internal cluster operations.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 20%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Pool</th>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Client requests</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq.axonserver.executor-thread-count</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Commands, queries, and event appends from client applications.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Internal cluster communication</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq.axonserver.cluster-executor-thread-count</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Topology updates, metrics distribution, and other inter-node messages.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RAFT consensus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq.axonserver.raft-executor-thread-count</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RAFT log replication and leader election messages.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>All three default to 4 threads.
+Increase <code>executor-thread-count</code> when client throughput is the bottleneck.
+Increase <code>cluster-executor-thread-count</code> or <code>raft-executor-thread-count</code> when cluster operations degrade under high client load.</p>
 </div>
 </div>
 </div>

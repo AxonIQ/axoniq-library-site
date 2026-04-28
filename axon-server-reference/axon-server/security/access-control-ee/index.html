@@ -59,10 +59,9 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="../../../../home/reference/">Reference</a>
           <div class="navbar-dropdown card">
-                <a class="navbar-item" href="../../../../axon-framework-reference/5.0/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-reference/5.1/">Axon Framework</a>
                 <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
                 <a class="navbar-item" href="../../../v2025.2/">Axon Server</a>
-                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
                 <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
           </div>
         </div>
@@ -102,6 +101,7 @@
   <button class="version-menu-toggle" title="Show other versions of page">master</button>
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">master</a>
+    <a class="version item" href="../../../v2026.0/axon-server/security/access-control-ee/">v2026.0</a>
     <a class="version item" href="../../../v2025.2/axon-server/security/access-control-ee/">v2025.2</a>
     <a class="version item" href="../../../v2025.1/axon-server/security/access-control-ee/">v2025.1</a>
     <a class="version item" href="../../../v2025.0/axon-server/security/access-control-ee/">v2025.0</a>
@@ -273,10 +273,10 @@
     <a class="nav-link" href="../access-control-api/">Access Control on the REST and gRPC APIs</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../access-control-ldap/">Axon Server EE - LDAP Extension</a>
+    <a class="nav-link" href="../access-control-ldap/">LDAP Authentication</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../access-control-oauth2/">Axon Server EE - OAuth Extension</a>
+    <a class="nav-link" href="../access-control-oauth2/">OAuth2 Authentication</a>
   </li>
 </ul>
   </li>
@@ -426,7 +426,58 @@ If you wish to use tools to access the REST API directly, you must add an HTTP h
 <div class="paragraph">
 <p>When you create a user account, you assign roles, which will determine the user&#8217;s access rights.
 The user accounts are generally only used for the UI, although they are also valid for access to the REST API, using Basic Authentication.
-In contrast to SE, where you could only choose between "normal" and "admin" accounts, you can now assign several roles from a long list, and each per context using "<em>role</em>`@`<em>context</em>". You can also assign a role for context &#8220;*&#8221;, which means that the user gets that role for any context existing now, or created in the future.</p>
+You can assign several roles from a long list, and each per context using "<em>role</em>`@`<em>context</em>". You can also assign a role for context &#8220;*&#8221;, which means that the user gets that role for any context existing now, or created in the future.</p>
+</div>
+<div class="sect2">
+<h3 id="_initial_admin_user"><a class="anchor" href="#_initial_admin_user"></a>Initial admin user</h3>
+<div class="paragraph">
+<p>To avoid a chicken-and-egg problem when enabling access control on a fresh cluster, Axon Server can create an initial <code>admin</code> user during cluster initialization.
+Set the following property before starting the node:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">axoniq:
+  axonserver:
+    accesscontrol:
+      enabled: true
+      initial-admin-password: &lt;password&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axon Server creates the <code>admin</code> user with the <code>ADMIN@*</code> role the first time the cluster is initialized.
+The following conditions must all be met:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>axoniq.axonserver.accesscontrol.enabled</code> is <code>true</code>.</p>
+</li>
+<li>
+<p><code>axoniq.axonserver.accesscontrol.initial-admin-password</code> is set.</p>
+</li>
+<li>
+<p>The cluster is initialized via autocluster, standalone, or platform connection, not via a cluster template (cluster templates have their own user definition mechanism).</p>
+</li>
+<li>
+<p>No user named <code>admin</code> exists yet. If one does, Axon Server logs a warning and leaves the existing account untouched.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Remove <code>initial-admin-password</code> from the configuration after the cluster has been initialized.
+Leaving it in place is harmless once the <code>admin</code> user exists, but keeping credentials in configuration files is a security risk.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_assigning_roles"><a class="anchor" href="#_assigning_roles"></a>Assigning roles</h3>

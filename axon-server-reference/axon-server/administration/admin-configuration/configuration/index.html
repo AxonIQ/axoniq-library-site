@@ -59,10 +59,9 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="../../../../../home/reference/">Reference</a>
           <div class="navbar-dropdown card">
-                <a class="navbar-item" href="../../../../../axon-framework-reference/5.0/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../../axon-framework-reference/5.1/">Axon Framework</a>
                 <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
                 <a class="navbar-item" href="../../../../v2025.2/">Axon Server</a>
-                <a class="navbar-item" href="../../../../../synapse-reference/v0.12/">Axon Synapse</a>
                 <a class="navbar-item" href="../../../../../axoniq-platform-reference/">Axoniq Platform</a>
           </div>
         </div>
@@ -103,6 +102,7 @@
   <button class="version-menu-toggle" title="Show other versions of page">master</button>
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">master</a>
+    <a class="version item" href="../../../../v2026.0/axon-server/administration/admin-configuration/configuration/">v2026.0</a>
     <a class="version item" href="../../../../v2025.2/axon-server/administration/admin-configuration/configuration/">v2025.2</a>
     <a class="version item" href="../../../../v2025.1/axon-server/administration/admin-configuration/configuration/">v2025.1</a>
     <a class="version item" href="../../../../v2025.0/axon-server/administration/admin-configuration/configuration/">v2025.0</a>
@@ -274,10 +274,10 @@
     <a class="nav-link" href="../../../security/access-control-api/">Access Control on the REST and gRPC APIs</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../security/access-control-ldap/">Axon Server EE - LDAP Extension</a>
+    <a class="nav-link" href="../../../security/access-control-ldap/">LDAP Authentication</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../../security/access-control-oauth2/">Axon Server EE - OAuth Extension</a>
+    <a class="nav-link" href="../../../security/access-control-oauth2/">OAuth2 Authentication</a>
   </li>
 </ul>
   </li>
@@ -790,7 +790,7 @@ The parameter name should be all in upper case with any kebab-case(-) / camelCas
 <tr>
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.enterprise.default-index-type</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">(Since 4.4.7, EE only) Sets the default index type to be used for new contexts. Values are JUMP_SKIP_INDEX and BLOOM_FILTER_INDEX.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(Since 4.4.7) Sets the default index type to be used for new contexts. Values are JUMP_SKIP_INDEX and BLOOM_FILTER_INDEX.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">JUMP_SKIP_INDEX</p></td>
 </tr>
 <tr>
@@ -1034,6 +1034,12 @@ The parameter name should be all in upper case with any kebab-case(-) / camelCas
 <td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.accesscontrol.password-disabled</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Whether to disable password-based login. Disables login for local users and LDAP, intended to be used with OAuth.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">false</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.accesscontrol.initial-admin-password</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Password for the initial <code>admin</code> user created on first cluster initialization. The user is only created if access control is enabled and no <code>admin</code> user exists yet. Remove this property after the cluster is initialized.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">None</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><em>Messaging (Between Clients and Axon Server)</em></p></td>
@@ -1380,7 +1386,7 @@ The parameter name should be all in upper case with any kebab-case(-) / camelCas
 <tr>
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.event.read-buffer-size</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Size of the buffer when reading from non-memory mapped files. (SE only)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Size of the buffer when reading from non-memory mapped files.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">32KB</p></td>
 </tr>
 <tr>
@@ -1398,7 +1404,7 @@ The parameter name should be all in upper case with any kebab-case(-) / camelCas
 <tr>
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.snapshot.read-buffer-size</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Size of the buffer when reading from non-memory mapped files. (SE only)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Size of the buffer when reading from non-memory mapped files.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">32KB</p></td>
 </tr>
 <tr>
@@ -1622,6 +1628,30 @@ The parameter name should be all in upper case with any kebab-case(-) / camelCas
 <td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.ai.mcp</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Set to true to expose a MCP server from this node, also requires <code>axoniq.axonserver.analytics.eventlake.enabled</code> to be true.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">false</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>Throughput limits</em></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.throughput.event-max-wait-ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maximum time (ms) to wait before rejecting an event append when the license throughput limit is active.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.throughput.command-max-wait-ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maximum time (ms) to wait before rejecting a command when the license throughput limit is active. Set to 0 to reject immediately.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">axoniq.axonserver.throughput.query-max-wait-ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maximum time (ms) to wait before rejecting a query when the license throughput limit is active. Set to 0 to reject immediately.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
 </tr>
 </tbody>
 </table>

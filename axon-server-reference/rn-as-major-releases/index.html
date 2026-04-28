@@ -59,10 +59,9 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="../../home/reference/">Reference</a>
           <div class="navbar-dropdown card">
-                <a class="navbar-item" href="../../axon-framework-reference/5.0/">Axon Framework</a>
+                <a class="navbar-item" href="../../axon-framework-reference/5.1/">Axon Framework</a>
                 <a class="navbar-item" href="../../axon-framework-extensions/">Axon Framework Extensions</a>
                 <a class="navbar-item" href="../v2025.2/">Axon Server</a>
-                <a class="navbar-item" href="../../synapse-reference/v0.12/">Axon Synapse</a>
                 <a class="navbar-item" href="../../axoniq-platform-reference/">Axoniq Platform</a>
           </div>
         </div>
@@ -102,6 +101,7 @@
   <button class="version-menu-toggle" title="Show other versions of page">master</button>
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">master</a>
+    <a class="version item" href="../v2026.0/rn-as-major-releases/">v2026.0</a>
     <a class="version item" href="../v2025.2/rn-as-major-releases/">v2025.2</a>
     <a class="version item" href="../v2025.1/rn-as-major-releases/">v2025.1</a>
     <a class="version item" href="../v2025.0/rn-as-major-releases/">v2025.0</a>
@@ -273,10 +273,10 @@
     <a class="nav-link" href="../axon-server/security/access-control-api/">Access Control on the REST and gRPC APIs</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../axon-server/security/access-control-ldap/">Axon Server EE - LDAP Extension</a>
+    <a class="nav-link" href="../axon-server/security/access-control-ldap/">LDAP Authentication</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../axon-server/security/access-control-oauth2/">Axon Server EE - OAuth Extension</a>
+    <a class="nav-link" href="../axon-server/security/access-control-oauth2/">OAuth2 Authentication</a>
   </li>
 </ul>
   </li>
@@ -344,6 +344,157 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p><!-- vale AxonIQ.Headings = NO --></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_release_2026_0"><a class="anchor" href="#_release_2026_0"></a>Release 2026.0</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_context_migration_to_dcb"><a class="anchor" href="#_context_migration_to_dcb"></a>Context migration to DCB</h3>
+<div class="paragraph">
+<p>Axon Server 2026.0 offers a way to convert existing event store contexts to the DCB format.
+This allows you to migrate contexts with existing data to the new format and make use of the DCB features that Axon Framework offers.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_learner_node_type"><a class="anchor" href="#_learner_node_type"></a>Learner node type</h3>
+<div class="paragraph">
+<p>Learner nodes replicate the event store and participate in replication groups without voting in leader elections or commit quorums.
+This change is invisible for users but improves safety of cluster topology changes with running event transformation or context migrations.
+This enables safe capacity expansion: add a new node starts as a learner to catch up on replication, then it gets promoted once it has replicated sufficient data.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_new_licensing_model"><a class="anchor" href="#_new_licensing_model"></a>New licensing model</h3>
+<div class="paragraph">
+<p>Axon Server 2026.0 introduces an updated licensing model:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Platform License V2 with gRPC-based license fetching</p>
+</li>
+<li>
+<p>Axon Server can act as a license source for connected client applications, removing the need to distribute license files to each node separately</p>
+</li>
+<li>
+<p>Throughput-based limits are enforced as part of the license</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_grpc_improvements"><a class="anchor" href="#_grpc_improvements"></a>gRPC improvements</h3>
+<div class="paragraph">
+<p>Internal gRPC thread pools have been split to separate threads for client-facing and internal cluster communication, reducing the risk of client load impacting cluster stability.
+gRPC request tracking metrics have been added for better observability.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_raft_improvements"><a class="anchor" href="#_raft_improvements"></a>RAFT improvements</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Log replication tasks now run in a dedicated executor, reducing interference with other cluster operations</p>
+</li>
+<li>
+<p>RAFT log inconsistencies are detected and reported at startup more eagerly, following a fail-fast mentality</p>
+</li>
+<li>
+<p>Certain configuration changes are rejected in mixed-version clusters, preventing incompatible changes during rolling upgrades</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_breaking_changes_and_removals"><a class="anchor" href="#_breaking_changes_and_removals"></a>Breaking changes and removals</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Java 21 is now the minimum supported version.</p>
+</li>
+<li>
+<p>The legacy UI, originally superseded in 2024.0, has been removed.</p>
+</li>
+<li>
+<p>Analytics node roles are deprecated and replaced by the stand-alone analytics application.
+Existing deployments continue to work, but analytics node support will be removed in a future release.</p>
+</li>
+<li>
+<p>OAuth2 and LDAP extensions are no extensions, their functionality is now part of the core product.</p>
+</li>
+<li>
+<p>Legacy metric names (the pre-2023.2 naming scheme) are now disabled by default.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_other_improvements"><a class="anchor" href="#_other_improvements"></a>Other improvements</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Legacy EventStore API is now supported on DCB contexts.
+See <a href="../axon-server/administration/multi-context/#dcb-framework-compatibility" class="xref page">Axon Framework compatibility</a> for version-specific details.</p>
+</li>
+<li>
+<p>Link to the Swagger UI added to the administration interface (icon in the top right)</p>
+</li>
+<li>
+<p>Performance improvements: consistent hash routing, query routing metric caching, reduced database load from gRPC threads, memory leak fix in event storage engine shutdown</p>
+</li>
+<li>
+<p>Changed ToS notice to reflect latest version</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_bug_fixes"><a class="anchor" href="#_bug_fixes"></a>Bug fixes</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Fix startup issue during node restart after install snapshot</p>
+</li>
+<li>
+<p>Fix install snapshot handling for DCB contexts (tag replication, _admin event store, flow control)</p>
+</li>
+<li>
+<p>Fix persistent stream ghost connections and NPE</p>
+</li>
+<li>
+<p>Fix broken cache after context configuration changes</p>
+</li>
+<li>
+<p>Fix deserialization issues in context data and the application REST controller</p>
+</li>
+<li>
+<p>Fix throughput statistics output</p>
+</li>
+<li>
+<p>Fix node version reporting during rolling upgrades</p>
+</li>
+<li>
+<p>Fix to prevent cluster initialization with invalid configuration</p>
+</li>
+<li>
+<p>Fix SequenceValidationStreamObserver being skipped on DCB contexts</p>
+</li>
+<li>
+<p>Fix column selection box in the search page</p>
+</li>
+<li>
+<p>Fix scrolling in list view on Nodes and Applications pages</p>
+</li>
+<li>
+<p>Fix NPE when re-adding a previously removed node</p>
+</li>
+<li>
+<p>Dependency updates to address security vulnerabilities</p>
+</li>
+</ul>
+</div>
 </div>
 </div>
 </div>
@@ -593,7 +744,7 @@ DCB enabled.</p>
 <p>Multi-tier storage in DCB contexts is not supported yet</p>
 </li>
 <li>
-<p>DCB contexts are not compatible with previous Axon Server versions, so you cannot use them in combination with Axon Framework 4.x.</p>
+<p>DCB contexts require Axon Framework 4.12 or higher. See <a href="../axon-server/administration/multi-context/#dcb-framework-compatibility" class="xref page">Axon Framework compatibility</a> for details.</p>
 </li>
 <li>
 <p>No automatic migration of existing contexts to DCB contexts. You can create new contexts with DCB enabled, but you cannot convert existing contexts to DCB contexts.</p>
@@ -866,7 +1017,7 @@ Logs are included as well.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_other_improvements"><a class="anchor" href="#_other_improvements"></a>Other improvements</h3>
+<h3 id="_other_improvements_2"><a class="anchor" href="#_other_improvements_2"></a>Other improvements</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -918,7 +1069,7 @@ The role ‘MONITOR’ is now granted permission to access the ‘internal/raft/
 </div>
 </div>
 <div class="sect2">
-<h3 id="_bug_fixes"><a class="anchor" href="#_bug_fixes"></a>Bug fixes</h3>
+<h3 id="_bug_fixes_2"><a class="anchor" href="#_bug_fixes_2"></a>Bug fixes</h3>
 <div class="paragraph">
 <p>This release also contains fixes for the following issues:</p>
 </div>

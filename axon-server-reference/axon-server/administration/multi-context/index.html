@@ -59,10 +59,9 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="../../../../home/reference/">Reference</a>
           <div class="navbar-dropdown card">
-                <a class="navbar-item" href="../../../../axon-framework-reference/5.0/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-reference/5.1/">Axon Framework</a>
                 <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
                 <a class="navbar-item" href="../../../v2025.2/">Axon Server</a>
-                <a class="navbar-item" href="../../../../synapse-reference/v0.12/">Axon Synapse</a>
                 <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
           </div>
         </div>
@@ -102,6 +101,7 @@
   <button class="version-menu-toggle" title="Show other versions of page">master</button>
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">master</a>
+    <a class="version item" href="../../../v2026.0/axon-server/administration/multi-context/">v2026.0</a>
     <a class="version item" href="../../../v2025.2/axon-server/administration/multi-context/">v2025.2</a>
     <a class="version item" href="../../../v2025.1/axon-server/administration/multi-context/">v2025.1</a>
     <a class="version item" href="../../../v2025.0/axon-server/administration/multi-context/">v2025.0</a>
@@ -273,10 +273,10 @@
     <a class="nav-link" href="../../security/access-control-api/">Access Control on the REST and gRPC APIs</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../security/access-control-ldap/">Axon Server EE - LDAP Extension</a>
+    <a class="nav-link" href="../../security/access-control-ldap/">LDAP Authentication</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../security/access-control-oauth2/">Axon Server EE - OAuth Extension</a>
+    <a class="nav-link" href="../../security/access-control-oauth2/">OAuth2 Authentication</a>
   </li>
 </ul>
   </li>
@@ -357,7 +357,7 @@
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-The <em>Developer</em> and <em>Starter</em> plans only support 1 (non-admin) context.
+The <em>Individual</em> plan only supports 1 (non-admin) context.
 </td>
 </tr>
 </table>
@@ -551,7 +551,7 @@ public class Configuration {
 <h3 id="_reading_events_from_multiple_contexts"><a class="anchor" href="#_reading_events_from_multiple_contexts"></a>Reading events from multiple contexts</h3>
 <div class="paragraph">
 <p>You can stream events from multiple contexts in the same processor.
-This is described in the <a href="../../../../axon-framework-reference/5.0/events/event-processors/streaming/#_multiple_event_sources" class="xref page">Streaming Events Processors' Multiple event sources section</a>.</p>
+This is described in the <a href="../../../../axon-framework-reference/5.1/events/event-processors/streaming/#_multiple_event_sources" class="xref page">Streaming Events Processors' Multiple event sources section</a>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -882,6 +882,35 @@ DCB contexts can be created and managed using the same tools as regular contexts
 <p>Note that the backup mechanism for DCB contexts is different from regular contexts. It is recommended to use the Axon Server backup and restore features to ensure data integrity. For more information, refer to the <a href="../backups/" class="xref page">Backups</a> section.</p>
 </div>
 <div class="sect2">
+<h3 id="dcb-framework-compatibility"><a class="anchor" href="#dcb-framework-compatibility"></a>Axon Framework compatibility</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Framework version</th>
+<th class="tableblock halign-left valign-top">Compatibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt; 4.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not compatible with DCB contexts.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&gt;= 4.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Compatible with DCB contexts.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.x</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Compatible with regular (non-DCB) contexts. Only a single tag per event is supported when connecting to a non-DCB context.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
 <h3 id="_context_migration_to_dcb"><a class="anchor" href="#_context_migration_to_dcb"></a>Context migration to DCB</h3>
 <div class="paragraph">
 <p>To migrate from a regular context to a DCB context, you can use the migration operations. This is a two-step process:</p>
@@ -928,14 +957,33 @@ DCB contexts can be created and managed using the same tools as regular contexts
 <p><span class="image"><img src="../../../_images/migration_complete.png" alt="Complete Migration button"></span> (the middle button here)</p>
 </div>
 <div class="paragraph">
+<p>This does the switch-over, making the context a DCB context.
+During the finalization, the context will be briefly unavailable.</p>
+</div>
+<div class="paragraph">
+<p>When the migration is complete, the button changes to one last state: "CleanupMigration"
+<span class="image"><img src="../../../_images/migration_cleanup.png" alt="Migration cleanup button"></span> (the middle button here).</p>
+</div>
+<div class="paragraph">
+<p>This will remove the previous index files, as they are no longer needed.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_permissions"><a class="anchor" href="#_permissions"></a>Permissions</h3>
+<div class="paragraph">
 <p>The migration operations require the global administrator role (ADMIN@_admin).</p>
 </div>
 <div class="paragraph">
 <p>To disable all migration operations from the UI, you can set the following property in the Axon Server configuration:</p>
 </div>
-<div class="paragraph">
-<p><strong>axoniq.axonserver.migration-enabled=false</strong></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">axoniq.axonserver.migration-enabled=false</code></pre>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_limitations"><a class="anchor" href="#_limitations"></a>Limitations</h3>
 <div class="paragraph">
 <p>The following limitations apply for migration:</p>
 </div>
