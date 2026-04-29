@@ -691,8 +691,13 @@ A flexible, general-purpose serializer like <a href="http://x-stream.github.io/"
 <p>By default, all three <code>Serializer</code> flavors are set to use the <code>XStreamSerializer</code>, which internally uses <a href="http://x-stream.github.io/">XStream</a> to serialize objects to an XML format.
 XML is verbose, but XStream has the major benefit of being able to serialize virtually anything.</p>
 </div>
-<div class="quoteblock">
-<blockquote>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
 <div class="paragraph">
 <p><em>XStream and JDK 17</em></p>
 </div>
@@ -706,7 +711,28 @@ Hence, if you&#8217;re using JDK 17, the chances are that objects (for example, 
 Other times you will have to introduce custom <a href="https://x-stream.github.io/converters.html"><code>Converters</code></a> to de-/serialize specific types.
 If you prefer not to deal with specific XStream settings, it might be better to use the <code>JacksonSerializer</code> throughout your Axon application.</p>
 </div>
-</blockquote>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Jackson 3 changed the default deserializing <code>final</code> fields (see <a href="https://github.com/FasterXML/jackson-databind/issues/4552">the original Jackson GitHub issue</a> for details).
+This prevents <code>final</code> fields from being deserialized, which—for example—might affect usages of Kotlin <code>val</code> properties for message payloads (because they are <code>final</code> by default).</p>
+</div>
+<div class="paragraph">
+<p>When upgrading to Jackson 3, be sure to check if any of your payloads that get serialized using the <code>Jackson3Serializer</code> (that is using Jackson 3 under the hood) are affected by this change.
+If so, you can either set the Jackson 3 feature <code>ALLOW_FINAL_FIELDS_AS_MUTATORS</code> to <code>true</code>, or adjust your payload representation in code as necessary.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>XML&#8217;s verbosity is typically fine when storing tokens, sagas, or snapshots, but for messages (and specifically events) XML might cost too much due to its serialized size.
