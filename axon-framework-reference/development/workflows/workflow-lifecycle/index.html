@@ -1052,15 +1052,17 @@ if (!reserved) {
 </tr>
 </table>
 </div>
+<!-- vale off -->
 <div class="et-player" data-autoplay>
   <div class="et-src" data-title="ctx.fail() — event store">
-1 cancelled ShipOrderCancelled {"reason": "WorkflowFailedException: Stock unavailable"}
-2 cancelled NotifyCustomerCancelled {"reason": "WorkflowFailedException: Stock unavailable"}
-3 failed OrderFulfillmentWorkflow#ExecuteFailed {"reason": "RuntimeException: Stock unavailable"}
+1 cancelled ShipOrderCancelled {"type": "...WorkflowFailedException", "message": "Stock unavailable"}
+2 cancelled NotifyCustomerCancelled {"type": "...WorkflowFailedException", "message": "Stock unavailable"}
+3 failed OrderFulfillmentWorkflow#ExecuteFailed {"type": "java.lang.RuntimeException", "message": "Stock unavailable"}
   </div>
 </div>
+<!-- vale on -->
 <div class="paragraph">
-<p>Running steps are cancelled first—each CANCELLED event carries the reason as a <code>WorkflowFailedException</code>. Then the workflow itself is terminated with a FAILED event that records the original exception (<code>RuntimeException</code> in this case), not the wrapper.</p>
+<p>Running steps are cancelled first—each CANCELLED event carries the reason as a <code>WorkflowFailedException</code>. Then the workflow itself is terminated with a FAILED event that records the original exception&#8217;s class and message (<code>RuntimeException</code> in this case), not the wrapper.</p>
 </div>
 </div>
 <div class="sect2">
@@ -1093,13 +1095,15 @@ var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
 execution.cancel("Cancelled by user");</code></pre>
 </div>
 </div>
+<!-- vale off -->
 <div class="et-player" data-autoplay>
   <div class="et-src" data-title="execution.cancel() — event store">
-1 cancelled ShipOrderCancelled {"reason": "WorkflowCancelledException: Cancelled by user"}
-2 cancelled NotifyCustomerCancelled {"reason": "WorkflowCancelledException: Cancelled by user"}
-3 cancelled OrderFulfillmentWorkflow#ExecuteCancelled {"reason": "WorkflowCancelledException: Cancelled by user"}
+1 cancelled ShipOrderCancelled {"type": "...WorkflowCancelledException", "message": "Cancelled by user"}
+2 cancelled NotifyCustomerCancelled {"type": "...WorkflowCancelledException", "message": "Cancelled by user"}
+3 cancelled OrderFulfillmentWorkflow#ExecuteCancelled {"type": "...WorkflowCancelledException", "message": "Cancelled by user"}
   </div>
 </div>
+<!-- vale on -->
 <div class="paragraph">
 <p>All running steps are cancelled first, then the workflow itself is terminated with a CANCELLED event (not FAILED).</p>
 </div>

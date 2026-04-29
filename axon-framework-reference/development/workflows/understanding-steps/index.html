@@ -1402,8 +1402,25 @@ if (shipping.failure()) { // blocks until shipping reaches a terminal state
 </td>
 <td class="content">
 <div class="paragraph">
-<p>Any exception thrown during step execution is wrapped in <code>StepFailedException</code>.
-Use <code>getCause()</code> to access the original exception.</p>
+<p>Any exception thrown by a step body is converted to a <code>WorkflowExecutionException</code> at the runtime boundary, then wrapped in <code>StepFailedException</code>.
+The conversion happens immediately—the same <code>WorkflowExecutionException</code> is observed during live execution and after event-sourced replay.</p>
+</div>
+<div class="paragraph">
+<p>Use <code>getCause()</code> on <code>StepFailedException</code> to access the <code>WorkflowExecutionException</code>, which exposes the originating throwable&#8217;s fully qualified class name via <code>type()</code> and its message via <code>getMessage()</code>.
+The original stack trace is written to the application log at the moment of failure but is not stored in the event store, so it is not available after replay.</p>
+</div>
+<div class="paragraph">
+<p>Because the cause is always a <code>WorkflowExecutionException</code>, <code>instanceof</code> checks against the originating exception class never match—neither live nor on replay. Branch on <code>type()</code> instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">} catch (StepFailedException e) {
+    var cause = (WorkflowExecutionException) e.getCause();
+    if (cause.isType(OutOfStockException.class)) {
+        // ...
+    }
+}</code></pre>
+</div>
 </div>
 </td>
 </tr>
@@ -1451,14 +1468,16 @@ ctx.cancelStep("awaitApproval", someException);              // wrap an existing
 <div class="paragraph">
 <p>Both approaches produce a CANCELLED event in the event store:</p>
 </div>
+<!-- vale off -->
 <div class="et-player" data-autoplay>
   <div class="et-src" data-title="Without reason">
 1 cancelled AwaitApprovalCancelled
   </div>
   <div class="et-src" data-title="With reason">
-1 cancelled AwaitApprovalCancelled {"reason": "StepCancellationException: Manager rejected"}
+1 cancelled AwaitApprovalCancelled {"type": "...StepCancellationException", "message": "Manager rejected"}
   </div>
 </div>
+<!-- vale off -->
 <div class="admonitionblock important">
 <table>
 <tr>
