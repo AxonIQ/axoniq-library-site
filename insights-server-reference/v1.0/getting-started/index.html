@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Getting Started</title>
+    <link rel="canonical" href="https://docs.axoniq.io/insights-server-reference/development/getting-started/">
+    <link rel="prev" href="../">
+    <link rel="next" href="../architecture/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../_'</script>
+
+
+<link rel="icon" href="../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../axon-framework-reference/5.1/">Axon Framework</a>
+                <a class="navbar-item" href="../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../axon-server-reference/v2025.2/">Axon Server</a>
+                <a class="navbar-item" href="../../development/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../">Axoniq Insights Reference</a></li>
+    <li><a href="../">Introduction</a></li>
+    <li><a href="./">Getting Started</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Getting%20Started" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Getting%20Started%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BGetting%20Started%5D(https%3A%2F%2Fdocs.axoniq.io%2Finsights-server-reference%2Fv1.0%2Fgetting-started%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">v1.0</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../development/getting-started/">development</a>
+    <a class="version item is-current" href="./">v1.0</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="insights-server-reference" data-version="v1.0">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../">Axoniq Insights</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Introduction</a>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Getting Started</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../architecture/">Axoniq Insights Architecture</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../architecture/access-control/">Access Control</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../configuration/">Configuration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/axoniq-insights/">Axoniq Insights Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/axon-server/">Axon Server Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/axoniq-platform/">Axoniq Platform Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/oauth2/">OAuth2 / OIDC Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/jdbc-configuration/">JDBC Driver Configuration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Getting Started</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page provides a quick introduction to using Axoniq Insights. It covers installation options, licensing, and connecting to Axon Server.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Java 21 or later (for stand-alone installation)</p>
+</li>
+<li>
+<p>Docker and Docker Compose (for Docker installation)</p>
+</li>
+<li>
+<p>An Axon Server cluster (version 2024.1 or later) to connect to</p>
+</li>
+<li>
+<p>An Axoniq Platform account or a local license file</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installation"><a class="anchor" href="#_installation"></a>Installation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axoniq Insights can be deployed either as a Docker container or as a stand-alone Java application.</p>
+</div>
+<div class="sect2">
+<h3 id="_docker"><a class="anchor" href="#_docker"></a>Docker</h3>
+<div class="paragraph">
+<p>The recommended way to run Axoniq Insights is using Docker Compose. This approach bundles Insights with an Axon Server instance and handles networking between the services.</p>
+</div>
+<div class="sect3">
+<h4 id="_running_with_docker_compose"><a class="anchor" href="#_running_with_docker_compose"></a>Running with Docker Compose</h4>
+<div class="paragraph">
+<p>Create a <code>docker-compose.yml</code> file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">services:
+  axonserver:
+    image: docker.axoniq.io/axoniq/axonserver:latest
+    hostname: axonserver-1
+    environment:
+      - AXONIQ_AXONSERVER_NAME=axonserver-1
+      - AXONIQ_AXONSERVER_INTERNAL_HOSTNAME=axonserver-1
+      - AXONIQ_AXONSERVER_HOSTNAME=localhost
+      - AXONIQ_AXONSERVER_STANDALONE=true
+    volumes:
+      - axonserver-data:/axonserver/data
+      - axonserver-events:/axonserver/events
+    ports:
+      - '8024:8024'
+      - '8124:8124'
+
+  insights:
+    image: docker.axoniq.io/axoniq/axoniq-insights:latest
+    hostname: insights-1
+    environment:
+      - insights.axonserver.routing-servers=axonserver-1:8124
+    volumes:
+      - insights-data:/insights/data
+      - ./application.properties:/insights/config/application.properties
+    ports:
+      - '8080:8080'
+
+volumes:
+  axonserver-data:
+  axonserver-events:
+  insights-data:</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Start the services:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">docker compose up -d</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Axoniq Insights UI is available at <a href="http://localhost:8080" class="bare">http://localhost:8080</a> and Axon Server Dashboard at <a href="http://localhost:8024" class="bare">http://localhost:8024</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_running_standalone_axoniq_insights"><a class="anchor" href="#_running_standalone_axoniq_insights"></a>Running standalone Axoniq Insights</h4>
+<div class="paragraph">
+<p>If you already have an Axon Server cluster running, you can run Insights on its own:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">docker run -d \
+  --name insights \
+  -p 8080:8080 \
+  -v insights-data:/insights/data \
+  -v ./application.properties:/insights/config/application.properties \
+  -e insights.axonserver.routing-servers=&lt;axonserver-host&gt;:8124 \
+  docker.axoniq.io/axoniq/axoniq-insights:latest</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_docker_volumes"><a class="anchor" href="#_docker_volumes"></a>Docker volumes</h4>
+<div class="paragraph">
+<p>The Insights container uses two volumes:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Volume</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Purpose</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>/insights/data</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent storage for DuckDB databases, event lake data, and the SQLite configuration database.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>/insights/config</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Configuration directory. Place your <code>application.properties</code> file here.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_stand_alone_application"><a class="anchor" href="#_stand_alone_application"></a>Stand-alone application</h3>
+<div class="paragraph">
+<p>You can run Axoniq Insights directly as a Java application without Docker.</p>
+</div>
+<div class="sect3">
+<h4 id="_download"><a class="anchor" href="#_download"></a>Download</h4>
+<div class="paragraph">
+<p>Download the latest Insights executable JAR from the Axoniq download page or your Axoniq Platform account.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_running_the_application"><a class="anchor" href="#_running_the_application"></a>Running the application</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">java -jar insights.jar</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>By default, Insights stores its data in a <code>data</code> directory relative to the working directory. You can change this using the <code>insights.dbdir</code> property.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_configuration_file"><a class="anchor" href="#_configuration_file"></a>Configuration file</h4>
+<div class="paragraph">
+<p>Create an <code>application.properties</code> file in the same directory as the JAR, or in a <code>config</code> subdirectory:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Axon Server connection
+insights.axonserver.routing-servers=localhost:8124
+
+# Data directory
+insights.dbdir=./data
+
+# Default admin password (change this!)
+insights.authorization.default-password=admin</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Alternatively, you can pass properties as command-line arguments:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">java -jar insights.jar \
+  --insights.axonserver.routing-servers=myserver:8124 \
+  --insights.dbdir=/var/insights/data</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Or use environment variables (replace dots with underscores and use uppercase):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export INSIGHTS_AXONSERVER_ROUTING_SERVERS=myserver:8124
+java -jar insights.jar</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_licensing"><a class="anchor" href="#_licensing"></a>Licensing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axoniq Insights requires a valid license to operate. There are two ways to configure your license.</p>
+</div>
+<div class="sect2">
+<h3 id="_option_1_axoniq_platform_recommended"><a class="anchor" href="#_option_1_axoniq_platform_recommended"></a>Option 1: Axoniq Platform (recommended)</h3>
+<div class="paragraph">
+<p>Connect Insights to <a href="https://platform.axoniq.io">Axoniq Platform</a> to manage your license automatically.
+Axoniq Platform handles license provisioning, renewal, and monitoring of your Insights installation.</p>
+</div>
+<div class="paragraph">
+<p>Add the following to your <code>application.properties</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">insights.platform.url=https://platform.axoniq.io
+insights.platform.authentication=&lt;your-platform-authentication-token&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can obtain the authentication token from your Axoniq Platform account under the Insights section.</p>
+</div>
+<div class="paragraph">
+<p>When connected to Axoniq Platform, Insights periodically validates its license and reports usage metrics. This is the recommended approach as it simplifies license management and provides access to platform features such as centralized monitoring.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_option_2_local_license_file"><a class="anchor" href="#_option_2_local_license_file"></a>Option 2: Local license file</h3>
+<div class="paragraph">
+<p>For environments without internet access or when you prefer offline license management, you can install a license file directly.</p>
+</div>
+<div class="paragraph">
+<p>Place the license file in the Insights data directory and configure the path:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">insights.license.path=/insights/data/insights.license</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When using Docker, mount the license file into the container:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">docker run -d \
+  --name insights \
+  -p 8080:8080 \
+  -v ./insights.license:/insights/data/insights.license \
+  -v insights-data:/insights/data \
+  docker.axoniq.io/axoniq/axoniq-insights:latest</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Or in Docker Compose:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">services:
+  insights:
+    image: docker.axoniq.io/axoniq/axoniq-insights:latest
+    volumes:
+      - ./insights.license:/insights/data/insights.license
+      - insights-data:/insights/data</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Contact Axoniq at <a href="mailto:sales@axoniq.io">sales@axoniq.io</a> to obtain a license file.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_connecting_to_axon_server"><a class="anchor" href="#_connecting_to_axon_server"></a>Connecting to Axon Server</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axoniq Insights connects to one or more Axon Server nodes to stream events into its analytics engine. Configure the connection in your <code>application.properties</code>.</p>
+</div>
+<div class="sect2">
+<h3 id="_single_node"><a class="anchor" href="#_single_node"></a>Single node</h3>
+<div class="paragraph">
+<p>For a single Axon Server instance:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">insights.axonserver.routing-servers=axonserver-host:8124</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Port <code>8124</code> is the default Axon Server gRPC port used for client communication.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cluster"><a class="anchor" href="#_cluster"></a>Cluster</h3>
+<div class="paragraph">
+<p>To connect to an Axon Server cluster, provide a comma-separated list of routing servers. Insights uses these as initial contact points and discovers the full cluster topology automatically.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">insights.axonserver.routing-servers=axonserver-1:8124,axonserver-2:8124,axonserver-3:8124</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Listing multiple nodes ensures Insights can connect even if one node is temporarily unavailable.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authentication"><a class="anchor" href="#_authentication"></a>Authentication</h3>
+<div class="paragraph">
+<p>If your Axon Server requires an access control token, configure it using:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">insights.axonserver.token=&lt;your-axonserver-token&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_auto_subscribing_to_contexts"><a class="anchor" href="#_auto_subscribing_to_contexts"></a>Auto-subscribing to contexts</h3>
+<div class="paragraph">
+<p>By default, Insights requires you to manually register which Axon Server contexts to monitor. To automatically subscribe to all available contexts:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">insights.axonserver.auto-subscribe=true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When auto-subscribe is enabled, Insights discovers all contexts on the connected Axon Server cluster and begins streaming events from each one. New contexts are picked up automatically.</p>
+</div>
+<div class="paragraph">
+<p>When auto-subscribe is disabled (the default), use the Insights UI or REST API to add contexts individually. This gives you fine-grained control over which contexts are monitored.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_verifying_the_connection"><a class="anchor" href="#_verifying_the_connection"></a>Verifying the connection</h3>
+<div class="paragraph">
+<p>After starting Insights, open the UI at <a href="http://localhost:8080" class="bare">http://localhost:8080</a>. Navigate to the Contexts page to verify that your Axon Server contexts are visible and events are being streamed.</p>
+</div>
+<div class="paragraph">
+<p>You can also check the application logs for connection status:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">Connected to Axon Server at axonserver-1:8124</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps"><a class="anchor" href="#_next_steps"></a>Next steps</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="../configuration/" class="xref page">Configuration Reference</a> : Full list of configuration options</p>
+</li>
+<li>
+<p><a href="../architecture/" class="xref page">Architecture</a> : How Insights works under the hood</p>
+</li>
+<li>
+<p><a href="../configuration/oauth2/" class="xref page">OAuth2 / OIDC</a> : Set up single sign-on with Google or Keycloak</p>
+</li>
+<li>
+<p><a href="../configuration/jdbc-configuration/" class="xref page">JDBC Configuration</a> : Connect BI tools via the PostgreSQL wire protocol</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../">Introduction</a></span>
+  <span class="next"><a href="../architecture/">Axoniq Insights Architecture</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
