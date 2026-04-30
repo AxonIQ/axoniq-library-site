@@ -29,9 +29,10 @@ cloneOrPullMaster "extension-reactor" "https://github.com/AxonFramework/extensio
 cloneOrPullMaster "extension-spring-aot" "https://github.com/AxonFramework/extension-spring-aot.git" "axon-spring-aot-4.11.x"
 cloneOrPullMaster "extension-springcloud" "https://github.com/AxonFramework/extension-springcloud.git" "axon-springcloud-4.11.x"
 cloneOrPullMaster "extension-tracing" "https://github.com/AxonFramework/extension-tracing.git" "axon-tracing-4.11.x"
-cloneOrPullMaster "axon-server" "https://github.com/AxonIQ/axon-server.git" "axonserver-ee-2024.1.x"
+cloneOrPullMaster "axon-server" "https://github.com/AxonIQ/axon-server.git" "master"
 cloneOrPullMaster "axon-server-image-build" "https://github.com/AxonIQ/axon-server-image-build.git" "main"
 cloneOrPullMaster "axoniq-platform" "https://github.com/AxonIQ/axoniq-platform.git" "main"
 cloneOrPullMaster "axoniq-playbook" "https://github.com/AxonIQ/axoniq-playbook.git" "main"
+cloneOrPullMaster "insights-server" "https://github.com/AxonIQ/insights-server.git" "main"
 
 echo "You should be up-to-date now!"
