@@ -400,9 +400,6 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../features/development-agent/">Development Agent</a>
   </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../features/sharing-projects/">Shared Projects</a>
-  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -419,6 +416,9 @@
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../../billing/">Billing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../authentication/">Authentication</a>
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
@@ -535,7 +535,7 @@ When you go to "Axon Server" page in your Axoniq Platform, you will see a button
 <h2 id="_exposed_operations"><a class="anchor" href="#_exposed_operations"></a>Exposed operations</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The following operations are exposed by the Axoniq Platform client:</p>
+<p>The following operations are exposed by Axoniq Platform for Axon Server clients:</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -555,11 +555,19 @@ When you go to "Axon Server" page in your Axoniq Platform, you will see a button
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>settings</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Updates client configuration settings, such as health report and heartbeat interval.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returns client configuration settings to Axon Server, including the heartbeat interval, heartbeat timeout, and the interval at which <code>status</code> reports must be sent.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>license</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Updates the license in Axon Server.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returns the current license for the cluster. Axon Server polls this route to keep its license up to date.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>register-node</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Registers an Axon Server node with the platform when it joins the cluster, and returns the cluster configuration the node should use.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>status</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Receives the periodic health and status report from Axon Server. The payload of this route is the data described in the next section.</p></td>
 </tr>
 </tbody>
 </table>
@@ -570,7 +578,7 @@ When you go to "Axon Server" page in your Axoniq Platform, you will see a button
 <div class="sectionbody">
 <div class="paragraph">
 <p>We will never send content of your event store, or sensitive information of any kind, to Axoniq Platform.
-What we will send is:</p>
+The <code>status</code> route receives:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -579,7 +587,7 @@ What we will send is:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>RAFT replication status</p>
+<p>Raft consensus replication status</p>
 </li>
 <li>
 <p>Disk usage</p>
@@ -594,7 +602,10 @@ What we will send is:</p>
 </div>
 </li>
 <li>
-<p>Clients connected</p>
+<p>Clients connected, including the command and query streams they hold</p>
+</li>
+<li>
+<p>Optional throughput-limiting state, if rate limiting is active on the cluster</p>
 </li>
 </ul>
 </div>

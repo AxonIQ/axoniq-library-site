@@ -401,9 +401,6 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../features/development-agent/">Development Agent</a>
   </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../features/sharing-projects/">Shared Projects</a>
-  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -420,6 +417,9 @@
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../../billing/">Billing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../authentication/">Authentication</a>
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
@@ -472,7 +472,7 @@ The client is open-source and can be found on <a href="https://github.com/AxonIQ
 <div class="sectionbody">
 <div class="paragraph">
 <p>The Axon Framework connector has been designed with privacy concerns in mind.
-It only collects aggregated metrics and names of components, but never the message payload unless specifically enabled by the user (DLQ).</p>
+It only collects aggregated metrics and names of components, but never the message payload unless specifically enabled by the user for the dead-letter queue (DLQ).</p>
 </div>
 <div class="paragraph">
 <p>All data is sent over a secure SSL connection using the RSocket protocol and stored for a maximum of 30 calendar days.
@@ -497,7 +497,7 @@ If your organization has a firewall, you need to allow this connection.</p>
 <h2 id="_bi_directional_communication"><a class="anchor" href="#_bi_directional_communication"></a>Bi-directional communication</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>RSocket provides bi-directional communication between the client and the server.
+<p>RSocket provides bidirectional communication between the client and the server.
 During the setup phase, a payload is sent to the server to authenticate the client.
 If this fails, the connection is closed before any data is accepted.</p>
 </div>
@@ -522,19 +522,14 @@ the server can send commands to the client without user intervention. For more i
 <h2 id="installation"><a class="anchor" href="#installation"></a>Installation</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The installation of the Axon Framework connector depends on whether you are using Spring Boot or not,
-as well as whether you run Axon Framework 4 or Axon Framework 5.</p>
-</div>
-<div class="paragraph">
-<p>Axoniq Platform will guide you through the installation process via an installation wizard.
-This wizard can be accessed from the Home or Applications page.
-Axoniq Platform will lead you through the installation.</p>
+<p>The installation of the Axon Framework connector depends on your framework version and setup.
+Axoniq Platform will guide you through the installation process in the Resource Center, and fills in the configuration for you automatically. You can find the Resource Center in the bottom left of the user interface after logging in.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="../../_images/installation-popup-configuration.png" alt="installation popup configuration" width="100%">
+<img src="../../_images/resource-center-installation-client.png" alt="resource center installation client" width="100%">
 </div>
-<div class="title">Figure 2. Installation popup</div>
+<div class="title">Figure 2. Resource Center with installation guides</div>
 </div>
 <div class="paragraph">
 <p>You can access this wizard in various parts of the user interface:</p>
@@ -565,7 +560,9 @@ Axoniq Platform will lead you through the installation.</p>
 <h2 id="_step_1_dependency"><a class="anchor" href="#_step_1_dependency"></a>Step 1: Dependency</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>You will need to add a dependency to your project.</p>
+<p>You will need to add a dependency to your project.
+Pick the tab that matches your setup.
+The Axoniq Framework (AF 5) tabs use the new <code>io.axoniq.platform</code> client. The AF 4 tabs use the legacy <code>io.axoniq.console</code> client.</p>
 </div>
 <div id="_tabs_1" class="openblock tabs is-loading">
 <div class="content">
@@ -577,9 +574,90 @@ Axoniq Platform will lead you through the installation.</p>
 <li id="_tabs_1_non_spring_boot" class="tab">
 <p>Non-Spring Boot</p>
 </li>
+<li id="_tabs_1_spring_boot_af_4" class="tab">
+<p>Spring Boot (AF 4)</p>
+</li>
+<li id="_tabs_1_non_spring_boot_af_4" class="tab">
+<p>Non-Spring Boot (AF 4)</p>
+</li>
 </ul>
 </div>
 <div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div class="paragraph">
+<p>Add the Axoniq Framework BOM, the Axoniq Framework Spring Boot starter, and the Axoniq Platform client starter.
+The starter auto-configures the framework and connects to Axon Server on <code>localhost:8124</code> by default.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+            &lt;artifactId&gt;axoniq-framework-bom&lt;/artifactId&gt;
+            &lt;version&gt;5.0.0&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+        &lt;artifactId&gt;axoniq-spring-boot-starter&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;io.axoniq.platform&lt;/groupId&gt;
+        &lt;artifactId&gt;axoniq-platform-spring-boot-starter&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_non_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_non_spring_boot">
+<div class="paragraph">
+<p>For plain Java projects, pull in the Axon Framework event-sourcing and modelling modules, the Axon Server connector, and the Axoniq Platform client.
+Versions are managed by the BOM.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+            &lt;artifactId&gt;axoniq-framework-bom&lt;/artifactId&gt;
+            &lt;version&gt;5.0.0&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
+        &lt;artifactId&gt;axon-eventsourcing&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
+        &lt;artifactId&gt;axon-modelling&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+        &lt;artifactId&gt;axon-server-connector&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;io.axoniq.platform&lt;/groupId&gt;
+        &lt;artifactId&gt;axoniq-platform-framework-client&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_spring_boot_af_4--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot_af_4">
+<div class="paragraph">
+<p>For applications still on Axon Framework 4, use the legacy console client starter.</p>
+</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
@@ -590,7 +668,10 @@ Axoniq Platform will lead you through the installation.</p>
 </div>
 </div>
 </div>
-<div id="_tabs_1_non_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_non_spring_boot">
+<div id="_tabs_1_non_spring_boot_af_4--panel" class="tabpanel" aria-labelledby="_tabs_1_non_spring_boot_af_4">
+<div class="paragraph">
+<p>For Axon Framework 4 in a non-Spring Boot setup, use the plain console client.</p>
+</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
@@ -609,7 +690,7 @@ Axoniq Platform will lead you through the installation.</p>
 <h2 id="_step_2_configure"><a class="anchor" href="#_step_2_configure"></a>Step 2: Configure</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>After adding the dependency, we need to configure the connector.</p>
+<p>After adding the dependency, configure the connector with the environment ID and access token from Axoniq Platform.</p>
 </div>
 <div id="_tabs_2" class="openblock tabs is-loading">
 <div class="content">
@@ -621,13 +702,54 @@ Axoniq Platform will lead you through the installation.</p>
 <li id="_tabs_2_non_spring_boot" class="tab">
 <p>Non-Spring Boot</p>
 </li>
+<li id="_tabs_2_spring_boot_af_4" class="tab">
+<p>Spring Boot (AF 4)</p>
+</li>
+<li id="_tabs_2_non_spring_boot_af_4" class="tab">
+<p>Non-Spring Boot (AF 4)</p>
+</li>
 </ul>
 </div>
 <div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
 <div class="paragraph">
-<p>The installation for Spring Boot is simple.
-Put the properties the UI indicates in your <code>application.properties</code> or <code>application.yml</code> file.
-This will look like the following:</p>
+<p>Set the connection properties in your <code>application.properties</code> (or <code>application.yml</code>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.application.name=my-axoniq-app
+
+axoniq.platform.credentials=ENVIRONMENT_ID:ACCESS_TOKEN</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_non_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_non_spring_boot">
+<div class="paragraph">
+<p>Register an <code>AxoniqPlatformConfiguration</code> on the <code>EventSourcingConfigurer</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.platform.framework.AxoniqPlatformConfiguration;
+import org.axonframework.config.EventSourcingConfigurer;
+
+AxoniqPlatformConfiguration platformConfig = new AxoniqPlatformConfiguration(
+        "ENVIRONMENT_ID",
+        "ACCESS_TOKEN",
+        "my-application"
+);
+
+EventSourcingConfigurer configurer = EventSourcingConfigurer.create()
+    .componentRegistry(cr -&gt; cr.registerComponent(
+        AxoniqPlatformConfiguration.class,
+        c -&gt; platformConfig
+    ));
+
+configurer.buildConfiguration().start();</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_spring_boot_af_4--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot_af_4">
+<div class="paragraph">
+<p>For Axon Framework 4 applications, set the legacy console properties in your <code>application.properties</code> or <code>application.yml</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -637,10 +759,9 @@ axoniq.console.dlq-mode=FULL</code></pre>
 </div>
 </div>
 </div>
-<div id="_tabs_2_non_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_non_spring_boot">
+<div id="_tabs_2_non_spring_boot_af_4--panel" class="tabpanel" aria-labelledby="_tabs_2_non_spring_boot_af_4">
 <div class="paragraph">
-<p>Without Spring Boot we need to configure the connector manually.
-For this, we configure the <code>Configurer</code> of Axon Framework:</p>
+<p>For Axon Framework 4 applications, configure the legacy console module on your <code>Configurer</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -666,23 +787,11 @@ For this, we configure the <code>Configurer</code> of Axon Framework:</p>
 <h2 id="_access_tokens"><a class="anchor" href="#_access_tokens"></a>Access tokens</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>As you can see in the configuration, you need to provide an environment ID and an access token.
-This will be automatically generated for you when you set up the environment in Axoniq Platform.</p>
+<p>As you can see in the configuration, you need to provide an access token. You can find these in your workspace/environment settings, or in the installation guide on Axoniq Platform.</p>
 </div>
 <div class="paragraph">
-<p>If you wish, you can generate more access tokens on the applications page of Axoniq Platform. You can find the section to do this on the right-hand side of the screen.
-At any time, you can retract these tokens.
+<p>You can, at any time, retract these tokens.
 Retracting a token will immediately disconnect all clients that use this token.</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="../../_images/access-tokens-framework.png" alt="access tokens framework" width="100%">
-</div>
-<div class="title">Figure 3. Access token management</div>
-</div>
-<div class="paragraph">
-<p>There are no dangerous or sensitive operations the clients can perform,
-so there&#8217;s no need to have only one application per token, or to rotate them out of precaution. Of course, you are still free to do this.</p>
 </div>
 </div>
 </div>

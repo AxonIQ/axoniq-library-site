@@ -402,9 +402,6 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../features/development-agent/">Development Agent</a>
   </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../features/sharing-projects/">Shared Projects</a>
-  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -421,6 +418,9 @@
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../../billing/">Billing</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../authentication/">Authentication</a>
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
@@ -495,11 +495,11 @@ There are several actions that can be executed:</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Pause an event processor (if not paused yet)</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>processor-split-segment</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>processor-command-split-segment</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Tells the processor to split a segment in two, parallelizing the processing of the segment.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>processor-merge-segment</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>processor-command-merge-segment</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Tells the processor to merge two segments into one, reducing the parallelization of the processing.</p></td>
 </tr>
 <tr>
@@ -518,11 +518,15 @@ There are several actions that can be executed:</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>event-processor-status</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Get the status of the event processor. Used by the server during actions to refresh data more often than once every 5 seconds.</p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>event-processor-segments</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Returns the full list of segments owned by a processor. Used by the platform when more detailed segment information is required than what is included in the periodic processor report.</p></td>
+</tr>
 </tbody>
 </table>
 <div class="paragraph">
 <p>Some actions in this list may be called automatically by Axoniq Platform if configured to do so by the user.
-For example, if <a href="../../features/management/#_automatic_balancing_and_scaling" class="xref page">automatic scaling of segments</a> is enabled, the <code>processor-split-segment</code> and <code>processor-merge-segment</code> actions will be called by the console itself when needed to control the number of segments.</p>
+For example, if <a href="../../features/management/#_automatic_balancing_and_scaling" class="xref page">automatic scaling of segments</a> is enabled, the <code>processor-command-split-segment</code> and <code>processor-command-merge-segment</code> actions will be called by the console itself when needed to control the number of segments.</p>
 </div>
 </div>
 </div>
@@ -550,10 +554,6 @@ There are several operations that can be done:</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Queries the dead letters for a processing group, paginated. Will only return sensitive data if configured to do so. See below for configuration.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dlq-query-dead-letter-sequence-size</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Queries the size of the dead letter sequence for a processing group. Not in use.</p></td>
-</tr>
-<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>dlq-command-delete-sequence</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Deletes a sequence of dead letters for a processing group.</p></td>
 </tr>
@@ -576,7 +576,7 @@ There are several operations that can be done:</p>
 </tbody>
 </table>
 <div class="paragraph">
-<p>During the configuration of the client via the web interface, you will be able to choose various modes for the DLQ data shown.
+<p>During the configuration of the client via the web interface, you will be able to choose various modes for the dead-letter queue (DLQ) data shown.
 The modes are:</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -590,19 +590,19 @@ The modes are:</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Description</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">NONE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NONE</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">No data is shown at all, except the number of dead letters.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">MASKED</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MASKED</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Message payloads and diagnostic data won&#8217;t be shown. The aggregate identifier will be hashed. The event type and the optional exception will be shown as-is.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">LIMITED</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LIMITED</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Message payloads won&#8217;t be shown. The aggregate identifier will be shown as-is. From the diagnostics only the keys set in the axoniq.console.dlq-diagnostics-whitelist will be shown.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">FULL</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>FULL</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">All the message payloads, aggregate identifier, and the diagnostics data will be visible.</p></td>
 </tr>
 </tbody>
@@ -632,31 +632,27 @@ The modes are:</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>client-heartbeat</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Simple call to check if the application is still alive.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bidirectional liveness check. Both the client and the platform expose this route so either side can ping the other.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>client-settings</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Updates the settings of the client, such as the update interval. Not in use.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Settings exchange route used by Axon Framework versions below 1.7.0. The client can pull its settings from the platform, and the platform can push updated settings to the client over the same route. Settings include the heartbeat interval, heartbeat timeout, and the report intervals for handler and processor metrics.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>client-settings-v2</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Updates the settings of the client, such as the update interval. Not in use.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same as <code>client-settings</code>, but for Axon Framework 1.7.0 and higher. Adds the application metric report interval to the v1 payload.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>client-status</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pushed from Axoniq Platform to the client when its operational status changes. Used to enable or disable reporting from the client, for example when the workspace exceeds its application limit or its credit allowance.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>client-log</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Sends a log message to the client, for example, when exceeding the limit of applications that can be connected to the platform.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>client-reporting-stop</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Tells the client to stop sending data to the platform. Called when the number of clients has been exceeded for a long time.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>client-reporting-start</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Tells the client to start sending data to the platform again. Called when the number of clients has been reduced.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Pushed from Axoniq Platform to the client to write a log message into the client application&#8217;s logger. Used to surface platform-side notifications (such as exceeded application limits) directly in the application&#8217;s own logs.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>client-thread-dump</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Requests a thread dump from the client.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Requests a thread dump from a specific instance of the client application. Used by the diagnostics view in Axoniq Platform.</p></td>
 </tr>
 </tbody>
 </table>
