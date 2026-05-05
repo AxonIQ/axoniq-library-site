@@ -192,6 +192,10 @@ const latestDefinitions = [
         baseFolder: "tracing-extension-reference",
         latestVersion: "4.12"
     },
+    {
+        baseFolder: "axon-server-query-language-guide",
+        latestVersion: "v2026.0"
+    },
 ]
 const app = express()
 app.use(express.static('build/site'))
