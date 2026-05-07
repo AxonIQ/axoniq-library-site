@@ -4,8 +4,9 @@
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Axon Framework 5.0 to Axoniq Framework Migration</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.1/advanced-migration/paths/5.0-to-5.1/">
     <link rel="prev" href="../../../migration/paths/sequencing-policies/">
-    <link rel="next" href="../../../messaging-concepts/">
+    <link rel="next" href="../../../data-protection-migration/migration-path/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
@@ -366,7 +367,7 @@
   <button class="version-menu-toggle" title="Show other versions of page">development</button>
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">development</a>
-    <a class="version item is-missing" href="../../../../5.1/">5.1</a>
+    <a class="version item" href="../../../../5.1/advanced-migration/paths/5.0-to-5.1/">5.1</a>
     <a class="version item is-missing" href="../../../../5.0/">5.0</a>
     <a class="version item is-missing" href="../../../../4.13/">4.13</a>
     <a class="version item is-missing" href="../../../../4.12/">4.12</a>
@@ -465,6 +466,9 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../../messaging-concepts/">Messaging Concepts</a>
 <ul class="nav-list">
@@ -479,6 +483,9 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../messaging-concepts/exception-handling/">Exception Handling</a>
@@ -932,9 +939,9 @@ Smaller organizations may be eligible for complimentary access to these componen
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework:axoniq-distributed-messaging</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server Testcontainer</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework:axon-test</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework:axoniq-testcontainer</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server Testcontainer (split from <code>axon-test</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework:axon-test</code> (<code>AxonTestFixture</code> remains here)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework:axoniq-testcontainer</code> (<code>AxonServerContainer</code> moves here)</p></td>
 </tr>
 </tbody>
 </table>
@@ -982,40 +989,10 @@ The Axoniq Framework BOM includes all Axon Framework BOM dependencies, so you do
 </div>
 </div>
 <div id="_tabs_1_gradle--panel" class="tabpanel" aria-labelledby="_tabs_1_gradle">
-<div class="paragraph">
-<p>For usage with <strong>Gradle Version 4.x</strong> and below, apply the dependency-management-plugin like so:</p>
-</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">buildscript {
-  repositories {
-    jcenter()
-  }
-  dependencies {
-    classpath "io.spring.gradle:dependency-management-plugin:0.5.1.RELEASE"
-  }
-}
-
-apply plugin: "io.spring.dependency-management"</code></pre>
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">implementation(platform("io.axoniq.framework:axoniq-framework-bom:&lt;VERSION&gt;"))</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>After this, import the Axon BOM:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">dependencyManagement {
-  imports {
-    mavenBom 'io.axoniq.framework:axoniq-framework-bom:&lt;VERSION&gt;'
-  }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Beginning with <strong><a href="https://docs.gradle.org/5.0/userguide/managing_transitive_dependencies.html#sec:bom_import">Gradle version 5.0</a></strong>, you can also omit the dependency-management plugin and instead use the <code>platform</code> dependency DSL to import maven BOMs:</p>
-</div>
-<div class="paragraph">
-<p><code>implementation(platform("io.axoniq.framework:axoniq-framework-bom:&lt;VERSION&gt;"))</code></p>
 </div>
 </div>
 </div>
@@ -1314,7 +1291,8 @@ Consult the table below on details about what moved where:</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p><code>AxonServerContainer</code> has moved from <code>axon-test</code> to a dedicated <code>axoniq-testcontainer</code> module.
-To continue using it, replace the dependency and update the import:</p>
+To continue using it, add the new dependency and update the import.
+Be sure to keep the <code>org.axonframework:axon-test</code> dependency if you want to continue using the <code>AxonTestFixture</code>.</p>
 </div>
 <div id="_tabs_6" class="openblock tabs is-loading">
 <div class="content">
@@ -1331,14 +1309,7 @@ To continue using it, replace the dependency and update the import:</p>
 <div id="_tabs_6_maven--panel" class="tabpanel" aria-labelledby="_tabs_6_maven">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!-- Remove (or reduce to test scope only if you use other axon-test features) --&gt;
-&lt;dependency&gt;
-    &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
-    &lt;artifactId&gt;axon-test&lt;/artifactId&gt;
-    &lt;scope&gt;test&lt;/scope&gt;
-&lt;/dependency&gt;
-
-&lt;!-- Add --&gt;
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!-- Add --&gt;
 &lt;dependency&gt;
     &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
     &lt;artifactId&gt;axoniq-testcontainer&lt;/artifactId&gt;
@@ -1350,10 +1321,7 @@ To continue using it, replace the dependency and update the import:</p>
 <div id="_tabs_6_gradle--panel" class="tabpanel" aria-labelledby="_tabs_6_gradle">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">// Remove (or reduce scope if you use other axon-test features)
-testImplementation 'org.axonframework:axon-test'
-
-// Add
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">// Add
 testImplementation 'io.axoniq.framework:axoniq-testcontainer'</code></pre>
 </div>
 </div>
@@ -1389,7 +1357,7 @@ testImplementation 'io.axoniq.framework:axoniq-testcontainer'</code></pre>
 </div>
         <nav class="pagination">
   <span class="prev"><a href="../../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a></span>
-  <span class="next"><a href="../../../messaging-concepts/">Messaging Concepts</a></span>
+  <span class="next"><a href="../../../data-protection-migration/migration-path/">Data Protection module migration</a></span>
 </nav>
     </article>
   </div>

@@ -466,6 +466,9 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
 <ul class="nav-list">
@@ -480,6 +483,9 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
@@ -1242,13 +1248,20 @@ Since Event Processors are dedicated to event handling, the <code>MessageHandler
 Differently put, an <a href="../../messaging-concepts/message-intercepting/#event-handler-interceptors" class="xref page">EventHandlerInterceptor</a> can be registered to Event Processors.</p>
 </div>
 <div class="paragraph">
-<p>There are two approaches to registering interceptors with your event handling processes.
-Firstly, you can define default handling interceptors that will be attached to all Event Processors in your application.
-This can be achieved through the <code>MessagingConfigurer</code> and is explained in more detail <a href="../../messaging-concepts/message-intercepting/#event-handler-interceptors" class="xref page">here</a>.</p>
+<p>There are several approaches to registering interceptors, each with a different scope.</p>
 </div>
+<div class="sect3">
+<h4 id="_default_interceptors_for_all_processors"><a class="anchor" href="#_default_interceptors_for_all_processors"></a>Default interceptors for all processors</h4>
 <div class="paragraph">
-<p>Secondly, handler interceptor can be registered per specific Event Processor instance.
-For this you should use the <code>withInterceptr(MessageHandlerInterceptor&lt;? super EventMessage&gt;)</code> operation as part of customizing a processor based on its name as shown:</p>
+<p>Default handling interceptors can be attached to all Event Processors in your application through the <code>MessagingConfigurer</code>.
+This is explained in more detail <a href="../../messaging-concepts/message-intercepting/#event-handler-interceptors" class="xref page">here</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_interceptors_for_a_specific_processor_instance"><a class="anchor" href="#_interceptors_for_a_specific_processor_instance"></a>Interceptors for a specific processor instance</h4>
+<div class="paragraph">
+<p>Interceptors can be registered for a specific Event Processor instance by name.
+Use the <code>withInterceptor(MessageHandlerInterceptor&lt;? super EventMessage&gt;)</code> operation as part of customizing a processor:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1261,12 +1274,140 @@ public class AxonConfig {
         configurer.eventProcessing()
                   .subscribing()
                   .customize("my-processor", config -&gt; config.withInterceptor(new CustomEventHandlerInterceptor()));
-        // For PooledStreamEventProcessor:
+        // For PooledStreamingEventProcessor:
         configurer.eventProcessing()
                   .pooledStreaming()
                   .customize("my-processor", config -&gt; config.withInterceptor(new CustomEventHandlerInterceptor()));
     }
 }</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_interceptors_for_specific_event_handling_components"><a class="anchor" href="#_interceptors_for_specific_event_handling_components"></a>Interceptors for specific event handling components</h4>
+<div class="paragraph">
+<p>Interceptors can be registered as part of the event handling component configuration itself, using <code>intercepted()</code> on the <code>EventHandlingComponentsConfigurer</code>.
+Calling <code>intercepted()</code> closes the component registration phase, so all components must be registered before calling it.
+Multiple <code>intercepted()</code> calls accumulate interceptors in registration order:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
+
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.subscribing(
+                this::configureSubscribingProcessor
+        ));
+    }
+
+    private SubscribingEventProcessorsConfigurer configureSubscribingProcessor(
+            SubscribingEventProcessorsConfigurer subscribingConfigurer
+    ) {
+        return subscribingConfigurer.processor(
+                "my-processor",
+                config -&gt; config.eventHandlingComponents(this::configureHandlingComponents)
+                                .notCustomized()
+        );
+    }
+
+    private EventHandlingComponentsConfigurer.CompletePhase configureHandlingComponents(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected("orderHandler", cfg -&gt; new OrderEventHandler())
+                                  .autodetected("inventoryHandler", cfg -&gt; new InventoryEventHandler())
+                                  .intercepted(cfg -&gt; new AuditLoggingInterceptor())
+                                  .intercepted(cfg -&gt; new TenantFilterInterceptor(tenantId));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Component registration ends when the first <code>.intercepted(&#8230;&#8203;)</code> is called.
+Additional interceptors can still be added with further <code>.intercepted(&#8230;&#8203;)</code> calls and are applied in registration order.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_annotated_interceptors_on_the_handler_class"><a class="anchor" href="#_annotated_interceptors_on_the_handler_class"></a>Annotated interceptors on the handler class</h4>
+<div class="paragraph">
+<p>Methods on the handler class itself can be annotated with <code>@EventHandlerInterceptor</code>.
+These methods are automatically discovered and run before every <code>@EventHandler</code> method on the same component instance, making them ideal for cross-cutting concerns that share the component&#8217;s state (such as tenant filtering or component-level auditing).</p>
+</div>
+<div class="paragraph">
+<p>Two styles are supported:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A <strong>before-interceptor</strong> is a <code>void</code> method with no <code>MessageHandlerInterceptorChain</code> parameter.
+It runs before the handler, and the chain automatically proceeds when the method returns normally.
+If the method throws, the handler is not invoked.</p>
+</li>
+<li>
+<p>A <strong>surround-interceptor</strong> declares a <code>MessageHandlerInterceptorChain</code> parameter and returns a <code>MessageStream</code>.
+It controls whether the handler is invoked by calling <code>chain.proceed(event, ctx)</code>.
+Returning without calling <code>proceed</code> short-circuits the chain.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+
+// Before-interceptor: runs before every @EventHandler on this component
+public class AuditingEventHandler {
+
+    private final AuditLog auditLog;
+
+    @EventHandlerInterceptor
+    void audit(EventMessage event) {
+        auditLog.record(event.qualifiedName());
+        // chain proceeds automatically after this returns
+    }
+
+    @EventHandler
+    void on(OrderPlaced event) { ... }
+
+    @EventHandler
+    void on(OrderCancelled event) { ... }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+
+// Surround-interceptor: short-circuit events intended for other tenants
+public class TenantScopedEventHandler {
+
+    private final TenantId tenantId;
+
+    @EventHandlerInterceptor
+    MessageStream&lt;?&gt; filterByTenant(
+            EventMessage event,
+            MessageHandlerInterceptorChain&lt;EventMessage&gt; chain,
+            ProcessingContext ctx
+    ) {
+        if (!tenantId.equals(event.metaData().get("tenantId"))) {
+            return MessageStream.empty(); // skip: not our tenant
+        }
+        return chain.proceed(event, ctx);
+    }
+
+    @EventHandler
+    void on(OrderPlaced event) { ... }
+}</code></pre>
+</div>
 </div>
 </div>
 </div>

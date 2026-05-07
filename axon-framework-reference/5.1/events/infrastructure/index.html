@@ -458,6 +458,12 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
   </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-migration/migration-path/">Data Protection Module Migration</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -525,7 +531,7 @@
     <a class="nav-link" href="../event-processors/streaming/">Streaming Event Processor</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../../dead-letter-queue/">Dead-Letter Queue</a>
+    <a class="nav-link" href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
   </li>
 </ul>
   </li>
@@ -581,7 +587,7 @@
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="../../data-protection/">Data Protection</a>
+    <a class="nav-link" href="../../data-protection/"><span class="advanced-framework">Data Protection</span></a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../data-protection/installation/">Installation</a>
@@ -608,10 +614,10 @@
     <a class="nav-link" href="../../tuning/">Tuning</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../snapshotting/">Snapshots</a>
+    <a class="nav-link" href="../../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../../caching/">Caching</a>
+    <a class="nav-link" href="../../caching/"><span class="advanced-framework">Caching</span></a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
@@ -669,7 +675,7 @@
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
-    <span class="nav-text">Axoniq Framework</span>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../advanced-release-notes/major-releases/">Major Releases</a>
@@ -681,7 +687,7 @@
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
-    <span class="nav-text">Axoniq Data Protection</span>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../data-protection-release-notes/major-releases/">Major Releases</a>
@@ -839,6 +845,10 @@ Recommended for production use.</p>
 <p><strong><code>AggregateBasedAxonServerEventStorageEngine</code></strong> - Uses Axon Server&#8217;s aggregate-oriented APIs.
 Compatible with Axon Server versions that do not support DCB.
 Events are organized by aggregate identifier and sequence number.</p>
+</li>
+<li>
+<p><strong><code>PostgresqlEventStorageEngine</code></strong> - Stores events directly in a PostgreSQL 16+ database with full DCB support.
+Use this engine when running without Axon Server.</p>
 </li>
 <li>
 <p><strong><code>AggregateBasedJpaEventStorageEngine</code></strong> - Stores events in a JPA-compatible database.
@@ -1007,6 +1017,115 @@ public class AxonConfig {
 </div>
 </div>
 </div>
+<div class="sect3 axoniq-feature">
+<h4 id="_postgresqleventstorageengine"><a class="anchor" href="#_postgresqleventstorageengine"></a><code>PostgresqlEventStorageEngine</code></h4>
+<div class="paragraph">
+<p>The <code>PostgresqlEventStorageEngine</code> stores events directly in a PostgreSQL 16+ database, fully supporting Dynamic Consistency Boundaries where events may have several tags.
+This is the default storage engine when running without Axon Server.</p>
+</div>
+<div class="paragraph">
+<p>The engine creates its schema automatically on startup—an <code>events</code> table, a <code>tags</code> table for DCB tag data, a <code>consistency_tags</code> table for concurrent-write safety, and an <code>events_monotonic_seq</code> sequence—so no manual DDL is required.</p>
+</div>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_3_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
+<div class="paragraph">
+<p>Declare dependencies:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--somewhere in the POM file--&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+    &lt;artifactId&gt;axoniq-postgresql&lt;/artifactId&gt;
+    &lt;version&gt;${axoniq.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>PostgresqlEventStorageEngine</code> registers itself automatically once a <code>DataSource</code> is present in the component registry.
+To register an explicit engine—for example when overriding defaults—use <code>EventSourcingConfigurer</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.postgresql.PostgresqlEventStorageEngine;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+
+import javax.sql.DataSource;
+
+public class AxonConfig {
+
+    public void configureStorageEngine(EventSourcingConfigurer configurer) {
+        configurer.registerEventStorageEngine(config -&gt; new PostgresqlEventStorageEngine(
+                config.getComponent(DataSource.class),
+                config.getComponent(EventConverter.class)
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
+<div class="paragraph">
+<p>Declare dependencies:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--somewhere in the POM file--&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+    &lt;artifactId&gt;axoniq-postgresql&lt;/artifactId&gt;
+    &lt;version&gt;${axoniq.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Configure your PostgreSQL data source using standard Spring Boot properties:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.datasource.url=jdbc:postgresql://localhost/mydb
+spring.datasource.username=user
+spring.datasource.password=password</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>PostgresqlEventStorageEngine</code> registers itself automatically once a <code>DataSource</code> bean is present.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Axon Server takes precedence</div>
+<div class="paragraph">
+<p>When both <code>axoniq-postgresql</code> and <code>axon-server-connector</code> are on the classpath, the Axon Server engine takes precedence.
+To use PostgreSQL instead, either remove <code>axon-server-connector</code> from your dependencies or register <code>PostgresqlEventStorageEngine</code> explicitly as shown above.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>For schema details, connection pool sizing, and multi-instance coordination, see <a href="../../tuning/rdbms-tuning/#postgresql_operations" class="xref page">PostgreSQL operations</a>.</p>
+</div>
+</div>
 <div class="sect3">
 <h4 id="aggregatebasedjpaeventstorageengine"><a class="anchor" href="#aggregatebasedjpaeventstorageengine"></a><code>AggregateBasedJpaEventStorageEngine</code></h4>
 <div class="paragraph">
@@ -1131,19 +1250,19 @@ public class MyEntityManagerProvider implements EntityManagerProvider {
 <div class="paragraph">
 <p>With your persistence details in place, you are able to configure the <code>AggregateBasedJpaEventStorageEngine</code> as the <code>EventStorageEngine</code> of your Axon application:</p>
 </div>
-<div id="_tabs_3" class="openblock tabs is-loading">
+<div id="_tabs_4" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
 <ul>
-<li id="_tabs_3_configuration_api" class="tab">
+<li id="_tabs_4_configuration_api" class="tab">
 <p>Configuration API</p>
 </li>
-<li id="_tabs_3_spring_boot" class="tab">
+<li id="_tabs_4_spring_boot" class="tab">
 <p>Spring Boot</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
+<div id="_tabs_4_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_4_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.jpa.EntityManagerProvider;
@@ -1174,7 +1293,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
+<div id="_tabs_4_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_4_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.jpa.EntityManagerProvider;
@@ -1236,19 +1355,19 @@ Failure to do so might result in `OutOfMemoryException`s when loading large stre
 While it probably outperforms any other event store out there, it is not really meant for long-term production use.
 However, it is useful in short-lived tools or tests that require an event store.</p>
 </div>
-<div id="_tabs_4" class="openblock tabs is-loading">
+<div id="_tabs_5" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
 <ul>
-<li id="_tabs_4_configuration_api" class="tab">
+<li id="_tabs_5_configuration_api" class="tab">
 <p>Configuration API</p>
 </li>
-<li id="_tabs_4_spring_boot" class="tab">
+<li id="_tabs_5_spring_boot" class="tab">
 <p>Spring Boot</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_4_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_4_configuration_api">
+<div id="_tabs_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_5_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -1263,7 +1382,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div id="_tabs_4_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_4_spring_boot">
+<div id="_tabs_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_5_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -1407,7 +1526,7 @@ When it comes to Axon Server, we could, for example, use a distinct shared/globa
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../../dead-letter-queue/">Dead-Letter Queue</a></span>
+  <span class="prev"><a href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a></span>
   <span class="next"><a href="../event-store-internals/">Event Store Internals</a></span>
 </nav>
     </article>

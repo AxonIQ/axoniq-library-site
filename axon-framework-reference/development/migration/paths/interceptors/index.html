@@ -467,6 +467,9 @@
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="../../../messaging-concepts/">Messaging Concepts</a>
 <ul class="nav-list">
@@ -481,6 +484,9 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../messaging-concepts/exception-handling/">Exception Handling</a>
@@ -1416,7 +1422,109 @@ public class SecondInterceptor implements MessageHandlerInterceptor&lt;CommandMe
 <h2 id="_annotation_based_interceptors"><a class="anchor" href="#_annotation_based_interceptors"></a>Annotation-based interceptors</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Although the <code>@MessageHandlerInterceptor</code> annotation is present in Axon Framework 5, using it to declare interceptor methods directly within handler classes is not yet supported. This feature will be fully functional in <strong>Axon Framework 5.2.0</strong>.</p>
+<p>Axon Framework 5 supports declaring interceptor methods directly on handling components using dedicated annotations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>@CommandHandlerInterceptor</code>: intercepts command handlers on the same component</p>
+</li>
+<li>
+<p><code>@QueryHandlerInterceptor</code>: intercepts query handlers on the same component</p>
+</li>
+<li>
+<p><code>@EventHandlerInterceptor</code>: intercepts event handlers on the same component</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Two styles are available:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Before-interceptor</strong>: a <code>void</code> method without a <code>MessageHandlerInterceptorChain</code> parameter.
+The framework runs the method before the handler and automatically proceeds the chain when it returns normally.</p>
+</li>
+<li>
+<p><strong>Surround-interceptor</strong>: a method that returns <code>MessageStream&lt;?&gt;</code> and declares a <code>MessageHandlerInterceptorChain</code> parameter.
+The method controls whether and when to call <code>chain.proceed(message, context)</code>.</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_5" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_5_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_5_axon_framework_5" class="tab">
+<p>Axon Framework 5</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_5_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_5_axon_framework_4">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class OrderCommandHandler {
+
+    @CommandHandlerInterceptor
+    public void intercept(CommandMessage&lt;?&gt; command, InterceptorChain interceptorChain) throws Exception {
+        if (!isAuthorized(command)) {
+            throw new AccessDeniedException("Not authorized");
+        }
+        interceptorChain.proceed();
+    }
+
+    @CommandHandler
+    public void handle(PlaceOrderCommand command) {
+        // Handle the command
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_5_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_5_axon_framework_5">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+
+public class OrderCommandHandler {
+
+    // Surround-interceptor: full control over the chain
+    @CommandHandlerInterceptor
+    MessageStream&lt;?&gt; authorize(
+            CommandMessage command,
+            MessageHandlerInterceptorChain&lt;CommandMessage&gt; chain,
+            ProcessingContext context
+    ) {
+        if (!isAuthorized(command)) {
+            return MessageStream.failed(new AccessDeniedException("Not authorized"));
+        }
+        return chain.proceed(command, context);
+    }
+
+    // Before-interceptor: runs before the handler, chain proceeds automatically
+    @CommandHandlerInterceptor
+    void log(CommandMessage command) {
+        logger.info("Handling command: {}", command.qualifiedName());
+    }
+
+    @CommandHandler
+    void handle(PlaceOrderCommand command, ProcessingContext context) {
+        // Handle the command
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>For full documentation and examples for all three message types, see <a href="../../../messaging-concepts/component-message-intercepting/" class="xref page">Component Message Intercepting</a>.</p>
 </div>
 </div>
 </div>
