@@ -1366,7 +1366,7 @@ When an <code>OrderPlaced</code> event is published, both workflows start in par
 <div class="listingblock">
 <div class="title">OrderFulfillmentWorkflow—handles stock and shipping</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEvent = "OrderPlaced")
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEventClass = OrderPlacedEvent.class)
 public void execute(SimpleWorkflowContext ctx) {
     ctx.awaitExecute("reserveStock", Boolean.class,
                       InventoryService::reserveStock);
@@ -1378,7 +1378,7 @@ public void execute(SimpleWorkflowContext ctx) {
 <div class="listingblock">
 <div class="title">CustomerNotificationWorkflow—handles all customer communication</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "customerId", startOnEvent = "OrderPlaced")
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "customerId", startOnEventClass = OrderPlacedEvent.class)
 public void execute(SimpleWorkflowContext ctx) {
     ctx.awaitExecute("sendConfirmationEmail",
             payload("email", ctx.workflowPayload().get("email"),
