@@ -494,6 +494,9 @@
     <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
   </li>
 </ul>
@@ -1403,6 +1406,27 @@ public class AxonConfig {
 <p>Component registration ends when the first <code>.intercepted(&#8230;&#8203;)</code> is called.
 Additional interceptors can still be added with further <code>.intercepted(&#8230;&#8203;)</code> calls and are applied in registration order.</p>
 </div>
+<div class="paragraph">
+<p>Use <code>withExceptionHandler()</code> to handle exceptions thrown by event handlers in all components managed by the configurer.
+Return <code>MessageStream.empty()</code> to suppress the exception and allow event processing to continue.
+Return <code>MessageStream.failed(error)</code> (with the same or a different exception) to propagate the error to the event processor:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+
+private EventHandlingComponentsConfigurer.CompletePhase configureHandlingComponents(
+        EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+) {
+    return componentConfigurer.autodetected("orderHandler", cfg -&gt; new OrderEventHandler())
+                              .withExceptionHandler((event, context, error) -&gt; {
+                                  log.warn("Handler failed for {}: {}", event.qualifiedName(), error.getMessage());
+                                  return MessageStream.empty(); // suppress; use MessageStream.failed(error) to propagate
+                              });
+}</code></pre>
+</div>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_annotated_interceptors_on_the_handler_class"><a class="anchor" href="#_annotated_interceptors_on_the_handler_class"></a>Annotated interceptors on the handler class</h4>
@@ -1480,6 +1504,40 @@ public class TenantScopedEventHandler {
 
     @EventHandler
     void on(OrderPlaced event) { ... }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>@ExceptionHandler</code> methods handle exceptions thrown by <code>@EventHandler</code> methods on the same component.
+When an event handler throws, the framework looks for a matching <code>@ExceptionHandler</code> on the same component before propagating the error.
+If the method returns normally, the exception is suppressed and event processing continues; if the method throws (or re-throws), the exception propagates.</p>
+</div>
+<div class="paragraph">
+<p>Use the <code>resultType</code> attribute to narrow the handler to a specific exception type.
+Without it, the method is eligible for any exception that matches its declared parameter type (or any exception if there are no parameters).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.core.interception.annotation.ExceptionHandler;
+
+public class MyEventHandler {
+
+    @EventHandler
+    void on(OrderPlaced event) {
+        // may throw
+    }
+
+    @ExceptionHandler
+    void onException(RuntimeException ex) {
+        log.error("Handler failed: {}", ex.getMessage());
+        // return normally to suppress the exception and continue processing
+    }
+
+    @ExceptionHandler(resultType = OptimisticLockingFailureException.class)
+    void onConcurrencyFailure(OptimisticLockingFailureException ex) {
+        // handle a specific exception type; other exceptions are not affected
+    }
 }</code></pre>
 </div>
 </div>

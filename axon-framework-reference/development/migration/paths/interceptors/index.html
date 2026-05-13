@@ -495,6 +495,9 @@
     <a class="nav-link" href="../../../messaging-concepts/exception-handling/">Exception Handling</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../messaging-concepts/processing-context/">Processing Context</a>
   </li>
 </ul>
@@ -1528,6 +1531,62 @@ public class OrderCommandHandler {
 </div>
 <div class="paragraph">
 <p>For full documentation and examples for all three message types, see <a href="../../../messaging-concepts/component-message-intercepting/" class="xref page">Component Message Intercepting</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_migration_of_exceptionhandler"><a class="anchor" href="#_migration_of_exceptionhandler"></a>Migration of <code>@ExceptionHandler</code></h3>
+<div class="paragraph">
+<p>The <code>@ExceptionHandler</code> annotation works in Axon Framework 5 with the same intent as in Axon Framework 4: handling exceptions thrown from message handler methods in the same class.
+The <code>payloadType</code> attribute has been removed. Narrowing is now done solely by exception type via <code>resultType</code>, and optionally by message type (command, event, or query) via <code>messageType</code>.</p>
+</div>
+<div id="_tabs_6" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_6_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_6_axon_framework_5" class="tab">
+<p>Axon Framework 5</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_6_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_6_axon_framework_4">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class OrderCommandHandler {
+
+    @ExceptionHandler(resultType = IllegalStateException.class)
+    public void handleIllegalState(IllegalStateException exception, CommandMessage&lt;?&gt; message) {
+        // Handle exception for all commands
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_6_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_6_axon_framework_5">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class OrderCommandHandler {
+
+    @ExceptionHandler(resultType = IllegalStateException.class)
+    public void handleIllegalState(IllegalStateException exception) {
+        // Handle exception for all commands on this component
+    }
+
+    // Narrow to a specific exception type
+    @ExceptionHandler(resultType = ValidationException.class)
+    public void handleValidation(ValidationException exception) {
+        // Only handles ValidationException (and its subtypes)
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>For full documentation on <code>@ExceptionHandler</code>, see <a href="../../../messaging-concepts/component-message-intercepting/#ExceptionHandler" class="xref page">Component Message Intercepting - @ExceptionHandler</a>.</p>
+</div>
 </div>
 </div>
 </div>
