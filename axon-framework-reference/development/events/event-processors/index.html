@@ -1091,6 +1091,77 @@ Furthermore, embracing an ordering approach might lead to place <em>all</em> eve
 </div>
 </div>
 <div class="sect1">
+<h2 id="lifecycle"><a class="anchor" href="#lifecycle"></a>Processor lifecycle</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every <code>EventProcessor</code> exposes a common set of lifecycle methods to start, stop, and inspect state.
+These methods are available on all processor implementations, including the <a href="subscribing/" class="xref page">Subscribing</a> and <a href="streaming/" class="xref page">Streaming</a> Event Processor.</p>
+</div>
+<div class="sect2">
+<h3 id="_starting_and_stopping"><a class="anchor" href="#_starting_and_stopping"></a>Starting and stopping</h3>
+<div class="paragraph">
+<p><code>start()</code> and <code>shutdown()</code> both return a <code>CompletableFuture&lt;Void&gt;</code> that completes when the operation has fully finished.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In most scenarios, you do not need to invoke <code>start()</code> or <code>shutdown()</code> manually.
+Axon Framework manages the processor lifecycle automatically as part of application startup and shutdown.
+Only call these methods directly when you need explicit control, for example when triggering a programmatic replay or conditionally pausing processing.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_checking_state"><a class="anchor" href="#_checking_state"></a>Checking state</h3>
+<div class="paragraph">
+<p>Two synchronous methods allow you to inspect the current state of a processor at any point:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>isRunning()</code>: returns <code>true</code> when the processor is active and processing events.
+Returns <code>false</code> after a clean <code>shutdown()</code> or before <code>start()</code> has been called.</p>
+</li>
+<li>
+<p><code>isError()</code>: returns <code>true</code> when the processor has gone into error mode due to an unhandled exception.
+Returns <code>false</code> after a clean <code>shutdown()</code>.
+See <a href="streaming/#error-mode" class="xref page">Error mode</a> for more on how the Streaming Event Processor handles errors.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+
+public class ProcessorStateChecker {
+
+    private final AxonConfiguration configuration;
+
+    public ProcessorStateChecker(AxonConfiguration configuration) {
+        this.configuration = configuration;
+    }
+
+    public void printState(String processorName) {
+        EventProcessor processor = configuration.getComponent(EventProcessor.class, processorName);
+        System.out.println("Running: " + processor.isRunning());
+        System.out.println("Error:   " + processor.isError());
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="error-handling"><a class="anchor" href="#error-handling"></a>Error handling</h2>
 <div class="sectionbody">
 <div class="paragraph">

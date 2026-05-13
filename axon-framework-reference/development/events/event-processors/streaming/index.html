@@ -1301,6 +1301,74 @@ public class EventProcessorConfig {
 </div>
 </div>
 <div class="sect1">
+<h2 id="lifecycle"><a class="anchor" href="#lifecycle"></a>Processor lifecycle</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>PooledStreamingEventProcessor</code> follows the common <a href="../#lifecycle" class="xref page">Event Processor lifecycle</a> contract, with one important addition: <code>start()</code> performs initialization work before event processing can begin.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In most scenarios, you do not need to invoke <code>start()</code> manually.
+Axon Framework invokes <code>start()</code> automatically as part of its lifecycle management when the application starts up.
+Only invoke <code>start()</code> directly when you need explicit control over the startup sequence.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_what_start_does"><a class="anchor" href="#_what_start_does"></a>What start() does</h3>
+<div class="paragraph">
+<p>When <code>start()</code> is called, the processor performs the following steps in sequence before its returned <code>CompletableFuture&lt;Void&gt;</code> completes:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Resolves the <a href="#token_store">token store</a> identifier from the configured <code>TokenStore</code>.</p>
+</li>
+<li>
+<p>Starts the internal <code>Coordinator</code>, which opens the event stream and begins claiming segments.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Because <code>start()</code> is fully asynchronous, callers should await the returned future before interacting with any processor state that depends on a running processor:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+
+public class ProcessorService {
+
+    private final AxonConfiguration configuration;
+
+    public ProcessorService(AxonConfiguration configuration) {
+        this.configuration = configuration;
+    }
+
+    public void startAndQueryIdentifier(String processorName) {
+        StreamingEventProcessor processor =
+                configuration.getComponent(StreamingEventProcessor.class, processorName);
+        processor.start()
+                 .thenRun(() -&gt; {
+                     String identifier = processor.getTokenStoreIdentifier();
+                     System.out.println("Token store identifier: " + identifier);
+                 });
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="error_mode"><a class="anchor" href="#error_mode"></a>Error mode</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -1955,7 +2023,7 @@ public class AxonConfig {
 <div class="paragraph">
 <p>Implementations of <code>TokenStore</code> might share state in the underlying storage.
 To ensure correct operation, a token store has a unique identifier that uniquely identifies the storage location of the tokens in that store.
-This identifier can be queried with the <code>retrieveStorageIdentifier</code> method of your event processor.</p>
+This identifier is resolved eagerly during <code>start()</code>, but if queried before the processor has started, it is resolved lazily with a blocking call to the <code>TokenStore</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
