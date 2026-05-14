@@ -55,7 +55,7 @@ const rewriteMappings = {
     "/appendices/message-handler-tuning": "/message-handler-customization-guide/latest",
     "/appendices/meta-annotations": "/meta-annotations-guide/latest",
     "/appendices/identifier-generation": "/identifier-generation-guide/latest",
-    "/appendices/query-reference": "/axon-server-query-language-guide",
+    "/appendices/query-reference": "/axon-server-query-language-guide/latest",
     "/axoniq-console-reference": "/axoniq-platform-reference"
 }
 
@@ -191,6 +191,10 @@ const latestDefinitions = [
     {
         baseFolder: "tracing-extension-reference",
         latestVersion: "4.12"
+    },
+    {
+        baseFolder: "axon-server-query-language-guide",
+        latestVersion: "v2026.0"
     },
 ]
 const app = express()
