@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Configuration</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-server-proxy-reference/1.0/configuration/">
+    <link rel="prev" href="../installation/">
+    <link rel="next" href="../running/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../_'</script>
+
+
+<link rel="icon" href="../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../axon-framework-reference/5.1/">Axon Framework</a>
+                <a class="navbar-item" href="../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../">Axon Server Proxy Reference</a></li>
+    <li><a href="./">Configuration</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Configuration" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Configuration%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BConfiguration%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-server-proxy-reference%2Fmain%2Fconfiguration%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">main</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-current" href="./">main</a>
+    <a class="version item" href="../../1.0/configuration/">1.0</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-server-proxy-reference" data-version="main">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../">Axon Server Proxy</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../">Axon Server Proxy Reference Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation/">Installation</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="./">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../running/">Running the Proxy</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../monitoring/">Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting/">Troubleshooting</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Configuration</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page describes all configuration options available for Axon Server Proxy.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration_file"><a class="anchor" href="#_configuration_file"></a>Configuration file</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Configuration is provided via a <code>proxy.properties</code> file placed in the working directory. Alternatively, any property can be set via environment variables (see <a href="#environment-variables">Environment variables</a>). Environment variables take precedence over values in <code>proxy.properties</code>.</p>
+</div>
+<div class="paragraph">
+<p>There are no command-line property overrides. Configuration comes exclusively from <code>proxy.properties</code> or environment variables.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_required_configuration"><a class="anchor" href="#_required_configuration"></a>Required configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>These configuration options must be specified for the proxy to function.</p>
+</div>
+<div class="sect2">
+<h3 id="_axon_server_nodes"><a class="anchor" href="#_axon_server_nodes"></a>Axon Server nodes</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>proxy.servers</code></dt>
+<dd>
+<p>Comma-separated list of Axon Server admin node addresses. Each address can be in the format <code>hostname</code> or <code>hostname:port</code>. If no port is specified, the default port 8124 is used.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Single server
+proxy.servers=axonserver.local
+
+# Single server with custom port
+proxy.servers=axonserver.local:9124
+
+# Multiple servers (HA setup)
+proxy.servers=axonserver1.local:8124,axonserver2.local:8124,axonserver3.local:8124
+
+# Multiple servers with mixed ports
+proxy.servers=axonserver1.local:8124,axonserver2.local,axonserver3.local:9124</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+These should be the <strong>admin nodes</strong> of your Axon Server cluster, not regular nodes.
+</td>
+</tr>
+</table>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_proxy_port"><a class="anchor" href="#_proxy_port"></a>Proxy port</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>proxy.port</code></dt>
+<dd>
+<p>The TCP port on which the proxy listens for incoming gRPC connections from applications.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.port=8124</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Using the same port as Axon Server (8124) makes it easier for applications to switch between direct connection and proxy connection.
+</td>
+</tr>
+</table>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_basic_configuration"><a class="anchor" href="#_basic_configuration"></a>Basic configuration</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_message_size_limits"><a class="anchor" href="#_message_size_limits"></a>Message size limits</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>proxy.maxMessageSize</code></dt>
+<dd>
+<p>Maximum message size that the proxy will accept and forward. Supports standard size formats (for example, <code>10MB</code>, <code>512KB</code>, <code>1GB</code>). If not specified or set to <code>0</code>, the gRPC default is used (no limit).</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Accept messages up to 10 megabytes
+proxy.maxMessageSize=10MB
+
+# Accept messages up to 512 kilobytes
+proxy.maxMessageSize=512KB</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+This value cannot exceed 2 GB due to gRPC limitations.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Ensure this value is aligned with your Axon Server configuration and application requirements.
+</td>
+</tr>
+</table>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_disconnect_timeout"><a class="anchor" href="#_disconnect_timeout"></a>Disconnect timeout</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>proxy.disconnectTimeout</code></dt>
+<dd>
+<p>Number of seconds to wait for graceful shutdown of channels when closing connections. Specified as a plain integer. Default is <code>10</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Default timeout
+proxy.disconnectTimeout=10
+
+# Longer timeout for graceful shutdown
+proxy.disconnectTimeout=30</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After this timeout, channels are forcibly closed if they haven&#8217;t terminated gracefully.</p>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tls_configuration"><a class="anchor" href="#_tls_configuration"></a>TLS configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The proxy supports TLS in two independently configurable contexts:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Client-facing TLS</strong>: Secure connections from applications to the proxy</p>
+</li>
+<li>
+<p><strong>Backend TLS</strong>: Secure connections from the proxy to Axon Server</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+TLS support exists so the proxy can operate in environments that require it, not as a primary reason to introduce the proxy. If your applications already connect directly to Axon Server with TLS, the proxy does not simplify that. The main benefit is when the two sides have <strong>different</strong> requirements. For example, applications in an external network requiring TLS, while the proxy and Axon Server share a trusted internal network where TLS is unnecessary.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_client_facing_tls_incoming"><a class="anchor" href="#_client_facing_tls_incoming"></a>Client-facing TLS (incoming)</h3>
+<div class="paragraph">
+<p>Configure TLS for connections from applications to the proxy.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>proxy.tlsEnabled</code></dt>
+<dd>
+<p>Enable TLS for incoming connections. Default is <code>false</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.tlsEnabled=true</code></pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1"><code>proxy.tlsKey</code></dt>
+<dd>
+<p>Path to the private key file for TLS. Required when <code>proxy.tlsEnabled=true</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.tlsKey=/etc/axon-proxy/tls/server-key.pem</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The file should be in PEM format.</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>proxy.tlsCert</code></dt>
+<dd>
+<p>Path to the certificate chain file for TLS. Required when <code>proxy.tlsEnabled=true</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.tlsCert=/etc/axon-proxy/tls/server-cert.pem</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The file should contain the certificate and any intermediate CA certificates in PEM format.</p>
+</div>
+</dd>
+</dl>
+</div>
+<div class="sect3">
+<h4 id="_complete_client_tls_example"><a class="anchor" href="#_complete_client_tls_example"></a>Complete client TLS example</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.tlsEnabled=true
+proxy.tlsKey=/etc/axon-proxy/tls/server-key.pem
+proxy.tlsCert=/etc/axon-proxy/tls/server-cert.pem</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_backend_tls_outgoing"><a class="anchor" href="#_backend_tls_outgoing"></a>Backend TLS (outgoing)</h3>
+<div class="paragraph">
+<p>Configure TLS for connections from the proxy to Axon Server.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>proxy.internalTlsEnabled</code></dt>
+<dd>
+<p>Enable TLS for connections to Axon Server backend nodes. Default is <code>false</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.internalTlsEnabled=true</code></pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1"><code>proxy.internalTrustCerts</code></dt>
+<dd>
+<p>Path to the file containing trusted CA certificates for backend connections. Required when <code>proxy.internalTlsEnabled=true</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.internalTrustCerts=/etc/axon-proxy/tls/ca-cert.pem</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The file should contain one or more CA certificates in PEM format.</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>proxy.trustManagerVerification</code></dt>
+<dd>
+<p>Controls the level of certificate verification for backend connections. Valid values:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>CERTIFICATE_AND_HOST_NAME_VERIFICATION</code> (default): Full verification including hostname</p>
+</li>
+<li>
+<p><code>CERTIFICATE_ONLY_VERIFICATION</code>: Verify certificate validity but skip hostname check</p>
+</li>
+<li>
+<p><code>INSECURELY_SKIP_ALL_VERIFICATION</code>: Skip all verification (not recommended for production)</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Default - full verification
+proxy.trustManagerVerification=CERTIFICATE_AND_HOST_NAME_VERIFICATION
+
+# Certificate only
+proxy.trustManagerVerification=CERTIFICATE_ONLY_VERIFICATION
+
+# Skip verification (development only!)
+proxy.trustManagerVerification=INSECURELY_SKIP_ALL_VERIFICATION</code></pre>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Using <code>INSECURELY_SKIP_ALL_VERIFICATION</code> disables all certificate validation and should only be used in development environments.
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="sect3">
+<h4 id="_complete_backend_tls_example"><a class="anchor" href="#_complete_backend_tls_example"></a>Complete backend TLS example</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.internalTlsEnabled=true
+proxy.internalTrustCerts=/etc/axon-proxy/tls/ca-cert.pem
+proxy.trustManagerVerification=CERTIFICATE_AND_HOST_NAME_VERIFICATION</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_monitoring_endpoint_configuration"><a class="anchor" href="#_monitoring_endpoint_configuration"></a>Monitoring endpoint configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The proxy includes an HTTP monitoring endpoint that exposes health, metrics, and connection endpoints.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>proxy.monitoring.enabled</code></dt>
+<dd>
+<p>Enable or disable the monitoring endpoint entirely. Default is <code>true</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.monitoring.enabled=false</code></pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1"><code>proxy.monitoring.port</code></dt>
+<dd>
+<p>The port on which the monitoring HTTP endpoint listens. Default is <code>8080</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.monitoring.port=9090</code></pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1"><code>proxy.monitoring.host</code></dt>
+<dd>
+<p>The bind address for the monitoring HTTP endpoint. Default is <code>0.0.0.0</code> (all interfaces). Set to <code>127.0.0.1</code> to restrict access to the loopback interface only.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Restrict to localhost only
+proxy.monitoring.host=127.0.0.1</code></pre>
+</div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>See <a href="../monitoring/" class="xref page">Monitoring</a> for details on the available monitoring endpoints.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="logging-configuration"><a class="anchor" href="#logging-configuration"></a>Logging configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The proxy uses SLF4J with Logback for logging. Log levels and appenders are configured via a <code>logback.xml</code> file, not via <code>proxy.properties</code>.</p>
+</div>
+<div class="paragraph">
+<p>The default configuration writes colorized, timestamped output to the console.</p>
+</div>
+<div class="paragraph">
+<p>To override the logging configuration:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Place a <code>logback.xml</code> file in the working directory (it will be detected automatically at startup), or</p>
+</li>
+<li>
+<p>Pass the path explicitly as a JVM system property:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">java -Dlogback.configurationFile=/etc/axon-proxy/logback.xml -jar axon-server-proxy.jar</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Example <code>logback.xml</code> with file output and rolling policy:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;configuration&gt;
+  &lt;appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender"&gt;
+    &lt;file&gt;/var/log/axon-proxy/proxy.log&lt;/file&gt;
+    &lt;rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy"&gt;
+      &lt;fileNamePattern&gt;/var/log/axon-proxy/proxy-%d{yyyy-MM-dd}.%i.log&lt;/fileNamePattern&gt;
+      &lt;maxFileSize&gt;100MB&lt;/maxFileSize&gt;
+      &lt;maxHistory&gt;10&lt;/maxHistory&gt;
+      &lt;totalSizeCap&gt;1GB&lt;/totalSizeCap&gt;
+    &lt;/rollingPolicy&gt;
+    &lt;encoder&gt;
+      &lt;pattern&gt;%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n&lt;/pattern&gt;
+    &lt;/encoder&gt;
+  &lt;/appender&gt;
+
+  &lt;root level="INFO"&gt;
+    &lt;appender-ref ref="FILE"/&gt;
+  &lt;/root&gt;
+
+  &lt;logger name="io.axoniq.proxy" level="INFO"/&gt;
+&lt;/configuration&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_complete_configuration_examples"><a class="anchor" href="#_complete_configuration_examples"></a>Complete configuration examples</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_minimal_configuration"><a class="anchor" href="#_minimal_configuration"></a>Minimal configuration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.servers=axonserver.local:8124
+proxy.port=8124</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_production_configuration_no_tls"><a class="anchor" href="#_production_configuration_no_tls"></a>Production configuration (no TLS)</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Server configuration
+proxy.servers=axonserver1:8124,axonserver2:8124,axonserver3:8124
+proxy.port=8124
+
+# Message size limit
+proxy.maxMessageSize=10MB
+
+# Disconnect timeout (seconds)
+proxy.disconnectTimeout=30
+
+# Monitoring endpoint
+proxy.monitoring.port=8080
+proxy.monitoring.host=127.0.0.1</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_production_configuration_full_tls"><a class="anchor" href="#_production_configuration_full_tls"></a>Production configuration (full TLS)</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Server configuration
+proxy.servers=axonserver1:8124,axonserver2:8124,axonserver3:8124
+proxy.port=8124
+
+# Message configuration
+proxy.maxMessageSize=10MB
+proxy.disconnectTimeout=30
+
+# Client-facing TLS
+proxy.tlsEnabled=true
+proxy.tlsKey=/etc/axon-proxy/tls/server-key.pem
+proxy.tlsCert=/etc/axon-proxy/tls/server-cert.pem
+
+# Backend TLS
+proxy.internalTlsEnabled=true
+proxy.internalTrustCerts=/etc/axon-proxy/tls/ca-cert.pem
+proxy.trustManagerVerification=CERTIFICATE_AND_HOST_NAME_VERIFICATION
+
+# Monitoring endpoint
+proxy.monitoring.port=8080
+proxy.monitoring.host=127.0.0.1</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_development_configuration"><a class="anchor" href="#_development_configuration"></a>Development configuration</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Server configuration
+proxy.servers=localhost:8124
+proxy.port=8125
+
+# Monitoring endpoint on default port
+proxy.monitoring.port=8080</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="environment-variables"><a class="anchor" href="#environment-variables"></a>Environment variables</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All configuration properties can also be set via environment variables. Environment variables take precedence over values in <code>proxy.properties</code>.</p>
+</div>
+<div class="paragraph">
+<p>The naming rule is: replace dots with underscores, insert an underscore before each uppercase letter in camelCase names, and uppercase the entire result.</p>
+</div>
+<div class="paragraph">
+<p>For example: <code>proxy.tlsEnabled</code> becomes <code>PROXY_TLS_ENABLED</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">Environment variable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.servers</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_SERVERS</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.port</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_PORT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.maxMessageSize</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_MAX_MESSAGE_SIZE</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.disconnectTimeout</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_DISCONNECT_TIMEOUT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.tlsEnabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_TLS_ENABLED</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.tlsKey</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_TLS_KEY</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.tlsCert</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_TLS_CERT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.internalTlsEnabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_INTERNAL_TLS_ENABLED</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.internalTrustCerts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_INTERNAL_TRUST_CERTS</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.trustManagerVerification</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_TRUST_MANAGER_VERIFICATION</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.monitoring.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_MANAGEMENT_ENABLED</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.monitoring.port</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_MANAGEMENT_PORT</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.monitoring.host</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_MANAGEMENT_HOST</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export PROXY_SERVERS=axonserver1:8124,axonserver2:8124
+export PROXY_PORT=8124
+export PROXY_TLS_ENABLED=true</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration_validation"><a class="anchor" href="#_configuration_validation"></a>Configuration validation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The proxy validates configuration on startup and will fail to start if:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>proxy.servers</code> is not specified or empty</p>
+</li>
+<li>
+<p><code>proxy.port</code> is not specified</p>
+</li>
+<li>
+<p><code>proxy.tlsEnabled=true</code> but <code>proxy.tlsKey</code> or <code>proxy.tlsCert</code> is missing</p>
+</li>
+<li>
+<p><code>proxy.internalTlsEnabled=true</code> but <code>proxy.internalTrustCerts</code> is missing</p>
+</li>
+<li>
+<p><code>proxy.maxMessageSize</code> exceeds 2 GB</p>
+</li>
+<li>
+<p><code>proxy.disconnectTimeout</code> is negative</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps"><a class="anchor" href="#_next_steps"></a>Next steps</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="../running/" class="xref page">Run the proxy</a></p>
+</li>
+<li>
+<p><a href="../monitoring/" class="xref page">Set up monitoring</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../installation/">Installation</a></span>
+  <span class="next"><a href="../running/">Running the Proxy</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

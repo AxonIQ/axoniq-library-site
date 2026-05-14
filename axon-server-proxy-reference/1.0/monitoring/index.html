@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Monitoring</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-server-proxy-reference/1.0/monitoring/">
+    <link rel="prev" href="../running/">
+    <link rel="next" href="../troubleshooting/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../_'</script>
+
+
+<link rel="icon" href="../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../axon-framework-reference/5.1/">Axon Framework</a>
+                <a class="navbar-item" href="../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../">Axon Server Proxy Reference</a></li>
+    <li><a href="./">Monitoring</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Monitoring" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Monitoring%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BMonitoring%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-server-proxy-reference%2F1.0%2Fmonitoring%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.0</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../main/monitoring/">main</a>
+    <a class="version item is-current" href="./">1.0</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-server-proxy-reference" data-version="1.0">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../">Axon Server Proxy</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../">Axon Server Proxy Reference Guide</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../running/">Running the Proxy</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="./">Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../troubleshooting/">Troubleshooting</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Monitoring</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page describes the monitoring and observability features of Axon Server Proxy.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_health_checks"><a class="anchor" href="#_health_checks"></a>Health checks</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="health-checks"><a class="anchor" href="#health-checks"></a>Health endpoint</h3>
+<div class="paragraph">
+<p>The health endpoint provides a full overview of the proxy&#8217;s status, including a component breakdown.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl http://localhost:8080/health</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Response (HTTP 200 when all components are up, HTTP 503 if any component is down):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
+  "components": {
+    "proxyServer": {"status": "UP"},
+    "channelFactory": {"status": "UP"}
+  },
+  "status": "UP"
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_liveness_probe"><a class="anchor" href="#_liveness_probe"></a>Liveness probe</h3>
+<div class="paragraph">
+<p>For Kubernetes and container orchestration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl http://localhost:8080/health/liveness</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Returns:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>200 OK</code> with <code>{"status":"UP"}</code> whenever the process is responding</p>
+</li>
+<li>
+<p>This endpoint is always <code>200</code> as long as the process is alive</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_readiness_probe"><a class="anchor" href="#_readiness_probe"></a>Readiness probe</h3>
+<div class="paragraph">
+<p>Check if the proxy is ready to accept traffic:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl http://localhost:8080/health/readiness</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Returns:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>200 OK</code> with <code>{"status":"UP"}</code> if ready</p>
+</li>
+<li>
+<p><code>503 Service Unavailable</code> if not ready</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="metrics"><a class="anchor" href="#metrics"></a>Metrics</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The proxy exposes metrics through Micrometer, available in Prometheus format.</p>
+</div>
+<div class="sect2">
+<h3 id="_prometheus_metrics"><a class="anchor" href="#_prometheus_metrics"></a>Prometheus metrics</h3>
+<div class="paragraph">
+<p>Scrape metrics in Prometheus text format:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl http://localhost:8080/prometheus</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This returns metrics in Prometheus format:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-prometheus hljs" data-lang="prometheus"># HELP jvm_memory_used_bytes The amount of used memory
+# TYPE jvm_memory_used_bytes gauge
+jvm_memory_used_bytes{area="heap",id="G1 Eden Space",} 1.2345678E7
+...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_proxy_specific_metrics"><a class="anchor" href="#_proxy_specific_metrics"></a>Proxy-specific metrics</h3>
+<div class="paragraph">
+<p>The proxy exposes a custom metric for monitoring its operation:</p>
+</div>
+<div class="sect3">
+<h4 id="_active_connections"><a class="anchor" href="#_active_connections"></a>Active connections</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-prometheus hljs" data-lang="prometheus"># Number of active client connections
+axon_proxy_connections 5</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_key_metrics_to_monitor"><a class="anchor" href="#_key_metrics_to_monitor"></a>Key metrics to monitor</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 50%;">
+<col style="width: 16.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Metric</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>jvm.memory.used</code> / <code>jvm_memory_used_bytes</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JVM memory usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gauge</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>jvm.threads.live</code> / <code>jvm_threads_live_threads</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Number of live threads</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gauge</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>system.cpu.usage</code> / <code>system_cpu_usage</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System CPU usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gauge</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>process.cpu.usage</code> / <code>process_cpu_usage</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Process CPU usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gauge</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>jvm.gc.pause</code> / <code>jvm_gc_pause_seconds</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GC pause duration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Timer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon_proxy_connections</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Active client connections</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gauge</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_connections_endpoint"><a class="anchor" href="#_connections_endpoint"></a>Connections endpoint</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The proxy provides an endpoint to view active connections.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl http://localhost:8080/connections</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Response:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">[
+  {
+    "connectionId": "550e8400-e29b-41d4-a716-446655440000",
+    "clientId": "my-application",
+    "componentName": "MyCommandHandler",
+    "context": "default",
+    "backend": "axonserver1:8124"
+  },
+  {
+    "connectionId": "661f9511-f30c-52e5-b827-557766551111",
+    "clientId": "another-app",
+    "componentName": "QueryProcessor",
+    "context": "default",
+    "backend": "axonserver2:8124"
+  }
+]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This helps identify:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Which applications are connected</p>
+</li>
+<li>
+<p>How many connections are active</p>
+</li>
+<li>
+<p>Which backend node each connection is routed to</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="logging"><a class="anchor" href="#logging"></a>Logging</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The proxy uses SLF4J with Logback. Log levels and output destinations are configured via a <code>logback.xml</code> file, not at runtime through a monitoring endpoint.</p>
+</div>
+<div class="paragraph">
+<p>The default configuration writes colorized, timestamped output to the console.</p>
+</div>
+<div class="paragraph">
+<p>To configure file output, place a <code>logback.xml</code> in the working directory or specify its path with <code>-Dlogback.configurationFile</code>. See <a href="../configuration/#logging-configuration" class="xref page">Logging configuration</a> for examples.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prometheus_integration"><a class="anchor" href="#_prometheus_integration"></a>Prometheus integration</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_prometheus_configuration"><a class="anchor" href="#_prometheus_configuration"></a>Prometheus configuration</h3>
+<div class="paragraph">
+<p>Add the proxy as a scrape target in <code>prometheus.yml</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">scrape_configs:
+  - job_name: 'axon-proxy'
+    metrics_path: '/prometheus'
+    static_configs:
+      - targets: ['proxy.local:8080']</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_grafana_dashboard"><a class="anchor" href="#_grafana_dashboard"></a>Grafana dashboard</h3>
+<div class="paragraph">
+<p>Create a Grafana dashboard with key metrics:</p>
+</div>
+<div class="paragraph">
+<p><strong>JVM Panel:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Memory usage: <code>jvm_memory_used_bytes</code></p>
+</li>
+<li>
+<p>GC activity: <code>jvm_gc_pause_seconds_count</code></p>
+</li>
+<li>
+<p>Thread count: <code>jvm_threads_live_threads</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Proxy Panel:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Active connections: <code>axon_proxy_connections</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>System Panel:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>CPU usage: <code>process_cpu_usage</code>, <code>system_cpu_usage</code></p>
+</li>
+<li>
+<p>File descriptors: <code>process_files_open_files</code></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alerting"><a class="anchor" href="#_alerting"></a>Alerting</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_prometheus_alerts"><a class="anchor" href="#_prometheus_alerts"></a>Prometheus alerts</h3>
+<div class="paragraph">
+<p>Example alert rules:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">groups:
+  - name: axon-proxy
+    interval: 30s
+    rules:
+      - alert: AxonProxyDown
+        expr: up{job="axon-proxy"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Axon Proxy is down"
+          description: "Axon Proxy {{ $labels.instance }} is unreachable"
+
+      - alert: AxonProxyHighMemory
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} &gt; 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Heap usage above 90% on {{ $labels.instance }}"
+
+      - alert: AxonProxyNoConnections
+        expr: axon_proxy_connections == 0
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "No active connections"
+          description: "No applications connected to {{ $labels.instance }}"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_performance_monitoring"><a class="anchor" href="#_performance_monitoring"></a>Performance monitoring</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_key_performance_indicators"><a class="anchor" href="#_key_performance_indicators"></a>Key performance indicators</h3>
+<div class="paragraph">
+<p>Monitor these KPIs:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Connection Count</strong>: Number of active connections (<code>axon_proxy_connections</code>)</p>
+</li>
+<li>
+<p><strong>Resource Usage</strong>: CPU, memory, file descriptors</p>
+</li>
+<li>
+<p><strong>JVM Health</strong>: Heap usage, GC pause frequency and duration (JAR only)</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_load_testing"><a class="anchor" href="#_load_testing"></a>Load testing</h3>
+<div class="paragraph">
+<p>Use tools like <code>ghz</code> for gRPC load testing:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ghz --insecure \
+    --proto axonserver.proto \
+    --call io.axoniq.axonserver.grpc.control.PlatformService/GetPlatformServer \
+    --duration 60s \
+    --connections 10 \
+    --concurrency 50 \
+    localhost:8124</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Monitor proxy metrics during load tests to establish baselines.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_security_monitoring"><a class="anchor" href="#_security_monitoring"></a>Security monitoring</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Monitor security-related events:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Failed TLS handshakes (check logs)</p>
+</li>
+<li>
+<p>Certificate expiration (external monitoring)</p>
+</li>
+<li>
+<p>Unusual connection patterns</p>
+</li>
+<li>
+<p>Authentication failures (if using Axon Server access control)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps"><a class="anchor" href="#_next_steps"></a>Next steps</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="../troubleshooting/" class="xref page">Learn about troubleshooting</a></p>
+</li>
+<li>
+<p>Set up alerting based on metrics</p>
+</li>
+<li>
+<p>Create dashboards for visualization</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../running/">Running the Proxy</a></span>
+  <span class="next"><a href="../troubleshooting/">Troubleshooting</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
