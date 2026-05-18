@@ -648,6 +648,56 @@ Client applications will dynamically connect to a node in the cluster and automa
 </div>
 </div>
 <div class="sect1">
+<h2 id="network-requirements"><a class="anchor" href="#network-requirements"></a>Network requirements</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each Axon Server node in a cluster must be individually addressable by every other node in the cluster.
+By default, the same constraint applies to client applications, but the <a href="../../../../../axon-server-proxy-reference/1.0/" class="xref page">Axon Server Proxy</a> can be used as an alternative client-facing entry point when individual addressability for clients is not practical.</p>
+</div>
+<div class="paragraph">
+<p>There are two reasons for the constraint.
+First, the nodes within a cluster use the RAFT consensus protocol to coordinate replication and elect leaders.
+RAFT requires point-to-point communication with a specific peer, so traffic that is forwarded to an arbitrary node by a shared load balancer is delivered to the wrong destination.
+A shared load balancer or ingress host fronting the internal gRPC port (default <code>8224</code>) will break the cluster, and the Axon Server Proxy does not change this, as it is a client-side concern only.
+Second, client applications connect to any node in the cluster to discover where they should connect for a specific context.
+The server responds with the hostname and port of a specific node, and the client reconnects to that address.
+If that address routes back through a shared load balancer, the client may end up on a different node than the one selected, with broken context routing as a result.</p>
+</div>
+<div class="paragraph">
+<p>To support both kinds of traffic, each node advertises two distinct addresses.
+The property <code>axoniq.axonserver.hostname</code> (optionally combined with <code>axoniq.axonserver.domain</code>) defines the address advertised to clients on the gRPC port (default <code>8124</code>).
+The property <code>axoniq.axonserver.internal-hostname</code> (optionally combined with <code>axoniq.axonserver.internal-domain</code>) defines the address advertised to other nodes on the internal gRPC port (default <code>8224</code>).
+Both addresses must resolve to the node that advertises them, from every party that uses them, and each node must be reachable on its own port pair.</p>
+</div>
+<div class="paragraph">
+<p>Depending on the deployment target, this typically means:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>In Kubernetes, expose the nodes through a headless <code>Service</code> (<code>clusterIP: None</code>), per-pod <code>Services</code>, per-pod <code>NodePorts</code>, or per-pod ingress hosts.
+A single ingress with a shared host fronting all replicas does not work for the gRPC ports.</p>
+</li>
+<li>
+<p>On VMs behind a load balancer, provision per-node DNS records, or distinct load balancer listeners with per-node ports, rather than a single shared address that round-robins across nodes.</p>
+</li>
+<li>
+<p>In environments with split-horizon DNS, ensure that each advertised hostname resolves to the same node from every perspective (clients, peers, and the node itself).</p>
+</li>
+<li>
+<p>If individual addressability for client applications is not practical (for example behind a shared ingress, across network segments, or between security zones), deploy the <a href="../../../../../axon-server-proxy-reference/1.0/" class="xref page">Axon Server Proxy</a> as a client-facing entry point.
+The proxy understands Axon Server&#8217;s routing semantics and translates node-specific redirects internally, so applications can connect through a single (optionally load-balanced) address.
+The proxy itself still needs direct access to every Axon Server node.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When TLS is enabled and the client-facing hostname differs from the internal hostname, separate certificates are required.
+See <a href="../../security/ssl/" class="xref page">SSL</a> for the dedicated <code>internal-cert-chain-file</code>, <code>internal-private-key-file</code>, and <code>internal-trust-manager-file</code> settings.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_setup_process"><a class="anchor" href="#_setup_process"></a>Setup process</h2>
 <div class="sectionbody">
 <div class="paragraph">

@@ -1152,6 +1152,13 @@ ingress.networking.k8s.io/axonserver created</code></pre>
 </div>
 </div>
 <div class="paragraph">
+<p>Note that the gRPC <code>Service</code> in the example above uses <code>clusterIP: None</code>, making it a headless Service.
+This is deliberate: each Axon Server node must be individually addressable, both by client applications and by the other nodes in the cluster.
+A single Ingress or <code>LoadBalancer</code> Service with a shared host fronting all replicas does not work for the gRPC ports.
+If individual addressability for clients is not practical, the <a href="../../../../../axon-server-proxy-reference/1.0/" class="xref page">Axon Server Proxy</a> can be deployed as a client-facing entry point instead.
+See <a href="../../clustering/cluster-basics/#network-requirements" class="xref page">Network requirements</a> for the underlying reasons and the equivalent guidance for non-Kubernetes deployments.</p>
+</div>
+<div class="paragraph">
 <p>To run an Axon Server cluster in Kubernetes it is recommended to create a separate stateful set for each node, and not to scale a single stateful set to multiple instances. Scaling a single stateful set makes it hard to control individual nodes in the cluster.</p>
 </div>
 </div>
