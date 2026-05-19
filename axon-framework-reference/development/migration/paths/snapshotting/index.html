@@ -1037,9 +1037,22 @@ EventSourcingConfigurer.create()
 <h2 id="spring_boot_configuration"><a class="anchor" href="#spring_boot_configuration"></a>Spring Boot configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>For Spring Boot applications, the annotation-based <code>@EventSourced</code> shortcut currently does not expose snapshot policy configuration.
-If you need snapshotting, declare the entity as an explicit <code>EventSourcedEntityModule</code> bean and configure the <code>SnapshotPolicy</code> there.
-Spring&#8217;s component registry picks up <code>Module</code> beans automatically, so this integrates with the regular Spring Boot setup.</p>
+<p>For Spring Boot applications, snapshotting can be enabled by adding <code>@Snapshotting</code> alongside the <code>@EventSourced</code> annotation on the entity class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced
+@Snapshotting
+public class Account { ... }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>At least one threshold must be configured, either on the annotation directly or via a higher-level annotation on an enclosing class, package, or module.
+See <a href="../../../tuning/snapshotting/#_annotation_based_configuration" class="xref page">annotation-based configuration</a> for details.</p>
+</div>
+<div class="paragraph">
+<p>For more complex policies that require payload inspection, declare the entity as an explicit <code>EventSourcedEntityModule</code> bean and configure the <code>SnapshotPolicy</code> programmatically.
+Spring&#8217;s component registry picks up <code>Module</code> beans automatically, so this integrates with the regular Spring Boot setup:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1049,7 +1062,12 @@ class AccountConfiguration {
     @Bean
     EventSourcedEntityModule&lt;String, Account&gt; accountModule() {
         return EventSourcedEntityModule.declarative(String.class, Account.class)
-                .snapshotPolicy(c -&gt; SnapshotPolicy.afterEvents(250))
+                .snapshotPolicy(c -&gt; SnapshotPolicy.afterEvents(250)
+                        .or(SnapshotPolicy.whenEventMatches(
+                                msg -&gt; msg.type().qualifiedName().equals(
+                                        new QualifiedName(AccountClosed.class)
+                                )
+                        )))
                 .build();
     }
 
@@ -1059,10 +1077,6 @@ class AccountConfiguration {
     }
 }</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>This is the Spring-friendly migration path when you still want to use the AF5 snapshotting model.
-If you are only using <code>@EventSourced</code> annotations today, you will need to move this entity to explicit module registration before you can configure snapshotting.</p>
 </div>
 </div>
 </div>

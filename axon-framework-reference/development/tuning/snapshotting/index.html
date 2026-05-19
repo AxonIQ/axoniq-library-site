@@ -961,7 +961,7 @@ This allows the policy to detect whether a snapshot should be triggered based on
 </div>
 <div class="paragraph">
 <p>After sourcing has completed, the policy is evaluated based on the full evolution of the entity.
-If the policy indicates that a snapshot should be created—either based on the overall evolution (such as event count or sourcing time) or because a triggering event was observed—a new snapshot is created and stored.</p>
+If the policy indicates that a snapshot should be created, either based on the overall evolution (such as event count or sourcing time) or because a triggering event was observed, a new snapshot is created and stored.</p>
 </div>
 <div class="paragraph">
 <p>This snapshot can then be used the next time the entity is loaded, reducing the number of events that need to be replayed.</p>
@@ -1086,20 +1086,90 @@ When a policy is configured, the repository automatically handles the creation a
 If no policy is provided, snapshotting is disabled, and the entity is always reconstructed from the event stream.</p>
 </div>
 <div class="paragraph">
+<p>The repository requires several supporting components to be present when snapshotting is enabled:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A <code>Converter</code> to serialize and deserialize snapshot payloads.</p>
+</li>
+<li>
+<p>A <code>MessageTypeResolver</code> capable of resolving a <code>MessageType</code> for the entity type, used to identify the snapshot and its version.</p>
+</li>
+<li>
+<p>A <code>SnapshotStore</code> to persist snapshots.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If any of these components are missing, configuration will fail when snapshotting is enabled.</p>
+</div>
+<div class="sect3">
+<h4 id="_annotation_based_configuration"><a class="anchor" href="#_annotation_based_configuration"></a>Annotation-based configuration</h4>
+<div class="paragraph">
+<p>For entities registered with <code>@EventSourcedEntity</code>, snapshotting can be enabled by adding <code>@Snapshotting</code> to the entity class.
+At least one threshold must be configured, either directly on the annotation or via a higher-level annotation on an enclosing class, package, or module:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity
+@Snapshotting(afterEvents = 100)
+public class Course { ... }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>afterEvents</code> sets the event-count threshold.
+<code>afterSourcingTime</code> accepts an ISO-8601 duration string and triggers a snapshot when sourcing time exceeds that threshold.
+When both are set, either condition independently triggers a snapshot.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity
+@Snapshotting(afterEvents = 100, afterSourcingTime = "PT5S")
+public class Course { ... }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A shared default can be provided at the package level, so individual entity classes can opt in with a bare <code>@Snapshotting</code> annotation:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// package-info.java
+@Snapshotting(afterEvents = 50)
+package com.example.faculty;</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity
+@Snapshotting  // inherits afterEvents = 50 from the package annotation
+public class Course { ... }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If no concrete threshold can be resolved from the annotation hierarchy, configuration fails with an error at startup.</p>
+</div>
+<div class="paragraph">
+<p>For payload-based triggers, such as forcing a snapshot when a specific event type is encountered, use the programmatic API described below.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_programmatic_configuration"><a class="anchor" href="#_programmatic_configuration"></a>Programmatic configuration</h4>
+<div class="paragraph">
 <p>The <code>SnapshotPolicy</code> is configured as part of the entity registration.
-The example below shows how to configure snapshotting for an event-sourced entity:</p>
+The example below shows how to configure snapshotting for an event-sourced entity using the declarative builder:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">SnapshotPolicy snapshotPolicy = SnapshotPolicy.afterEvents(5)
         .or(SnapshotPolicy.whenEventMatches(
                 msg -&gt; msg.type().qualifiedName().equals(
-                        new QualifiedName(AccountClosed.class)
+                        new QualifiedName(CourseRenamed.class)
                 )
         ));
 
-EventSourcedEntityModule&lt;String, Account&gt; accountModule =
-        EventSourcedEntityModule.declarative(String.class, Account.class)
+EventSourcedEntityModule&lt;CourseId, Course&gt; courseModule =
+        EventSourcedEntityModule.declarative(CourseId.class, Course.class)
                                 // other entity configuration omitted
                                 .snapshotPolicy(c -&gt; snapshotPolicy)
                                 .build();</code></pre>
@@ -1118,30 +1188,12 @@ In the example, a snapshot is created after more than five events have been appl
 <p>Snapshotting is activated automatically when a <code>SnapshotPolicy</code> is configured.
 If no policy is provided, snapshotting is not used and the entity is always sourced from events only.</p>
 </li>
-<li>
-<p>The repository requires several supporting components to be present when snapshotting is enabled:</p>
-<div class="ulist">
-<ul>
-<li>
-<p>A <code>Converter</code> to serialize and deserialize snapshot payloads.</p>
-</li>
-<li>
-<p>A <code>MessageTypeResolver</code> capable of resolving a <code>MessageType</code> for the entity type.
-This type is used to identify the snapshot and its version.</p>
-</li>
-<li>
-<p>A <code>SnapshotStore</code> to persist snapshots (this requirement will change in future versions as snapshotting becomes more tightly integrated with the event store).</p>
-</li>
-</ul>
-</div>
-</li>
 </ul>
 </div>
 <div class="paragraph">
-<p>If any of these components are missing, configuration will fail when snapshotting is enabled.</p>
+<p>Custom snapshot behavior can be achieved by using <code>whenEventMatches</code> for domain-specific triggers, as shown in the example, or by implementing the <code>SnapshotPolicy</code> interface directly.
+For a complete use of the declarative <code>EventSourcedEntityModule</code> API, please check <a href="../../commands/command-handlers/#stateful-command-handlers" class="xref page">here.</a></p>
 </div>
-<div class="paragraph">
-<p>Custom snapshot behavior can be achieved by using <code>whenEventMatches</code> for domain-specific triggers, as shown in the example, or by implementing the <code>SnapshotPolicy</code> interface directly.</p>
 </div>
 </div>
 <div class="sect2">
@@ -1156,17 +1208,20 @@ Most JSON-based converters (such as Jackson, when compiled with parameter names 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class Account {
-    private final String accountId;
-    private final int balance;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class Course {
+    private final String courseId;
+    private final String name;
+    private final int capacity;
 
-    public Account(String accountId, int balance) {
-        this.accountId = accountId;
-        this.balance = balance;
+    public Course(String courseId, String name, int capacity) {
+        this.courseId = courseId;
+        this.name = name;
+        this.capacity = capacity;
     }
 
-    public String getAccountId() { return accountId; }
-    public int getBalance() { return balance; }
+    public String getCourseId() { return courseId; }
+    public String getName() { return name; }
+    public int getCapacity() { return capacity; }
 }</code></pre>
 </div>
 </div>
@@ -1175,7 +1230,7 @@ Most JSON-based converters (such as Jackson, when compiled with parameter names 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record Account(String accountId, int balance) {}</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record Course(String courseId, String name, int capacity) {}</code></pre>
 </div>
 </div>
 <div class="paragraph">
