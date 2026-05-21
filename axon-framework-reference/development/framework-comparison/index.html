@@ -1,0 +1,2156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Axon Framework and Axoniq Framework</title>
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../_'</script>
+
+
+<link rel="icon" href="../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../5.1/">Axon Framework</a>
+                <a class="navbar-item" href="../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../">Axon Framework Reference</a></li>
+    <li><a href="./">Axon Framework and Axoniq Framework</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Axon%20Framework%20and%20Axoniq%20Framework" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Axon%20Framework%20and%20Axoniq%20Framework%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BAxon%20Framework%20and%20Axoniq%20Framework%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fframework-comparison%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">development</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-current" href="./">development</a>
+    <a class="version item is-missing" href="../../5.1/">5.1</a>
+    <a class="version item is-missing" href="../../5.0/">5.0</a>
+    <a class="version item is-missing" href="../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="development">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/snapshotting/">Snapshotting</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/dlq/">Dead-Letter Queue Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-versioning/">Versioning</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflows/"><span class="advanced-framework">Workflows</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Steps</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/execute-steps/">Execute Steps</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/waiting-for-events/">Waiting for Events</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflows/understanding-steps/">Understanding Steps</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#step-primitives">Step Primitives</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#workflow-step-result">WorkflowStepResult</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#timeouts">Timeouts</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#payload-reducers">Payload Reducers</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#error-handling">Error Handling</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#cancelling-a-step">Cancelling a Step</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#execution-semantics">Execution Semantics</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#retries">Retries</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#event-name-customization">Event Name Customization</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/understanding-steps/#kotlin-dsl-equivalents">Kotlin DSL</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflows/workflow-lifecycle/">Workflow Lifecycle</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflows/workflow-lifecycle/#_the_workflow_context">Workflow Context</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/workflow-lifecycle/#fail-vs-cancel">fail() vs cancel()</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/workflow-lifecycle/#_unhandled_exceptions">Unhandled Exceptions</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/workflow-lifecycle/#_lifecycle_listeners">Lifecycle Listeners</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflows/step-orchestration/">Step Orchestration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/step-orchestration/#_non_blocking_execution">Non-blocking Execution</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/step-orchestration/#_anymatch_first_match_wins">anyMatch</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/step-orchestration/#_allmatch_all_must_succeed">allMatch</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflows/step-orchestration/#_nonematch_no_failures_allowed">noneMatch</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../workflows/step-orchestration/#_inspecting_sub_results">Inspecting Sub-results</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/step-orchestration/#_parallel_workflows">Parallel Workflows</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflows/common-patterns/">Common Patterns</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/common-patterns/#_fan_out_fan_in">Fan-out / Fan-in</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/common-patterns/#_saga_compensating_transactions">Saga</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/common-patterns/#_scatter_gather">Scatter-gather</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/common-patterns/#_human_in_the_loop">Human-in-the-loop</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/common-patterns/#_circuit_breaker">Circuit Breaker</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/common-patterns/#_scheduled_delayed_steps">Scheduled Steps</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/common-patterns/#_sub_workflows">Sub-workflows</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../workflows/payload-and-state/">Payload &amp; State</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../workflows/configuration/">Configuration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/configuration/#_the_workflowmodule_builder">WorkflowModule Builder</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/configuration/#_start_conditions">Start Conditions</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/configuration/#_workflow_id_provider">Workflow ID Provider</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/configuration/#_customization_options">Customization Options</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/configuration/#metadata-and-correlation-data">Metadata &amp; Correlation Data</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows/configuration/#custom-workflow-context">Custom Workflow Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../workflows/testing-workflows/">Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Workflow Engine</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../workflows-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Axon Framework and Axoniq Framework</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>For those using or looking to use the Framework, you may be wondering: "What is the difference between Axon and Axoniq Framework?"
+This page will break that down for you, as well as explain <a href="#how-to-use">how to use both</a> and which <a href="#feature_comparison">features can be found where</a>.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework is the open-source foundation for building message-driven, event-sourced applications on the JVM.
+It provides the core messaging infrastructure (commands, events, and queries), modeling support, event sourcing, and test fixtures, and is released under the Apache 2.0 license.</p>
+</div>
+<div class="paragraph">
+<p>Axoniq Framework builds on top of Axon Framework and adds advanced modules.
+These modules cover scenarios that go beyond the open-source baseline, such as PostgreSQL-optimized event storage, distributed messaging, sequenced dead-letter queue support, data protection, and connectivity to Axon Server.
+Axoniq Framework modules are commercial offerings under the <a href="https://www.axoniq.io/legal/terms-of-service">Axoniq Terms of Service</a>, and require an active <a href="#how-to-use">subscription</a> for production use.</p>
+</div>
+<div class="paragraph">
+<p>For an overview of the features in Axon Framework and Axoniq Framework, be sure to check the <a href="#feature_comparison">Feature comparison</a> table.
+However, you do not have to jump to this table to understand what is in Axon or in Axoniq Framework.
+You will find <span class="advanced-framework">this icon</span> to mark Axoniq Framework features throughout the documentation.
+When no such icon is present, you are dealing with Axon Framework features.</p>
+</div>
+<div class="paragraph">
+<p>So, in short:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Axon Framework</strong>: the open-source core. Free to use, including in production, covering the bases to support messaging, modeling, and event sourcing.</p>
+</li>
+<li>
+<p><strong>Axoniq Framework</strong>: the commercial modules on top of Axon Framework, providing advanced and production-grade capabilities.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="how-to-use"><a class="anchor" href="#how-to-use"></a>How to use Axon and Axoniq Framework</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Just as any library or framework, to use Axon and Axoniq Framework, you can simply depend on either.
+Axon Framework modules are marked with <code>org.axonframework</code>, whereas Axoniq Framework modules are marked with <code>io.axoniq.framework</code>. For a full list of all the modules, be sure to check out <a href="../modules/" class="xref page">this page</a>.</p>
+</div>
+<div class="paragraph">
+<p>However, there&#8217;s a licensing difference between both.
+Axon Framework being Apache 2.0 means you can use it whenever, wherever.
+However, Axoniq Framework falls under the <a href="https://www.axoniq.io/legal/terms-of-service">Axoniq Terms of Service</a>.
+To that end, access to Axoniq Framework features is governed through a subscription.
+On start-up of an application using Axoniq Framework features, these features will validate if the application is entitled to use them.</p>
+</div>
+<div class="paragraph">
+<p>You can retrieve a subscription through <a href="https://platform.axoniq.io">Axoniq Platform</a> as a self-service means.
+A self-service subscription is associated with an environment and grants credentials (an environment identifier and an access token) that the application presents at runtime.
+As such, this flow will expect an active connection with Axoniq Platform to ensure the subscription entitles your application to the features you&#8217;re using.</p>
+</div>
+<div class="paragraph">
+<p>If you are unable to form an active connection with Axoniq Platform or otherwise require a different feature set, be sure to check out our <a href="https://www.axoniq.io/pricing">pricing page</a>.
+Be sure to <a href="https://www.axoniq.io/contact">contact us</a> when more information or help is required.</p>
+</div>
+<div class="paragraph">
+<p>When no active subscription is found, we assume you are <a href="#evaluating">evaluating</a> Axoniq Framework.
+Evaluating Axoniq Framework in a live system is allowed for a limited period of time.
+Do note that anybody can use the <a href="#individual_plan">individual plan</a> free of charge.
+This will entitle your application to run past the evaluation time window for non-production use.</p>
+</div>
+<div class="paragraph">
+<p>For details on <a href="#configuring_credentials">configuring</a>, how we <a href="#enforcing_subscription">enforce a subscription</a>, and <a href="#runtime_subscription_changes">runtime subscription changes</a>, be sure to check out their respective sections.</p>
+</div>
+<div class="sect2">
+<h3 id="evaluating"><a class="anchor" href="#evaluating"></a>Evaluating Axoniq Framework</h3>
+<div class="paragraph">
+<p>During evaluation, Axoniq Framework modules start without credentials, logging a warning as a result.
+This evaluation mode is intended for development, prototyping, testing, and proof-of-concept work.
+Continued use for development, testing, or production without a valid subscription is not permitted under the <a href="https://www.axoniq.io/legal/terms-of-service">Axoniq Terms of Service</a>.
+As such, once the evaluation period ends, your application will be forcefully shutdown as a result.</p>
+</div>
+<div class="paragraph">
+<p>Note that smaller organizations may qualify for complimentary access to Axoniq Framework modules.
+Contact a <a href="https://www.axoniq.io/contact">Axoniq representative</a> to discuss your eligibility.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="individual_plan"><a class="anchor" href="#individual_plan"></a>Testing Axoniq Framework - individual plan</h3>
+<div class="paragraph">
+<p>Every Axoniq Platform account includes our free <strong>Individual</strong> plan.
+The Individual plan is intended for learning, prototyping, and local development, and provides credentials that unlock the full set of Axoniq Framework modules at reduced throughput.</p>
+</div>
+<div class="paragraph">
+<p>The Individual plan is free of charge and does not expire.
+It allows you to try out Axoniq Framework end-to-end, including modules that are otherwise blocked without credentials, before committing to a paid subscription.
+When going to production, the Workspace can be upgraded to a paid plan.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="configuring_credentials"><a class="anchor" href="#configuring_credentials"></a>Configuring credentials</h3>
+<div class="paragraph">
+<p>Credentials are provided to the application through the standard Axoniq Platform configuration.
+For Spring Boot applications, this is typically a single property:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axoniq.platform.credentials=&lt;environment-id&gt;:&lt;access-token&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For plain Java applications, credentials are registered through an <code>AxoniqPlatformConfiguration</code> component.
+The same credentials are used by every Axoniq Framework module the application depends on.</p>
+</div>
+<div class="paragraph">
+<p>For a thorough explanation on how to set this up, we refer to the Axoniq Platform <a href="https://docs.axoniq.io/axoniq-platform-reference/connectors/axon-framework/#installation">installation page</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="enforcing_subscription"><a class="anchor" href="#enforcing_subscription"></a>Feature entitlement and message throughput</h3>
+<div class="paragraph">
+<p>Axoniq Framework features validate their entitlement at runtime based on the configured credentials.
+Most subscription <a href="https://www.axoniq.io/pricing">tiers</a> require a connection to Axoniq Platform to validate the credentials.
+If you are not able to have an active connection to Axoniq Platform, you will need a "license" file in your environment to be entitled.
+Be sure to <a href="https://www.axoniq.io/contact">contact us</a> if this is a requirement for you.</p>
+</div>
+<div class="paragraph">
+<p>Assuming you are able to connect to Axoniq Platform, the runtime behavior for feature entitlement differs depending on the scenario you&#8217;re in:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>No credentials configured</strong></dt>
+<dd>
+<p>The application is treated as <a href="#evaluating">evaluating</a> Axoniq Framework.
+All Axoniq Framework features operate for a 15-minute evaluation window, regardless of which features are in use.
+This includes features such as Data Protection.
+Once the evaluation window closes, the application is forcefully shut down.</p>
+</dd>
+<dt class="hdlist1"><strong>Credentials configured, without an active connection to Axoniq Platform</strong></dt>
+<dd>
+<p>The application continues to operate for 24-hour grace period without an active connection.
+This window allows transient connectivity issues to be resolved without an immediate outage.
+If the connection is not restored within the window, the application is forcefully shut down.</p>
+</dd>
+<dt class="hdlist1"><strong>Credentials configured, with an active connection to Axoniq Platform</strong></dt>
+<dd>
+<p>The Axoniq Framework modules included in the subscription operate normally.
+This is where so-called "feature entitlement" kicks in: if the application depends on an Axoniq Framework feature that is not part of the subscription, the application is shut down immediately.
+The Data Protection feature is an example: if it is used by the application but not covered by the subscription, the application will not continue to run.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Beyond entitlement, Axoniq Framework features apply message throughput control to their operations based on the <a href="https://www.axoniq.io/pricing">tier</a> of the subscription.
+When a throughput limit is reached, the module logs a warning and throttles further operations until the rate window resets or higher-tier credentials are provided.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="runtime_subscription_changes"><a class="anchor" href="#runtime_subscription_changes"></a>Runtime subscription changes</h3>
+<div class="paragraph">
+<p>Once an application has validated its entitlement, two scenarios can change that entitlement while the application is running.
+The application will respond differently to each.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><strong>Connection to Axoniq Platform is lost</strong></dt>
+<dd>
+<p>When the application can no longer reach Axoniq Platform, it enters a 24-hour grace period and continues to operate as if the connection were still established.
+This gives operators time to resolve transient connectivity issues without an immediate outage.
+During the grace period the modules log warnings to make the situation visible.
+Once the grace period ends, the application is forcefully shut down.</p>
+</dd>
+<dt class="hdlist1"><strong>Subscription is cancelled or payment lapses</strong></dt>
+<dd>
+<p>The license is updated immediately to a non-Production license, and the application falls out of compliance for production use.
+If the application depends on an Axoniq Framework feature that requires a subscription regardless of whether it is development or production use (like the Data Protection feature), the application is shut down immediately.
+Other features continue to operate under the non-Production license, with warnings logged to indicate the changed situation, until new credentials are provided or the application is stopped.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="feature_comparison"><a class="anchor" href="#feature_comparison"></a>Feature comparison</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The table belows compares features between Axon Framework and Axoniq Framework.
+If a feature you expect is missing from this table, be sure to file a concern with the Framework team.</p>
+</div>
+<div class="paragraph">
+<p>The table mentions the feature in question, whether it is a part of Axon and/or Axoniq Framework, since what version it is or will be present, and an optional description. The version columns start at 5.0.0 and go up, regardless of whether the feature existed before Framework 5.</p>
+</div>
+<div class="paragraph">
+<p>The "Axon Framework" and "Axoniq Framework" columns may contain any of the following:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>✓</strong> - The feature is present.</p>
+</li>
+<li>
+<p><strong>X</strong> - The feature is not present.</p>
+</li>
+<li>
+<p><strong>Partial</strong> - The feature is present partially. Expect a description</p>
+</li>
+<li>
+<p><strong>TBD</strong> - Stands for "to be determined." Will change accordingly once planned by the Framework team</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Lastly, some rows describe a feature that is no longer present in Framework 5.
+They are present in the table as a marker for people migrating from 4 (or lower) to 5.
+If you depended strongly on any of the removed features, be sure to reach out.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 22.2222%;">
+<col style="width: 11.1111%;">
+<col style="width: 11.1111%;">
+<col style="width: 11.1111%;">
+<col style="width: 11.1111%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Feature</th>
+<th class="tableblock halign-left valign-top">Axon Framework</th>
+<th class="tableblock halign-left valign-top">Axon Framework Version</th>
+<th class="tableblock halign-left valign-top">Axoniq Framework</th>
+<th class="tableblock halign-left valign-top">Axoniq Framework Version</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Core API</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unit of Work</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Command / Event / Query messages</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Message metadata</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Message streams</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Message Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Supports both synchronous and asynchronous programming models</p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Command Dispatching and Handling</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Command Dispatching API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Declarative Command Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annotated Command Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stateful Command Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributed Command API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributing Commands - Axon Server integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributing Commands - Spring Cloud integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributed Command Priority</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributing Commands - JGroups integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deprecated and removed as of Axon Framework 5</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Disruptor Command Bus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deprecated and removed as of Axon Framework 5</p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Event Publishing and Handling</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Publishing API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Declarative Event Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annotated Event Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stateful Event Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event publishing and handling - AMQP integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event publishing and handling - Kafka integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Query Dispatching and Handling</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Query Publishing - Direct Query API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Query Publishing - Scatter-gather API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deprecated and removed as of Axon Framework 5</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Query Publishing - Subscription Query API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Query Publishing - Streaming Query API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Declarative Query Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annotated Query Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stateful Query Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributed Query API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributing Queries - Axon Server integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributing Queries - Spring Cloud integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributed Query Priority</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Modeling / Entities</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Command Model / Entity API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Declarative Entity Configuration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annotated Entity Configuration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Entity Hierarchy API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Sourced Entity support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">State-based Entity support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This feature reflects the JPA storage support for Aggregates from previous versions</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Entity Caching</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Entity Creation Policy</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate Conflict Resolution</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deprecated and removed as of Axon Framework 5</p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Event Store</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Store - DCB API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">DCB Event Storage - Axon Server integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">DCB Event Storage - JPA support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">DCB Event Storage - PostgreSQL integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Store - Aggregate API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate-based Event Storage - Axon Server integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate-based Event Storage - JPA support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate-based Event Storage - JDBC support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate-based Event Storage - Mongo integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deprecated and removed as of Axon Framework 5</p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Event Processing</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Processing API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Subscribing Event Processors</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Streaming Event Processors</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Sequencing</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Processing Replays</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Token Store API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JPA Token Store</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JDBC Token Store</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Mongo Token Store</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent Stream integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Multi-Source Event Streaming</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sequenced Dead-Letter Queue API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sequenced Dead-Letter Queue - JPA support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sequenced Dead-Letter Queue - JDBC support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sequenced Dead-Letter Queue - Mongo integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Process Management</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Saga pattern integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replaced fully with the Workflow integration</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Workflows</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Follows the "Durable Execution" paradigm, fully replacing Saga support from previous versions, as well as supporting many other process management styles</p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Message Interceptors</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Message Dispatch Interceptors</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Message Handler Interceptors</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Declarative Message Handling Component Interceptors</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annotated Message Handling Component Interceptors</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Declarative Exception Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annotated Exception Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Message Handler Timeout support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">UnitOfWork Timeout support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Conversion, versioning, and upcasting</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Conversion / Serialization</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Conversion - Jackson integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Conversion - Avro integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Conversion - Data Protection integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Command Versioning</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Versioning</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Query Versioning</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Upcasting</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Partial</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Marked partial for Axon Framework as message handlers can receive the payload in any format. Hence, upcasting can be done specific to a message handler at the user&#8217;s discretion. Support in Axoniq Framework is more extensive, with implementable components and guard rails</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Conversion - XStream integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deprecated and removed as of Axon Framework 5 due to incompatibility with new JDK versions</p></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Snapshotting</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Integrated Command Model / Entity Snapshotting</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Partial</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Marked partial for Axon Framework, as it solely provides the API for snapshot storage (the <code>SnapshotStore</code>) but a concrete implementations needs to be provided at the user&#8217;s discretion. Axoniq Framework provides an actual implementation optimized for Axon Server.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Generic Entity Snapshotting</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Event Scheduling and Deadline Management</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Scheduling API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">To-be-decided given the ease to have a custom integration</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Scheduling - Axon Server integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Scheduling - Quartz integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Scheduling - JobRunr integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event Scheduling - db-scheduler integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deadline Manager API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">To-be-decided given the <strong>relative</strong> ease to have a custom integration</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deadline Manager - Quartz integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deadline Manager - JobRunr integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deadline Manager - db-scheduler integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Test fixtures</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test Fixtures - Entity support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test Fixtures - Workflow support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test Fixtures - Projection support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test Fixtures - Command Handler support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test Fixtures - Event Handler support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Test Fixtures - Query Handler support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Configuration-based Testing</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Monitoring and tracing</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Correlation Data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoring API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoring - Dropwizard integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoring - Micrometer integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Distributed Tracing</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.2.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Multi-tenancy</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Multi-Tenancy support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Dependency Injection integration</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Spring Framework integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Spring AOT integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TBD</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quarkus integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Micronaut integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBD</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Language/Library integration</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kotlin integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Reactor integration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<th class="tableblock halign-left valign-top" colspan="6"><p class="tableblock">Configuration and tooling</p></th>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Configuration API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Modularized Configuration support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Lifecycle Handlers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.0.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Migration support</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.1</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Feature-based project modularization</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">—</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>✓</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.1.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Means a module-per-feature is used, providing more granular dependencies when desired.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+            </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
