@@ -835,6 +835,62 @@ We strongly recommend making your event handlers idempotent when using the dead-
 </div>
 </div>
 <div class="sect1">
+<h2 id="_transactionality"><a class="anchor" href="#_transactionality"></a>Transactionality</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The event processor runs all work for a processing batch within a single database transaction.
+That transaction covers three things atomically:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>event handler execution, including any database writes the handler performs (like projection updates)</p>
+</li>
+<li>
+<p>the tracking token update</p>
+</li>
+<li>
+<p>any DLQ enqueue operations for events that failed earlier in the same batch</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The DLQ cannot protect against database exceptions that break the active transaction, regardless of whether the exception originates in the handler or in the DLQ persistence itself.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>JpaSequencedDeadLetterQueue</code> and <code>JdbcSequencedDeadLetterQueue</code> obtain their database connection from the active <code>ProcessingContext</code>, so they join the same transaction as the event handler.
+Because all three participate in the same transaction, a failure in any one of them rolls back all the others.</p>
+</div>
+<div class="paragraph">
+<p>This has two practical consequences:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Handler failure rolls back the DLQ entry.</strong> When a handler&#8217;s database write fails with a transaction-breaking exception (for example, a projection write where a value is too large for a column), the entire transaction is rolled back.
+Any DLQ entries added earlier in the same batch are undone along with the handler&#8217;s work and the tracking token update.
+The processor retries the same batch from its last committed position.</p>
+</li>
+<li>
+<p><strong>DLQ persistence failure rolls back the handler&#8217;s transactional work.</strong> If the DLQ itself fails to persist a dead letter, that also breaks the transaction.
+Any transactional work performed by the handler earlier in the same batch (such as a projection update) is rolled back as well.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
