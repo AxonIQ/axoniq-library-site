@@ -1040,7 +1040,7 @@ ctx.awaitExecute("stepB", Map.of(), ServiceB::doWork);</code></pre>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="../waiting-for-events/" class="xref page">Waiting for Events</a></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sleepAsync</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sleep</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>WorkflowStepResult</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="../waiting-for-events/" class="xref page">Waiting for Events</a></p></td>
@@ -1136,11 +1136,12 @@ ctx.awaitExecute("stepB", Map.of(), ServiceB::doWork);</code></pre>
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// non-blocking execute
 var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
         ShippingService::shipOrder,
-        Duration.ofMinutes(5), defaults());
+        step -&gt; step.timeout(Duration.ofMinutes(5)));
 
 // non-blocking wait for event
 var approval = ctx.waitForEvent("awaitApproval",
-        ManagerApproved.class, Duration.ofMinutes(30));
+        EventConditions.fromQualifiedName(ctx.resolve(ManagerApproved.class)),
+        step -&gt; step.timeout(Duration.ofMinutes(30)));
 
 // check and wait on either
 if (shipping.isCompleted()) {
@@ -1178,7 +1179,7 @@ Default
 Override per step
 </td>
 <td class="hdlist2">
-<p>Pass a <code>Duration</code> parameter to <code>awaitExecute</code>, <code>execute</code>, or <code>awaitEvent</code>.</p>
+<p>Customize the step definition with <code>timeout(&#8230;&#8203;)</code>.</p>
 </td>
 </tr>
 </table>
@@ -1186,16 +1187,20 @@ Override per step
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Uses the default 5-second timeout
-ctx.awaitExecute("quickCheck", Boolean.class, QuickService::check);
+ctx.awaitExecute("quickCheck",
+        Map.of(),
+        (pc, input) -&gt; Map.of("passed", QuickService::check()));
 
 // Explicit 30-second timeout for an action
 ctx.awaitExecute("slowOperation", ctx.workflowPayload(),
                  SlowService::process,
-                 Duration.ofSeconds(30), defaults());
+                 step -&gt; step.timeout(Duration.ofSeconds(30)));
 
 // Explicit 15-minute timeout for waiting on an external event
 ctx.awaitEvent("awaitPayment", PaymentConfirmed.class,
-               Duration.ofMinutes(15));</code></pre>
+               associate(payloadProperty("orderId"),
+                         equalsTo(ctx.workflowPayload().get("orderId"))),
+               step -&gt; step.timeout(Duration.ofMinutes(15)));</code></pre>
 </div>
 </div>
 <div class="admonitionblock important">
@@ -1236,7 +1241,7 @@ That&#8217;s what payload reducers control.</p>
 <table>
 <tr>
 <td class="hdlist1">
-<code>parameterMapping</code>
+<code>parameterPayloadReducer</code>
 </td>
 <td class="hdlist2">
 <p>Controls the <strong>input</strong>—what payload the step&#8217;s action receives.</p>
@@ -1244,7 +1249,7 @@ That&#8217;s what payload reducers control.</p>
 </tr>
 <tr>
 <td class="hdlist1">
-<code>resultMapping</code>
+<code>resultPayloadReducer</code>
 </td>
 <td class="hdlist2">
 <p>Controls the <strong>output</strong>—what happens to the step&#8217;s result after it completes.</p>
@@ -1264,23 +1269,23 @@ That&#8217;s what payload reducers control.</p>
 <thead>
 <tr>
 <th class="tableblock halign-left valign-top">Reducer</th>
-<th class="tableblock halign-left valign-top">As input (<code>parameterMapping</code>)</th>
-<th class="tableblock halign-left valign-top">As output (<code>resultMapping</code>)</th>
+<th class="tableblock halign-left valign-top">As input (<code>parameterPayloadReducer</code>)</th>
+<th class="tableblock halign-left valign-top">As output (<code>resultPayloadReducer</code>)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LOCAL_ONLY</code> <em>(default for input)</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LocalOnlyPayloadReducer.INSTANCE</code> <em>(default for input)</em></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The action receives only the local payload you passed in. It doesn&#8217;t see the global workflow state.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Only the local result is kept. The global payload is untouched.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GLOBAL_ONLY</code> <em>(default for output)</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GlobalOnlyPayloadReducer.INSTANCE</code> <em>(default for output)</em></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The action receives only the global workflow payload. The local payload is ignored.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The step&#8217;s result is discarded. The global payload stays as-is.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>COMBINE_GLOBAL_AND_LOCAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CombineGlobalAndLocalPayloadReducer.INSTANCE</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The action receives both merged—local values overwrite global values with the same key.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The step&#8217;s result is merged back into the global payload.</p></td>
 </tr>
@@ -1290,7 +1295,7 @@ That&#8217;s what payload reducers control.</p>
 <div class="sect2">
 <h3 id="_why_does_this_matter"><a class="anchor" href="#_why_does_this_matter"></a>Why does this matter?</h3>
 <div class="paragraph">
-<p>With the defaults (<code>LOCAL_ONLY</code> input, <code>GLOBAL_ONLY</code> output), steps are isolated—they only see what you explicitly pass them, and their results don&#8217;t leak into the global state. This keeps things predictable.</p>
+<p>With the defaults (<code>LocalOnlyPayloadReducer.INSTANCE</code> for input and <code>GlobalOnlyPayloadReducer.INSTANCE</code> for output), steps are isolated—they only see what you explicitly pass them, and their results don&#8217;t leak into the global state. This keeps things predictable.</p>
 </div>
 <div class="paragraph">
 <p>Sometimes you want a step to see the full workflow context, or you want the result to update the global payload for subsequent steps. That&#8217;s when you change the reducer.</p>
@@ -1319,33 +1324,20 @@ ctx.awaitExecute("reserveStock",
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">// Step sees everything: global + local merged
-awaitExecute(
-    "processOrder",
-    { payload -&gt;
-        // payload = {orderId=123, customerId=456, email=joe@example.com, priority=high}
-        OrderService.process(payload)
-    },
-    local = mapOf("priority" to "high"),
-    parameterMapping = PayloadReducer.COMBINE_GLOBAL_AND_LOCAL, <i class="conum" data-value="1"></i><b>(1)</b>
-    resultMapping = PayloadReducer.COMBINE_GLOBAL_AND_LOCAL     <i class="conum" data-value="2"></i><b>(2)</b>
-)</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitExecute(
+        "processOrder",
+        payload("priority", "high").getValues(),
+        OrderService::process,
+        step -&gt; step.parameterPayloadReducer(CombineGlobalAndLocalPayloadReducer.INSTANCE)
+                    .resultPayloadReducer(CombineGlobalAndLocalPayloadReducer.INSTANCE)
+);</code></pre>
 </div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The action receives the global payload merged with the local <code>priority</code> field.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>The step&#8217;s result is merged back into the global payload, so subsequent steps can see it.</td>
-</tr>
-</table>
 </div>
 <div class="paragraph">
-<p>In Java, the full-form <code>awaitExecute</code> with <code>PayloadProcessor</code> uses <code>LOCAL_ONLY</code> for input and <code>GLOBAL_ONLY</code> for output by default.</p>
+<p>The action receives the global payload merged with the local <code>priority</code> field, and the step&#8217;s result is merged back into the global payload so subsequent steps can see it.</p>
+</div>
+<div class="paragraph">
+<p>In Java, the full-form <code>awaitExecute</code> with <code>PayloadProcessor</code> uses <code>LocalOnlyPayloadReducer.INSTANCE</code> for input and <code>GlobalOnlyPayloadReducer.INSTANCE</code> for output by default.</p>
 </div>
 </div>
 </div>
@@ -1396,11 +1388,12 @@ Catch it to run a compensating action, or let it propagate to fail the workflow:
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var paymentConfirmation = ctx.waitForEvent("awaitPayment",
-        PaymentConfirmed.class, Duration.ofMinutes(15));
+        EventConditions.fromQualifiedName(ctx.resolve(PaymentConfirmed.class)),
+        step -&gt; step.timeout(Duration.ofMinutes(15)));
 
 var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
         ShippingService::shipOrder,
-        Duration.ofMinutes(5), defaults());
+        step -&gt; step.timeout(Duration.ofMinutes(5)));
 
 if (paymentConfirmation.timeout()) { // blocks until terminal state
     ctx.fail(new RuntimeException("Payment confirmation timed out"));
@@ -1500,7 +1493,8 @@ The original stack trace is written to the application log at the moment of fail
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var approval = ctx.waitForEvent("awaitApproval",
-        ManagerApproved.class, Duration.ofMinutes(30));
+        EventConditions.fromQualifiedName(ctx.resolve(ManagerApproved.class)),
+        step -&gt; step.timeout(Duration.ofMinutes(30)));
 
 // later — manager rejected, no longer need approval
 approval.cancel("Manager rejected the request"); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
@@ -1520,8 +1514,10 @@ approval.cancel("Manager rejected the request"); <i class="conum" data-value="1"
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.cancelStep("awaitApproval");                            // default message: "Step cancelled"
-ctx.cancelStep("awaitApproval", "Manager rejected");        // custom reason
-ctx.cancelStep("awaitApproval", someException);              // wrap an existing exception</code></pre>
+ctx.cancelStep("awaitApproval",
+        step -&gt; step.cause(new StepCancellationException("Manager rejected"))); // custom reason
+ctx.cancelStep("awaitApproval",
+        step -&gt; step.cause(someException));                  // wrap an existing exception</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1773,8 +1769,9 @@ You can set it at the <strong>workflow level</strong> (applies to all steps) or 
           startOnEventClass = OrderPlacedEvent.class,
           workflowNamespace = "io.myapp.orders")  <i class="conum" data-value="1"></i><b>(1)</b>
 public void execute(SimpleWorkflowContext ctx) {
-    ctx.awaitExecute("reserveStock", Boolean.class,
-                      InventoryService::reserveStock); <i class="conum" data-value="2"></i><b>(2)</b>
+    ctx.awaitExecute("reserveStock",
+            Map.of(),
+            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock())); <i class="conum" data-value="2"></i><b>(2)</b>
 }</code></pre>
 </div>
 </div>
@@ -1956,8 +1953,9 @@ When a step also has its own customizer, the two are merged—<strong>step-level
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Step 1: inherits workflow customizer — no override needed
-ctx.awaitExecute("reserveStock", Boolean.class,
-                  InventoryService::reserveStock);
+ctx.awaitExecute("reserveStock",
+                 Map.of(),
+                 (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()));
 
 // Step 2: overrides namespace for this step only
 ctx.awaitExecute("initiatePayment",
@@ -2096,33 +2094,31 @@ io.payments.InitiatePaymentDone    <i class="conum" data-value="3"></i><b>(3)</b
 <h2 id="kotlin-dsl-equivalents"><a class="anchor" href="#kotlin-dsl-equivalents"></a>Kotlin DSL equivalents</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The Kotlin DSL exposes the same options as named parameters:</p>
+<p>The Kotlin DSL exposes the same options as concise overloads, while still allowing direct definition objects when needed:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">// Non-blocking execute with all options
-execute(
-    "shipOrder",
-    action = { pc, p -&gt; ShippingService.shipOrder(pc, p) },
-    local = mapOf("address" to address),
-    parameterMapping = PayloadReducer.LOCAL_ONLY,
-    resultMapping = PayloadReducer.GLOBAL_ONLY,
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">val result = execute(
+    stepName = "shipOrder",
+    inputPayload = mapOf("address" to address),
     timeout = 5.minutes,
-    eventNameCustomizer = namespace("io.shipping")
-)
+    retryPolicy = RetryPolicy.NONE
+) { pc, p -&gt;
+    ShippingService.shipOrder(pc, p)
+}
 
-// Blocking awaitExecute with all options
-val result = awaitExecute(
-    "reserveStock",
-    action = { InventoryService.reserveStock() },
-    local = mapOf("customerId" to customerId),
-    timeout = 10.seconds,
-    eventNameCustomizer = baseName("ReservingStock")
-)</code></pre>
+val reservation = awaitExecute(
+    stepName = "reserveStock",
+    timeout = 10.seconds
+) { _, _ -&gt;
+    mapOf("reserved" to InventoryService.reserveStock())
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Kotlin&#8217;s named parameters and default values mean you only specify what you need—everything else falls back to sensible defaults.</p>
+<p>For advanced cases, you can still pass <code>ExecuteStepDefinition</code>, <code>WaitForStepDefinition</code>, and <code>PayloadStepDefinition</code> directly to <code>Kontext</code>.
+The convenience overloads simply build those same definitions with Kotlin defaults applied up front.
+When you want to pass step-local data as a named argument in Kotlin, use <code>inputPayload = &#8230;&#8203;</code> to match the Java DSL terminology.</p>
 </div>
 </div>
 </div>
