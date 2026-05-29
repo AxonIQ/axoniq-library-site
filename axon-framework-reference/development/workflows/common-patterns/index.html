@@ -959,7 +959,7 @@ var reservations = lineItems.stream()
                 payload("sku", item.get("sku"),
                         "quantity", item.get("quantity")).getValues(),
                 InventoryService::reserveStock,
-                step -&gt; step.timeout(Duration.ofSeconds(30))))
+                Duration.ofSeconds(30), defaults()))
         .toArray(WorkflowStepResult[]::new);</code></pre>
 </div>
 </div>
@@ -1030,8 +1030,8 @@ for (var approver : approvers) {
 var approvals = approvers.stream()
         .map(approver -&gt; ctx.waitForEvent(
                 "approval-" + approver,                                    <i class="conum" data-value="1"></i><b>(1)</b>
-                EventConditions.fromQualifiedName(ctx.resolve(ApprovalDecisionEvent.class)),
-                step -&gt; step.timeout(Duration.ofDays(5))))
+                ApprovalDecisionEvent.class,
+                Duration.ofDays(5)))
         .toArray(WorkflowStepResult[]::new);
 
 // Fan-in: wait for all approvals
@@ -1120,7 +1120,7 @@ var quotes = suppliers.stream()
         .map(s -&gt; ctx.execute("getQuote-" + s,
                 payload("supplier", s, "itemId", itemId).getValues(),
                 QuoteService::requestQuote,
-                step -&gt; step.timeout(Duration.ofSeconds(30))))
+                Duration.ofSeconds(30), defaults()))
         .toList();
 
 var remaining = new ArrayList&lt;&gt;(quotes);
@@ -1166,8 +1166,7 @@ ctx.awaitExecute("requestApproval",
 
 // Wait for their response
 var decision = ctx.waitForEvent("awaitApproval",
-        EventConditions.fromQualifiedName(ctx.resolve(ApprovalDecisionEvent.class)),
-        step -&gt; step.timeout(Duration.ofDays(3)));
+        ApprovalDecisionEvent.class, Duration.ofDays(3));
 
 if (decision.timeout()) {                                                <i class="conum" data-value="1"></i><b>(1)</b>
     // Team lead didn't respond — escalate to department head
@@ -1176,8 +1175,7 @@ if (decision.timeout()) {                                                <i clas
             ApprovalService::escalate);
 
     decision = ctx.waitForEvent("awaitEscalatedApproval",
-            EventConditions.fromQualifiedName(ctx.resolve(ApprovalDecisionEvent.class)),
-            step -&gt; step.timeout(Duration.ofDays(1)));
+            ApprovalDecisionEvent.class, Duration.ofDays(1));
 
     if (decision.timeout()) {
         ctx.fail(new RuntimeException("No approval received after escalation"));
@@ -1336,11 +1334,11 @@ public void execute(SimpleWorkflowContext ctx) {
     // ... do other work in parallel while child runs ...
 
     // Wait for the child's explicit completion event (matched by orderId in payload)
-    ctx.awaitEvent("awaitPaymentProcess",                                <i class="conum" data-value="3"></i><b>(3)</b>
+    ctx.awaitEvent("awaitPaymentProcess",                                  <i class="conum" data-value="3"></i><b>(3)</b>
             PaymentProcessCompleted.class,
             associate(payloadProperty("orderId"),                           <i class="conum" data-value="4"></i><b>(4)</b>
                       equalsTo(ctx.workflowId())),
-            step -&gt; step.timeout(Duration.ofMinutes(30)));
+            Duration.ofMinutes(30));
 
     logger.info("Child workflow completed for order {}", ctx.workflowId());
 }</code></pre>

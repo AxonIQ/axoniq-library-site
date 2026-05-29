@@ -1003,8 +1003,7 @@ Any async steps (started via <code>execute(&#8230;&#8203;)</code> without a foll
 <h2 id="_the_workflow_context"><a class="anchor" href="#_the_workflow_context"></a>The workflow context</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The workflow context passed to your workflow method is your single entry point to all engine capabilities.
-For Java, <code>BaseWorkflowContext</code> is the canonical DSL layer and <code>SimpleWorkflowContext</code> adds convenience methods on top:</p>
+<p>The <code>SimpleWorkflowContext</code> passed to your workflow method is your single entry point to all engine capabilities:</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -1032,14 +1031,13 @@ For Java, <code>BaseWorkflowContext</code> is the canonical DSL layer and <code>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Wait for events</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitEvent(&#8230;&#8203;)</code>—blocking event wait on <code>BaseWorkflowContext</code>, plus a typed convenience overload on <code>SimpleWorkflowContext</code><br>
-<code>waitForEvent(&#8230;&#8203;)</code>—non-blocking wait primitive on <code>BaseWorkflowContext</code> and <code>SimpleWorkflowContext</code><br>
-<code>sleep(&#8230;&#8203;)</code> / <code>awaitSleep(&#8230;&#8203;)</code>—durable delay primitives</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitEvent(&#8230;&#8203;)</code>—block until an external event arrives<br>
+<code>waitForEvent(&#8230;&#8203;)</code>—wait without blocking (returns <code>WorkflowStepResult</code>)<br>
+<code>sleep(&#8230;&#8203;)</code>—pause the workflow for a duration</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Manage state</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>modifyPayload(&#8230;&#8203;)</code> / <code>awaitModifyPayload(&#8230;&#8203;)</code>—canonical payload mutation primitives<br>
-<code>setPayload(&#8230;&#8203;)</code>—<code>SimpleWorkflowContext</code> convenience for replacing payload fields from an object</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>setPayload(&#8230;&#8203;)</code>—durably update the workflow payload</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Terminate</strong></p></td>
@@ -1054,8 +1052,7 @@ For Java, <code>BaseWorkflowContext</code> is the canonical DSL layer and <code>
 </tbody>
 </table>
 <div class="paragraph">
-<p>In Kotlin, <code>WorkflowKontext</code> is the execution-facing context and <code>Kontext</code> is the author-facing wrapper.
-<code>Kontext</code> exposes the same primitives through concise overloads and still delegates to the same definition-based API when needed.</p>
+<p>In Kotlin, the equivalent is <code>Kontext</code>, which provides the same capabilities with idiomatic Kotlin syntax—<code>payload</code> as a property, named parameters with defaults, and <code>kotlin.time.Duration</code> support.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1102,10 +1099,10 @@ For Java, <code>BaseWorkflowContext</code> is the canonical DSL layer and <code>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The workflow detected an error and cannot continue. Called from your workflow code.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ctx.cancel()</code> / <code>ctx.cancel("reason")</code> / <code>execution.cancel("reason")</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ctx.cancel("reason")</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>CANCELLED</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Inside or outside the workflow</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow should stop gracefully, either by workflow logic or by an external action (user, admin, API).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Outside the workflow</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An external action (user, admin, API) wants to stop a running workflow.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1122,17 +1119,16 @@ For Java, <code>BaseWorkflowContext</code> is the canonical DSL layer and <code>
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Start two steps in parallel (non-blocking)
 var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
                             ShippingService::shipOrder,
-                            step -&gt; step.timeout(Duration.ofMinutes(5)));
+                            Duration.ofMinutes(5), defaults());
 
 var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
                                 NotificationService::notifyCustomer,
-                                step -&gt; step.timeout(Duration.ofMinutes(1)));
+                                Duration.ofMinutes(1), defaults());
 
-// Meanwhile, check stock - if unavailable, fail the workflow
-var reservation = ctx.awaitExecute("reserveStock",
-        Map.of(),
-        (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()));
-if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
+// Meanwhile, check stock — if unavailable, fail the workflow
+var reserved = ctx.awaitExecute("reserveStock", Boolean.class,
+                                 InventoryService::reserveStock);
+if (!reserved) {
     ctx.fail(new RuntimeException("Stock unavailable")); <i class="conum" data-value="1"></i><b>(1)</b>
 }</code></pre>
 </div>
@@ -1147,7 +1143,7 @@ if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
 </div>
 <!-- vale off -->
 <div class="et-player" data-autoplay>
-  <div class="et-src" data-title="ctx.fail()">
+  <div class="et-src" data-title="ctx.fail() — event store">
 1 cancelled ShipOrderCancelled {"type": "...WorkflowFailedException", "message": "Stock unavailable"}
 2 cancelled NotifyCustomerCancelled {"type": "...WorkflowFailedException", "message": "Stock unavailable"}
 3 failed OrderFulfillmentWorkflow#ExecuteFailed {"type": "java.lang.RuntimeException", "message": "Stock unavailable"}
@@ -1169,14 +1165,14 @@ Like <code>fail</code>, <code>cancel</code> first cancels all running steps, the
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Inside the workflow - two long-running steps in parallel
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Inside the workflow — two long-running steps in parallel
 var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
                             ShippingService::shipOrder,
-                            step -&gt; step.timeout(Duration.ofMinutes(5)));
+                            Duration.ofMinutes(5), defaults());
 
 var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
                                 NotificationService::notifyCustomer,
-                                step -&gt; step.timeout(Duration.ofMinutes(1)));</code></pre>
+                                Duration.ofMinutes(1), defaults());</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1190,7 +1186,7 @@ execution.cancel("Cancelled by user");</code></pre>
 </div>
 <!-- vale off -->
 <div class="et-player" data-autoplay>
-  <div class="et-src" data-title="execution.cancel()">
+  <div class="et-src" data-title="execution.cancel() — event store">
 1 cancelled ShipOrderCancelled {"type": "...WorkflowCancelledException", "message": "Cancelled by user"}
 2 cancelled NotifyCustomerCancelled {"type": "...WorkflowCancelledException", "message": "Cancelled by user"}
 3 cancelled OrderFulfillmentWorkflow#ExecuteCancelled {"type": "...WorkflowCancelledException", "message": "Cancelled by user"}
@@ -1211,17 +1207,17 @@ When your workflow body returns, the engine cancels any such step and waits for 
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void execute(SimpleWorkflowContext ctx) {
-    // fire-and-forget - notice there is no .await() on the returned result
+    // fire-and-forget — notice there is no .await() on the returned result
     ctx.execute("sendReceipt", ctx.workflowPayload(),
                 NotificationService::sendReceipt,
-                step -&gt; step.timeout(Duration.ofMinutes(1)));
+                Duration.ofMinutes(1), defaults());
 
     // workflow body returns while sendReceipt is still running
 }</code></pre>
 </div>
 </div>
 <div class="et-player" data-autoplay>
-  <div class="et-src" data-title="normal completion">
+  <div class="et-src" data-title="normal completion — event store">
 1 cancelled SendReceiptCancelled {"reason": "StepCancellationException: Workflow completed"}
 2 completed OrderFulfillmentWorkflow#ExecuteCompleted {}
   </div>

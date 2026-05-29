@@ -421,8 +421,9 @@ If the application crashes, the engine replays those events and resumes exactly 
 
     @Workflow(idProperty = "orderId", startOnEventName = "OrderPlaced")
     public void execute(SimpleWorkflowContext ctx) {
+
         ctx.awaitExecute("reserveStock", Boolean.class,
-                InventoryService::reserveStock); <i class="conum" data-value="1"></i><b>(1)</b>
+                          InventoryService::reserveStock); <i class="conum" data-value="1"></i><b>(1)</b>
     }
 }</code></pre>
 </div>
@@ -431,9 +432,7 @@ If the application crashes, the engine replays those events and resumes exactly 
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>SimpleWorkflowContext.awaitExecute(stepName, resultType, supplier)</code> is a convenience for single-value actions.
-It stores the value under an internal payload key named <code>"<em>" + stepName + "Result"</code> and returns it as the requested type.
-For <code>reserveStock</code>, that key becomes <code></em>reserveStockResult</code>.
+<td><code>awaitExecute</code> calls the action, waits for it to finish, and returns the typed result.
 The engine records a STARTED and COMPLETED event for this step automatically.</td>
 </tr>
 </table>
@@ -457,10 +456,11 @@ The engine records a STARTED and COMPLETED event for this step automatically.</t
         var customerId = ctx.workflowPayload().get("customerId");
         var amount = ctx.workflowPayload().get("amount");
 
-        var reservation = ctx.awaitExecute("reserveStock",
+        var reserved = ctx.awaitExecute("reserveStock",
                 payload("customerId", customerId, "amount", amount).getValues(),
-                (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock(input))); <i class="conum" data-value="1"></i><b>(1)</b>
-        if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
+                Boolean.class,
+                InventoryService::reserveStock); <i class="conum" data-value="1"></i><b>(1)</b>
+        if (!reserved) {
             ctx.fail(new RuntimeException("Stock unavailable")); <i class="conum" data-value="2"></i><b>(2)</b>
             return;
         }
@@ -474,7 +474,7 @@ The engine records a STARTED and COMPLETED event for this step automatically.</t
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>awaitExecute</code> runs the action synchronously and returns the step&#8217;s payload map.
+<td><code>awaitExecute</code> runs the action synchronously and returns the typed result.
 The params (payload) passed to the step (<code>customerId</code>, <code>amount</code>) are recorded in the STARTED event.</td>
 </tr>
 <tr>
@@ -492,14 +492,14 @@ Standard Java control flow—<code>if</code>, loops, try/catch—all work exactl
 1 external OrderPlaced {"orderId": 123, "customerId": 456, "email": "joe@example.com", "amount": 99.95}
 2 started OrderFulfillmentWorkflow#ExecuteStarted
 3 started ReserveStockStarted {"customerId": 456, "amount": 99.95}
-4 completed ReserveStockCompleted {"reserved": true}
+4 completed ReserveStockCompleted {"__reserveStock": true}
 5 completed OrderFulfillmentWorkflow#ExecuteCompleted
   </div>
 </div>
 <div class="paragraph">
 <p>The triggering <code>OrderPlaced</code> event&#8217;s <code>orderId</code> becomes the workflow instance ID (from <code>idProperty</code>).
 Each <code>awaitExecute</code> produces a STARTED/COMPLETED pair—the STARTED event captures the input payload, the COMPLETED event captures the result.
-The <code>reserved</code> key stores the step result payload returned by the action.</p>
+The <code>__reserveStock</code> key stores the typed return value (<code>true</code>).</p>
 </div>
 <div class="paragraph">
 <p>Every primitive call becomes a pair of durable events.
@@ -594,10 +594,11 @@ public void execute(SimpleWorkflowContext ctx) {
     var customerId = ctx.workflowPayload().get("customerId");
     var amount = ctx.workflowPayload().get("amount");
 
-    var reservation = ctx.awaitExecute("reserveStock",
+    var reserved = ctx.awaitExecute("reserveStock",
             payload("customerId", customerId, "amount", amount).getValues(),
-            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock(input)));
-    if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
+            Boolean.class,
+            InventoryService::reserveStock);
+    if (!reserved) {
         ctx.fail(new RuntimeException("Stock unavailable"));
         return;
     }
@@ -606,8 +607,8 @@ public void execute(SimpleWorkflowContext ctx) {
                      payload("customerId", customerId,
                              "amount", amount).getValues(),
                      PaymentService::initiatePayment,
-                     step -&gt; step.timeout(Duration.ofSeconds(30))
-                                 .eventNameCustomizer(baseName("InitiatingPaymentForCustomer")));  <i class="conum" data-value="2"></i><b>(2)</b>
+                     Duration.ofSeconds(30),
+                     baseName("InitiatingPaymentForCustomer"));  <i class="conum" data-value="2"></i><b>(2)</b>
 }</code></pre>
 </div>
 </div>
@@ -631,7 +632,7 @@ public void execute(SimpleWorkflowContext ctx) {
 1 external OrderPlaced {"orderId": 123, "customerId": 456, "email": "joe@example.com", "amount": 99.95}
 2 started OrderFulfillmentWorkflow#ExecuteStarted
 3 started ReserveStockStarted {"customerId": 456, "amount": 99.95}
-4 completed ReserveStockCompleted {"reserved": true}
+4 completed ReserveStockCompleted {"__reserveStock": true}
 5 started InitiatingPaymentForCustomerStarted {"customerId": 456, "amount": 99.95}
 6 completed InitiatingPaymentForCustomerCompleted
 7 completed OrderFulfillmentWorkflow#ExecuteCompleted
@@ -647,7 +648,7 @@ public void execute(SimpleWorkflowContext ctx) {
 <div class="sectionbody">
 <div class="paragraph">
 <p>Our workflow initiates payment, but how do we know when it&#8217;s confirmed?
-The <code>awaitEvent</code> convenience suspends the workflow until a matching external event arrives:</p>
+The <code>awaitEvent</code> primitive suspends the workflow until a matching external event arrives:</p>
 </div>
 <div class="listingblock">
 <div class="title">src/main/java/io/axoniq/example/order/OrderFulfillmentWorkflow.java</div>
@@ -658,10 +659,11 @@ public void execute(SimpleWorkflowContext ctx) {
     var customerId = ctx.workflowPayload().get("customerId");
     var amount = ctx.workflowPayload().get("amount");
 
-    var reservation = ctx.awaitExecute("reserveStock",
+    var reserved = ctx.awaitExecute("reserveStock",
             payload("customerId", customerId, "amount", amount).getValues(),
-            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock(input)));
-    if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
+            Boolean.class,
+            InventoryService::reserveStock);
+    if (!reserved) {
         ctx.fail(new RuntimeException("Stock unavailable"));
         return;
     }
@@ -670,14 +672,12 @@ public void execute(SimpleWorkflowContext ctx) {
                      payload("customerId", customerId,
                              "amount", amount).getValues(),
                      PaymentService::initiatePayment,
-                     step -&gt; step.timeout(Duration.ofSeconds(30))
-                                 .eventNameCustomizer(baseName("InitiatingPaymentForCustomer")));
+                     Duration.ofSeconds(30),
+                     baseName("InitiatingPaymentForCustomer"));
 
-    var confirmation = ctx.awaitEvent("awaitPayment",     <i class="conum" data-value="1"></i><b>(1)</b>
-            PaymentConfirmed.class,
-            associate(payloadProperty("orderId"),
-                    equalsTo(ctx.workflowPayload().get("orderId"))),
-            step -&gt; step.timeout(Duration.ofMinutes(15))); <i class="conum" data-value="2"></i><b>(2)</b>
+    var confirmation = ctx.awaitEvent("awaitPayment",       <i class="conum" data-value="1"></i><b>(1)</b>
+                                       PaymentConfirmed.class,
+                                       Duration.ofMinutes(15)); <i class="conum" data-value="2"></i><b>(2)</b>
 
     logger.info("Payment confirmed: {}", confirmation);
 }</code></pre>
@@ -687,12 +687,12 @@ public void execute(SimpleWorkflowContext ctx) {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>awaitEvent</code> blocks the workflow until a matching <code>PaymentConfirmed</code> event arrives.
+<td><code>awaitEvent</code> blocks the workflow until a <code>PaymentConfirmed</code> event arrives.
 The engine subscribes to the event bus and watches for events of this type.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>The association keeps the wait scoped to this workflow instance, and the customizer sets the maximum wait time to 15 minutes.</td>
+<td>Maximum time to wait. After 15 minutes, the step completes with <code>StepStatus.TIMED_OUT</code>.</td>
 </tr>
 </table>
 </div>
@@ -705,7 +705,7 @@ Here&#8217;s the full event store:</p>
 1 external OrderPlaced {"orderId": 123, "customerId": 456, "email": "joe@example.com", "amount": 99.95}
 2 started OrderFulfillmentWorkflow#ExecuteStarted
 3 started ReserveStockStarted {"customerId": 456, "amount": 99.95}
-4 completed ReserveStockCompleted {"reserved": true}
+4 completed ReserveStockCompleted {"__reserveStock": true}
 5 started InitiatingPaymentForCustomerStarted {"customerId": 456, "amount": 99.95}
 6 completed InitiatingPaymentForCustomerCompleted
 7 started AwaitPaymentStarted {"startTime": "2026-03-25T10:00:05Z"}
@@ -739,8 +739,7 @@ They can be published from anywhere—a command handler, an <code>EventGateway</
 <h2 id="_kotlin_dsl"><a class="anchor" href="#_kotlin_dsl"></a>Kotlin DSL</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>If you prefer Kotlin, <code>WorkflowKontext</code> is the runtime-facing context and <code>Kontext</code> is the author-facing DSL wrapper.
-<code>Kontext</code> offers the same kind of concise defaults as the Java DSL:</p>
+<p>If you prefer Kotlin, the same workflow looks like this:</p>
 </div>
 <div class="listingblock">
 <div class="title">src/main/kt/io/axoniq/example/order/OrderFulfillmentWorkflow.kt</div>
@@ -749,21 +748,42 @@ They can be published from anywhere—a command handler, an <code>EventGateway</
 
     @Workflow(idProperty = "orderId", startOnEventName = "OrderPlaced")
     fun Kontext.onExecute() {
-        val reservation = awaitExecute("reserveStock") { _, _ -&gt;
-            mapOf("reserved" to InventoryService.reserveStock())
-        }
-        if (reservation["reserved"] != true) {
+        val customerId = payload["customerId"]
+        val amount = payload["amount"]
+
+        val reserved = awaitExecute(
+            "reserveStock",
+            { InventoryService.reserveStock() },
+            local = mapOf("customerId" to customerId, "amount" to amount)
+        )
+        if (!reserved) {
             fail(RuntimeException("Stock unavailable"))
             return
         }
+
+        awaitExecute(
+            "initiatePayment",
+            { PaymentService.initiatePayment() },
+            local = mapOf("customerId" to customerId, "amount" to amount),
+            timeout = 30.seconds,
+            eventNameCustomizer = baseName("InitiatingPaymentForCustomer")
+        )
+
+        val confirmation = awaitEvent&lt;PaymentConfirmed&gt;(
+            "awaitPayment",
+            timeout = 15.minutes
+        )
+
+        logger.info("Payment confirmed: {}", confirmation)
     }
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Under the hood, <code>Kontext</code> still builds the same <code>ExecuteStepDefinition</code> and <code>WaitForStepDefinition</code> objects as the runtime-facing API through <code>WorkflowKontext</code>.
-You can stay concise for common cases and drop down to explicit definitions only when you need full control.
-When you need to pass step-local data with a named Kotlin argument, use <code>inputPayload = &#8230;&#8203;</code>.
+<p>The Kotlin DSL uses extension functions on <code>Kontext</code>, giving you a clean, idiomatic API with named parameters and <code>kotlin.time.Duration</code> support (for example, <code>30.seconds</code>).</p>
+</div>
+<div class="paragraph">
+<p>That&#8217;s a complete workflow—it executes actions and waits for external events.
 To learn more about all execution options, event associations, orchestration patterns, and advanced configuration, see the <a href="../../axon-framework-reference/development/workflows/" class="xref page">Reference Guide</a>.</p>
 </div>
 </div>
