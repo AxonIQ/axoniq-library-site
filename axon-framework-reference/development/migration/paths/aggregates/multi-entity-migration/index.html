@@ -521,6 +521,30 @@
     <a class="nav-link" href="../../../../commands/command-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../../../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../../commands/infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -1053,6 +1077,67 @@ public class Transaction {
 </div>
 </div>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_event_forwarding_mode"><a class="anchor" href="#_event_forwarding_mode"></a>Event forwarding mode</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In Axon Framework 4, <code>@AggregateMember</code> had an <code>eventForwardingMode</code> attribute controlling how events were delivered to child entities:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ForwardAll</code> (default): every event was forwarded to every child.</p>
+</li>
+<li>
+<p><code>ForwardMatchingInstances</code>: events were forwarded only to children whose <code>@EntityId</code> matched a field on the event.</p>
+</li>
+<li>
+<p><code>ForwardNone</code>: no events were forwarded automatically.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In Axon Framework 5, this attribute does not exist.
+The default behaviour is equivalent to <code>ForwardAll</code>: every event is offered to every child&#8217;s <code>@EventSourcingHandler</code>.</p>
+</div>
+<div class="paragraph">
+<p>To replicate <code>ForwardMatchingInstances</code>, configure <code>eventTargetMatcher</code> on <code>@EntityMember</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EntityMember(
+    routingKey = "transactionId",
+    eventTargetMatcher = RoutingKeyEventTargetMatcherDefinition.class <i class="conum" data-value="1"></i><b>(1)</b>
+)
+private List&lt;Transaction&gt; transactions = new ArrayList&lt;&gt;();</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>RoutingKeyEventTargetMatcherDefinition</code> routes events only to the child whose routing key matches a field on the event payload, preventing every child from receiving every event.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>There is no direct replacement for <code>ForwardNone</code>.
+If you need to suppress event forwarding entirely, do not declare <code>@EventSourcingHandler</code> methods on the child entity. Axon will offer events but nothing will handle them.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also"><a class="anchor" href="#_see_also"></a>See also</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="../../../../commands/entities/entity-hierarchies/" class="xref page">Entity Hierarchies</a>: full reference for <code>@EntityMember</code>, routing key configuration, and event routing in Axon Framework 5</p>
+</li>
+</ul>
 </div>
 <div class="admonitionblock important">
 <table>

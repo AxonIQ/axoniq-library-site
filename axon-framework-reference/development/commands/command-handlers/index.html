@@ -519,6 +519,30 @@
     <a class="nav-link" href="../command-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -910,122 +934,42 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Command handlers are the components that process commands and perform the corresponding business logic.
-Command handlers can be either stateless or stateful, depending on whether they need to maintain state across command invocations.</p>
+<p>Command handlers process commands and perform the corresponding business logic.
+A command handler decides whether a requested change is valid and, if so, applies it by appending events, invoking services, or dispatching further commands.</p>
 </div>
 <div class="paragraph">
-<p>This page explains how to define command handlers, handle commands, and work with the key concepts like <code>ProcessingContext</code>, <code>EventAppender</code>, and message types.</p>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-<div class="title">Annotating command messages</div>
-<div class="paragraph">
-<p>It&#8217;s recommended to annotate all command message classes with <code>@Command</code>. This allows you to:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Define an explicit message type independent of the Java class name.</p>
-</li>
-<li>
-<p>Version your queries for evolution over time.</p>
-</li>
-<li>
-<p>Organize queries by bounded context using namespaces.</p>
-</li>
-<li>
-<p>Leverage payload conversion at handling time for different representations.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>If the <code>@Command</code> annotation is omitted, Axon will default to using the fully qualified class name as the command name, which tightly couples your message identity to your Java package structure.</p>
-</div>
-</td>
-</tr>
-</table>
+<p>Command handlers are <strong>stateless</strong> when they do not need prior state to process the command (this page).
+When prior state is required, the handler either lives on the entity itself (see <a href="../entities/event-sourced-entity/" class="xref page">Event-sourced entities</a>) or receives the entity as a parameter via <code>@InjectEntity</code> (see <a href="../entities/stateful-command-handler/" class="xref page">Stateful command handlers</a>).</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_stateless_vs_stateful_command_handlers"><a class="anchor" href="#_stateless_vs_stateful_command_handlers"></a>Stateless vs stateful command handlers</h2>
+<h2 id="stateless-command-handlers"><a class="anchor" href="#stateless-command-handlers"></a>Stateless command handlers</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Command handlers in Axon Framework fall into two categories:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Stateless command handlers</strong>: Regular components (registered objects or beans) that don&#8217;t maintain state in the handler itself between command invocations.
-Each command is processed independently.
-State may be accessed through injected services or repositories, but the handler itself doesn&#8217;t manage state.</p>
-</li>
-<li>
-<p><strong>Stateful command handlers</strong>: Components that maintain state in the handler itself across command invocations.
-These are typically event-sourced entities where state is built up from events and stored in the handler instance.</p>
-</li>
-</ul>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>With recent versions of Axon Framework, the emphasis has shifted from modeling-centric (read: aggregate focus) to command-centric.
-Entities are now understood as one implementation pattern for stateful command handling, not a core framework concept.
-The focus is on handling commands effectively, with various patterns available to achieve that goal.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_stateless_command_handlers"><a class="anchor" href="#_stateless_command_handlers"></a>Stateless command handlers</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Stateless command handlers are regular components with command handling methods that don&#8217;t maintain state in the handler itself. An example of command handling methods are methods annotated with <code>@CommandHandler</code>
-They may access state through injected services or repositories, but the handler instance itself is stateless.</p>
+<p>Command handlers are regular components with methods annotated with <code>@CommandHandler</code>.
+They may access state through injected services or repositories, but the handler instance itself holds no state between invocations.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.examples.demo.university.shared.application.notifier.NotificationService;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.springframework.stereotype.Component;
 
 @Component <i class="conum" data-value="1"></i><b>(1)</b>
-public class GiftCardBulkOperationsHandler {
+public class FacultyAnnouncementCommandHandler {
 
-    private final GiftCardInventoryService inventoryService; <i class="conum" data-value="2"></i><b>(2)</b>
+    private final NotificationService notificationService; <i class="conum" data-value="2"></i><b>(2)</b>
 
-    public GiftCardBulkOperationsHandler( GiftCardInventoryService inventoryService) {
-        this.inventoryService = inventoryService;
+    public FacultyAnnouncementCommandHandler(NotificationService notificationService) {
+        this.notificationService = notificationService;
     }
 
     @CommandHandler <i class="conum" data-value="3"></i><b>(3)</b>
-    public void handle(BulkIssueCardsCommand cmd,
-                       CommandDispatcher commandDispatcher) {
+    public void handle(SendFacultyAnnouncement command) {
         // Access state through service, but don't maintain it in the handler
-        int availableStock = inventoryService.getAvailableStock(cmd.shopId());
-        if (availableStock &lt; cmd.quantity()) {
-            throw new IllegalStateException("Insufficient stock");
-        }
-
-        // Reserve stock and dispatch commands
-        inventoryService.reserveStock(cmd.shopId(), cmd.quantity()); <i class="conum" data-value="4"></i><b>(4)</b>
-
-        for (int i = 0; i &lt; cmd.quantity(); i++) {
-            String cardId = UUID.randomUUID().toString();
-            commandDispatcher.send(new IssueCardCommand(cardId, cmd.amount(), cmd.shopId()));
-        }
+        notificationService.sendNotification(
+                new NotificationService.Notification(command.recipientId(), command.message())); <i class="conum" data-value="4"></i><b>(4)</b>
     }
 }</code></pre>
 </div>
@@ -1034,7 +978,7 @@ public class GiftCardBulkOperationsHandler {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Stateless command handlers are regular objects registered via the Configuration API or Spring beans as is the case in this example.</td>
+<td>Command handlers are regular objects registered via the Configuration API or as Spring beans, as in this example.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
@@ -1042,11 +986,11 @@ public class GiftCardBulkOperationsHandler {
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Each command invocation is independent—no instance state is maintained between calls.</td>
+<td>Each command invocation is independent; no instance state is maintained between calls.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>Commands change the conceptual state of the system (reserving stock, issuing cards).</td>
+<td>Commands change the conceptual state of the system (here, delivering an announcement through the notification service).</td>
 </tr>
 </table>
 </div>
@@ -1066,631 +1010,7 @@ If a command only performs validation or queries without changing state, conside
 </table>
 </div>
 <div class="paragraph">
-<p>Stateless handlers are useful for:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Commands that coordinate operations across multiple stateful handlers.</p>
-</li>
-<li>
-<p>Commands that perform operations using state from external services or repositories.</p>
-</li>
-<li>
-<p>Commands that don&#8217;t require building up and maintaining state within the handler itself.</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="stateful-command-handlers"><a class="anchor" href="#stateful-command-handlers"></a>Stateful command handlers</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Stateful command handlers maintain state in the handler itself across command invocations.
-State is typically built up from events and used to make decisions about whether commands can be executed.</p>
-</div>
-<div class="paragraph">
-<p>Axon Framework supports two paradigms for defining stateful command handlers:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Entity-centric</strong>: Define an entity class and place <code>@CommandHandler</code> methods directly on it.</p>
-</li>
-<li>
-<p><strong>Command-centric</strong>: Define command handlers as separate methods that receive the entity as a parameter, which Axon automatically loads.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Both approaches achieve the same goal but reflect different design preferences.
-The entity-centric approach groups all command handling logic with the entity state, while the command-centric approach keeps command handling logic separate from state management.</p>
-</div>
-<div class="sect2">
-<h3 id="_entity_centric_command_handlers"><a class="anchor" href="#_entity_centric_command_handlers"></a>Entity-centric command handlers</h3>
-<div class="paragraph">
-<p>In the entity-centric model, you define a class marked with <code>@EventSourcedEntity</code> and place command handlers directly on it:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
-import org.axonframework.messaging.commandhandling.annotation.Command;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
-
-@Command(routingKey = "cardId") <i class="conum" data-value="1"></i><b>(1)</b>
-public record IssueCardCommand(String cardId, int amount, String shopId) {
-}
-
-@Command(routingKey = "cardId")
-public record RedeemCardCommand(String cardId, String transactionId, int amount) {
-}
-
-@EventSourcedEntity <i class="conum" data-value="2"></i><b>(2)</b>
-public class GiftCard {
-
-    private String id;
-    private int remainingValue;
-
-    @CommandHandler <i class="conum" data-value="3"></i><b>(3)</b>
-    public static String issue(IssueCardCommand cmd, EventAppender eventAppender) {
-        if (cmd.amount() &lt;= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-        eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
-        return cmd.cardId();
-    }
-
-    @CommandHandler <i class="conum" data-value="4"></i><b>(4)</b>
-    public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
-        if (cmd.amount() &lt;= 0) {
-            throw new IllegalArgumentException("amount &lt;= 0");
-        }
-        if (cmd.amount() &gt; remainingValue) { <i class="conum" data-value="5"></i><b>(5)</b>
-            throw new IllegalStateException("amount &gt; remaining value");
-        }
-        eventAppender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
-    }
-
-    // Event sourcing handlers update state
-    @EventSourcingHandler
-    private void on(CardIssuedEvent event) {
-        this.id = event.cardId();
-        this.remainingValue = event.amount();
-    }
-
-    @EventSourcingHandler
-    private void on(CardRedeemedEvent event) {
-        this.remainingValue -= event.amount();
-    }
-
-    @EntityCreator <i class="conum" data-value="6"></i><b>(6)</b>
-    protected GiftCard() {
-        // Required no-arg constructor for reconstitution
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The <code>@Command</code> annotation on the command class defines the message type and routing key.
-The <code>routingKey</code> attribute specifies which property contains the identifier for routing.
-Commands with the same routing key are routed to the same handler instance to avoid optimistic concurrency conflicts.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>The <code>@EventSourcedEntity</code> annotation (non-Spring) or <code>@EventSourced</code> (Spring) marks the class as an event-sourced entity. If such an event-sourced entity contains command handlers, those will be automatically discovered.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>A creational command handler (static method) creates a new instance by appending events.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>An instance command handler (instance method) operates on an existing instance, requiring it to be loaded first based on the entity identifier.
-The task of finding the entity identifier is performed by the <code>EntityIdResolver</code>, which defaults to the <code>AnnotatedEntityIdResolver</code>.
-The <code>AnnotatedEntityIdResolver</code> in turn checks for the existence of an <code>@TargetEntityId</code> annotated field or getter on the command.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="5"></i><b>5</b></td>
-<td>Instance handlers have access to current state for decision-making.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="6"></i><b>6</b></td>
-<td>The entity creator of the event-sourced entity, as described in more detail <a href="#_entity_creation_with_entitycreator">here</a>. A no-arg constructor in this example.</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_command_centric_stateful_handlers"><a class="anchor" href="#_command_centric_stateful_handlers"></a>Command-centric command handlers</h3>
-<div class="paragraph">
-<p>In the command-centric model, you define command handlers as separate methods that receive the entity as a parameter.
-Axon Framework automatically loads the entity instance based on the command&#8217;s routing key:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
-import org.axonframework.extension.spring.stereotype.EventSourced;
-import org.springframework.stereotype.Component;
-
-// The entity definition with state and event sourcing handlers
-@EventSourcedEntity
-public class GiftCard {
-
-    private String id;
-    private int remainingValue;
-
-    @EventSourcingHandler
-    private void on(CardIssuedEvent event) {
-        this.id = event.cardId();
-        this.remainingValue = event.amount();
-    }
-
-    @EventSourcingHandler
-    private void on(CardRedeemedEvent event) {
-        this.remainingValue -= event.amount();
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public int getRemainingValue() {
-        return remainingValue;
-    }
-
-    @EntityCreator
-    protected GiftCard() {
-        // Required no-arg constructor for reconstitution
-    }
-}
-
-// Separate command handlers that receive the entity as a parameter
-@Component <i class="conum" data-value="1"></i><b>(1)</b>
-public class GiftCardCommandHandlers {
-
-    @CommandHandler <i class="conum" data-value="2"></i><b>(2)</b>
-    public String handle(IssueCardCommand cmd, EventAppender eventAppender) {
-        // Creational handler - no entity parameter needed
-        eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
-        return cmd.cardId();
-    }
-
-    @CommandHandler
-    public void handle(RedeemCardCommand cmd,
-                       @InjectEntity GiftCard card, <i class="conum" data-value="3"></i><b>(3)</b>
-                       EventAppender eventAppender) {
-        // Instance handler - entity automatically loaded by Axon
-        if (cmd.amount() &lt;= 0) {
-            throw new IllegalArgumentException("amount &lt;= 0");
-        }
-        if (cmd.amount() &gt; card.getRemainingValue()) { <i class="conum" data-value="4"></i><b>(4)</b>
-            throw new IllegalStateException("amount &gt; remaining value");
-        }
-        eventAppender.append(new CardRedeemedEvent(card.getId(), cmd.transactionId(), cmd.amount()));
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Command handlers are defined in a separate component (not on the entity itself).</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Creational handlers don&#8217;t receive an entity parameter—they create the entity through publication of the first event.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Instance handler receives entities when the parameter is annotated with <code>@InjectEntity</code>.
-Axon automatically loads it based on the command&#8217;s routing key.
-Other options are available and specified in the <code>@InjectEntity</code> documentation.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>The handler accesses the entity to make business decision.
-This can either be done by invoking entity-specific decision methods or by inspecting the state (as shown in the sample above).</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>The command-centric approach aligns closest with [Vertical Slice-based Architecture](<a href="https://www.baeldung.com/java-vertical-slice-architecture" class="bare">https://www.baeldung.com/java-vertical-slice-architecture</a>). This style is useful when:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>You want to keep command handling logic separate from entity state management.</p>
-</li>
-<li>
-<p>You have multiple entities that share similar command handling patterns.</p>
-</li>
-<li>
-<p>You prefer to organize code by command/use case rather than by entity.</p>
-</li>
-<li>
-<p>You want to easily test command handling logic without the entity class.</p>
-</li>
-</ul>
-</div>
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_creational_and_instance_handlers"><a class="anchor" href="#_creational_and_instance_handlers"></a>Creational and instance handlers</h3>
-<div class="paragraph">
-<p>Both entity-centric and command-centric stateful handlers support two handler types:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Creational handlers</strong>: Create new instances (static factory methods on the entity, or separate methods without entity parameter)</p>
-</li>
-<li>
-<p><strong>Instance handlers</strong>: Operate on existing instances (instance methods on the entity, or separate methods with entity parameter)</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>The examples below show the entity-centric approach.
-For command-centric examples, see the previous section.</p>
-</div>
-<div class="sect3">
-<h4 id="_creational_handlers"><a class="anchor" href="#_creational_handlers"></a>Creational handlers</h4>
-<div class="paragraph">
-<p>Creational handlers are static methods with <code>@CommandHandler</code> that create new entity instances by appending events:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced
-public class GiftCard {
-
-    @CommandHandler
-    public static String issue(IssueCardCommand cmd, EventAppender eventAppender) { <i class="conum" data-value="1"></i><b>(1)</b>
-        if (cmd.amount() &lt;= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-
-        eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount())); <i class="conum" data-value="2"></i><b>(2)</b>
-
-        return cmd.cardId(); <i class="conum" data-value="3"></i><b>(3)</b>
-    }
-
-    @EntityCreator <i class="conum" data-value="4"></i><b>(4)</b>
-    protected GiftCard() {
-        // Required no-arg constructor for reconstitution
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Static method marked with <code>@CommandHandler</code> creates the entity.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Events are appended to create and initialize the entity.
-The entity instance itself doesn&#8217;t need to be created or returned by the handler.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>The method can return whatever value makes sense for the caller—typically the entity identifier, but could be any result type.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>The entity creator of the event-sourced entity, as described in more detail <a href="#_entity_creation_with_entitycreator">here</a>. A no-arg constructor in this example.</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_instance_handlers"><a class="anchor" href="#_instance_handlers"></a>Instance handlers</h4>
-<div class="paragraph">
-<p>Instance handlers operate on existing instances that are loaded based on their identifier:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced
-public class GiftCard {
-
-    private String id;
-    private int remainingValue;
-
-    @CommandHandler <i class="conum" data-value="1"></i><b>(1)</b>
-    public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
-        if (cmd.amount() &gt; remainingValue) {
-            throw new IllegalStateException("Insufficient balance");
-        }
-        eventAppender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
-    }
-
-    @EntityCreator <i class="conum" data-value="2"></i><b>(2)</b>
-    protected GiftCard() {
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Instance methods with <code>@CommandHandler</code> require an existing instance to be loaded based on the entity identifier.
-The task of finding the entity identifier is performed by the <code>EntityIdResolver</code>, which defaults to the <code>AnnotatedEntityIdResolver</code>. The <code>AnnotatedEntityIdResolver</code> in turn checks for the existence of an <code>@TargetEntityId</code> annotated field or getter on the command.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>The entity creator of the event-sourced entity, as described in more detail <a href="#_entity_creation_with_entitycreator">here</a>. A no-arg constructor in this example.</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>The framework automatically loads the correct instance based on the command&#8217;s routing key before invoking the handler.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_entity_creation_with_entitycreator"><a class="anchor" href="#_entity_creation_with_entitycreator"></a>Entity creation with <code>@EntityCreator</code></h3>
-<div class="paragraph">
-<p>In event sourcing, events are used to reconstruct the state of an entity.
-To be able to reconstruct the state, an initial entity instance should be constructed.
-The <code>@EntityCreator</code> annotation specifies how to create that initial instance.
-The <code>@EntityCreator</code> is mandatory when writing annotation-based entities, as they are in charge of telling Axon Framework how you prefer to initialize an entity.</p>
-</div>
-<div class="paragraph">
-<p>There are three patterns for entity creation:</p>
-</div>
-<div class="paragraph">
-<p><strong>Pattern 1: Empty instance creation</strong></p>
-</div>
-<div class="paragraph">
-<p>When the <code>@EntityCreator</code> annotation is placed on a no-arg constructor, Axon Framework constructs an empty instance of that entity:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced
-public class GiftCard {
-
-    private String id;
-    private int remainingValue;
-
-    @EntityCreator <i class="conum" data-value="1"></i><b>(1)</b>
-    public GiftCard() {
-    }
-
-    @CommandHandler <i class="conum" data-value="2"></i><b>(2)</b>
-    public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
-        eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
-    }
-
-    @EventSourcingHandler
-    private void on(CardIssuedEvent event) {
-        this.id = event.id();
-        this.remainingValue = event.amount();
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>A no-argument constructor annotated with <code>@EntityCreator</code>.
-This constructor will be invoked to create the initial entity for further instance command handling.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>A static command handler must be used for the creation command, since no instance exists to handle it yet.
-Once the event is published, future loads will use the <code>@EntityCreator</code> to create the instance from that event.</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p><strong>Pattern 2: Identifier-only creation</strong></p>
-</div>
-<div class="paragraph">
-<p>Besides pattern one, where a no-arg constructors was annotated with the <code>@EntityCreator</code> annotation, you can also place the <code>@EntityCreator</code> on a constructor that includes an entity identifier parameter.
-The entity identifier is required to be annotated with <code>@InjectEntityId</code>, as shown in the sample below:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced
-public class GiftCard {
-
-    private String id;
-    private int remainingValue;
-
-    @EntityCreator <i class="conum" data-value="1"></i><b>(1)</b>
-    public GiftCard(@InjectEntityId String id) { <i class="conum" data-value="2"></i><b>(2)</b>
-        this.id = id;
-    }
-
-    @CommandHandler <i class="conum" data-value="3"></i><b>(3)</b>
-    public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
-        eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
-    }
-
-    @EventSourcingHandler
-    private void on(CardIssuedEvent event) {
-        this.remainingValue = event.amount();
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>@EntityCreator</code> on a constructor that takes only the identifier to creates the initial instance.
-This constructor will be invoked to create the initial entity for further instance command handling.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>The entity identifier parameter, annotated with <code>@InjectEntityId</code>.
-The identifier is resolved from the first event payload.
-The annotation is required by Axon Framework to be able to differentiate between an entity identifier parameter and event parameter (as used in pattern 3).</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>A static command handler must be used for the creation command, since no instance exists to handle it yet.
-Once the event is published, future loads will use the <code>@EntityCreator</code> to create the instance from that event.</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>Use <code>@InjectEntityId</code> to disambiguate the entity identifier from the event payload.
-Without this annotation, the first parameter is assumed to be the event payload.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p><strong>Pattern 3: Creation from origin event</strong></p>
-</div>
-<div class="paragraph">
-<p>Besides no-argument and identifier-only <code>@EntityCreator</code> annotated constructors, you can use the first event to construct the initial entity:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced
-public class GiftCard {
-
-    private final String id;
-    private final int initialAmount;
-
-    @EntityCreator <i class="conum" data-value="1"></i><b>(1)</b>
-    public GiftCard(CardIssuedEvent event, @InjectEntityId String id) {
-        this.id = event.cardId(); // or use the injected id parameter
-        this.initialAmount = event.amount();
-    }
-
-    @CommandHandler <i class="conum" data-value="2"></i><b>(2)</b>
-    public static String issue(IssueCardCommand cmd, EventAppender eventAppender) {
-        eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
-        return cmd.cardId();
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>@EntityCreator</code> on a constructor that takes the first event that can then be used to initialize the entity state.
-Can be combined with an <code>@InjectEntityId</code> annotated entity identifier parameter if desired.
-This constructor will be invoked to create the initial entity for further instance command handling.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>A static command handler must be used for the creation command, since no instance exists to handle it yet.
-Once the event is published, future loads will use the <code>@EntityCreator</code> to create the instance from that event.</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p><strong>Understanding the relationship:</strong></p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>@EntityCreator</code> defines how to create entity instances (either through a no-arg, identifier-only, or first-event-based constructor).</p>
-</li>
-<li>
-<p><code>@CommandHandler</code> on static methods handles creation commands and appends events.</p>
-</li>
-<li>
-<p><code>@CommandHandler</code> on instance methods handles commands on loaded entities.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>When a command arrives Axon Framework checks if the command is targeted towards a creational or instance command handler:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>For an instance command handler, Axon loads the entity using <code>@EntityCreator</code> first.
-Then the appropriate instance command handler is invoked on that instance.</p>
-</li>
-<li>
-<p>For a creational command handler, the static command handling method is invoked first.
-Then, the appropriate event sourcing handlers are triggered to set the new state.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>Both annotations work together in the entity lifecycle, but serve distinct purposes.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_polymorphic_entities"><a class="anchor" href="#_polymorphic_entities"></a>Polymorphic entities</h3>
-<div class="paragraph">
-<p>Axon Framework allows for polymorphism in your entities when desired.
-Please check out the following example that shows how to construct a polymorphic entity:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity(concreteTypes = {StandardCard.class, PremiumCard.class}) <i class="conum" data-value="1"></i><b>(1)</b>
-public abstract class GiftCard {
-
-    @EntityCreator <i class="conum" data-value="2"></i><b>(2)</b>
-    public static GiftCard create(@InjectEntityId CardId id) {
-        if (id.type() == CardType.STANDARD) {
-            return new StandardCard(id);
-        } else {
-            return new PremiumCard(id);
-        }
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The base or parent class is on purpose made abstract, to signal it is not the concrete entity type.
-Furthermore, the <code>@EventSourcedEntity</code> (or <code>@EventSourced</code> for Spring environments) annotation specifies the concrete types of the entity through the <code>concreteTypes</code> field.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Static factory method with <code>@EntityCreator</code> can return different subtypes based on the identifier.</td>
-</tr>
-</table>
-</div>
+<p>When command handling requires entity state, see <a href="../entities/event-sourced-entity/" class="xref page">Event-sourced entities</a> for handlers placed directly on the entity class, or <a href="../entities/stateful-command-handler/" class="xref page">Stateful command handlers</a> for the <code>@InjectEntity</code> pattern.</p>
 </div>
 </div>
 </div>
@@ -1701,6 +1021,24 @@ Furthermore, the <code>@EventSourcedEntity</code> (or <code>@EventSourced</code>
 <p>In Axon Framework, commands are identified by a <code>MessageType</code>, which consists of a <code>QualifiedName</code> and version.
 This decouples the logical identity of a command from its (Java) representation.</p>
 </div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Annotate command classes with <code>@Command</code> to define an explicit message type.
+This lets you set a stable name and namespace independent of the Java class name, version the command for evolution over time, and enable payload conversion at handling time.</p>
+</div>
+<div class="paragraph">
+<p>If <code>@Command</code> is omitted, Axon falls back to the fully qualified class name as the command name, which tightly couples your message identity to your Java package structure.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 <div class="sect2">
 <h3 id="_declaring_command_types"><a class="anchor" href="#_declaring_command_types"></a>Declaring command types</h3>
 <div class="paragraph">
@@ -1709,12 +1047,12 @@ This decouples the logical identity of a command from its (Java) representation.
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Command(
-    namespace = "giftcard", <i class="conum" data-value="1"></i><b>(1)</b>
-    name = "IssueCard",     <i class="conum" data-value="2"></i><b>(2)</b>
-    version = "1.0.0",      <i class="conum" data-value="3"></i><b>(3)</b>
-    routingKey = "cardId"   <i class="conum" data-value="4"></i><b>(4)</b>
+    namespace = "faculty",            <i class="conum" data-value="1"></i><b>(1)</b>
+    name = "IssueStudentTranscript",  <i class="conum" data-value="2"></i><b>(2)</b>
+    version = "1.0.0",                <i class="conum" data-value="3"></i><b>(3)</b>
+    routingKey = "studentId"          <i class="conum" data-value="4"></i><b>(4)</b>
 )
-public record IssueCardCommand(String cardId, int amount, String shopId) {
+public record IssueStudentTranscript(StudentId studentId, CourseId courseId) {
 }</code></pre>
 </div>
 </div>
@@ -1750,31 +1088,31 @@ This means different handlers in different JVMs can receive the same command in 
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Original command class
-@Command(name = "IssueCard", version = "1.0.0")
-public record IssueCardCommand(String cardId, int amount, String shopId) {
+@Command(namespace = "faculty", name = "IssueStudentTranscript", version = "1.0.0")
+public record IssueStudentTranscript(StudentId studentId, CourseId courseId) {
 }
 
 // Alternative representation for a different handler
-public record IssueCardDto(String cardId, int amount) {
+public record IssueStudentTranscriptDto(String studentId, String courseId) {
 }
 
-// Handler using original type
+// Handler using the original type
 @CommandHandler
-public void handle(IssueCardCommand cmd, EventAppender eventAppender) {
-    // Receives IssueCardCommand
+public void handle(IssueStudentTranscript command) {
+    // Receives IssueStudentTranscript with typed StudentId / CourseId
 }
 
-// Handler in a different component AND different JVM using alternative representation
-@CommandHandler(commandName = "com.example.IssueCard")
-public void handle(IssueCardDto dto) {
-    // Same command, but converted to IssueCardDto
+// Handler in a different component AND different JVM using the alternative representation
+@CommandHandler(commandName = "faculty.IssueStudentTranscript")
+public void handle(IssueStudentTranscriptDto dto) {
+    // Same command, but converted to the DTO representation
     // Axon converts the payload automatically
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>The framework uses <code>Converters</code> to transform the payload to match the handler&#8217;s parameter type.
-This eliminates many use cases for upcasters—simple type conversions happen during handling rather than requiring explicit upcasting logic.</p>
+This eliminates many use cases for upcasters, simple type conversions happen during handling rather than requiring explicit upcasting logic.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -1795,7 +1133,7 @@ However, for commands and for handlers that simply need data in a different form
 </div>
 </div>
 <div class="sect1">
-<h2 id="_handling_commands_with_processingcontext"><a class="anchor" href="#_handling_commands_with_processingcontext"></a><code>Handling commands with ProcessingContext</code></h2>
+<h2 id="_handling_commands_with_processingcontext"><a class="anchor" href="#_handling_commands_with_processingcontext"></a>Handling commands with <code>ProcessingContext</code></h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The <code>ProcessingContext</code> is a fundamental concept in Axon Framework, backing the internal concept of the <code>UnitOfWork</code>.
@@ -1808,21 +1146,14 @@ When a command is handled, Axon automatically creates a <code>ProcessingContext<
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
 public void handle(
-    RedeemCardCommand cmd,
-    EventAppender eventAppender,
+    SendFacultyAnnouncement command,
     ProcessingContext context <i class="conum" data-value="1"></i><b>(1)</b>
 ) {
-    // The ProcessingContext is available for interaction
-    // For example, you can store and retrieve resources
-    MyCustomService service = context.getResource(MY_SERVICE_KEY);
+    notificationService.sendNotification(
+            new NotificationService.Notification(command.recipientId(), command.message()));
 
-    // Perform business logic
-    if (cmd.amount() &gt; remainingValue) {
-        throw new IllegalStateException("Insufficient balance");
-    }
-
-    // Append events
-    eventAppender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
+    context.runOnCommit(ctx -&gt; notificationService.sendNotification( <i class="conum" data-value="2"></i><b>(2)</b>
+            new NotificationService.Notification("audit", "Announcement delivered to " + command.recipientId())));
 }</code></pre>
 </div>
 </div>
@@ -1831,7 +1162,12 @@ public void handle(
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
 <td>The <code>ProcessingContext</code> is automatically injected by the framework.
-It provides access to correlation data, resources, and lifecycle management.</td>
+It exposes the active unit of work, registered application components, and lifecycle hooks.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>runOnCommit</code> registers a callback that fires once the unit of work commits successfully.
+Use it for side effects that should only happen after the command processing completes: metrics, audit trails, or dispatching follow-up notifications outside the transactional boundary.</td>
 </tr>
 </table>
 </div>
@@ -1851,23 +1187,19 @@ The <code>EventAppender</code> must be injected as a parameter in your command h
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
-public GiftCard(IssueCardCommand cmd, EventAppender eventAppender) { <i class="conum" data-value="1"></i><b>(1)</b>
-    // Validate command
-    if (cmd.amount() &lt;= 0) {
-        throw new IllegalArgumentException("Amount must be positive");
+public static CourseId handle(CreateCourse command, EventAppender eventAppender) { <i class="conum" data-value="1"></i><b>(1)</b>
+    if (command.capacity() &lt;= 0) {
+        throw new IllegalArgumentException("Capacity must be positive");
     }
-
-    // Append event(s)
-    eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount())); <i class="conum" data-value="2"></i><b>(2)</b>
+    eventAppender.append(new CourseCreated(Ids.FACULTY_ID, command.courseId(), command.name(), command.capacity())); <i class="conum" data-value="2"></i><b>(2)</b>
+    return command.courseId();
 }
 
 @CommandHandler
-public void handle(RechargeCardCommand cmd, EventAppender eventAppender) {
-    // Can append multiple events
-    eventAppender.append(
-        new CardRechargedEvent(id, cmd.amount()),
-        new CardRechargeRecordedEvent(id, cmd.transactionId())
-    ); <i class="conum" data-value="3"></i><b>(3)</b>
+public void handle(RenameCourse command, EventAppender eventAppender) {
+    eventAppender.append( <i class="conum" data-value="3"></i><b>(3)</b>
+            new CourseRenamed(Ids.FACULTY_ID, command.courseId(), command.name())
+    );
 }</code></pre>
 </div>
 </div>
@@ -1875,16 +1207,17 @@ public void handle(RechargeCardCommand cmd, EventAppender eventAppender) {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The <code>EventAppender</code> is injected as a method parameter alongside the command.</td>
+<td><code>EventAppender</code> is injected as a handler parameter alongside the command.
+Creational handlers are declared <code>static</code>, no entity instance exists yet at this point.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
 <td>Use <code>eventAppender.append()</code> to publish one or more events.
-Events are applied to the entity and published when the <code>ProcessingContext</code> commits.</td>
+Events are published when the <code>ProcessingContext</code> commits.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Multiple events can be appended in a single call.</td>
+<td><code>append</code> accepts a single event, a varargs sequence, or a <code>List&lt;?&gt;</code> when several events are produced in one call.</td>
 </tr>
 </table>
 </div>
@@ -1906,101 +1239,6 @@ Never try to store or reuse an <code>EventAppender</code> across different comma
 </div>
 </div>
 <div class="sect1">
-<h2 id="_business_logic_and_state_changes"><a class="anchor" href="#_business_logic_and_state_changes"></a>Business logic and state changes</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>For stateful command handlers, there is a critical separation of concerns:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Command handlers</strong> validate whether the handler is in the correct state to execute the command.
-If yes, they publish events.
-If not, they throw an exception, ignore the command, or publish entirely different events,depending on business requirements.</p>
-</li>
-<li>
-<p><strong>Event sourcing handlers</strong> apply state changes based on events.
-They must <strong>never</strong> contain business logic—only state updates.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>State changes should <strong>never</strong> occur in command handling functions.
-Event sourcing handlers should be the only methods where state is updated.
-Failing to follow this principle means the handler will miss state changes when it is being sourced from its events.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity
-public class GiftCard {
-
-    private String id;
-    private int remainingValue;
-
-    @CommandHandler // Command handler: validation and decision-making
-    public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
-        // Business logic validation
-        if (cmd.amount() &lt;= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-        if (cmd.amount() &gt; remainingValue) { <i class="conum" data-value="1"></i><b>(1)</b>
-            throw new IllegalStateException("Insufficient balance");
-        }
-
-        // Decision: publish event
-        eventAppender.append(new CardRedeemedEvent(id, cmd.transactionId(), cmd.amount()));
-        <i class="conum" data-value="2"></i><b>(2)</b>
-    }
-
-    @EventSourcingHandler // Event sourcing handler: state changes only
-    private void on(CardRedeemedEvent event) {
-        this.remainingValue -= event.amount(); <i class="conum" data-value="3"></i><b>(3)</b>
-    }
-
-    @EntityCreator
-    protected GiftCard() {
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Command handler reads current state to make decisions.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Command handler does not modify state directly.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Event sourcing handler is the only place where state is modified.</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>The only state a stateful handler requires is the state it needs to make decisions.
-Handling an event is thus only required if the state change is necessary for future validation of other commands.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>The <a href="../../testing/" class="xref page">Test Fixture</a> will guard against unintentional state changes in command handling functions.
-It is strongly advised to provide thorough test cases for any stateful handler implementation.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_injectable_parameters"><a class="anchor" href="#_injectable_parameters"></a>Injectable parameters</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -2011,14 +1249,13 @@ Some of these are listed below:</p>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
 public void handle(
-    RedeemCardCommand command,              <i class="conum" data-value="1"></i><b>(1)</b>
+    RenameCourse command,                   <i class="conum" data-value="1"></i><b>(1)</b>
     CommandMessage commandMessage,          <i class="conum" data-value="2"></i><b>(2)</b>
     Metadata metadata,                      <i class="conum" data-value="3"></i><b>(3)</b>
     @MetadataValue("userId") String userId, <i class="conum" data-value="4"></i><b>(4)</b>
     ProcessingContext processingContext,    <i class="conum" data-value="5"></i><b>(5)</b>
     EventAppender eventAppender,            <i class="conum" data-value="6"></i><b>(6)</b>
     CommandDispatcher commandDispatcher     <i class="conum" data-value="7"></i><b>(7)</b>
-
 ) {
     // Handler logic
 }</code></pre>
@@ -2062,165 +1299,6 @@ public void handle(
 </div>
 </div>
 <div class="sect1">
-<h2 id="_injecting_multiple_entities_with_injectentity"><a class="anchor" href="#_injecting_multiple_entities_with_injectentity"></a>Injecting multiple entities with <code>@InjectEntity</code></h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Command handlers can work with multiple entity instances by using the <code>@InjectEntity</code> annotation.
-This allows you to inject different entities as parameters, which Axon will automatically load based on the command:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
-import org.axonframework.modelling.annotation.InjectEntity;
-import org.springframework.stereotype.Component;
-
-@Command(routingKey = "sourceCardId") <i class="conum" data-value="1"></i><b>(1)</b>
-public record TransferBalanceCommand(
-    String sourceCardId,
-    String destinationCardId,
-    String transactionId,
-    int amount
-) {
-}
-
-@Component
-public class GiftCardTransferHandler {
-
-    @CommandHandler
-    public void handle(
-        TransferBalanceCommand cmd,
-        @InjectEntity GiftCard sourceCard, <i class="conum" data-value="2"></i><b>(2)</b>
-        @InjectEntity(idProperty = "destinationCardId") GiftCard destinationCard, <i class="conum" data-value="3"></i><b>(3)</b>
-        EventAppender eventAppender
-    ) {
-        // Validate source card
-        if (sourceCard.getRemainingValue() &lt; cmd.amount()) {
-            throw new IllegalStateException("Insufficient balance on source card");
-        }
-
-        // Perform transfer
-        eventAppender.append(
-            new BalanceDeductedEvent(cmd.sourceCardId(), cmd.amount(), cmd.transactionId()),
-            new BalanceAddedEvent(cmd.destinationCardId(), cmd.amount(), cmd.transactionId())
-        );
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The command&#8217;s <code>routingKey</code> determines which card is the "primary" entity.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Without <code>idProperty</code>, the <code>@InjectEntity</code> behavior defaults to using the command&#8217;s routing key to load an entity.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>With <code>idProperty = "destinationCardId"</code>, Axon loads the destination card from a different property.</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>By specifying the <code>idProperty</code> attributes on <code>@InjectEntity</code> annotated parameters you can load an entity based on different field or getter present in the command. This is an example of how a command handler can load different entities.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p><strong>Alternative: Manual loading with repository</strong></p>
-</div>
-<div class="paragraph">
-<p>If you have a different way of loading required state (for example, from a custom data source or with special loading logic), you can manually load entities using the repository.
-However, this is effectively the same as a stateless command handler—you&#8217;re just using services to access state:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Component
-public class GiftCardCustomLoadingHandler {
-
-    private final Repository&lt;String, GiftCard&gt; repository; <i class="conum" data-value="1"></i><b>(1)</b>
-    private final CustomCardLookupService cardLookup;
-
-    @CommandHandler
-    public CompletableFuture&lt;Void&gt; handle(
-        TransferBalanceByAccountCommand cmd,
-        ProcessingContext context, <i class="conum" data-value="2"></i><b>(2)</b>
-        EventAppender eventAppender <i class="conum" data-value="3"></i><b>(3)</b>
-    ) {
-        // Custom logic to determine which cards to use
-        String sourceCardId = cardLookup.findActiveCardForAccount(cmd.sourceAccountId());
-        String destCardId = cardLookup.findActiveCardForAccount(cmd.destinationAccountId());
-
-        // Load both entities, extract them, and combine
-        return repository.load(sourceCardId, context) <i class="conum" data-value="4"></i><b>(4)</b>
-                .thenApply(ManagedEntity::entity) <i class="conum" data-value="5"></i><b>(5)</b>
-                .thenCombine(
-                    repository.load(destCardId, context)
-                            .thenApply(ManagedEntity::entity), <i class="conum" data-value="6"></i><b>(6)</b>
-                    (sourceCard, destCard) -&gt; {
-                        // Perform operations on loaded entities
-                        sourceCard.handle(
-                            new RedeemCardCommand(sourceCardId, cmd.transactionId(), cmd.amount()),
-                            eventAppender
-                        );
-                        destCard.handle(
-                            new RechargeCardCommand(destCardId, cmd.amount()),
-                            eventAppender
-                        );
-
-                        return null; <i class="conum" data-value="7"></i><b>(7)</b>
-                    }
-                );
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>Repository</code> interface with proper generic types (ID type and Entity type).</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td><code>ProcessingContext</code> is injected to pass to repository operations.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td><code>EventAppender</code> is injected as a parameter to publish events.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="4"></i><b>4</b></td>
-<td><code>repository.load()</code> returns a <code>CompletableFuture&lt;ManagedEntity&lt;ID, E&gt;&gt;</code>.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="5"></i><b>5</b></td>
-<td><code>thenApply(ManagedEntity::entity)</code> extracts the entity from the <code>ManagedEntity</code> wrapper.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="6"></i><b>6</b></td>
-<td>Both load operations extract their entities, so <code>thenCombine()</code> receives the actual <code>GiftCard</code> instances directly.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="7"></i><b>7</b></td>
-<td>Return <code>null</code> since the command handler return type is <code>CompletableFuture&lt;Void&gt;</code>.</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_explicit_command_handler_subscription"><a class="anchor" href="#_explicit_command_handler_subscription"></a>Explicit command handler subscription</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -2229,16 +1307,16 @@ However, you can also explicitly configure which commands a handler should handl
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler(commandName = "com.example.IssueCard") <i class="conum" data-value="1"></i><b>(1)</b>
-public void handleIssueCard(MyCustomCommandType cmd) {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler(commandName = "faculty.IssueStudentTranscript") <i class="conum" data-value="1"></i><b>(1)</b>
+public void handleIssueTranscript(IssueStudentTranscriptDto dto) {
     // Handle command
 }
 
 @CommandHandler(
-    commandName = "com.example.RedeemCard",
-    payloadType = RedeemCardDto.class <i class="conum" data-value="2"></i><b>(2)</b>
+    commandName = "faculty.RenameCourse",
+    payloadType = RenameCourseDto.class <i class="conum" data-value="2"></i><b>(2)</b>
 )
-public void handleRedeem(RedeemCardDto cmd) {
+public void handleRename(RenameCourseDto dto) {
     // Handle command
 }</code></pre>
 </div>
@@ -2274,31 +1352,71 @@ public void handleRedeem(RedeemCardDto cmd) {
 </div>
 </div>
 <div class="sect1">
-<h2 id="_configuration_examples"><a class="anchor" href="#_configuration_examples"></a>Configuration examples</h2>
+<h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="_spring_boot_configuration"><a class="anchor" href="#_spring_boot_configuration"></a>Spring Boot configuration</h3>
 <div class="paragraph">
-<p>When using Spring Boot, command handlers are automatically discovered and registered by using the <code>@CommandHandler</code> annotation on methods inside Spring beans:</p>
+<p>Three approaches are available to register a stateless command handler:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="#_declarative">Declarative</a>: register a handler function programmatically with <code>CommandHandlingModule</code>.</p>
+</li>
+<li>
+<p><a href="#_autodetected">Autodetected</a>: annotate methods with <code>@CommandHandler</code> and register the containing class with <code>CommandHandlingModule.autodetectedCommandHandlingComponent()</code>.</p>
+</li>
+<li>
+<p><a href="#_spring_boot">Spring Boot</a>: annotate methods with <code>@CommandHandler</code> inside a Spring bean. Axon&#8217;s auto-configuration detects and registers them automatically.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The non-Spring examples below assume a single <code>EventSourcingConfigurer</code> exists for the application, constructed once in <code>main()</code> and passed to a configuration method.</p>
+</div>
+<div class="paragraph">
+<p>The examples below illustrate a stateless <code>SendFacultyAnnouncement</code> command handler that delegates to a <code>NotificationService</code> registered as an application component:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced <i class="conum" data-value="1"></i><b>(1)</b>
-public class GiftCard {
-    @CommandHandler
-    public GiftCard(IssueCardCommand cmd, EventAppender eventAppender) {
-        eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
-    }
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record SendFacultyAnnouncement(String recipientId, String message) {
+}</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_declarative"><a class="anchor" href="#_declarative"></a>Declarative</h3>
+<div class="paragraph">
+<p>Register a command handler function without annotations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.examples.demo.university.shared.application.notifier.NotificationService;
+import org.axonframework.messaging.commandhandling.SimpleCommandHandlingComponent;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageTypeResolver;
 
-    protected GiftCard() {
-    }
-}
+public class FacultyAnnouncementConfiguration {
 
-@Component <i class="conum" data-value="2"></i><b>(2)</b>
-public class GiftCardValidationHandler {
-    @CommandHandler
-    public void handle(ValidateCardCommand cmd) {
-        // Stateless handler logic
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        return configurer.registerCommandHandlingModule(
+            CommandHandlingModule.named("FacultyAnnouncement")
+                                 .commandHandlers()
+                                 .commandHandlingComponent(config -&gt; { <i class="conum" data-value="1"></i><b>(1)</b>
+                                     MessageTypeResolver resolver = config.getComponent(MessageTypeResolver.class);
+                                     return SimpleCommandHandlingComponent
+                                             .create("FacultyAnnouncementComponent")
+                                             .subscribe(
+                                                     resolver.resolveOrThrow(SendFacultyAnnouncement.class).qualifiedName(), <i class="conum" data-value="2"></i><b>(2)</b>
+                                                     (command, context) -&gt; {
+                                                         var payload = command.payloadAs(SendFacultyAnnouncement.class);
+                                                         context.component(NotificationService.class) <i class="conum" data-value="3"></i><b>(3)</b>
+                                                                .sendNotification(new NotificationService.Notification(
+                                                                        payload.recipientId(), payload.message()));
+                                                         return MessageStream.empty().cast(); <i class="conum" data-value="4"></i><b>(4)</b>
+                                                     });
+                                 })
+        );
     }
 }</code></pre>
 </div>
@@ -2307,48 +1425,108 @@ public class GiftCardValidationHandler {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Stateful handlers are discovered via <code>@EventSourced</code> annotation.</td>
+<td>Build the command handling component inside a <code>ComponentBuilder</code> lambda so the <code>Configuration</code> is available for component lookups during registration.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Stateless handlers are discovered when they are regular Spring beans, as in this example through use of the  <code>@Component</code> annotation.</td>
+<td>Resolve the command&#8217;s qualified name through the <code>MessageTypeResolver</code> rather than constructing it directly.
+This honors any custom name or namespace declared on a <code>@Command</code> annotation and falls back to the fully qualified class name when none is present.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Retrieve any registered component from the <code>ProcessingContext</code>.
+The <code>NotificationService</code> was registered separately as part of the application&#8217;s configuration.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Stateless command handlers return a <code>MessageStream</code>. Use <code>MessageStream.empty().cast()</code> when no result is produced.</td>
 </tr>
 </table>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuration_api"><a class="anchor" href="#_configuration_api"></a>Configuration API</h3>
+<h3 id="_autodetected"><a class="anchor" href="#_autodetected"></a>Autodetected</h3>
 <div class="paragraph">
-<p>Without Spring, you can register command handlers using the Configuration API:</p>
+<p>Annotate methods with <code>@CommandHandler</code> and register the containing class.
+Axon scans the class for <code>@CommandHandler</code> methods automatically.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    void buildConfiguration() {
-        // Create the Event Sourcing configurer
-        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.examples.demo.university.shared.application.notifier.NotificationService;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 
-        // Register stateful event-sourced entity
-        configurer.registerEntity(
-            EventSourcedEntityModule.autodetected(String.class, GiftCard.class)
-        );
+public class FacultyAnnouncementCommandHandler {
 
-        // Register stateless command handler
-        configurer.registerCommandHandlingModule(
-            CommandHandlingModule.named("gift-card-validation")
-                                 .commandHandlers()
-                                 .annotatedCommandHandlingComponent(config -&gt;
-                                     new GiftCardValidationHandler(config.getComponent(QueryDispatcher.class))
-                                 )
-        );
+    private final NotificationService notificationService;
 
-        // Build and start the configuration
-        AxonConfiguration configuration = configurer.build();
-        configuration.start();
-    }</code></pre>
+    public FacultyAnnouncementCommandHandler(NotificationService notificationService) {
+        this.notificationService = notificationService;
+    }
+
+    @CommandHandler
+    public void handle(SendFacultyAnnouncement command) {
+        notificationService.sendNotification(
+                new NotificationService.Notification(command.recipientId(), command.message()));
+    }
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>For more details on configuration, see <a href="../configuration/" class="xref page">Configuration</a>.</p>
+<p>Register the handler class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.examples.demo.university.shared.application.notifier.NotificationService;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+
+public class FacultyAnnouncementConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        return configurer.registerCommandHandlingModule(
+            CommandHandlingModule.named("FacultyAnnouncement")
+                                 .commandHandlers()
+                                 .autodetectedCommandHandlingComponent(config -&gt;
+                                         new FacultyAnnouncementCommandHandler(
+                                                 config.getComponent(NotificationService.class)))
+        );
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_boot"><a class="anchor" href="#_spring_boot"></a>Spring Boot</h3>
+<div class="paragraph">
+<p>Annotate methods with <code>@CommandHandler</code> inside any Spring bean.
+Axon&#8217;s auto-configuration discovers and registers them automatically.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.examples.demo.university.shared.application.notifier.NotificationService;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.springframework.stereotype.Component;
+
+@Component
+public class FacultyAnnouncementCommandHandler {
+
+    private final NotificationService notificationService;
+
+    public FacultyAnnouncementCommandHandler(NotificationService notificationService) {
+        this.notificationService = notificationService;
+    }
+
+    @CommandHandler
+    public void handle(SendFacultyAnnouncement command) {
+        notificationService.sendNotification(
+                new NotificationService.Notification(command.recipientId(), command.message()));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For registering event-sourced entities, see <a href="../entities/event-sourced-entity/" class="xref page">Event-sourced entities</a>.
+For more details on configuration, see <a href="../configuration/" class="xref page">Configuration</a>.</p>
 </div>
 </div>
 </div>
