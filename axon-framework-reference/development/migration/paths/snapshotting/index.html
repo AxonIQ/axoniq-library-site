@@ -406,6 +406,9 @@
     <a class="nav-link" href="../../prerequisites/">Prerequisites</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../solved-architecture-choices/">Resolved Problems</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -424,6 +427,9 @@
 <ul class="nav-list">
   <li class="nav-item" data-depth="4">
     <a class="nav-link" href="../aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/event-tagging/">Event tagging</a>
   </li>
   <li class="nav-item" data-depth="4">
     <a class="nav-link" href="../aggregates/multi-entity-migration/">Multi-Entity Migration</a>
@@ -1045,12 +1051,26 @@ EventSourcingConfigurer.create()
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced
-@Snapshotting
+@Snapshotting(afterEvents = 100)
 public class Account { ... }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>At least one threshold must be configured, either on the annotation directly or via a higher-level annotation on an enclosing class, package, or module.
+<p>The annotation supports two threshold attributes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>afterEvents</code>: trigger a snapshot after a fixed number of events have been applied during sourcing.</p>
+</li>
+<li>
+<p><code>afterSourcingTime</code>: trigger a snapshot when the total sourcing time exceeds the given ISO-8601 duration (for example, <code>"PT5S"</code> for five seconds).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When both attributes are set, either condition independently triggers a snapshot.
+Use a bare <code>@Snapshotting</code> (no attributes) when the threshold is inherited from a higher-level annotation on an enclosing class, package, or module.
 See <a href="../../../tuning/snapshotting/#_annotation_based_configuration" class="xref page">annotation-based configuration</a> for details.</p>
 </div>
 <div class="paragraph">
