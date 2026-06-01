@@ -973,7 +973,7 @@ This always reflects the latest state, including any modifications made by previ
         PaymentConfirmed.class,
         associate(payloadProperty("orderId"),
                   equalsTo(ctx.workflowPayload().get("orderId"))),
-        Duration.ofMinutes(15));
+        step -&gt; step.timeout(Duration.ofMinutes(15)));
 
 ctx.setPayload("storePaymentDetails", confirmation); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
@@ -1004,8 +1004,7 @@ The engine records it as an event, so the payload state survives crashes and rep
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitExecute("shipOrder",
                  ctx.workflowPayload(), <i class="conum" data-value="1"></i><b>(1)</b>
                  ShippingService::shipOrder,
-                 Duration.ofMinutes(5),
-                 defaults());</code></pre>
+                 step -&gt; step.timeout(Duration.ofMinutes(5)));</code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -1063,19 +1062,19 @@ You can also use <code>payload(ctx, object)</code> to convert any object into a 
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GLOBAL_ONLY</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GlobalOnlyPayloadReducer.INSTANCE</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Step receives the workflow payload, ignoring local input</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Default for <code>awaitEvent</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default result reducer for <code>execute</code> and <code>waitForEvent</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LOCAL_ONLY</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LocalOnlyPayloadReducer.INSTANCE</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Step receives only its own local input, ignoring workflow payload</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Default parameter reducer for <code>execute</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>COMBINE_GLOBAL_AND_LOCAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CombineGlobalAndLocalPayloadReducer.INSTANCE</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Merges both—local values overwrite duplicates</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Used by <code>setPayload</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Typical choice when a step should both see and update shared workflow state</p></td>
 </tr>
 </tbody>
 </table>
