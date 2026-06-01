@@ -1405,8 +1405,7 @@ If you need to attach metadata that doesn&#8217;t come from the triggering event
 <h2 id="custom-workflow-context"><a class="anchor" href="#custom-workflow-context"></a>Custom workflow context</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>You don&#8217;t have to use <code>SimpleWorkflowContext</code>. <code>BaseWorkflowContext</code> is the canonical Java DSL layer, while <code>SimpleWorkflowContext</code> adds helpers such as typed <code>awaitEvent</code>, <code>sleep(Duration)</code>, <code>setPayload</code>, and <code>cancel(String)</code>.
-Extend whichever layer best fits the API you want to expose to workflow authors.</p>
+<p>You don&#8217;t have to use <code>SimpleWorkflowContext</code>. You can extend it to build a domain-specific DSL that hides the engine primitives behind business language.</p>
 </div>
 <div class="paragraph">
 <p>For example, an approval workflow context:</p>
@@ -1427,12 +1426,7 @@ Extend whichever layer best fits the API you want to expose to workflow authors.
                 payload("approver", approver, "requestId", workflowId()).getValues(),
                 ApprovalService::sendRequest);
 
-        var decision = awaitEvent(
-                "awaitDecision",
-                ApprovalDecisionEvent.class,
-                associate(payloadProperty("requestId"), equalsTo(workflowId())),
-                step -&gt; step.timeout(deadline)
-        );
+        var decision = awaitEvent("awaitDecision", ApprovalDecisionEvent.class, deadline);
         return "approved".equals(decision.outcome());
     }
 

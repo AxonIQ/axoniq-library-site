@@ -936,37 +936,13 @@
 <p>Execute steps are the type of execution primitives that allow calling services, performing computations and triggering side effects in workflows.
 The engine records each execution as durable events, giving you crash recovery and audit trails automatically.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>The Java DSL now has two layers:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>BaseWorkflowContext</code> is the canonical primitive API. Its blocking <code>awaitExecute(&#8230;&#8203;)</code> methods return a payload map, and customization happens through <code>UnaryOperator&lt;ExecuteStepDefinition&gt;</code>.</p>
-</li>
-<li>
-<p><code>SimpleWorkflowContext</code> adds convenience helpers on top, such as execute overloads without extra input payload, typed <code>awaitExecute(&#8230;&#8203;)</code> for single-value actions, typed <code>awaitEvent(&#8230;&#8203;)</code>, <code>sleep(&#8230;&#8203;)</code>, and <code>setPayload(&#8230;&#8203;)</code>.</p>
-</li>
-</ul>
-</div>
-</td>
-</tr>
-</table>
-</div>
 <div class="paragraph">
 <p>There are two variants:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong><code>awaitExecute</code></strong>—blocks until the action finishes and returns either the resulting payload map or, via the convenience overload, a single typed value</p>
+<p><strong><code>awaitExecute</code></strong>—blocks until the action finishes and returns a typed result</p>
 </li>
 <li>
 <p><strong><code>execute</code></strong>—starts the action without waiting and returns a <code>WorkflowStepResult</code></p>
@@ -979,32 +955,18 @@ The engine records each execution as durable events, giving you crash recovery a
 <h2 id="awaitexecute"><a class="anchor" href="#awaitexecute"></a><code>awaitExecute</code> (blocking)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><code>awaitExecute</code> calls an action, waits for it to finish, and returns the resulting payload map.
+<p><code>awaitExecute</code> calls an action, waits for it to finish, and returns the typed result.
 The engine records a STARTED and COMPLETED event for this step automatically.</p>
 </div>
 <div class="sect2">
 <h3 id="_basic_usage"><a class="anchor" href="#_basic_usage"></a>Basic usage</h3>
 <div class="paragraph">
-<p>For a single-value action, <code>SimpleWorkflowContext</code> offers a typed convenience overload:</p>
+<p>The simplest form takes a step name, return type, and a supplier:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reserved = ctx.awaitExecute("reserveStock", Boolean.class,
                                  InventoryService::reserveStock);</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Internally this convenience stores the value under the synthetic payload key <code>"<em>" + stepName + "Result"</code>, then unwraps it for the caller.
-For <code>reserveStock</code>, that key becomes <code></em>reserveStockResult</code>.</p>
-</div>
-<div class="paragraph">
-<p>The canonical form takes a step name, a local payload map, and a processor:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reservation = ctx.awaitExecute("reserveStock",
-        Map.of(),
-        (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()));</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1021,10 +983,11 @@ For <code>reserveStock</code>, that key becomes <code></em>reserveStockResult</c
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var customerId = ctx.workflowPayload().get("customerId");
 var amount = ctx.workflowPayload().get("amount");
 
-var reservation = ctx.awaitExecute("reserveStock",
+var reserved = ctx.awaitExecute("reserveStock",
         payload("customerId", customerId, "amount", amount).getValues(),
-        (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock(input))); <i class="conum" data-value="1"></i><b>(1)</b>
-if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
+        Boolean.class,
+        InventoryService::reserveStock); <i class="conum" data-value="1"></i><b>(1)</b>
+if (!reserved) {
     ctx.fail(new RuntimeException("Stock unavailable")); <i class="conum" data-value="2"></i><b>(2)</b>
     return;
 }</code></pre>
@@ -1034,7 +997,7 @@ if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The params (payload) passed to the step (<code>customerId</code>, <code>amount</code>) are recorded in the STARTED event, and the returned payload map is recorded in the COMPLETED event.</td>
+<td>The params (payload) passed to the step (<code>customerId</code>, <code>amount</code>) are recorded in the STARTED event.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
@@ -1049,7 +1012,7 @@ Standard Java control flow—<code>if</code>, loops, try/catch—all work exactl
 <div class="et-player" data-autoplay>
   <div class="et-src" data-title="awaitExecute — reserveStock">
 1 started ReserveStockStarted {"customerId": 456, "amount": 99.95}
-2 completed ReserveStockCompleted {"reserved": true}
+2 completed ReserveStockCompleted {"__reserveStock": true}
   </div>
 </div>
 <div class="paragraph">
@@ -1066,8 +1029,8 @@ Standard Java control flow—<code>if</code>, loops, try/catch—all work exactl
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitExecute("initiatePayment",
                  payload("customerId", customerId, "amount", amount).getValues(),
                  PaymentService::initiatePayment,
-                 step -&gt; step.timeout(Duration.ofSeconds(30))
-                             .eventNameCustomizer(baseName("InitiatingPaymentForCustomer"))); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+                 Duration.ofSeconds(30),
+                 baseName("InitiatingPaymentForCustomer")); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -1095,7 +1058,7 @@ For full details on naming rules, see <a href="../understanding-steps/#event-nam
 </div>
 </div>
 <div class="sect2">
-<h3 id="_java_entry_points"><a class="anchor" href="#_java_entry_points"></a>Java entry points</h3>
+<h3 id="_all_overloads"><a class="anchor" href="#_all_overloads"></a>All overloads</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -1103,26 +1066,34 @@ For full details on naming rules, see <a href="../understanding-steps/#event-nam
 </colgroup>
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">API</th>
+<th class="tableblock halign-left valign-top">Overload</th>
 <th class="tableblock halign-left valign-top">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(stepName, returnType, supplier)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SimpleWorkflowContext</code> convenience for single-value actions. Internally stores the result under the payload key <code>"__" + stepName + "Result"</code> and returns it as the requested type.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simplest form. No input payload, no timeout override, no customizer. Calls a <code>Supplier&lt;T&gt;</code> and returns the result.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(stepName, payload, processor)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>BaseWorkflowContext</code> blocking form. Passes a local payload map to a <code>PayloadProcessor</code> and returns the resulting payload map.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(stepName, returnType, function)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Like above, but the action receives the (empty) payload map as input.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(stepName, payload, processor, customizer)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Same as above, with fluent customization through <code>ExecuteStepDefinition</code> methods such as <code>timeout(&#8230;&#8203;)</code>, <code>eventNameCustomizer(&#8230;&#8203;)</code>, <code>parameterPayloadReducer(&#8230;&#8203;)</code>, <code>resultPayloadReducer(&#8230;&#8203;)</code>, and <code>retryPolicy(&#8230;&#8203;)</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(stepName, payload, returnType, function)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Passes a payload map to the action. The payload is recorded in the STARTED event.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>execute(stepName, payload, processor)</code> / <code>execute(stepName, payload, processor, customizer)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Non-blocking counterparts that return a <code>WorkflowStepResult</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(stepName, payload, returnType, function, eventNameCustomizer)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Adds an event name customizer to control how events are named.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(stepName, payload, consumer)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The action receives payload but returns nothing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(stepName, payload, action, duration, eventNameCustomizer)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Full form. The <code>action</code> is a <code>PayloadProcessor</code> (receives <code>ProcessingContext</code> + payload, returns a payload map). Explicit timeout and customizer.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1153,8 +1124,8 @@ Use this when you want to run multiple steps concurrently, or when you need to c
 <td class="tableblock halign-left valign-top"><p class="tableblock">Starts the step with default timeout and default event names.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>execute(stepName, payload, action, customizer)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Full form with explicit timeout, event name customization, reducer overrides, and retry policy.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>execute(stepName, payload, action, duration, eventNameCustomizer)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Full form with explicit timeout and event name customizer.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1162,7 +1133,7 @@ Use this when you want to run multiple steps concurrently, or when you need to c
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
         ShippingService::shipOrder,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));</code></pre>
+        Duration.ofMinutes(5), defaults());</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1190,26 +1161,47 @@ See <a href="../workflow-lifecycle/#complete-with-running-steps" class="xref pag
 <h2 id="_kotlin_dsl"><a class="anchor" href="#_kotlin_dsl"></a>Kotlin DSL</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><code>WorkflowKontext</code> is the runtime-facing context, while <code>Kontext</code> is the Kotlin authoring wrapper.
-<code>Kontext</code> supports concise Kotlin-first overloads with defaults for the common case:</p>
+<p>The Kotlin DSL uses extension functions on <code>Kontext</code>, giving you a clean, idiomatic API with named parameters and <code>kotlin.time.Duration</code> support:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">fun Kontext.fulfillOrder() {
-    val reserved = awaitExecute&lt;Boolean&gt;(
-        stepName = "reserveStock",
-        timeout = 10.seconds
-    ) {
-        InventoryService.reserveStock()
+    // Blocking awaitExecute
+    val reserved = awaitExecute(
+        "reserveStock",
+        { InventoryService.reserveStock() },
+        local = mapOf("customerId" to customerId, "amount" to amount)
+    )
+    if (!reserved) {
+        fail(RuntimeException("Stock unavailable"))
+        return
     }
+
+    // Blocking awaitExecute with all options
+    val result = awaitExecute(
+        "reserveStock",
+        action = { InventoryService.reserveStock() },
+        local = mapOf("customerId" to customerId),
+        timeout = 10.seconds,
+        eventNameCustomizer = baseName("ReservingStock")
+    )
+
+    // Non-blocking execute with all options
+    execute(
+        "shipOrder",
+        action = { pc, p -&gt; ShippingService.shipOrder(pc, p) },
+        local = mapOf("address" to address),
+        parameterMapping = PayloadReducer.LOCAL_ONLY,
+        resultMapping = PayloadReducer.GLOBAL_ONLY,
+        timeout = 5.minutes,
+        eventNameCustomizer = namespace("io.shipping")
+    )
+
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>If you want to pass step-local data with a named Kotlin argument, use <code>inputPayload = &#8230;&#8203;</code>.</p>
-</div>
-<div class="paragraph">
-<p>The typed Kotlin convenience uses the same synthetic payload key pattern <code>"__" + stepName + "Result"</code> internally. The low-level definition API is still available when you want to construct <code>ExecuteStepDefinition</code> explicitly, but most workflows can stay on the overloads with Kotlin default parameters.</p>
+<p>Kotlin&#8217;s named parameters and default values mean you only specify what you need—everything else falls back to sensible defaults.</p>
 </div>
 </div>
 </div>
