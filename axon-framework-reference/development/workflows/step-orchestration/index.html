@@ -951,11 +951,11 @@ The non-blocking variants—<code>execute</code> and <code>waitForEvent</code>�
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
         ShippingService::shipOrder,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+        Duration.ofMinutes(5), defaults());
 
 var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
         NotificationService::sendConfirmation,
-        step -&gt; step.timeout(Duration.ofSeconds(30)));</code></pre>
+        Duration.ofSeconds(30), defaults());</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -964,12 +964,11 @@ var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var approval = ctx.waitForEvent("awaitApproval",
-        EventConditions.fromQualifiedName(ctx.resolve(ManagerApproved.class)),
-        step -&gt; step.timeout(Duration.ofMinutes(30)));
+        ManagerApproved.class, Duration.ofMinutes(30));
 
 var backgroundCheck = ctx.execute("runBackgroundCheck", ctx.workflowPayload(),
         ComplianceService::check,
-        step -&gt; step.timeout(Duration.ofMinutes(10)));</code></pre>
+        Duration.ofMinutes(10), defaults());</code></pre>
 </div>
 </div>
 </div>
@@ -1004,12 +1003,10 @@ They are <strong>not</strong> automatically cancelled—if you need cleanup, can
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var accepted = ctx.waitForEvent("paymentAccepted",
-        EventConditions.fromQualifiedName(ctx.resolve(CardPaymentAccepted.class)),
-        step -&gt; step.timeout(Duration.ofMinutes(10)));
+        CardPaymentAccepted.class, Duration.ofMinutes(10));
 
 var declined = ctx.waitForEvent("paymentDeclined",
-        EventConditions.fromQualifiedName(ctx.resolve(CardPaymentDeclined.class)),
-        step -&gt; step.timeout(Duration.ofMinutes(10)));
+        CardPaymentDeclined.class, Duration.ofMinutes(10));
 
 var result = ctx.anyMatch(WorkflowStepResult::isCompleted,     <i class="conum" data-value="1"></i><b>(1)</b>
                           accepted, declined);
@@ -1058,10 +1055,10 @@ if (winner == declined) {
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var dhlQuote = ctx.execute("getDhlQuote", ctx.workflowPayload(),
-        DhlService::getQuote, step -&gt; step.timeout(Duration.ofSeconds(10)));
+        DhlService::getQuote, Duration.ofSeconds(10), defaults());
 
 var fedexQuote = ctx.execute("getFedexQuote", ctx.workflowPayload(),
-        FedexService::getQuote, step -&gt; step.timeout(Duration.ofSeconds(10)));
+        FedexService::getQuote, Duration.ofSeconds(10), defaults());
 
 var race = ctx.anyMatch(WorkflowStepResult::isCompleted,
                         dhlQuote, fedexQuote);
@@ -1091,11 +1088,11 @@ It short-circuits on the first non-match:</p>
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Ship and notify in parallel
 var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
         ShippingService::shipOrder,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+        Duration.ofMinutes(5), defaults());
 
 var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
         NotificationService::sendConfirmation,
-        step -&gt; step.timeout(Duration.ofSeconds(30)));
+        Duration.ofSeconds(30), defaults());
 
 var guard = ctx.allMatch(WorkflowStepResult::success,           <i class="conum" data-value="1"></i><b>(1)</b>
                          shipping, notification);
@@ -1156,13 +1153,13 @@ They are <strong>not</strong> automatically cancelled—cancel them explicitly v
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var stepA = ctx.execute("processA", Map.of(), ServiceA::process,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+        Duration.ofMinutes(5), defaults());
 
 var stepB = ctx.execute("processB", Map.of(), ServiceB::process,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+        Duration.ofMinutes(5), defaults());
 
 var stepC = ctx.execute("processC", Map.of(), ServiceC::process,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+        Duration.ofMinutes(5), defaults());
 
 var check = ctx.noneMatch(WorkflowStepResult::failure,          <i class="conum" data-value="1"></i><b>(1)</b>
                           stepA, stepB, stepC);
@@ -1226,15 +1223,15 @@ if (!check.success()) {
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reserveStock = ctx.execute("reserveStock", ctx.workflowPayload(),
         InventoryService::reserveStock,
-        step -&gt; step.timeout(Duration.ofMinutes(1)));
+        Duration.ofMinutes(1), defaults());
 
 var reserveShipping = ctx.execute("reserveShipping", ctx.workflowPayload(),
         ShippingService::reserveSlot,
-        step -&gt; step.timeout(Duration.ofMinutes(1)));
+        Duration.ofMinutes(1), defaults());
 
 var chargePayment = ctx.execute("chargePayment", ctx.workflowPayload(),
         PaymentService::charge,
-        step -&gt; step.timeout(Duration.ofSeconds(30)));
+        Duration.ofSeconds(30), defaults());
 
 var check = ctx.noneMatch(WorkflowStepResult::failure,
                           reserveStock, reserveShipping, chargePayment);
@@ -1409,11 +1406,10 @@ When an <code>OrderPlaced</code> event is published, both workflows start in par
 <div class="listingblock">
 <div class="title">OrderFulfillmentWorkflow—handles stock and shipping</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEventClass = OrderPlacedEvent.class)
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEvent = "OrderPlaced")
 public void execute(SimpleWorkflowContext ctx) {
-    ctx.awaitExecute("reserveStock",
-            Map.of(),
-            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()));
+    ctx.awaitExecute("reserveStock", Boolean.class,
+                      InventoryService::reserveStock);
     ctx.awaitExecute("shipOrder", ctx.workflowPayload(),
                       ShippingService::shipOrder);
 }</code></pre>
@@ -1422,7 +1418,7 @@ public void execute(SimpleWorkflowContext ctx) {
 <div class="listingblock">
 <div class="title">CustomerNotificationWorkflow—handles all customer communication</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "customerId", startOnEventClass = OrderPlacedEvent.class)
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "customerId", startOnEvent = "OrderPlaced")
 public void execute(SimpleWorkflowContext ctx) {
     ctx.awaitExecute("sendConfirmationEmail",
             payload("email", ctx.workflowPayload().get("email"),

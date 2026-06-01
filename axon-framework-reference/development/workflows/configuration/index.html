@@ -946,27 +946,10 @@ This section covers the declarative (programmatic) configuration API, which give
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId",
-          startOnEventClass = OrderPlacedEvent.class,
+          startOnEvent = "OrderPlaced",
           workflowNamespace = "io.myapp.orders")
 public void execute(SimpleWorkflowContext ctx) { /* ... */ }</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>The start trigger can be declared in two ways:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>startOnEventClass = OrderPlacedEvent.class</code> for a type-safe class reference</p>
-</li>
-<li>
-<p><code>startOnEventName = "io.myapp.orders.OrderPlaced"</code> for an explicit qualified event name</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Use exactly one of these attributes on a workflow method.
-<code>startOnConditions</code> can be combined with either form to further filter which events start a workflow.</p>
 </div>
 <div class="paragraph">
 <p>The declarative API offers the same capabilities plus additional options not available via annotations.
@@ -1405,8 +1388,7 @@ If you need to attach metadata that doesn&#8217;t come from the triggering event
 <h2 id="custom-workflow-context"><a class="anchor" href="#custom-workflow-context"></a>Custom workflow context</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>You don&#8217;t have to use <code>SimpleWorkflowContext</code>. <code>BaseWorkflowContext</code> is the canonical Java DSL layer, while <code>SimpleWorkflowContext</code> adds helpers such as typed <code>awaitEvent</code>, <code>sleep(Duration)</code>, <code>setPayload</code>, and <code>cancel(String)</code>.
-Extend whichever layer best fits the API you want to expose to workflow authors.</p>
+<p>You don&#8217;t have to use <code>SimpleWorkflowContext</code>. You can extend it to build a domain-specific DSL that hides the engine primitives behind business language.</p>
 </div>
 <div class="paragraph">
 <p>For example, an approval workflow context:</p>
@@ -1427,12 +1409,7 @@ Extend whichever layer best fits the API you want to expose to workflow authors.
                 payload("approver", approver, "requestId", workflowId()).getValues(),
                 ApprovalService::sendRequest);
 
-        var decision = awaitEvent(
-                "awaitDecision",
-                ApprovalDecisionEvent.class,
-                associate(payloadProperty("requestId"), equalsTo(workflowId())),
-                step -&gt; step.timeout(deadline)
-        );
+        var decision = awaitEvent("awaitDecision", ApprovalDecisionEvent.class, deadline);
         return "approved".equals(decision.outcome());
     }
 
