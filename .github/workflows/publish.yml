@@ -27,11 +27,12 @@ jobs:
         sudo tar -xvzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz -C /usr/local/bin vale
     - name: Start Kroki
       uses: hoverkraft-tech/compose-action@v2.2.0
-    - name: Generate Site
+    - name: Generate Site and Markdown files
       run: |
         export GIT_CREDENTIALS='https://axoniq-devops:${{ secrets.LIBRARY_DEVBOT_TOKEN }}@github.com'
         echo 'Using' `vale -v`
         npx antora playbook.yaml --log-level debug
+        node scripts/generate-markdown.js
     - name: Check broken link
       run: node check-broken-links.js
     - name: Create custom redirects
