@@ -978,8 +978,38 @@ Two processors with the same name are considered as two instances of the same pr
 <div class="paragraph">
 <p>Each event handler will belong to an event handling component.
 An event handling component can include any number of event handlers.
-These event handling components are attached to a processor, whose name by default is the package name of the event handler&#8217;s class.
-Furthermore, the default processor implementation used by Axon is the <a href="streaming/" class="xref page">PooledStreamingEventProcessor</a>.
+These event handling components are attached to a processor, whose name by default is the package name of the event handler&#8217;s class.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Consequences of assigning an event handling component to a processor</div>
+<div class="paragraph">
+<p>There are certain consequences of grouping event handling components with the same processors.
+All event handling components assigned to a single processor will share the same configuration (for example batch size, initial segment count and thread pool configuration) and scaling considerations (if for example you split the segments).</p>
+</div>
+<div class="paragraph">
+<p>If the same event is handled in multiple event handlers across different event handling components assigned to the same processor, they are still processed in the same transaction, sharing the same <a href="../../messaging-concepts/processing-context/" class="xref page">processing context</a>.</p>
+</div>
+<div class="paragraph">
+<p>Finally, event handlers across all event handling components assigned to the same processor are <a href="streaming/#sequential_processing" class="xref page">sequenced together</a>, <a href="streaming/#replaying-events" class="xref page">replayed together</a> and share <a href="streaming/#thread_configuration" class="xref page">the same thread pool</a>
+and
+<a href="../../dead-letter-queue/" class="xref page">dead letter queue</a>.</p>
+</div>
+<div class="paragraph">
+<p>Consider this when assigning handlers to processors.
+A good rule of thumb usually is: If you want to advance and replay multiple projections as a unit or isolate failures across them, assign them to the same processor.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The default processor implementation used by Axon is the <a href="streaming/" class="xref page">PooledStreamingEventProcessor</a>.
 The event processor type can be customized, as is shown in the <a href="subscribing/#configuring" class="xref page">subscribing</a> and <a href="streaming/#configuring" class="xref page">streaming</a> sections.</p>
 </div>
 <div class="paragraph">
@@ -1058,28 +1088,75 @@ public class AxonConfig {
 <div class="sect2">
 <h3 id="autodetected_config"><a class="anchor" href="#autodetected_config"></a>Autodetected configuration</h3>
 <div class="paragraph">
-<p>Assuming the autodetected approach is used, let us consider that the following event handling components have been registered:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>org.axonframework.example.eventhandling.MyHandler</code></p>
-</li>
-<li>
-<p><code>org.axonframework.example.eventhandling.MyOtherHandler</code></p>
-</li>
-<li>
-<p><code>org.axonframework.example.eventhandling.module.ModuleHandler</code></p>
-</li>
-</ul>
+<p>Using the <code>@Namespace</code> annotation on an event handling component allows you to explicitly assign it to a processor when using the autodetected configuration.</p>
 </div>
 <div class="paragraph">
-<p>Without any intervention, this will trigger the creation of two Streaming Processors, namely:</p>
+<p>Assuming the autodetected approach is used, let us consider that the following event handling components have been registered:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// MyHandler.java
+package org.axonframework.example.eventhandling;
+@Namespace("my-processor")
+public class MyHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}
+
+// MyOtherHandler.java
+package org.axonframework.example.eventhandling;
+@Namespace("my-processor")
+public class MyOtherHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}
+
+// ModuleHandler.java
+package org.axonframework.example.eventhandling.module;
+@Namespace("my-processor")
+public class ModuleHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This configuration would result in the creation of a single Streaming Processor named <code>my-processor</code> with all three event handling components.</p>
+</div>
+<div class="paragraph">
+<p>Now consider the same autodetected setup, but with the following event handling components registered without the <code>@Namespace</code> annotation:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// MyHandler.java
+package org.axonframework.example.eventhandling;
+public class MyHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}
+
+// MyOtherHandler.java
+package org.axonframework.example.eventhandling;
+public class MyOtherHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}
+
+// ModuleHandler.java
+package org.axonframework.example.eventhandling.module;
+public class ModuleHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Without</strong> having the <code>@Namespace</code> annotation applied to the event handling component class, this would trigger the creation of two Streaming Processors, based on the handler component&#8217;s package names:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><code>org.axonframework.example.eventhandling</code> with two event handling components called <code>MyHandler</code> and <code>MyOtherHandler</code>.</p>
+<p><code>org.axonframework.example.eventhandling</code> with two event handling components called <code>MyHandler</code> and <code>MyOtherHandler</code>, and</p>
 </li>
 <li>
 <p><code>org.axonframework.example.eventhandling.module</code> with the event handling component <code>ModuleHandler</code>.</p>

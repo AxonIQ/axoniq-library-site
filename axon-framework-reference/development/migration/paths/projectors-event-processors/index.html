@@ -983,8 +983,7 @@ The <code>PooledStreamingEventProcessor</code> is a more robust and performant i
 Previously, this annotation was used to group event handling components into a single event processor.</p>
 </div>
 <div class="paragraph">
-<p>In Axon Framework 5, event handlers are registered directly to an event processor in the configuration.
-A replacement for <code>@ProcessingGroup</code> in the form of a "namespace" annotation is expected to be introduced soon.</p>
+<p>In Axon Framework 5, you can use the <code>@Namespace</code> annotation to <a href="../../../events/event-processors/#autodetected_config" class="xref page">assign an event handling component to an event processor</a>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -995,17 +994,16 @@ public class MyProjector {
     public void on(MyEvent event) { /* ... */ }
 }
 
-// AF5 - Declarative registration (Non-Spring)
-public void configure(MessagingConfigurer configurer) {
-    configurer.eventProcessing(
-        eventProcessing -&gt; eventProcessing.pooledStreaming(
-            pooledStreaming -&gt; pooledStreaming.defaultProcessor("my-processor",
-                components -&gt; components.autodetected(cfg -&gt; new MyProjector())
-            )
-        )
-    );
+// AF5
+@Namespace("my-processor")
+public class MyProjector {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
 }</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Alternatively, you can use the <a href="../../../events/event-processors/#declarative_config" class="xref page">declarative configuration</a> to assign event handling components to processors.</p>
 </div>
 </div>
 </div>
