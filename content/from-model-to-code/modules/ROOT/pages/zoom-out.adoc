@@ -1,0 +1,93 @@
+= From Model to Code - Zoom out
+
+pass:[<!-- vale AxonIQ.Headings = NO -->]
+pass:[<!-- vale proselint.Skunked = NO -->]
+
+:author: Ivan Dugalic
+:docdate: 2020-14-12
+
+In the link:/from-model-to-code/eventmodel-into-code[previous blog post], Ivan focused on translating the "music lesson booking system" event model to the source code using link:https://www.axoniq.io/products/axon-framework[Axon Framework], a programming model, and link:https://www.axoniq.io/products/axon-server[Axon Server] as an event store and message broker.
+
+image::zoomout4.jpg[]
+
+In this part, we will zoom out and visualize how multiple software systems fit together within the bounds of an enterprise.
+
+== Systems Landscape
+
+After the "music lesson _booking_ system" was in production for a while, we realized that there is more than just simply adding a lesson into the system for the students to book. So we started thinking about the (sub)domain of “_teacher_”: Who will register teachers into the system? Who will create, draft and publish lessons so they are available to students? How are students going to pay for the classes they have booked? Let’s find out!
+
+In the blueprint below, we now visualize three systems on the timeline: “_booking_”, “_teacher,”_ and “_payment_”.
+
+image::zoomout7.jpg[]
+
+We use the second level of swimlane(s) to visualize which events (and aggregates) belong to which systems. For example, the "TeacherRegistered" event belongs to the "Teacher" aggregate, which additionally belongs to a Teacher system. On the other hand, the payment system is not in any swimlane because we will be using a third-party system for payment processing (we are not going to implement this system).
+
+To make this more precise, we will extract each of these systems into independent blueprints.
+
+=== Booking system
+
+The booking system remains the same. It enables students to browse and book the lessons. The only thing that is changed is who will add the lessons to this system, so they are available for booking. Creating, drafting, and publishing lessons is now the responsibility of a _teacher_ system. The _booking_ system will subscribe to the_ LessonPublished_ event (from the Teacher system) and publish the _AddLesson_ command (from the Booking system).
+
+
+image::zoomout3.jpg[]
+
+This new component that translates the _LessonPublished_ event to the _AddLesson_ command is essentially an Event Handler in Axon. In Event Modeling, this pattern is known as the "Translation" pattern.
+
+
+image::zoomout5.jpg[]
+
+It is just a new adapter that we are adding, adopting the event of another system to a command of the _booking_ system. You can still keep the old REST/UI adapter if you need this web page for some reason (in the transition process, for example).
+
+
+=== Teacher management system
+
+_The teacher_ system can now independently evolve to enable managers to add teachers to the system and allow teachers to create, draft and publish lessons.
+
+image::zoomout2.jpg[]
+
+We are not going to dive deep into this system. However, the process of translating the _teacher_ system to the source code is very similar to the _booking_ system we have described in the link:/from-model-to-code/eventmodel-into-code/[previous blog post].
+
+We are focusing more on the strategic and integration patterns in this blog post.
+
+== Subdomains
+
+Each of these systems is a subdomain model, and not all of these subdomains are equally important.
+
+image::zoomout.jpg[]
+
+We map out our domain as a portfolio of capabilities and anticipate how they may change over time. A particular focus is on identifying the core domains, the critical areas for business growth.
+
+
+In our example, we anticipate that the Teacher subdomain will transit to a supporting domain in three months.
+
+== Bounded Contexts
+
+The question is if these systems/subdomain models are autonomous bounded contexts.
+
+
+link:https://docs.axoniq.io/reference-guide/architecture-overview/ddd-cqrs-concepts[Domain-Driven Design] divides up a large system/domain model into link:https://www.axoniq.io/blog/bounded-contexts-with-axon[Bounded contexts], each of which can have a unified model - essentially a way of structuringlink:https://martinfowler.com/bliki/MultipleCanonicalModels.html[MultipleCanonicalModels]. Bounded Contexts have unrelated concepts (such as an Account aggregate only existing in a Booking context) and share concepts (such as Lesson aggregate). Different contexts may have completely different models of common concepts with mechanisms to map these common concepts for integration.
+
+In our case, the standard concept of Lesson is modeled as an aggregate in the _booking_ context and as an aggregate in the _teaching_ context. These are now two different models of the standard concept of Lesson, and each of these contexts has a unique understanding of this concept by using unified vocabulary (link:https://martinfowler.com/bliki/UbiquitousLanguage.html[ubiquitous language]). We have to map/translate this concept for integration between these two bounded contexts. The Event Handler component we have described earlier is acting as an anti-corruption layer (ACL) component now.
+
+== Bounded Context Mapping
+
+Axon takes “location transparency” further than placing services behind a logical URL. In Axon, a component (for example, an Event Handler) that sends a message via CommandGateway/QueryGateway does not need to specify a destination for that message. This gives you options, as now you get to choose in which system/subdomain model to put your Event Handling component responsible for translating/integrating two bounded contexts.
+
+Since _booking_ is our Core domain, we would want to put the Event Handler component under the Booking context. This sets the Booking context downstream from the Teacher context. This makes the core domain model dependent on the supporting domain model and not the other way around.
+
+This is crucial because if in the future we decided to transfer the Teacher model to a 3rd party (generic) domain model, we want to make sure that nothing is dependent on the core system. Therefore, switching a supporting system to a generic system can easily be achieved.
+
+image::zoomout6.jpg[]
+
+The Booking context (and the team that produces it) is downstream to Teacher and Payment bounded contexts. The Event Handler component acts as an anti-corruption layer (ACL) component by not letting events from the Teacher or Payment system leak deep into the Booking domain model.
+
+There is a "customer-supplier" relationship between teams. The Downstream team is considered to be the customer. Downstream requirements factor into upstream planning. Therefore, the Downstream team gains some influence over the priorities and tasks of the Upstream team.
+
+
+link:https://www.axoniq.io/products/axon-server[Axon Server] (Enterprise) explicitly supports bounded contexts by allowing different (groups of) applications to connect to other contexts within the Axon Server. Unless specifically indicated otherwise, contexts are strictly separated, and information/messages are not shared between them.
+
+== Closing
+
+We hope that these few blogs have given you the basic architectural ideas and tools to help you design your systems. Of course, there are many ways of doing this process. But one crucial thing to keep in mind is why a system should be chosen as core and downstream to other systems. That is where the business problem has to be identified and examined closely. Our model to code example is just one way of showing you how these tools can be helpful, and hopefully, you can benefit from these examples in your projects.
+
+Ivan Dugalic
