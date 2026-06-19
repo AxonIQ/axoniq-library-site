@@ -1254,6 +1254,190 @@ public class AxonConfig {
 </table>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_retry_behavior"><a class="anchor" href="#_retry_behavior"></a>Retry behavior</h3>
+<div class="paragraph">
+<p>When a command dispatch fails, the framework can automatically retry it if a <code>RetryScheduler</code> is registered in the
+configuration.
+The <code>RetryScheduler</code> decides, based on the failure and the dispatch history, whether another attempt is warranted
+and how long to wait before trying again.
+No additional wiring is required: registering the scheduler is enough for the framework to activate retry behavior.</p>
+</div>
+<div class="paragraph">
+<p>The built-in <code>AsyncRetryScheduler</code> executes retries on a <code>ScheduledExecutorService</code> according to a <code>RetryPolicy</code>.
+Axon Framework provides three composable <code>RetryPolicy</code> implementations:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>ExponentialBackOffRetryPolicy</code></dt>
+<dd>
+<p>Doubles the retry delay after each attempt, starting from a given initial wait time in milliseconds.
+Retries indefinitely on its own, so combine it with <code>MaxAttemptsPolicy</code> to cap the number of attempts.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Retry with delays of 100ms, 200ms, 400ms, 800ms, ...
+RetryPolicy policy = new ExponentialBackOffRetryPolicy(100);</code></pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1"><code>MaxAttemptsPolicy</code></dt>
+<dd>
+<p>Wraps any other policy and stops retrying once the maximum number of attempts is reached.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Retry at most 3 times using the given delegate policy
+RetryPolicy policy = new MaxAttemptsPolicy(delegate, 3);</code></pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1"><code>FilteringRetryPolicy</code></dt>
+<dd>
+<p>Wraps any other policy and only delegates to it when the latest exception matches a given predicate.
+Failures that do not match are propagated immediately without retrying.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Only retry when the failure is not a validation error
+RetryPolicy policy = new FilteringRetryPolicy(
+        delegate,
+        e -&gt; !(e instanceof IllegalArgumentException)
+);</code></pre>
+</div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Compose them to express the exact behavior you need.
+A common combination is exponential backoff, capped at a maximum number of retries, filtered to transient errors only:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">RetryPolicy policy = new MaxAttemptsPolicy(
+        new FilteringRetryPolicy(
+                new ExponentialBackOffRetryPolicy(100),
+                e -&gt; !(e instanceof IllegalArgumentException)
+        ),
+        3
+);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Register an <code>AsyncRetryScheduler</code> with the policy to enable automatic retry behavior:</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.retry.AsyncRetryScheduler;
+import org.axonframework.messaging.core.retry.ExponentialBackOffRetryPolicy;
+import org.axonframework.messaging.core.retry.FilteringRetryPolicy;
+import org.axonframework.messaging.core.retry.MaxAttemptsPolicy;
+import org.axonframework.messaging.core.retry.RetryScheduler;
+
+import java.util.concurrent.Executors;
+
+public class AxonConfig {
+
+    public void configureRetryScheduler(MessagingConfigurer configurer) {
+        configurer.componentRegistry(cr -&gt; cr.registerComponent(
+                RetryScheduler.class,
+                config -&gt; new AsyncRetryScheduler(
+                        new MaxAttemptsPolicy(
+                                new FilteringRetryPolicy(
+                                        new ExponentialBackOffRetryPolicy(100),
+                                        e -&gt; !(e instanceof IllegalArgumentException)
+                                ),
+                                3
+                        ),
+                        Executors.newSingleThreadScheduledExecutor()
+                )
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.retry.AsyncRetryScheduler;
+import org.axonframework.messaging.core.retry.ExponentialBackOffRetryPolicy;
+import org.axonframework.messaging.core.retry.FilteringRetryPolicy;
+import org.axonframework.messaging.core.retry.MaxAttemptsPolicy;
+import org.axonframework.messaging.core.retry.RetryScheduler;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.concurrent.Executors;
+
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public RetryScheduler retryScheduler() {
+        return new AsyncRetryScheduler(
+                new MaxAttemptsPolicy(
+                        new FilteringRetryPolicy(
+                                new ExponentialBackOffRetryPolicy(100),
+                                e -&gt; !(e instanceof IllegalArgumentException)
+                        ),
+                        3
+                ),
+                Executors.newSingleThreadScheduledExecutor()
+        );
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>When the built-in policies do not cover your requirements, implement <code>RetryPolicy</code> directly.
+The interface receives the failed message, the current exception, and the exception types from all previous attempts,
+and returns a <code>RetryPolicy.Outcome</code> that either schedules the next attempt or aborts:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.retry.RetryPolicy;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+public class CustomRetryPolicy implements RetryPolicy {
+
+    @Override
+    public Outcome defineFor(Message message, Throwable failure,
+                             List&lt;Class&lt;? extends Throwable&gt;[]&gt; previousFailures) {
+        if (failure instanceof IllegalArgumentException || previousFailures.size() &gt;= 3) {
+            return Outcome.doNotReschedule();
+        }
+        return Outcome.rescheduleIn(2, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        descriptor.describeProperty("maxRetries", 3);
+        descriptor.describeProperty("retryDelay", "2 SECONDS");
+    }
+}</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1553,19 +1737,19 @@ This makes your commands self-documenting and ensures consistent message identif
 <div class="paragraph">
 <p>Custom routing strategies can be configured:</p>
 </div>
-<div id="_tabs_2" class="openblock tabs is-loading">
+<div id="_tabs_3" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
 <ul>
-<li id="_tabs_2_configuration_api" class="tab">
+<li id="_tabs_3_configuration_api" class="tab">
 <p>Configuration API</p>
 </li>
-<li id="_tabs_2_spring_boot" class="tab">
+<li id="_tabs_3_spring_boot" class="tab">
 <p>Spring Boot</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
@@ -1586,7 +1770,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
