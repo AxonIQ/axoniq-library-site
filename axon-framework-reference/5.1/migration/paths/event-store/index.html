@@ -976,6 +976,110 @@ public class AxonConfig {
 </div>
 </div>
 <div class="sect1">
+<h2 id="missing-revision"><a class="anchor" href="#missing-revision"></a>Events without a revision (AF4 migration concern)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework 4 allowed events to be stored without a revision (the field was nullable).
+Axon Framework 5 requires every event to carry a version as part of its <code>MessageType</code>, so reading AF4 events with a missing revision would throw an <code>IllegalArgumentException</code> with the message "The given version is unsupported because it is empty."</p>
+</div>
+<div class="paragraph">
+<p>The framework resolves this at read time through the <code>EventTypeResolver</code>.
+The default resolver substitutes <code>0.0.0</code> for any missing or empty stored version, so no schema change or data migration is needed.
+The value <code>0.0.0</code> is chosen deliberately: it is distinct from <code>MessageType.DEFAULT_VERSION</code> (<code>0.0.1</code>) so that legacy events without a revision always sort as older than any explicitly versioned event.</p>
+</div>
+<div class="paragraph">
+<p>The default resolver is active out of the box.
+If <code>0.0.0</code> does not suit your needs, configure a different fallback version.</p>
+</div>
+<div class="paragraph">
+<p>When using the <code>AggregateBasedJpaEventStorageEngine</code>, consider the following example to configure a custom <code>EventTypeResolver</code>:</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.persistence.EntityManagerFactory;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.eventsourcing.eventstore.EventTypeResolver;
+import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+
+public class AxonConfig {
+
+    public void configureStorageEngine(
+            EventSourcingConfigurer configurer,
+            EntityManagerFactory factory,
+            EventConverter eventConverter
+    ) {
+        configurer.registerEventStorageEngine(
+                config -&gt; new AggregateBasedJpaEventStorageEngine(
+                        new JpaTransactionalExecutorProvider(factory),
+                        eventConverter,
+                        engineConfig -&gt; engineConfig.eventTypeResolver(
+                            EventTypeResolver.withDefaultVersion("0.0.1")
+                        )
+                )
+        );
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
+<div class="paragraph">
+<p>Provide an <code>AggregateBasedJpaEventStorageEngineConfiguration</code> bean with the custom resolver:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.eventstore.EventTypeResolver;
+import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngineConfiguration;
+
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public AggregateBasedJpaEventStorageEngineConfiguration storageEngineConfiguration() {
+        return AggregateBasedJpaEventStorageEngineConfiguration.DEFAULT
+                .eventTypeResolver(
+                    EventTypeResolver.withDefaultVersion("0.0.1")
+                );
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>This substitution happens only at read time.
+Stored events are never modified; the missing version is resolved in memory when the event is read from the store.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="jpa-migration"><a class="anchor" href="#jpa-migration"></a>JPA event storage migration</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -1234,19 +1338,19 @@ Ensure you have a backup before running any schema alterations.</p>
 <p>Having taken care of the <a href="#jpa_database_migration">database migration</a> was the hard part.
 Now, we can configure the <code>AggregateBasedJpaEventStorageEngine</code> in the application:</p>
 </div>
-<div id="_tabs_2" class="openblock tabs is-loading">
+<div id="_tabs_3" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
 <ul>
-<li id="_tabs_2_configuration_api" class="tab">
+<li id="_tabs_3_configuration_api" class="tab">
 <p>Configuration API</p>
 </li>
-<li id="_tabs_2_spring_boot" class="tab">
+<li id="_tabs_3_spring_boot" class="tab">
 <p>Spring Boot</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
 <div class="paragraph">
 <p>Firstly, be sure to adjust the persistence context. Replace the <code>DomainEventEntry</code> entity registration with the <code>AggregateEventEntry</code>.
 Once done, we can register the <code>AggregateBasedJpaEventStorageEngine</code> with the <code>EventSourcingConfigurer</code>:</p>
@@ -1316,7 +1420,7 @@ public class AxonConfig {
 </div>
 </div>
 </div>
-<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
 <div class="paragraph">
 <p>With Spring Boot, the <code>AggregateBasedJpaEventStorageEngine</code> is automatically configured when Axon Server is disabled:</p>
 </div>
