@@ -3,10 +3,9 @@
   <head>
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Understanding the Architecture Principles of Axon Framework 5</title>
-    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.1/migration/understanding-architecture-principles/">
-    <link rel="prev" href="../solved-architecture-choices/">
-    <link rel="next" href="../paths/">
+    <title>Persistent Streams</title>
+    <link rel="prev" href="../../events/event-processors/streaming/">
+    <link rel="next" href="../../dead-letter-queue/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -291,7 +290,7 @@
 
 <link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
   </head>
-  <body class="article">
+  <body class="article axoniq-feature">
     <div class="header_container">
       
     <!-- Google Tag Manager (noscript) -->
@@ -349,17 +348,17 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
-    <li><a href="../">Migration Guide</a></li>
-    <li><a href="./">Understanding Choices</a></li>
+    <li><a href="../../events/">Events</a></li>
+    <li><a href="../../events/event-processors/">Event Processors</a></li>
+    <li><a href="./"><span class="advanced-framework">Persistent Streams</span></a></li>
   </ul>
 </nav>
 <div class="page-actions">
   <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
   <div class="actions-menu toolbar_dropdown_menu card">
-      <a class="action item" href="https://github.com/AxonIQ/AxonFramework/edit/main/docs/reference-guide/modules/migration/pages/understanding-architecture-principles.adoc">Edit this Page</a>
-    
-    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Understanding%20the%20Architecture%20Principles%20of%20Axon%20Framework%205" target="discuss_search">View Discussions</a>
-    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Understanding%20the%20Architecture%20Principles%20of%20Axon%20Framework%205%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BUnderstanding%20the%20Architecture%20Principles%20of%20Axon%20Framework%205%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fmigration%2Funderstanding-architecture-principles%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Persistent%20Streams" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Persistent%20Streams%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BPersistent%20Streams%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fconnector%2Fpersistent-streams%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
   </div>
 </div>
 
@@ -368,8 +367,8 @@
   <button class="version-menu-toggle" title="Show other versions of page">development</button>
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">development</a>
-    <a class="version item" href="../../../5.1/migration/understanding-architecture-principles/">5.1</a>
-    <a class="version item" href="../../../5.0/migration/understanding-architecture-principles/">5.0</a>
+    <a class="version item is-missing" href="../../../5.1/">5.1</a>
+    <a class="version item is-missing" href="../../../5.0/">5.0</a>
     <a class="version item is-missing" href="../../../4.13/">4.13</a>
     <a class="version item is-missing" href="../../../4.12/">4.12</a>
     <a class="version item is-missing" href="../../../4.11/">4.11</a>
@@ -396,77 +395,77 @@
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="../">Migration Guide</a>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../why-upgrade/">Why Upgrade?</a>
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../prerequisites/">Prerequisites</a>
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+    <a class="nav-link" href="../../migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../solved-architecture-choices/">Resolved Problems</a>
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="./">Understanding Choices</a>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
   </li>
   <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="../paths/">Migration Paths</a>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/messages/">Messages</a>
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
   </li>
   <li class="nav-item" data-depth="3">
     <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="../paths/aggregates/">Aggregates</a>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="4">
-    <a class="nav-link" href="../paths/aggregates/configuration-migration/">Configuration Migration</a>
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
   </li>
   <li class="nav-item" data-depth="4">
-    <a class="nav-link" href="../paths/aggregates/event-tagging/">Event tagging</a>
+    <a class="nav-link" href="../../migration/paths/aggregates/event-tagging/">Event tagging</a>
   </li>
   <li class="nav-item" data-depth="4">
-    <a class="nav-link" href="../paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
   </li>
   <li class="nav-item" data-depth="4">
-    <a class="nav-link" href="../paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
   </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/projectors-event-processors/">Projectors and Event Processors</a>
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/event-store/">Event Store</a>
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/snapshotting/">Snapshotting</a>
+    <a class="nav-link" href="../../migration/paths/snapshotting/">Snapshotting</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/test-fixtures/">Test Fixtures</a>
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/serializers/">Serializer Migration</a>
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/dlq/">Dead-Letter Queue Migration</a>
+    <a class="nav-link" href="../../migration/paths/dlq/">Dead-Letter Queue Migration</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/interceptors/">Interceptor Migration</a>
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/configuration/">Configuration Migration</a>
+    <a class="nav-link" href="../../migration/paths/configuration/">Configuration Migration</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/sequencing-policies/">Sequencing Policy Migration</a>
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
   </li>
   <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../paths/token-store/">Token Store</a>
+    <a class="nav-link" href="../../migration/paths/token-store/">Token Store</a>
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
@@ -570,8 +569,8 @@
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
   </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="../../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="./"><span class="advanced-framework">Persistent Streams</span></a>
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
@@ -932,519 +931,241 @@
         <aside class="toc sidebar" data-title="Page content" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
-          <article class="doc">
-                <h1 class="page">Understanding the Architecture Principles of Axon Framework 5</h1>
+          <article class="doc axoniq-feature">
+                <h1 class="page">Persistent Streams</h1>
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Now let&#8217;s explore some of the most significant architectural changes you&#8217;ll encounter when migrating from Axon Framework 4.x to Axon Framework 5.
-Each change builds upon a core philosophy, such as: embracing asynchronicity, eliminating hidden state management, decoupling business logic from technical concerns, and providing developers with clearer, more expressive APIs.</p>
+<p>A Subscribing Processor can use a persistent stream as its event source.
+By using a persistent stream, a Subscribing Processor can process events in parallel and replay events.</p>
+</div>
+<div class="paragraph">
+<p>When a processor uses a persistent stream, it receives events from Axon Server.
+After processing a batch of events, it sends an acknowledgment back to Axon Server.</p>
+</div>
+<div class="paragraph">
+<p>The persistent stream can be split into segments to allow for parallel processing within a single client or across multiple instances of the client.
+The number of segments can be changed dynamically.
+Axon Server distributes the segments across the subscribers to ensure that all segments are connected.</p>
+</div>
+<div class="paragraph">
+<p>Events are assigned to a specific segment based on the sequencing policy for the persistent stream.
+Persistent streams support all the standard sequencing policies that can also be used for
+<a href="../../events/event-processors/streaming/#sequencing_policies" class="xref page">streaming processors</a>.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If no sequencing policy is specified for a persistent stream, the configuration defaults to <code>SequentialPolicy</code>.
+This policy instructs the persistent stream to process all events sequentially.
+Be sure to explicitly check and configure your sequencing policy to match your specific sequencing requirements. If you
+are using an aggregate-based approach with a non-DCB context in Axon Server, consider using the <code>SequentialPerAggregatePolicy</code>
+instead of the <code>SequentialPolicy</code>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Clients can provide a filter in the persistent stream definition.
+This reduces the number of events that the client receives from Axon Server.
+The filter expression uses the same syntax as the <a href="https://docs.axoniq.io/axon-server-query-language-guide/latest">ad-hoc query option in Axon Server</a>.</p>
+</div>
+<div class="paragraph">
+<p>Persistent streams do not require a token store in the client like <a href="../../events/event-processors/streaming/#token_store" class="xref page">streaming processors</a> do.
+The state of the stream is maintained in Axon Server.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_async_native_apis_for_better_concurrency_and_throughput"><a class="anchor" href="#_async_native_apis_for_better_concurrency_and_throughput"></a>Async-native APIs for better concurrency and throughput</h2>
+<h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Axon Framework 5 fundamentally reimagines how the framework interacts with your code.
-In Axon Framework 4.x, many operations were synchronous and contained bottlenecks.</p>
+<p>For a specific Event Processor to use a persistent stream as its source, the event source must be a <code>PersistentStreamEventSource</code>.
+You can configure this using the <a href="#declarative_config_persistent">declarative Configuration API</a>.</p>
 </div>
 <div class="paragraph">
-<p>Axon Framework 5 makes asynchronicity explicit and pervasive.
-Rather than hiding <code>CompletableFuture</code> chains behind method returns, the framework embraces them as first-class citizens.
-Every infrastructure component that touches message processing, event storage, or command/query handling now operates natively with <code>CompletableFuture</code> and reactive streams.</p>
+<p>See the examples below, or consult the <a href="../../events/event-processors/#general_processor_configuration" class="xref page">general processor configuration section</a> for further options.</p>
 </div>
 <div class="paragraph">
-<p>This change flows through:</p>
+<p>Each persistent stream must be identified by a unique name within your Axon Server environment.
+The <code>PersistentStreamEventSource</code> requires a <code>PersistentStreamProperties</code> to define the initial stream creation settings:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>The <code>CommandBus</code> and <code>CommandGateway</code></p>
+<p><code>streamName</code>: the unique identifier of the persistent stream in Axon Server; reusing an existing name joins the same server-side stream.</p>
 </li>
 <li>
-<p>The <code>EventStore</code> and <code>EventStorageEngine</code></p>
+<p><code>segments</code>: the initial number of segments for parallel processing.</p>
 </li>
 <li>
-<p>Event Processors and message handlers</p>
+<p><code>sequencingPolicyName</code>: the name of the sequencing policy; use the constants on <code>PersistentStreamSequencingPolicy</code> (for example, <code>SEQUENTIAL_PER_AGGREGATE_POLICY</code>).</p>
 </li>
 <li>
-<p>The <code>QueryBus</code> and <code>QueryGateway</code></p>
+<p><code>sequencingPolicyParameters</code>: list of parameters for the sequencing policy; required for <code>PropertySequencingPolicy</code> and <code>MetadataSequencingPolicy</code>.</p>
 </li>
 <li>
-<p>The entire <code>Repository</code> layer</p>
+<p><code>initialPosition</code>: the position to start reading from, which is either a global event sequence number, <code>"HEAD"</code> (start from the latest event), or <code>"TAIL"</code> (start from the beginning of the event store).</p>
+</li>
+<li>
+<p><code>filter</code>: an optional server-side filter expression in <a href="https://docs.axoniq.io/axon-server-query-language-guide/latest">Axon Server Query Language</a>; use <code>null</code> to receive all events.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Modern systems increasingly demand non-blocking execution.
-By making async explicit, developers can reason about concurrency clearly and therefore can optimize scheduling effectively.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="improved_configuration_architecture"><a class="anchor" href="#improved_configuration_architecture"></a>The improved configuration architecture makes configuring your project easier</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>One of the most architecturally significant changes is how Axon Framework approaches configuration.
-Axon Framework 4.x had a centralized <code>axon-configuration</code> module that depended on all other modules to provide a global configuration.
-This created:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>High coupling between modules</p>
-</li>
-<li>
-<p>Difficult modularization for custom extensions</p>
-</li>
-<li>
-<p>All-or-nothing configuration initialization</p>
-</li>
-</ul>
+<p>For the <code>MetadataSequencingPolicy</code>, the <code>sequencingPolicyParameters</code> must contain the name of one or more event metadata fields.
+Events with the same value for these fields are routed to the same segment.</p>
 </div>
 <div class="paragraph">
-<p>Axon Framework 5 inverts the dependency structure.
-Instead of having an <code>axon-configuration</code> module that depends on all other modules, the core module (<code>axon-messaging</code>) now contains an <code>ApplicationConfigurer</code> interface.
-The key insight: different layers provide different configurers based on what you&#8217;re trying to build.</p>
+<p>The <code>PropertySequencingPolicy</code> requires 4 values in the <code>sequencingPolicyParameters</code> list:</p>
 </div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The serialization format of the events: <code>JSON</code> or <code>XML</code> (currently only JSON or XML supported).</p>
+</li>
+<li>
+<p>The payload type to apply the policy on.</p>
+</li>
+<li>
+<p>An expression to extract the sequencing value from the event payload (<code>JsonPath</code> for JSON, <code>XPath</code> for XML).</p>
+</li>
+<li>
+<p>A fallback policy name to use when the event payload type does not match; this may be another <code>PropertySequencingPolicy</code> to chain additional payload-type rules.</p>
+</li>
+</ol>
+</div>
+<div class="sect2">
+<h3 id="declarative_config_persistent"><a class="anchor" href="#declarative_config_persistent"></a>Declarative configuration</h3>
 <div class="paragraph">
-<p>The new <code>ApplicationConfigurer</code> interface now only provides basic operations to register components, decorate components, register modules, and register lifecycle handlers.
-This breaks down into specific layer configurers:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>MessagingConfigurer</strong> - For basic messaging concepts (<code>CommandBus</code>, <code>QueryBus</code>, <code>EventSink</code>)</p>
-</li>
-<li>
-<p><strong>ModellingConfigurer</strong> - Wraps <code>MessagingConfigurer</code>, adds modeling-specific registration</p>
-</li>
-<li>
-<p><strong>EventSourcingConfigurer</strong> - Wraps <code>ModellingConfigurer</code>, adds event store and event storage engine registration</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Instead of a monolithic configuration class, you now compose modular configurers:</p>
+<p>When using Axon&#8217;s Configuration API directly, retrieve the infrastructure components via the <code>Configuration</code> parameter and pass them to the <code>PersistentStreamEventSource</code> constructor:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.axonserver.connector.AxonServerConnection;
-import io.axoniq.framework.axonserver.connector.event.AxonServerEventStorageEngine;
-import org.axonframework.common.configuration.ApplicationConfigurer;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.messaging.core.interception.LoggingInterceptor;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
+import io.axoniq.framework.axonserver.connector.api.AxonServerConfiguration;
+import io.axoniq.framework.axonserver.connector.api.AxonServerConnectionManager;
+import io.axoniq.framework.axonserver.connector.event.PersistentStreamEventSource;
+import io.axoniq.framework.axonserver.connector.event.PersistentStreamScheduledExecutorBuilder;
+import io.axoniq.framework.axonserver.connector.event.PersistentStreamSequencingPolicy;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
 
-class AxonConfig {
+import java.util.Collections;
+import java.util.concurrent.Executors;
 
-    public ApplicationConfigurer configurer() {
-        return EventSourcingConfigurer.create()
-                                      .registerEventStorageEngine(config -&gt; new AxonServerEventStorageEngine(
-                                              config.getComponent(AxonServerConnection.class),
-                                              config.getComponent(EventConverter.class)
-                                      ))
-                                      // Accessing the modelling layer...
-                                      .modelling(modelling -&gt; {
-                                          CommandHandlingModule.CommandHandlerPhase commandHandlingModule =
-                                                  CommandHandlingModule.named("orders")
-                                                                       .commandHandlers();
-                                          modelling.registerCommandHandlingModule(commandHandlingModule);
-                                      })
-                                      // Accessing the messaging layer...
-                                      .messaging(messaging -&gt; messaging.registerDispatchInterceptor(
-                                              config -&gt; new LoggingInterceptor&lt;&gt;()
-                                      ));
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.subscribing(
+                this::configureSubscribingProcessor
+        ));
     }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Each layer wraps the one below it, creating a delegation chain that lets you move up and down to access layer-specific APIs.</p>
-</div>
-<div class="paragraph">
-<p>The benefits of this architecture include:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Clear separation</strong>: Each module configures its own concerns.</p>
-</li>
-<li>
-<p><strong>Lazy initialization</strong>: Components only initialize when needed.</p>
-</li>
-<li>
-<p><strong>Custom modules</strong>: Easier to create domain-specific configuration modules.</p>
-</li>
-<li>
-<p><strong>Composability</strong>: Pick and choose exactly what you need from Axon.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p><strong>For more info:</strong> <a href="https://www.axoniq.io/blog/announcing-axon-framework-5-configuring-axon-made-easy">Configuration Blog</a></p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="moving-away-from-aggregates"><a class="anchor" href="#moving-away-from-aggregates"></a>Moving away from fixed aggregates to entities with tags: the Dynamic Consistency Boundary approach</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>One of the most significant changes is how Axon Framework 5 conceptualizes event storage.
-Axon Framework 4.x&#8217;s event store was fundamentally aggregate-centric.
-An <code>EventStore</code> stored events grouped by aggregate root.
-This made sense for a certain class of applications, but imposed constraints:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Complex event sourcing patterns spanning multiple entities.</p>
-</li>
-<li>
-<p>Systems needing to event-source entire bounded contexts.</p>
-</li>
-<li>
-<p>Read models sourced from multiple aggregate streams.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Axon Framework 5 moves to a "Dynamic Consistency Boundary" (DCB) model.
-Rather than assuming a single aggregate root per stream, events can be organized by tags.</p>
-</div>
-<div class="paragraph">
-<p><strong>For more info:</strong> <a href="https://www.axoniq.io/blog/dcb-in-af-5">DCB Blog</a> and <a href="../../events/event-store-internals/" class="xref page">Event Store internals</a>.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_rethinking_unit_of_work_with_the_processingcontext"><a class="anchor" href="#_rethinking_unit_of_work_with_the_processingcontext"></a>Rethinking Unit of Work with the <code>ProcessingContext</code></h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>One of the most profound architectural changes in Axon Framework 5 is the complete rewrite of the <code>UnitOfWork</code> abstraction.</p>
-</div>
-<div class="paragraph">
-<p>In Axon Framework 4, the <code>UnitOfWork</code> relied on <code>ThreadLocal</code> to track the currently active unit of work.
-This approach broke down in modern execution environments:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Virtual threads can move between OS threads, invalidating <code>ThreadLocal</code> semantics.</p>
-</li>
-<li>
-<p>Reactive stacks execute multiple logical flows on the same OS thread.</p>
-</li>
-<li>
-<p>Distributed tracing needs explicit context propagation.</p>
-</li>
-<li>
-<p>Hidden state made it difficult to understand code flow without deep framework knowledge.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>The removal of <code>ThreadLocal</code> is paramount for a reactive programming style.
-Axon Framework 5 breaks down the <code>UnitOfWork</code> interface into two interfaces and a concrete implementation:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>The <code>ProcessingLifecycle</code>, describing methods to register actions into distinct <code>ProcessingLifeCycle.Phases</code>, thus managing the "lifecycle of a process."</p>
-</li>
-<li>
-<p>The <code>ProcessingContext</code>, an implementation of the <code>ProcessingLifecycle</code> adding resource management.</p>
-</li>
-<li>
-<p>The <code>UnitOfWork</code>, an implementation of the <code>ProcessingContext</code> and thus <code>ProcessingLifecycle</code>.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>The <code>ProcessingContext</code> replaces the use of the <code>ThreadLocal</code>.
-As such, you will notice that the <code>ProcessingContext</code> will become a parameter throughout virtually all infrastructure interfaces Axon Framework provides.
-This will become most apparent on all message handlers.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Axon Framework 4.x: Implicit ThreadLocal-based unit of work
-@EventHandler
-public void handle(MyEvent event) {
-    UnitOfWork uow = CurrentUnitOfWork.get();
-    // Process event
-}
 
-// Axon Framework 5: Explicit ProcessingContext
-@EventHandler
-public void handle(MyEvent event, ProcessingContext context) {
-    // Context is explicit, can be reasoned about
-    // Flows through all nested operations
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The <code>ProcessingContext</code> provides:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Explicit resource management</strong>: Store and retrieve resources bound to the current message processing operation.</p>
-</li>
-<li>
-<p><strong>Clear lifecycle management</strong>: Resources are bound to the logical processing unit, not the OS thread.</p>
-</li>
-<li>
-<p><strong>Distributed tracing support</strong>: The context can carry trace information through async boundaries.</p>
-</li>
-<li>
-<p><strong>Better integration with reactive stacks</strong>: Works seamlessly with reactive frameworks.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p><strong>For more info:</strong> <a href="../../messaging-concepts/processing-context/" class="xref page">Processing Context</a></p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_message_type_and_qualified_name_decoupling_from_javas_type_system"><a class="anchor" href="#_message_type_and_qualified_name_decoupling_from_javas_type_system"></a>Message type and qualified name: Decoupling from Java&#8217;s type system</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Axon Framework 4.x coupled message identity tightly to Java&#8217;s type system.
-A command&#8217;s type was its class, an event&#8217;s type was determined by its class name.
-This approach had fundamental limitations.
-For example, what happens when you need to:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Support multiple versions of the same message simultaneously?</p>
-</li>
-<li>
-<p>Deploy messages across JVM and non-JVM systems?</p>
-</li>
-<li>
-<p>Evolve message schemas independent of code deployments?</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>In Axon Framework 4.x, these scenarios required workarounds.
-Message versioning was handled through a separate <code>RevisionResolver</code> mechanism.
-Cross-platform compatibility required custom serialization logic.</p>
-</div>
-<div class="paragraph">
-<p>Axon Framework 5 introduces two new foundational concepts: <code>QualifiedName</code> and <code>MessageType</code>.</p>
-</div>
-<div class="paragraph">
-<p>The <code>QualifiedName</code> represents the business identity of a message, completely independent of Java&#8217;s type system.</p>
-</div>
-<div class="paragraph">
-<p>Rather than relying on convention, you now explicitly declare message identity.</p>
-</div>
-<div class="paragraph">
-<p>This decoupling has profound implications for your entire architecture:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Version negotiation happens at the message level, not the serializer level.</p>
-</li>
-<li>
-<p>Non-JVM systems can understand message identity without reflection.</p>
-</li>
-<li>
-<p>Schema registries can track messages by qualified name and version independent of deployment artifacts.</p>
-</li>
-<li>
-<p>Upcasting and down casting becomes more explicit and controllable.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p><strong>For more info:</strong> <a href="../../messaging-concepts/anatomy-message/#message_type" class="xref page">Message Types</a></p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_the_messagestream_significantly_improves_messaging_for_axon_throughout"><a class="anchor" href="#_the_messagestream_significantly_improves_messaging_for_axon_throughout"></a>The <code>MessageStream</code> significantly improves messaging for Axon throughout</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>In Axon Framework 4.x, retrieving multiple messages from the event store required understanding different APIs.
-<code>DomainEventStream</code> was used for events, <code>BlockingStream</code> for certain operations, and standard <code>Stream</code> or <code>List</code> for other scenarios.
-This fragmentation made it difficult to write generic code.</p>
-</div>
-<div class="paragraph">
-<p>Each required different handling patterns.
-Worse, Axon Framework 4.x couldn&#8217;t easily support both synchronous and reactive message handlers with the same infrastructure.</p>
-</div>
-<div class="paragraph">
-<p>Axon Framework 5 introduces <code>MessageStream</code>, a unified abstraction that elegantly handles:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Empty results (like event handlers, which return nothing).</p>
-</li>
-<li>
-<p>Single results (like command handlers, which return one response).</p>
-</li>
-<li>
-<p>Multiple results (like query handlers, which may return N values).</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p><code>MessageStream</code> also supports attaching context information to each message.</p>
-</div>
-<div class="paragraph">
-<p>This context carries metadata about each message (like aggregate identifier, sequence number) without coupling the message itself to the source.</p>
-</div>
-<div class="paragraph">
-<p>The introduction of <code>MessageStream</code> has cascading effects throughout Axon Framework 5:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>EventStore</code> operations return <code>MessageStream</code> instead of custom stream types.</p>
-</li>
-<li>
-<p><code>EventStorageEngine</code> operations work with <code>MessageStream</code> internally.</p>
-</li>
-<li>
-<p>Event processors consume messages as <code>MessageStream</code>.</p>
-</li>
-<li>
-<p>Handlers can return <code>MessageStream</code> for flexible result types.
-The <code>MessageStream</code> is enforced when registering lambdas as your message handlers.</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_serialization_to_conversion_a_cleaner_separation_of_concerns"><a class="anchor" href="#_serialization_to_conversion_a_cleaner_separation_of_concerns"></a>Serialization to conversion: A cleaner separation of concerns</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Axon Framework 4.x placed serialization concerns into a large <code>Serializer</code> abstraction that handled everything: payload conversion, metadata handling, and revision resolution.
-In Axon Framework 4.x, a <code>Serializer</code> had to:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Convert payloads to/from wire format.</p>
-</li>
-<li>
-<p>Handle metadata serialization.</p>
-</li>
-<li>
-<p>Resolve revisions via <code>RevisionResolver</code>.</p>
-</li>
-<li>
-<p>Support multiple serialization formats (XStream, Jackson, etc.).</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>This breadth of responsibility made it difficult to reason about serialization and prevented flexibility in format choice.</p>
-</div>
-<div class="paragraph">
-<p>Axon Framework 5 breaks this into focused, composable pieces and replaces <code>Serializer</code> with a three-level <code>Converter</code> hierarchy with concrete types:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p><strong>GeneralConverter</strong>: Used for all conversions unless a more specific converter is provided</p>
-</li>
-<li>
-<p><strong>MessageConverter</strong>: Specifically handles conversion of <code>Message</code> implementations</p>
-</li>
-<li>
-<p><strong>EventConverter</strong>: Specifically handles conversion of <code>EventMessage</code> implementations</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>Infrastructure components now enforce the use of the appropriate converter due to the concrete types for each layer:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.axonserver.connector.api.AxonServerConnectionManager;
-import io.axoniq.framework.axonserver.connector.event.AxonServerEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.springframework.context.annotation.Bean;
-
-class AxonConfig {
-
-    @Bean
-    public EventStorageEngine eventStorageEngine(
-            AxonServerConnectionManager connectionManager,
-            EventConverter eventConverter
+    private SubscribingEventProcessorsConfigurer configureSubscribingProcessor(
+            SubscribingEventProcessorsConfigurer subscribingConfigurer
     ) {
-        return new AxonServerEventStorageEngine(connectionManager.getConnection(), eventConverter);
+        return subscribingConfigurer.processor(
+                "example-processor",
+                config -&gt; config.eventHandlingComponents(this::configureHandlingComponent)
+                                .customized((c, subscribingConfig) -&gt; subscribingConfig.eventSource(
+                                        buildPersistentStreamSource(c)
+                                ))
+        );
+    }
+
+    private PersistentStreamEventSource buildPersistentStreamSource(Configuration c) {
+        String streamName = "example-persistent-stream";
+        int segmentCount = 4;
+        int batchSize = 1024;
+
+        PersistentStreamProperties properties = new PersistentStreamProperties(
+                streamName,
+                segmentCount,
+                PersistentStreamSequencingPolicy.SEQUENTIAL_PER_AGGREGATE_POLICY,
+                Collections.emptyList(),
+                "HEAD",
+                null  // no server-side filter
+        );
+
+        return new PersistentStreamEventSource(
+                streamName,
+                c.getComponent(AxonServerConnectionManager.class),
+                c.getComponent(AxonServerConfiguration.class),
+                c.getComponent(EventConverter.class),
+                properties,
+                PersistentStreamScheduledExecutorBuilder.defaultFactory().build(segmentCount, streamName),
+                c.getComponent(UnitOfWorkFactory.class),
+                batchSize
+        );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected(c -&gt; new AnnotatedEventHandlingClass());
     }
 }</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>The default converter switched from XStream to Jackson, eliminating the problematic reflection behavior of XStream.
-However, if you need XML serialization:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Configure Jackson with XML support
-JacksonConverter xmlConverter = new JacksonConverter(
-    new ObjectMapper(new XmlFactory())
-);</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Version resolution moved from the <code>Serializer</code> layer to the <code>MessageType</code> itself.
-Rather than having a <code>RevisionResolver</code> determine message version at serialization time, the version is now part of the message&#8217;s identity:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Old Axon Framework 4.x approach
-@Revision("2.0")
-public class AccountCreatedEvent { }
-
-// New Axon 5 approach
-@Event(name = "AccountCreatedEvent", version = "2.0")
-public class AccountCreatedEvent { }</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This makes versioning explicit and independent of serialization concerns.</p>
-</div>
-<div class="paragraph">
-<p><strong>For more info:</strong> <a href="https://github.com/AxonFramework/AxonFramework/issues/3102">GitHub Issue #3102</a></p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_pooledstreamingeventprocessor_replaces_trackingeventprocessor"><a class="anchor" href="#_pooledstreamingeventprocessor_replaces_trackingeventprocessor"></a><code>PooledStreamingEventProcessor</code> replaces <code>TrackingEventProcessor</code></h2>
+<h2 id="_replaying_events"><a class="anchor" href="#_replaying_events"></a>Replaying events</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Axon Framework 4&#8217;s event processing architecture centered on the <code>TrackingEventProcessor</code>, which maintained position in event streams.
-While functional, the <code>TrackingEventProcessor</code> had limitations in resource management and scalability.</p>
+<p>Persistent stream backed event processors allow replaying events in a similar way as <a href="../../events/event-processors/streaming/#replaying-events" class="xref page">streaming event processors do</a>.
+However, due to the nature of subscribing processors and the server-side implementation of persistent streams there are a few limitations compared to streaming processors:</p>
 </div>
-<div class="paragraph">
-<p>Axon Framework 5 removes the <code>TrackingEventProcessor</code> entirely.
-In its place, the <code>PooledStreamingEventProcessor</code> provides similar capabilities with better resource management.
-The pooled approach allows for more efficient thread utilization, as worker threads are shared across segments rather than dedicated per segment.
-This results in better scalability when processing high volumes of events across many segments.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>the <code>ReplayToken</code> that might be accessed from the processing context or as annotated handler parameter always reports the next token position as the <code>token at reset</code> instead to the real position at which the reset was triggered (so a replay startet a position <code>10</code> will have a replay token for an event at position <code>5</code> report position <code>6</code> as <code>token at reset</code>, the event at position <code>6</code> will report position <code>7</code> as <code>token at reset</code>)</p>
+</li>
+<li>
+<p><code>@ReplayContext</code> annotated handler parameters are not supported (they will be always <code>null</code>)</p>
+</li>
+<li>
+<p><code>@ResetHandler</code> annotated methods (used to run pre-reset logic) are not supported (they will simply be ignored)</p>
+</li>
+</ul>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_persistent_streams_and_the_dead_letter_queue"><a class="anchor" href="#_persistent_streams_and_the_dead_letter_queue"></a>Persistent streams and the dead letter queue</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Dead letter queues not supported for persistent streams in Axon Framework 5.2</div>
 <div class="paragraph">
-<p><strong>For more info:</strong> <a href="../../events/event-processors/streaming/" class="xref page">Streaming Event Processors</a></p>
+<p>The dead letter queue support for persistent streams is not yet available in Axon Framework 5.2. It will be introduced in a later version of the Framework.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../solved-architecture-choices/">Resolved Problems</a></span>
-  <span class="next"><a href="../paths/">Migration Paths</a></span>
+  <span class="prev"><a href="../../events/event-processors/streaming/">Streaming Event Processor</a></span>
+  <span class="next"><a href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a></span>
 </nav>
     </article>
   </div>
