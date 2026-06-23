@@ -488,6 +488,30 @@
     <a class="nav-link" href="command-dispatchers/">Dispatching</a>
   </li>
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="infrastructure/">Infrastructure</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -688,67 +712,35 @@ The framework provides comprehensive support for:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_command_handlers_stateful_and_stateless"><a class="anchor" href="#_command_handlers_stateful_and_stateless"></a>Command handlers: stateful and stateless</h2>
+<h2 id="_command_handler_styles"><a class="anchor" href="#_command_handler_styles"></a>Command handler styles</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Command handlers fall into two main categories based on how they manage state:</p>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><strong>Stateful handlers</strong> (most common)</dt>
-<dd>
-<p>Handlers where Axon Framework manages the state lifecycle automatically.
-Axon loads the current state, invokes your handler, and persists any changes.
-Your handler focuses on business logic while Axon handles state management.</p>
-<div class="paragraph">
-<p>Examples: Order handlers, user account handlers, payment handlers</p>
-</div>
-</dd>
-<dt class="hdlist1"><strong>Stateless handlers</strong></dt>
-<dd>
-<p>Handlers where state is not managed by Axon Framework.
-These handlers must query and manage state themselves when needed, typically by calling external services or databases directly within the handler.</p>
-<div class="paragraph">
-<p>Examples: Integration handlers that call external APIs, handlers that query read models, notification handlers</p>
-</div>
-</dd>
-</dl>
-</div>
-<div class="sect2">
-<h3 id="_managing_state_with_entities"><a class="anchor" href="#_managing_state_with_entities"></a>Managing state with entities</h3>
-<div class="paragraph">
-<p>For stateful command handling, Axon Framework provides comprehensive <strong>entity</strong> support for state management.
-Entities are components that encapsulate state and the business logic that operates on that state.</p>
-</div>
-<div class="paragraph">
-<p>Axon supports two approaches to entity state management:</p>
+<p>Command handlers come in three styles, depending on whether they need prior state and where that state lives:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Event-sourced entities</strong> - State derived from a sequence of events</p>
+<p><strong>Stateless command handlers</strong>: no prior state is needed.
+Each invocation is independent (for example, dispatching a batch of sub-commands, sending a notification, or forwarding a command to an external system).
+See <a href="command-handlers/" class="xref page">Command handlers</a>.</p>
 </li>
 <li>
-<p><strong>State-stored entities</strong> - State persisted directly to a database</p>
+<p><strong>Event-sourced entities</strong>: command handlers live on the entity class itself, alongside its state fields and event sourcing handlers.
+All logic for the entity lives in one place.
+See <a href="entities/event-sourced-entity/" class="xref page">Event-sourced entities</a>.</p>
+</li>
+<li>
+<p><strong>Stateful command handlers</strong>: command handlers live in a dedicated class and receive the entity as a parameter via <code>@InjectEntity</code>.
+Logic is organized by use case rather than by entity, which aligns with Vertical Slice Architecture.
+See <a href="entities/stateful-command-handler/" class="xref page">Stateful command handlers</a>.</p>
 </li>
 </ul>
-</div>
-<div class="paragraph">
-<p>You can mix and match these approaches based on your needs.
-The choice depends on your specific requirements for state management, auditability, and consistency.</p>
-</div>
-<div class="paragraph">
-<p>Alternatively, you can implement stateful handlers without using entities, managing state through your own custom mechanisms.</p>
-</div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_subsections"><a class="anchor" href="#_subsections"></a>Subsections</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>A summary of the various sections is given below.</p>
-</div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 50%;">
@@ -763,11 +755,15 @@ The choice depends on your specific requirements for state management, auditabil
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="command-handlers/" class="xref page">Handling</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">How to write command handlers (stateless and stateful, with and without entities)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How to write stateless command handlers: parameters, message types, event appending, and configuration</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="command-dispatchers/" class="xref page">Dispatching</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">How to dispatch commands from your application code</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="entities/" class="xref page">Entities</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How to maintain state across commands and enforce business rules using event-sourced entities</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="infrastructure/" class="xref page">Infrastructure</a></p></td>
