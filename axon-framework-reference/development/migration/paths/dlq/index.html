@@ -1251,7 +1251,8 @@ If your application relied on the <code>MongoSequencedDeadLetterQueue</code>, mi
 <div id="_tabs_1_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 
 public class AxonConfig {
@@ -1264,7 +1265,8 @@ public class AxonConfig {
                                 .eventHandlingComponents(components -&gt; components
                                         .declarative("myHandler", cfg -&gt; myHandlerComponent))
                                 .customized((cfg, processorConfig) -&gt; processorConfig
-                                        .deadLetterQueue(dlq -&gt; dlq.enabled()))
+                                        .extend(DeadLetterQueueConfiguration.class,
+                                                () -&gt; new DeadLetterQueueConfiguration().enabled()))
                 )
         ));
     }
@@ -1277,7 +1279,7 @@ public class AxonConfig {
 <div class="ulist">
 <ul>
 <li>
-<p>Configured via the fluent <code>deadLetterQueue(dlq &#8594; &#8230;&#8203;)</code> builder on <code>PooledStreamingEventProcessorConfiguration</code></p>
+<p>Configured by registering a <code>DeadLetterQueueConfiguration</code> extension on <code>PooledStreamingEventProcessorConfiguration</code> via the <code>extend</code> method</p>
 </li>
 <li>
 <p>No need to explicitly supply <code>TransactionManager</code>, <code>Serializer</code>, or <code>EntityManagerProvider</code></p>
@@ -1346,7 +1348,8 @@ public class AxonConfig {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -1359,9 +1362,10 @@ public class ProcessorConfig {
                 .assigningHandlers(descriptor -&gt;
                         descriptor.beanName().startsWith("order"))
                 .customized(config -&gt; config
-                        .deadLetterQueue(dlq -&gt; dlq
-                                .enabled()
-                                .cacheMaxSize(2048)));
+                        .extend(DeadLetterQueueConfiguration.class,
+                                () -&gt; new DeadLetterQueueConfiguration()
+                                        .enabled()
+                                        .cacheMaxSize(2048)));
     }
 }</code></pre>
 </div>
@@ -1461,8 +1465,9 @@ In Axon Framework 5 the name of the DLQ is determined by both the processor name
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import io.axoniq.framework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
+import io.axoniq.framework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 
 public class AxonConfig {
@@ -1476,21 +1481,20 @@ public class AxonConfig {
                                 .eventHandlingComponents(components -&gt; components
                                         .declarative("myHandler", cfg -&gt; myHandlerComponent))
                                 .customized((cfg, processorConfig) -&gt; processorConfig
-                                        .deadLetterQueue(dlq -&gt; dlq
-                                                .enabled()
-                                                .factory((name, config) -&gt; {
-                                                            if (dlqEnabledGroups.contains(name)) {
-                                                                return conf -&gt; InMemorySequencedDeadLetterQueue.builder()
-                                                                        .maxSequences(256)
-                                                                        .maxSequenceSize(256)
-                                                                        .build();
-                                                            } else {
-                                                                return null;
-                                                            }
-                                                        }
-
-                                                )
-                                        )))));
+                                        .extend(DeadLetterQueueConfiguration.class,
+                                                () -&gt; new DeadLetterQueueConfiguration()
+                                                        .enabled()
+                                                        .factory((name, config) -&gt; {
+                                                                    if (dlqEnabledGroups.contains(name)) {
+                                                                        return conf -&gt; InMemorySequencedDeadLetterQueue.builder()
+                                                                                .maxSequences(256)
+                                                                                .maxSequenceSize(256)
+                                                                                .build();
+                                                                    } else {
+                                                                        return null;
+                                                                    }
+                                                                }
+                                                        ))))));
     }
 }</code></pre>
 </div>
@@ -1660,7 +1664,8 @@ public class AxonConfig {
 <div id="_tabs_5_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_5_axon_framework_5">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 
 public class AxonConfig {
@@ -1672,9 +1677,10 @@ public class AxonConfig {
                                 .pooledStreaming("my-processor")
                                 .eventHandlingComponents(/* ... */)
                                 .customized((cfg, processorConfig) -&gt; processorConfig
-                                        .deadLetterQueue(dlq -&gt; dlq
-                                                .enabled()
-                                                .enqueuePolicy(new CustomEnqueuePolicy()))))
+                                        .extend(DeadLetterQueueConfiguration.class,
+                                                () -&gt; new DeadLetterQueueConfiguration()
+                                                        .enabled()
+                                                        .enqueuePolicy(new CustomEnqueuePolicy()))))
         ));
     }
 }</code></pre>
@@ -1685,7 +1691,8 @@ public class AxonConfig {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -1697,9 +1704,10 @@ public class ProcessorConfig {
         return EventProcessorDefinition.pooledStreaming("my-processor")
                 .assigningHandlers(descriptor -&gt; descriptor.beanName().startsWith("my"))
                 .customized(config -&gt; config
-                        .deadLetterQueue(dlq -&gt; dlq
-                                .enabled()
-                                .enqueuePolicy(new CustomEnqueuePolicy())));
+                        .extend(DeadLetterQueueConfiguration.class,
+                                () -&gt; new DeadLetterQueueConfiguration()
+                                        .enabled()
+                                        .enqueuePolicy(new CustomEnqueuePolicy())));
     }
 }</code></pre>
 </div>
