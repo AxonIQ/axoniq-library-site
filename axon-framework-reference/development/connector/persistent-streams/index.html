@@ -1005,7 +1005,7 @@ The state of the stream is maintained in Axon Server.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>For a specific Event Processor to use a persistent stream as its source, the event source must be a <code>PersistentStreamEventSource</code>.
-You can configure this using the <a href="#declarative_config_persistent">declarative Configuration API</a>.</p>
+You can configure this in three ways: <a href="#declarative_config_persistent">declaratively</a> through the Configuration API, through <a href="#autodetected_config_spring_properties_persistent">Spring Boot properties</a> or <a href="#bean_based_config_persistent">autodetected via Spring Boot <code>EventProcessorDefinition</code> beans</a>.</p>
 </div>
 <div class="paragraph">
 <p>See the examples below, or consult the <a href="../../events/event-processors/#general_processor_configuration" class="xref page">general processor configuration section</a> for further options.</p>
@@ -1067,26 +1067,23 @@ Events with the same value for these fields are routed to the same segment.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
-import io.axoniq.framework.axonserver.connector.api.AxonServerConfiguration;
-import io.axoniq.framework.axonserver.connector.api.AxonServerConnectionManager;
 import io.axoniq.framework.axonserver.connector.event.PersistentStreamEventSource;
+import io.axoniq.framework.axonserver.connector.event.PersistentStreamEventSourceFactory;
 import io.axoniq.framework.axonserver.connector.event.PersistentStreamScheduledExecutorBuilder;
 import io.axoniq.framework.axonserver.connector.event.PersistentStreamSequencingPolicy;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
 
 import java.util.Collections;
-import java.util.concurrent.Executors;
 
 public class AxonConfig {
 
-    public void configureEventProcessing(MessagingConfigurer configurer) {
-        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.subscribing(
-                this::configureSubscribingProcessor
+    public void configureEventProcessing(MessagingConfigurer messaging) {
+        messaging.eventProcessing(
+                eventProcessing -&gt; eventProcessing.subscribing(
+                    this::configureSubscribingProcessor
         ));
     }
 
@@ -1096,13 +1093,126 @@ public class AxonConfig {
         return subscribingConfigurer.processor(
                 "example-processor",
                 config -&gt; config.eventHandlingComponents(this::configureHandlingComponent)
-                                .customized((c, subscribingConfig) -&gt; subscribingConfig.eventSource(
-                                        buildPersistentStreamSource(c)
-                                ))
+                        .customized((c, subscribingConfig) -&gt; subscribingConfig.eventSource(
+                                buildPersistentStreamSource(c)
+                        ))
         );
     }
 
     private PersistentStreamEventSource buildPersistentStreamSource(Configuration c) {
+        String streamName = "example-persistent-stream";
+        int segmentCount = 4;
+        int batchSize = 1024;
+
+        PersistentStreamProperties properties = new PersistentStreamProperties(
+                streamName,
+                segmentCount,
+                PersistentStreamSequencingPolicy.SEQUENTIAL_POLICY,
+                Collections.emptyList(),
+                "HEAD",
+                null  // no server-side filter
+        );
+
+        return PersistentStreamEventSourceFactory.defaultFactory()
+                .build(streamName,
+                        properties,
+                        PersistentStreamScheduledExecutorBuilder.defaultFactory().build(segmentCount, streamName),
+                        batchSize,
+                        c);
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected(c -&gt; new AnnotatedEventHandlingClass());
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="autodetected_config_spring_properties_persistent"><a class="anchor" href="#autodetected_config_spring_properties_persistent"></a>Properties-based configuration - Spring Boot properties file</h3>
+<div class="paragraph">
+<p>The simplest way to configure a persistent stream in Spring Boot is through the properties file.
+Each entry under <code>axon.axonserver.persistent-streams</code> registers a <code>PersistentStreamEventSource</code> Spring bean named after the map key.
+The <code>source</code> value of the processor must match that key exactly.
+See the <code>io.axoniq.framework.axonserver.connector.api.AxonServerConfiguration.PersistentStreamSettings</code> Java class for all available persistent stream configuration properties.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors.example-processor.mode=subscribing
+axon.eventhandling.processors.example-processor.source=example-persistent-stream
+
+axon.axonserver.persistent-streams.example-persistent-stream.name=Example Persistent Stream
+axon.axonserver.persistent-streams.example-persistent-stream.batch-size=100
+axon.axonserver.persistent-streams.example-persistent-stream.initial-segment-count=4</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Multiple persistent streams can be declared side-by-side under different keys, and each processor declares its own <code>source</code> to resolve unambiguously:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.eventhandling.processors.payments-processor.mode=subscribing
+axon.eventhandling.processors.payments-processor.source=payments-stream
+
+axon.eventhandling.processors.orders-processor.mode=subscribing
+axon.eventhandling.processors.orders-processor.source=orders-stream
+
+axon.axonserver.persistent-streams.payments-stream.name=Payments Stream
+axon.axonserver.persistent-streams.payments-stream.initial-segment-count=4
+
+axon.axonserver.persistent-streams.orders-stream.name=Orders Stream
+axon.axonserver.persistent-streams.orders-stream.initial-segment-count=2</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you want to default all processors to use persistent streams, you could use the following shorthand configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.axonserver.auto-persistent-streams-enabled=true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This automatically configures a persistent stream named <code>[processor]-stream</code> for each processor that is not explicitly defined as <a href="../../events/event-processors/streaming/" class="xref page">streaming processor</a> in your configuration.
+To customize the auto-configured persistent streams further you can use the following configuration properties.
+Same as for individual persistent stream configurations, see the <code>io.axoniq.framework.axonserver.connector.api.AxonServerConfiguration.PersistentStreamSettings</code> Java class for all available persistent stream configuration properties.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.axonserver.auto-persistent-streams-settings.batch-size=5
+axon.axonserver.auto-persistent-streams-settings.thread-count=10
+axon.axonserver.auto-persistent-streams-settings.initial-segment-count=10</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="bean_based_config_persistent"><a class="anchor" href="#bean_based_config_persistent"></a>Autodetected configuration - <code>EventProcessorDefinition</code> based configuration</h3>
+<div class="paragraph">
+<p>When using Spring Boot, you can define a <code>PersistentStreamEventSource</code> bean and wire it to an <code>EventProcessorDefinition</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
+import io.axoniq.framework.axonserver.connector.event.PersistentStreamEventSource;
+import io.axoniq.framework.axonserver.connector.event.PersistentStreamEventSourceFactory;
+import io.axoniq.framework.axonserver.connector.event.PersistentStreamScheduledExecutorBuilder;
+import io.axoniq.framework.axonserver.connector.event.PersistentStreamSequencingPolicy;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.extension.spring.config.EventHandlerSelector;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.Collections;
+
+@Configuration
+class EventProcessorConfig {
+
+    @Bean
+    public PersistentStreamEventSource persistentStreamSource(
+            AxonConfiguration configuration) {
         String streamName = "example-persistent-stream";
         int segmentCount = 4;
         int batchSize = 1024;
@@ -1116,22 +1226,22 @@ public class AxonConfig {
                 null  // no server-side filter
         );
 
-        return new PersistentStreamEventSource(
-                streamName,
-                c.getComponent(AxonServerConnectionManager.class),
-                c.getComponent(AxonServerConfiguration.class),
-                c.getComponent(EventConverter.class),
-                properties,
-                PersistentStreamScheduledExecutorBuilder.defaultFactory().build(segmentCount, streamName),
-                c.getComponent(UnitOfWorkFactory.class),
-                batchSize
-        );
+        return PersistentStreamEventSourceFactory.defaultFactory()
+                .build(streamName,
+                        properties,
+                        PersistentStreamScheduledExecutorBuilder.defaultFactory().build(segmentCount, streamName),
+                        batchSize,
+                        configuration
+                );
     }
 
-    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
-            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
-    ) {
-        return componentConfigurer.autodetected(c -&gt; new AnnotatedEventHandlingClass());
+    @Bean
+    public EventProcessorDefinition persistentStreamProcessor(
+            PersistentStreamEventSource persistentStreamSource) {
+        return EventProcessorDefinition.subscribing("example-processor")
+                .assigningHandlers(EventHandlerSelector.matchesNamespaceOnType("orders"))
+                .customized(config -&gt; config
+                        .eventSource(persistentStreamSource));
     }
 }</code></pre>
 </div>
