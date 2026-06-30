@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Defining Transformations</title>
+    <link rel="prev" href="../">
+    <link rel="next" href="../configuring-transformations/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article axoniq-feature">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../5.1/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../../events/">Events</a></li>
+    <li><a href="../"><span class="advanced-framework">Event Transformation</span></a></li>
+    <li><a href="./">Defining transformations</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Defining%20Transformations" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Defining%20Transformations%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BDefining%20Transformations%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fmessage-transformation%2Fdefining-transformations%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">development</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-current" href="./">development</a>
+    <a class="version item is-missing" href="../../../5.1/">5.1</a>
+    <a class="version item is-missing" href="../../../5.0/">5.0</a>
+    <a class="version item is-missing" href="../../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="development">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="./">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/"><span class="advanced-framework">Workflows</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Steps</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/execute-steps/">Execute Steps</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/waiting-for-events/">Waiting for Events</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/understanding-steps/">Understanding Steps</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#step-primitives">Step Primitives</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#workflow-step-result">WorkflowStepResult</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#timeouts">Timeouts</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#payload-reducers">Payload Reducers</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#error-handling">Error Handling</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#cancelling-a-step">Cancelling a Step</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#execution-semantics">Execution Semantics</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#retries">Retries</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#event-name-customization">Event Name Customization</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#kotlin-dsl-equivalents">Kotlin DSL</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/">Workflow Lifecycle</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/#_the_workflow_context">Workflow Context</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/#fail-vs-cancel">fail() vs cancel()</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/#_unhandled_exceptions">Unhandled Exceptions</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/#_lifecycle_listeners">Lifecycle Listeners</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/step-orchestration/">Step Orchestration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_non_blocking_execution">Non-blocking Execution</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_anymatch_first_match_wins">anyMatch</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_allmatch_all_must_succeed">allMatch</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/step-orchestration/#_nonematch_no_failures_allowed">noneMatch</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_inspecting_sub_results">Inspecting Sub-results</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_parallel_workflows">Parallel Workflows</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/common-patterns/">Common Patterns</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_fan_out_fan_in">Fan-out / Fan-in</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_saga_compensating_transactions">Saga</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_scatter_gather">Scatter-gather</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_human_in_the_loop">Human-in-the-loop</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_circuit_breaker">Circuit Breaker</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_scheduled_delayed_steps">Scheduled Steps</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_sub_workflows">Sub-workflows</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../workflows/payload-and-state/">Payload &amp; State</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/configuration/">Configuration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#_the_workflowmodule_builder">WorkflowModule Builder</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#_start_conditions">Start Conditions</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#_workflow_id_provider">Workflow ID Provider</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#_customization_options">Customization Options</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#metadata-and-correlation-data">Metadata &amp; Correlation Data</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#custom-workflow-context">Custom Workflow Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../workflows/testing-workflows/">Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Workflow Engine</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc axoniq-feature">
+                <h1 class="page">Defining Transformations</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A transformation is built using the static factory methods on <code>EventTransformation</code>.
+You name the event identity it matches (<code>from</code>), the identity it produces (<code>to</code>), and a mapper that rewrites the payload.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_a_single_transformation"><a class="anchor" href="#_a_single_transformation"></a>A single transformation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A single transformation maps one stored version of an event to the next.
+The <code>from</code> and <code>to</code> identities name the same event and differ only in version, and the mapper rewrites the payload from the old shape to the new one, so a transformation only ever changes an event&#8217;s version and payload.
+Each step is small and self-contained, and you register one per version so the chain can compose them.</p>
+</div>
+<div class="paragraph">
+<p>A v1 <code>CoursePublished</code> stored a single <code>capacity</code> field.
+This transformation lifts it into the v2 shape that carries <code>minCapacity</code> and <code>maxCapacity</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import io.axoniq.framework.messaging.transformation.events.EventTransformation;
+import org.axonframework.messaging.core.MessageType;
+
+public final class CoursePublishedV1ToV2 {
+
+    private static final MessageType FROM = new MessageType("coursecatalog.CoursePublished", "1.0.0");
+    private static final MessageType TO   = new MessageType("coursecatalog.CoursePublished", "2.0.0");
+
+    public static EventTransformation build() {
+        return EventTransformation.from(FROM)                                             <i class="conum" data-value="1"></i><b>(1)</b>
+                                  .to(TO)                                                 <i class="conum" data-value="2"></i><b>(2)</b>
+                                  .transform(JsonNode.class, CoursePublishedV1ToV2::map); <i class="conum" data-value="3"></i><b>(3)</b>
+    }
+
+    private static JsonNode map(JsonNode v1) { <i class="conum" data-value="4"></i><b>(4)</b>
+        int capacity = v1.get("capacity").asInt();
+        ObjectNode v2 = JsonNodeFactory.instance.objectNode();
+        v2.set("catalogId", v1.get("catalogId"));
+        v2.set("courseId",  v1.get("courseId"));
+        v2.set("name",      v1.get("name"));
+        v2.put("minCapacity", capacity);
+        v2.put("maxCapacity", capacity);
+        return v2;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>from(&#8230;&#8203;)</code> matches the stored event identity by its <code>MessageType</code>, a qualified name plus a version. Only events with this exact identity are passed to the mapper.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>to(&#8230;&#8203;)</code> declares the identity of the event the mapper produces. It must keep the same qualified name as <code>from</code>, and only the version may change.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td><code>transform(&#8230;&#8203;)</code> converts the stored payload to the requested type before calling your mapper, which returns the new payload.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>The mapper takes just the converted payload and returns the new one. Most mappers need nothing else. If yours does, see <a href="#_reading_from_the_processing_context">Reading from the processing context</a>.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The <code>JsonNode</code> used here is the Jackson 3 type (<code>tools.jackson.databind.JsonNode</code>), the same representation Axon Framework&#8217;s default converter works with.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title"><code>transform(&#8230;&#8203;)</code> changes the version, not the name</div>
+<div class="paragraph">
+<p>A <code>transform(&#8230;&#8203;)</code> may change an event&#8217;s <em>version</em> and <em>payload</em>, but not its qualified name: the <code>to</code> identity must share the qualified name of <code>from</code>.
+To change the name itself, with the payload carried over unchanged, use a <a href="#_renaming_an_event">rename</a> instead.</p>
+</div>
+<div class="paragraph">
+<p>If a <code>transform(&#8230;&#8203;)&#8217;s `from</code> and <code>to</code> qualified names differ, the chain raises a <code>ChainConfigurationException</code>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>with a concrete <code>from</code>, the mismatch is detected when the chain is built, so the failure surfaces at startup.</p>
+</li>
+<li>
+<p>with a <a href="#_matching_with_a_predicate">predicate <code>from</code></a>, a match can only be resolved per event, so the failure surfaces when such an event is read.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_working_with_generic_payloads"><a class="anchor" href="#_working_with_generic_payloads"></a>Working with generic payloads</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>transform(Class&lt;T&gt;, &#8230;&#8203;)</code> works for any non-generic type.
+When the type you want carries type parameters (such as <code>Map&lt;String, Object&gt;</code> or <code>List&lt;&#8230;&#8203;&gt;</code>), use the <code>TypeReference</code> overload so the generic information is preserved:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static final TypeReference&lt;Map&lt;String, Object&gt;&gt; INPUT_TYPE = new TypeReference&lt;&gt;() { <i class="conum" data-value="1"></i><b>(1)</b>
+};
+
+public static EventTransformation build() {
+    return EventTransformation.from(FROM)
+                              .to(TO)
+                              .transform(INPUT_TYPE, StudentRegisteredV1ToV2::map); <i class="conum" data-value="2"></i><b>(2)</b>
+}
+
+private static Map&lt;String, Object&gt; map(Map&lt;String, Object&gt; v1) {
+    Map&lt;String, Object&gt; v2 = new LinkedHashMap&lt;&gt;();
+    v2.put("catalogId", v1.get("catalogId"));
+    v2.put("studentId", v1.get("studentId"));
+    v2.put("fullName", combine(v1.get("firstName"), v1.get("lastName"))); <i class="conum" data-value="3"></i><b>(3)</b>
+    return v2;
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>A <code>TypeReference</code> captures the full <code>Map&lt;String, Object&gt;</code> type that a <code>Class</code> token would erase.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Pass it to the <code>TypeReference</code> overload of <code>transform(&#8230;&#8203;)</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The mapper combines the separate <code>firstName</code> and <code>lastName</code> fields into a single <code>fullName</code>.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mapping_to_a_typed_event"><a class="anchor" href="#_mapping_to_a_typed_event"></a>Mapping to a typed event</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Reading and writing <code>JsonNode</code> or <code>Map</code> is convenient, but it gives up compile-time safety: a misspelled field or wrong type only surfaces at read time, and the loosely typed nodes coerce values in ways you did not ask for (dates and UUIDs become strings, a small number is an <code>int</code> while a larger one is a <code>long</code>).</p>
+</div>
+<div class="paragraph">
+<p>You can avoid that by mapping between records and letting the compiler check the result.
+Describe the <em>stored</em> shape as a small <code>record</code> that mirrors the old version, and map it to the next version of the event.
+Axon Framework deserializes the stored payload into that record before your mapper runs:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static final MessageType FROM = new MessageType("coursecatalog.CoursePublished", "2.0.0");
+private static final MessageType TO   = new MessageType("coursecatalog.CoursePublished", "3.0.0");
+
+public static EventTransformation build() {
+    return EventTransformation.from(FROM)
+                              .to(TO)
+                              .transform(V2Schema.class, CoursePublishedV2ToV3::map); <i class="conum" data-value="1"></i><b>(1)</b>
+}
+
+private static CoursePublished map(V2Schema v2) { <i class="conum" data-value="2"></i><b>(2)</b>
+    return new CoursePublished(
+            new CatalogId(v2.catalogId().value()),
+            new CourseId(v2.courseId().value()),
+            v2.name(),
+            new CapacityRange(v2.minCapacity(), v2.maxCapacity())
+    );
+}
+
+// Mirrors how a v2 CoursePublished was stored: capacity split into a min and a max.
+record V2Schema(Id catalogId, Id courseId, String name, int minCapacity, int maxCapacity) { } <i class="conum" data-value="3"></i><b>(3)</b>
+
+// Stored id value object: a single value string.
+record Id(String value) { }</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The mapper&#8217;s input type is the schema <code>record</code>, not <code>JsonNode</code>. Axon Framework deserializes the stored payload into it before the mapper runs.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The mapper works on named, typed fields and returns the current <code>CoursePublished</code> event, so a misspelled field or wrong type is now a compile error.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The schema <code>record</code> only describes the <em>stored</em> shape. It mirrors the wire form exactly, including identifiers written as <code>{"value": &#8230;&#8203;}</code> objects, and stays free of the live value objects, which the mapper builds at the end.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">The stored-shape record is a throwaway, not a domain class</div>
+<div class="paragraph">
+<p>The input <code>record</code> (here <code>V2Schema</code>) exists only to read one historic version.
+Keep it next to the transformation that uses it, and do not add it, or a handler for it, to your domain model.</p>
+</div>
+<div class="paragraph">
+<p>You never accumulate a class or an event handler per historic version: the chain lifts every stored version to the current shape, so handlers only ever deal with the current event.
+When the event changes again, you add one more transformation, nothing else.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Mapping the final hop straight to the current event class, as above, is fully type-safe but couples that transformation to the class.
+When the event changes again, map what is now an older version to its own stored-shape <code>record</code> instead, exactly as the earlier hops do, so the historic transformation keeps compiling unchanged.</p>
+</div>
+<div class="paragraph">
+<p>Because the mapper returns a typed object, Axon Framework resolves its identity and rejects a wrong-shaped output: if the produced event&#8217;s identity does not match the declared <code>to</code>, the chain raises a <code>ChainConfigurationException</code>.
+A <code>JsonNode</code> or <code>Map</code> output skips that check, so the typed form catches a class of mistakes the untyped one cannot.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reading_from_the_processing_context"><a class="anchor" href="#_reading_from_the_processing_context"></a>Reading from the processing context</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The mappers shown so far take only the payload, which is all most transformations need.
+When a mapper needs read-only access to the surrounding <code>ProcessingContext</code>, add it as a second parameter:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.transform(JsonNode.class, (payload, context) -&gt; map(payload, context)); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The context-taking overload of <code>transform(&#8230;&#8203;)</code>. The <code>ProcessingContext</code> is for read-only access and may be <code>null</code>.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Reach for this overload only when the mapper genuinely depends on the context.
+Keep it out of the signature otherwise, so the common case stays a plain payload-to-payload function.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_matching_multiple_event_versions"><a class="anchor" href="#_matching_multiple_event_versions"></a>Matching multiple event versions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>An event that has changed more than once is handled one version step at a time: each step is its own transformation, with its own mapper, and the chain composes them, so a stored <code>v1</code> is lifted to <code>v2</code> and then to <code>v3</code> on read.
+Write one transformation per version step rather than one that jumps straight from <code>v1</code> to <code>v3</code>.</p>
+</div>
+<div class="paragraph">
+<p>The framework offers no way to bind a single transformation to a set of source versions, and that is deliberate.
+Reusing one transformation across several <code>MessageType</code> versions is a smell rather than something to reach for: a single mapper covering several versions has to branch over which one it received, while a per-version transformation stays a straight-line mapper that reads more clearly and is easier to evolve.
+If you genuinely want the same mapper on several versions, nothing stops you from registering one transformation per version yourself, but the framework will not suggest it for you.</p>
+</div>
+<div class="paragraph">
+<p>The one shape that does not decompose into version steps is a whole <em>range</em> of historic versions that collapses to a single target and cannot be enumerated up front. Match that with a predicate.</p>
+</div>
+<div class="sect2">
+<h3 id="_matching_with_a_predicate"><a class="anchor" href="#_matching_with_a_predicate"></a>Matching with a predicate</h3>
+<div class="paragraph">
+<p>This is the exception, not the norm: prefer exact matching with one transformation per version step, and reach for a predicate only when a whole range of historic versions genuinely folds to a single target and the versions cannot be listed up front.
+Pass the predicate to <code>from(&#8230;&#8203;)</code> and scope it to the names it is meant for with <code>declaringFromTypes(&#8230;&#8203;)</code>.
+The declared names act as a <em>pre-filter</em>: the predicate only ever sees events of those names, so it can match on version alone.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static final Predicate&lt;MessageType&gt; BETA_VERSION =
+        type -&gt; type.version().startsWith("0."); <i class="conum" data-value="1"></i><b>(1)</b>
+
+private static final QualifiedName FROM_NAME = new QualifiedName("coursecatalog.WelcomeMessageSent");
+private static final MessageType TO = new MessageType(FROM_NAME, "1.0.0");
+
+public static EventTransformation build() {
+    return EventTransformation.from(BETA_VERSION)            <i class="conum" data-value="2"></i><b>(2)</b>
+                              .declaringFromTypes(FROM_NAME) <i class="conum" data-value="3"></i><b>(3)</b>
+                              .to(TO)
+                              .transform(JsonNode.class, WelcomeMessageBetaCleanup::map);
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The predicate matches on version alone. The pre-filter takes care of the name.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Pass the predicate to the <code>from(&#8230;&#8203;)</code> overload instead of a concrete <code>MessageType</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td><code>declaringFromTypes(&#8230;&#8203;)</code> declares the names the predicate runs against. The predicate is only ever evaluated for events of these names, so a type-filtering read for <code>WelcomeMessageSent</code> stays scoped to that name rather than scanning every stored event.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This single transformation folds every <code>0.x</code> version of <code>WelcomeMessageSent</code> up to <code>1.0.0</code> without listing each one.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">A predicate cannot be optimized</div>
+<div class="paragraph">
+<p>The chain cannot look inside a predicate, so unlike an exact <code>from</code> it is evaluated for every event that reaches the fallback step (an exact match always takes precedence; see <a href="../configuring-transformations/#_when_more_than_one_transformation_matches" class="xref page">When more than one transformation matches</a>).
+Never use one merely to cover a handful of known versions, such as <code>type &#8594; versions.contains(type.version())</code>: that runs on every read and the chain cannot optimize it. Match known versions exactly instead, one transformation per version step.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_without_a_pre_filter"><a class="anchor" href="#_without_a_pre_filter"></a>Without a pre-filter</h4>
+<div class="paragraph">
+<p>You can omit <code>declaringFromTypes(&#8230;&#8203;)</code> and go straight to <code>to(&#8230;&#8203;)</code>.
+The predicate then sees <em>every</em> event read, so it must guard the qualified name itself:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static final Predicate&lt;MessageType&gt; FROM_PREDICATE =
+        type -&gt; "coursecatalog.WelcomeMessageSent".equals(type.qualifiedName().name()) <i class="conum" data-value="1"></i><b>(1)</b>
+                &amp;&amp; type.version().startsWith("0.");
+
+public static EventTransformation build() {
+    return EventTransformation.from(FROM_PREDICATE) <i class="conum" data-value="2"></i><b>(2)</b>
+                              .to(new MessageType("coursecatalog.WelcomeMessageSent", "1.0.0"))
+                              .transform(JsonNode.class, WelcomeMessageBetaCleanupWithoutPreFilter::map);
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Without a pre-filter, the name guard must live inside the predicate.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Both forms produce the same result, but it is typically preferred to use <code>declaringFromTypes(&#8230;&#8203;)</code>.
+The predicate stays simpler (version only) and more importantly, the Framework can optimize reads from the event store as it knows the types that are expected.
+Because the chain cannot look inside a predicate, the form without <code>declaringFromTypes(&#8230;&#8203;)</code> drops the type filter on reads, a broader read that returns every stored event so the predicate can run against each.</p>
+</div>
+<div class="paragraph">
+<p>Keep the matched names aligned with the <code>to</code> identity&#8217;s name either way: a <code>transform(&#8230;&#8203;)</code> changes the version, not the name (use a <a href="#_renaming_an_event">rename</a> to change the name).</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_renaming_an_event"><a class="anchor" href="#_renaming_an_event"></a>Renaming an event</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The transformations above change an event&#8217;s payload and version while keeping its qualified name.
+When the <em>name itself</em> must change and the payload stays the same, use <code>rename(&#8230;&#8203;)</code> instead of <code>transform(&#8230;&#8203;)</code>.</p>
+</div>
+<div class="paragraph">
+<p>An early version of the catalog published courses with a <code>CourseOffered</code> event. A later refinement renamed it to <code>CoursePublished</code>.
+A single <code>rename(&#8230;&#8203;)</code> reads every stored <code>CourseOffered</code> back as a <code>CoursePublished</code>, with its payload untouched:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static final MessageType FROM = new MessageType("coursecatalog.CourseOffered", "1.0.0");
+private static final MessageType TO   = new MessageType("coursecatalog.CoursePublished", "1.0.0");
+
+public static EventTransformation build() {
+    return EventTransformation.rename(FROM, TO); <i class="conum" data-value="1"></i><b>(1)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>rename(from, to)</code> takes the two identities and nothing else: there is no mapper, because the payload is carried over unchanged.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>A rename may change the qualified name, the version, or both.
+Handlers registered for the new identity receive the event. Handlers still on the old identity no longer match it.
+A <code>rename(&#8230;&#8203;)</code> whose <code>from</code> and <code>to</code> are identical is rejected, since it would leave the event unchanged.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Renames compose with payload transformations</div>
+<div class="paragraph">
+<p>A renamed event keeps flowing through the chain.
+Renaming <code>CourseOffered</code> to <code>CoursePublished</code> <code>1.0.0</code> lets the existing <code>CoursePublished</code> <code>1.0.0</code> &#8594; <code>2.0.0</code> &#8594; <code>3.0.0</code> transformers apply in turn, so a stored <code>CourseOffered</code> reaches your handler as the current <code>CoursePublished</code>.
+Register the rename alongside those <code>transform(&#8230;&#8203;)</code> steps and the chain applies them in sequence.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Custom criteria still find renamed events</div>
+<div class="paragraph">
+<p>If you write a custom <a href="../../events/event-store-internals/#event_criteria" class="xref page"><code>EventCriteria</code></a> (through an <code>@EventCriteriaBuilder</code> method or a <code>CriteriaResolver</code>) that filters by type, list only the current name.
+A filter on <code>CoursePublished</code> also matches events stored as <code>CourseOffered</code>: Axon adds the old names for you, so renamed events are never missed.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_dropping_an_event"><a class="anchor" href="#_dropping_an_event"></a>Dropping an event</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Sometimes a stored event should no longer reach any handler at all.
+An old monitoring sidecar might have written <code>SystemHeartbeat</code> pings into the stream, or a class of event might now be regulated and must be suppressed from processing without being deleted from storage.
+<code>drop(&#8230;&#8203;)</code> removes every matching event from the read stream:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static final MessageType FROM = new MessageType("coursecatalog.SystemHeartbeat", "1.0.0");
+
+public static EventTransformation build() {
+    return EventTransformation.drop(FROM); <i class="conum" data-value="1"></i><b>(1)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>drop(from)</code> takes only the identity to match. There is no <code>to</code> and no mapper: a matched event produces no output, the 1:0 case.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>A drop matches its <code>from</code> by exact identity, like a concrete <code>from(&#8230;&#8203;)</code>; it does not take a predicate.
+No payload conversion happens, because nothing is produced.</p>
+</div>
+<div class="paragraph">
+<p>The stored events stay exactly as they were written; only the read path is affected.
+A dropped event never reaches a handler, and surviving events keep their original tracking token: once a streaming processor reads an event after a drop, the dropped position is covered, so a restart does not reprocess it.</p>
+</div>
+<div class="paragraph">
+<p>Unlike a <a href="#_renaming_an_event">rename</a>, a drop declares no <code>to</code>, so it adds no read-time widening: a type-filtering read is never broadened to fetch a dropped event.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Dropping an event versus dropping a field</div>
+<div class="paragraph">
+<p><code>drop(&#8230;&#8203;)</code> removes a whole <em>event</em> from the read stream.
+To drop a <em>field</em> that handlers no longer read, let the <a href="../../conversion/" class="xref page">converter</a> ignore it instead: that is a conversion concern, not a transformation.
+See <a href="../" class="xref page">the overview</a> for when each applies.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps"><a class="anchor" href="#_next_steps"></a>Next steps</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>With your transformations defined, the next step is to assemble and register them.
+See <a href="../configuring-transformations/" class="xref page">Configuring transformations</a>.</p>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../"><span class="advanced-framework">Event Transformation</span></a></span>
+  <span class="next"><a href="../configuring-transformations/">Configuring transformations</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
