@@ -1190,12 +1190,12 @@ axon.axonserver.auto-persistent-streams-settings.initial-segment-count=10</code>
 <div class="sect2">
 <h3 id="bean_based_config_persistent"><a class="anchor" href="#bean_based_config_persistent"></a>Autodetected configuration - <code>EventProcessorDefinition</code> based configuration</h3>
 <div class="paragraph">
-<p>When using Spring Boot, you can define a <code>PersistentStreamEventSource</code> bean and wire it to an <code>EventProcessorDefinition</code>:</p>
+<p>When using Spring Boot, you can wire a persistent stream to a processor through an <code>EventProcessorDefinition</code> bean.
+The definition selects the event handlers for the processor and supplies the <code>PersistentStreamEventSource</code> as its event source in the <code>customized(&#8230;&#8203;)</code> step.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
-import io.axoniq.framework.axonserver.connector.event.PersistentStreamEventSource;
 import io.axoniq.framework.axonserver.connector.event.PersistentStreamEventSourceFactory;
 import io.axoniq.framework.axonserver.connector.event.PersistentStreamScheduledExecutorBuilder;
 import io.axoniq.framework.axonserver.connector.event.PersistentStreamSequencingPolicy;
@@ -1206,45 +1206,79 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Collections;
+import java.util.concurrent.ScheduledExecutorService;
 
 @Configuration
 class EventProcessorConfig {
 
+    private static final String STREAM_NAME = "example-persistent-stream";
+    private static final int SEGMENT_COUNT = 4;
+
+    @Bean(destroyMethod = "shutdown") <i class="conum" data-value="1"></i><b>(1)</b>
+    public ScheduledExecutorService exampleStreamExecutor(
+            PersistentStreamScheduledExecutorBuilder executorBuilder) {
+        return executorBuilder.build(SEGMENT_COUNT, STREAM_NAME);
+    }
+
     @Bean
-    public PersistentStreamEventSource persistentStreamSource(
-            AxonConfiguration configuration) {
-        String streamName = "example-persistent-stream";
-        int segmentCount = 4;
+    public EventProcessorDefinition exampleProcessorDefinition(
+            AxonConfiguration configuration,
+            PersistentStreamEventSourceFactory eventSourceFactory,
+            ScheduledExecutorService exampleStreamExecutor) {
         int batchSize = 1024;
 
         PersistentStreamProperties properties = new PersistentStreamProperties(
-                streamName,
-                segmentCount,
+                STREAM_NAME,
+                SEGMENT_COUNT,
                 PersistentStreamSequencingPolicy.SEQUENTIAL_PER_AGGREGATE_POLICY,
                 Collections.emptyList(),
                 "HEAD",
                 null  // no server-side filter
         );
 
-        return PersistentStreamEventSourceFactory.defaultFactory()
-                .build(streamName,
-                        properties,
-                        PersistentStreamScheduledExecutorBuilder.defaultFactory().build(segmentCount, streamName),
-                        batchSize,
-                        configuration
-                );
-    }
-
-    @Bean
-    public EventProcessorDefinition persistentStreamProcessor(
-            PersistentStreamEventSource persistentStreamSource) {
         return EventProcessorDefinition.subscribing("example-processor")
                 .assigningHandlers(EventHandlerSelector.matchesNamespaceOnType("orders"))
-                .customized(config -&gt; config
-                        .eventSource(persistentStreamSource));
+                // Build the event source inside the lambda: it runs once the Axon configuration
+                // is fully initialized. Querying the AxonConfiguration during bean construction
+                // fails the application start-up.
+                .customized(config -&gt; config.eventSource(
+                        eventSourceFactory.build(STREAM_NAME,
+                                                 properties,
+                                                 exampleStreamExecutor,
+                                                 batchSize,
+                                                 configuration))); <i class="conum" data-value="2"></i><b>(2)</b>
     }
 }</code></pre>
 </div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Registering the executor as a Spring bean with a <code>shutdown</code> destroy method ensures its threads are released when the application context closes.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Building the event source inside the <code>customized(&#8230;&#8203;)</code> lambda to ensure the <code>AxonConfiguration</code> is fully initialized and allows retrieving the required dependencies.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The creation of the <code>StreamableEventsource</code> deliberately happens inside the lambda passed to <code>customized(&#8230;&#8203;)</code>. The lambda only runs when the event processor is created at application start-up, after the Axon configuration has been fully initialized.</p>
+</div>
+<div class="paragraph">
+<p>Building the event source outside the lambda, for example in a separate <code>@Bean</code> method, looks up components while the application context is still starting and fails the boot process.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
