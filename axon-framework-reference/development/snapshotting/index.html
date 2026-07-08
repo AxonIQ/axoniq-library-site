@@ -1075,6 +1075,16 @@
 <p>Snapshots are persisted using a <code>SnapshotStore</code>, which abstracts the underlying storage mechanism. Note that <code>SnapshotStore</code> is currently a tentative API and may eventually be rolled into the <code>EventStore</code>. When using Axon Server, an <code>AxonServerSnapshotStore</code> is automatically provided.</p>
 </div>
 <div class="paragraph">
+<p>When sourcing an entity that has a snapshot, the framework performs two operations: it loads the latest compatible snapshot, then loads all events after the snapshot&#8217;s position.
+If the <code>EventStorageEngine</code> and <code>SnapshotStore</code> are backed by the same storage system, these two operations can be combined into a single round-trip.
+If they use different backends, two separate queries are required regardless of how fast each individual store is: one for the snapshot and one for the events.</p>
+</div>
+<div class="paragraph">
+<p>For this reason, it is strongly recommended to use the same backend for both.
+The framework allows arbitrary combinations (for example, Axon Server for events and PostgreSQL for snapshots), but any such combination sacrifices the single round-trip benefit.
+Choose a different <code>SnapshotStore</code> only when there is a compelling reason to do so.</p>
+</div>
+<div class="paragraph">
 <p>Current implementations include:</p>
 </div>
 <div class="ulist">
@@ -1086,7 +1096,9 @@
 <p><strong><code>AxonServerSnapshotStore</code></strong> - Stores snapshots in Axon Server with thread-safe, concurrent access.</p>
 </li>
 <li>
-<p><strong><code>PostgresqlEventStorageEngine</code></strong> - Postgres specific event storage engine that can store snapshots as well.</p>
+<p><strong><code>PostgresqlEventStorageEngine</code></strong> - Stores both events and snapshots in PostgreSQL.
+When no other <code>SnapshotStore</code> is configured, it registers itself as the <code>SnapshotStore</code> as well,
+enabling the single round-trip optimisation described above.</p>
 </li>
 </ul>
 </div>
