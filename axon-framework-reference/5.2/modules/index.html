@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Modules</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.2/modules/">
+    <link rel="prev" href="../framework-comparison/">
+    <link rel="next" href="../release-notes/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../_'</script>
+
+
+<link rel="icon" href="../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../">Axon Framework</a>
+                <a class="navbar-item" href="../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../">Axon Framework Reference</a></li>
+    <li><a href="./">Modules</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonIQ/AxonFramework/edit/axon-5.2.x/docs/reference-guide/modules/ROOT/pages/modules.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Modules" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Modules%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BModules%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.2%2Fmodules%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.2</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../development/modules/">development</a>
+    <a class="version item is-current" href="./">5.2</a>
+    <a class="version item" href="../../5.1/modules/">5.1</a>
+    <a class="version item" href="../../5.0/modules/">5.0</a>
+    <a class="version item" href="../../4.13/modules/">4.13</a>
+    <a class="version item" href="../../4.12/modules/">4.12</a>
+    <a class="version item" href="../../4.11/modules/">4.11</a>
+    <a class="version item" href="../../4.10/modules/">4.10</a>
+    <a class="version item is-missing" href="../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.2">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../message-transformation/"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../message-transformation/defining-transformations/">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../message-transformation/configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../message-transformation/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="./">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Modules</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework consists of a number of modules that provide specific capabilities.
+Depending on the exact needs of your project, you will need to include one or more of these modules.</p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="../_images/diag-7018ff87e341144ff9969fcca7379b17c01db918.svg" alt="Axon Framework Modules Overview">
+</div>
+<div class="title">Figure 1. Axon Framework Modules Overview</div>
+</div>
+<div class="paragraph">
+<p>There are currently two ways of obtaining the module binaries: either download the binaries from our website or preferably configure a repository for your build system (<a href="http://maven.apache.org/">Maven</a>, <a href="https://gradle.org/">Gradle</a>).</p>
+</div>
+<div class="paragraph">
+<p>To not be bothered with version compatibility issues between <a href="#_main_modules">framework</a> and the <a href="#_extension_modules">extensions</a>, it is recommended to use the <a href="#_axon_framework_bill_of_materials">BOM</a>.</p>
+</div>
+<div class="paragraph">
+<p>Axon modules are available on <a href="https://central.sonatype.com/search?q=axonframework">Maven Central</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_main_modules"><a class="anchor" href="#_main_modules"></a>Main modules</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon 'Main Modules' are the modules that have been thoroughly tested and are robust enough to use in demanding production environments.
+The maven <code>groupId</code> of all these modules is <code>org.axonframework</code>.
+Visit <a href="https://central.sonatype.com/search?q=g:org.axonframework">Maven Central Repository</a> to copy coordinates for the version you need.</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><strong>Quick start an Axon Application</strong></p>
+</div>
+<div class="paragraph">
+<p>The Axon Spring Boot Starter extension is the quickest start in to an Axon project as it will retrieve all the required modules/dependencies transitively.
+See the <a href="#_extension_modules">Extension modules</a> section below for details.
+Alternatively, you can manually select individual modules for a customized configuration.</p>
+</div>
+</blockquote>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Module</th>
+<th class="tableblock halign-left valign-top">Artifact Id</th>
+<th class="tableblock halign-left valign-top">Group Id</th>
+<th class="tableblock halign-center valign-top">Maven Central</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_common">Axon Common</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-common</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-common">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_conversion">Axon Conversion</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-conersion</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-conversion">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_messaging">Axon Messaging</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-messaging</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-messaging">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_modelling">Axon Modelling</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-modelling</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-modelling">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_event_sourcing">Axon Event Sourcing</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-eventsourcing</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-eventsourcing">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_test">Axon Test</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-test</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-test">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_update">Axon Update</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-update</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-update">available</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect2">
+<h3 id="_axon_common"><a class="anchor" href="#_axon_common"></a>Axon Common</h3>
+<div class="paragraph">
+<p>This module contains all common components utilized by Axon Framework throughout.
+Examples of what is container are Axon&#8217;s caching integration, configuration implementation, application descriptors, and numerous utility classes.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_conversion"><a class="anchor" href="#_axon_conversion"></a>Axon Conversion</h3>
+<div class="paragraph">
+<p>This module provides the conversion interfaces and implementations, used to (for example) convert every <code>Message#payload</code> when sending and receiving them.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_messaging"><a class="anchor" href="#_axon_messaging"></a>Axon Messaging</h3>
+<div class="paragraph">
+<p>This module contains all necessary components and building blocks to support command, event, and query messaging.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_modelling"><a class="anchor" href="#_axon_modelling"></a>Axon Modelling</h3>
+<div class="paragraph">
+<p>This module contains the necessary components to create domain models and entities.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_event_sourcing"><a class="anchor" href="#_axon_event_sourcing"></a>Axon Event Sourcing</h3>
+<div class="paragraph">
+<p>This module contains all necessary infrastructure components to support Event Sourcing, Command Models, and Query Models.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_test"><a class="anchor" href="#_axon_test"></a>Axon Test</h3>
+<div class="paragraph">
+<p>This module contains test fixtures that you can use to test Axon based components, such as your command handlers and entities.
+You typically do not need this module at runtime and will only need to be added to the classpath for running tests.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_update"><a class="anchor" href="#_axon_update"></a>Axon Update</h3>
+<div class="paragraph">
+<p>This module Axon Framework&#8217;s update checker, ensuring your Axon application is as up to date as possible. For more details on this component we refer to <a href="https://docs.axoniq.io/axon-framework-update-checker/">this</a> section of our documentation.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_extension_modules"><a class="anchor" href="#_extension_modules"></a>Extension modules</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Besides main modules, there are several extension modules which complement Axon Framework.
+The maven <code>groupId</code> of these extensions starts with <code>org.axonframework.extensions.*</code>.
+Visit <a href="https://central.sonatype.com/search?q=axonframework%20extensions">Maven Central Repository</a> to copy coordinates for the version you need.</p>
+</div>
+<div class="paragraph">
+<p>These extensions are part of the main Axon Framework repository and provide essential integration and monitoring capabilities.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Module</th>
+<th class="tableblock halign-left valign-top">Artifact Id</th>
+<th class="tableblock halign-left valign-top">Group Id</th>
+<th class="tableblock halign-center valign-top">Maven Central</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_spring">Axon Spring</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-spring</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.extensions.spring</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-spring">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_spring_boot_starter">Axon Spring Boot Starter</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-spring-boot-starter</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.extensions.spring</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-spring-boot-starter">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#axon-reactor">Axon Reactor</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-reactor</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.extensions.reactor</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-reactor">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_dropwizard_metrics">Axon Dropwizard metrics</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-metrics-dropwizard</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.extensions.metrics</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-metrics-dropwizard">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_micrometer_metrics">Axon Micrometer metrics</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-metrics-micrometer</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.extensions.metrics</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-metrics-micrometer">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axon_kotlin">Axon Kotlin</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-kotlin</code>, <code>axon-kotlin-test</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework.extensions.kotlin</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-kotlin">available</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect2">
+<h3 id="_axon_spring"><a class="anchor" href="#_axon_spring"></a>Axon Spring</h3>
+<div class="paragraph">
+<p>This extension allows Axon Framework components to be configured in the Spring application context.
+It provides integration with Spring Framework, enabling bean-based registration and lifecycle management of Axon components.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_spring_boot_starter"><a class="anchor" href="#_axon_spring_boot_starter"></a>Axon Spring Boot Starter</h3>
+<div class="paragraph">
+<p>This extension provides Spring Boot auto-configuration for your project.
+It is by far the easiest option to get started as it automatically configures all Axon components.
+It is explained in more details <a href="../spring-boot-integration/" class="xref page">here</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="axon-reactor"><a class="anchor" href="#axon-reactor"></a>Axon Reactor</h3>
+<div class="paragraph">
+<p>This extension provides reactive gateways for Axon Framework&#8217;s command, event, and query buses using <a href="https://projectreactor.io/">Project Reactor</a>.
+It includes <code>ReactorCommandGateway</code>, <code>ReactorEventGateway</code>, and <code>ReactorQueryGateway</code>, the reactor counterparts to Axon&#8217;s standard gateways that return <code>Mono</code> and <code>Flux</code> instead of <code>CompletableFuture</code>.</p>
+</div>
+<div class="paragraph">
+<p>The key feature is that reactive dispatch interceptors run inside the Reactor subscription chain.
+This gives interceptors access to the Reactor context, enabling integration with reactive context holders such as Spring Security&#8217;s <code>ReactiveSecurityContextHolder</code>.
+This is particularly useful in Spring WebFlux applications where thread-local context holders are not available.</p>
+</div>
+<div class="paragraph">
+<p>The reactive gateways are auto-configured when the <code>axon-reactor</code> extension is on the classpath.
+In Spring Boot applications, reactor dispatch interceptors declared as Spring beans are automatically discovered and registered.</p>
+</div>
+<div class="paragraph">
+<p>To add the extension to your project:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_maven" class="tab">
+<p>Maven</p>
+</li>
+<li id="_tabs_1_gradle" class="tab">
+<p>Gradle</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_maven--panel" class="tabpanel" aria-labelledby="_tabs_1_maven">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.axonframework.extensions.reactor&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-reactor&lt;/artifactId&gt;
+    &lt;version&gt;${axon.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_gradle--panel" class="tabpanel" aria-labelledby="_tabs_1_gradle">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">implementation 'org.axonframework.extensions.reactor:axon-reactor:${axonVersion}'</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_dropwizard_metrics"><a class="anchor" href="#_axon_dropwizard_metrics"></a>Axon Dropwizard metrics</h3>
+<div class="paragraph">
+<p>This extension provides basic implementations based on Dropwizard to collect monitoring information.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_micrometer_metrics"><a class="anchor" href="#_axon_micrometer_metrics"></a>Axon Micrometer metrics</h3>
+<div class="paragraph">
+<p>This extension provides basic implementations based on Micrometer to collect monitoring information.
+<a href="https://micrometer.io/">Micrometer</a> is a dimensional-first metrics collection facade whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axon_kotlin"><a class="anchor" href="#_axon_kotlin"></a>Axon Kotlin</h3>
+<div class="paragraph">
+<p>The Kotlin extension provides idiomatic Kotlin support for Axon Framework, reducing boilerplate and enabling natural Kotlin API usage through extension functions and reified generics.</p>
+</div>
+<div class="paragraph">
+<p>Features include, among others:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>reified generics support to eliminate explicit type parameters</p>
+</li>
+<li>
+<p>idiomatic extension functions for messaging gateways and metadata</p>
+</li>
+<li>
+<p>Kotlin value class support for entity identifiers</p>
+</li>
+<li>
+<p>reduced boilerplate in event sourcing handlers</p>
+</li>
+<li>
+<p>test fixture support tailored for Kotlin (<code>axon-kotlin-test</code>)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1 axoniq-feature">
+<h2 id="_axoniq_framework_modules"><a class="anchor" href="#_axoniq_framework_modules"></a>Axoniq Framework modules</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Besides the open source Axon Framework, Axoniq provides the Axoniq Framework advanced features which are available for production use with a commercial license.</p>
+</div>
+<div class="paragraph">
+<p>Depending on the exact needs of your project, you will need to include one or more of these modules.</p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="../_images/diag-bdd041cd860d1b3dd1d9df7defaae83c5ff9a63a.svg" alt="Commercially available Framework Modules Overview">
+</div>
+<div class="title">Figure 2. Commercially available Framework Modules Overview</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Module</th>
+<th class="tableblock halign-left valign-top">Artifact Id</th>
+<th class="tableblock halign-left valign-top">Group Id</th>
+<th class="tableblock halign-center valign-top">Maven Central</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axoniq_postgresql">Axoniq PostgreSQL</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-postgresql</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=io.axoniq.framework%3Aaxoniq-postgresql">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axoniq_axon_server_connector">Axoniq Axon Server connector</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-server-connector</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=io.axoniq.framework%3Aaxon-server-connector">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axoniq_distributed_messaging">Axoniq distributed messaging</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-distributed-messaging</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axoniq-distributed-messaging">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axoniq_dead_letter_queue">Axoniq dead letter queue</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-dead-letter-queue</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=axoniq-dead-letter-queue">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axoniq_message_transformation">Axoniq message transformation</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-message-transformation</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axoniq-message-transformation">available</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#_axoniq_data_protection">Axoniq Data Protection</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-data-protection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axoniq-data-protection">available</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect2">
+<h3 id="_axoniq_postgresql"><a class="anchor" href="#_axoniq_postgresql"></a>Axoniq PostgreSQL</h3>
+<div class="paragraph">
+<p>This module provides a storage solution optimized for use with <a href="https://www.postgresql.org/">PostgreSQL</a> by taking advantage of PostgreSQL-specifics.
+It supports the Dynamic-Consistency Boundary, just as Axon Server does</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axoniq_axon_server_connector"><a class="anchor" href="#_axoniq_axon_server_connector"></a>Axoniq Axon Server connector</h3>
+<div class="paragraph">
+<p>This module provides infrastructure components that connect to Axon Server.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axoniq_distributed_messaging"><a class="anchor" href="#_axoniq_distributed_messaging"></a>Axoniq distributed messaging</h3>
+<div class="paragraph">
+<p>This module provides distributed variants for messaging components (namely <code>CommandBus</code> and <code>QueryBus</code>).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axoniq_dead_letter_queue"><a class="anchor" href="#_axoniq_dead_letter_queue"></a>Axoniq dead letter queue</h3>
+<div class="paragraph">
+<p>This module provides the dead letter queue functionality.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axoniq_message_transformation"><a class="anchor" href="#_axoniq_message_transformation"></a>Axoniq message transformation</h3>
+<div class="paragraph">
+<p>This module rewrites stored events as they are read, so handlers always receive the current version. It is the Axoniq Framework replacement for Axon Framework 4 upcasting.
+See the <a href="../message-transformation/" class="xref page">event transformation reference</a> to get started.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_axoniq_data_protection"><a class="anchor" href="#_axoniq_data_protection"></a>Axoniq Data Protection</h3>
+<div class="paragraph">
+<p>This module provides <a href="../data-protection/" class="xref page">cryptographic data protection and GDPR compliance</a> for event-sourced applications through field-level encryption and key management.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_axon_framework_bill_of_materials"><a class="anchor" href="#_axon_framework_bill_of_materials"></a>Axon Framework Bill of Materials</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In addition to the Axon Framework modules and extensions and Axoniq Framework modules, Axon also provides two <a href="https://en.wikipedia.org/wiki/Software_bill_of_materials">Bills of Materials</a>, or BOM for both Axon Framework and Axoniq Framework.
+The BOM is provided to ensure the use of compatible framework and extension dependencies inside an Axon application.
+As such, it is the recommended approach towards defining the overall Axon version used inside of an application.</p>
+</div>
+<div class="sect2">
+<h3 id="axon-framework-bom"><a class="anchor" href="#axon-framework-bom"></a>Axon Framework Bill of Materials</h3>
+<div class="paragraph">
+<p>For the Axon Framework and extensions, we provide a BOM under the <code>org.axonframework</code> Group id as follows:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Module</th>
+<th class="tableblock halign-left valign-top">Artifact Id</th>
+<th class="tableblock halign-left valign-top">Group Id</th>
+<th class="tableblock halign-center valign-top">Maven Central</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#axon-framework-bom">Axon Framework Bill of Materials</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-framework-bom</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.axonframework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axon-framework-bom">available</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>For using the BOM, you would add the <code>axon-bom</code> dependency to your dependency management system:</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_maven" class="tab">
+<p>Maven</p>
+</li>
+<li id="_tabs_2_gradle" class="tab">
+<p>Gradle</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_maven--panel" class="tabpanel" aria-labelledby="_tabs_2_maven">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--...--&gt;
+&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
+            &lt;artifactId&gt;axon-framework-bom&lt;/artifactId&gt;
+            &lt;version&gt;${version.axon}&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+
+        ...
+
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+&lt;!--...--&gt;</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_gradle--panel" class="tabpanel" aria-labelledby="_tabs_2_gradle">
+<div class="paragraph">
+<p>For usage with <strong>Gradle Version 4.x</strong> and below, apply the dependency-management-plugin like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath "io.spring.gradle:dependency-management-plugin:0.5.1.RELEASE"
+  }
+}
+
+apply plugin: "io.spring.dependency-management"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After this, import the Axon BOM:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">dependencyManagement {
+  imports {
+    mavenBom 'org.axonframework:axon-framework-bom:&lt;VERSION&gt;'
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Beginning with <strong><a href="https://docs.gradle.org/5.0/userguide/managing_transitive_dependencies.html#sec:bom_import">Gradle version 5.0</a></strong>, you can also omit the dependency-management plugin and instead use the <code>platform</code> dependency DSL to import maven BOMs:</p>
+</div>
+<div class="paragraph">
+<p><code>implementation(platform("org.axonframework:axon-bom:&lt;VERSION&gt;"))</code></p>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>After that is in place, you can add any of the mentioned dependencies from <a href="#_main_modules">framework</a> and the <a href="#_extension_modules">extensions</a> without specifying versions.
+Furthermore, you will be guaranteed that the provided versions in the BOM are compatible with one another.</p>
+</div>
+</div>
+<div class="sect2 axoniq-feature">
+<h3 id="advanced-framework-bom"><a class="anchor" href="#advanced-framework-bom"></a>Axoniq Framework Bill of Materials</h3>
+<div class="paragraph">
+<p>For the Axoniq Framework, we provide a BOM under the <code>io.axoniq.framework</code> Group id as follows:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Module</th>
+<th class="tableblock halign-left valign-top">Artifact Id</th>
+<th class="tableblock halign-left valign-top">Group Id</th>
+<th class="tableblock halign-center valign-top">Maven Central</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#advanced-framework-bom">Axoniq Framework Bill of Materials</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-framework-bom</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework</code></p></td>
+<td class="tableblock halign-center valign-top"><p class="tableblock"><a href="https://central.sonatype.com/search?q=a:axoniq-framework-bom">available</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>For using the BOM, you would add the <code>axoniq-framework-bom</code> dependency to your dependency management system:</p>
+</div>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_maven" class="tab">
+<p>Maven</p>
+</li>
+<li id="_tabs_3_gradle" class="tab">
+<p>Gradle</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_maven--panel" class="tabpanel" aria-labelledby="_tabs_3_maven">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--...--&gt;
+&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+            &lt;artifactId&gt;axoniq-framework-bom&lt;/artifactId&gt;
+            &lt;version&gt;${version.axon}&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+
+        ...
+
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+&lt;!--...--&gt;</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_3_gradle--panel" class="tabpanel" aria-labelledby="_tabs_3_gradle">
+<div class="paragraph">
+<p>For usage with <strong>Gradle Version 4.x</strong> and below, apply the dependency-management-plugin like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath "io.spring.gradle:dependency-management-plugin:0.5.1.RELEASE"
+  }
+}
+
+apply plugin: "io.spring.dependency-management"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After this, import the Axon BOM:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">dependencyManagement {
+  imports {
+    mavenBom 'io.axoniq.framework:axoniq-framework-bom:&lt;VERSION&gt;'
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Beginning with <strong><a href="https://docs.gradle.org/5.0/userguide/managing_transitive_dependencies.html#sec:bom_import">Gradle version 5.0</a></strong>, you can also omit the dependency-management plugin and instead use the <code>platform</code> dependency DSL to import maven BOMs:</p>
+</div>
+<div class="paragraph">
+<p><code>implementation(platform("io.axoniq.framework:axoniq-framework-bom:&lt;VERSION&gt;"))</code></p>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>After that is in place, you can add any of the mentioned dependencies from the <a href="#_axoniq_framework_modules">advanced modules</a> without specifying versions.
+Furthermore, you will be guaranteed that the provided versions in the BOM are compatible with one another.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The Axoniq Framework BOM includes all dependencies for the <a href="#_main_modules">Axon Framework modules</a> and the <a href="#_extension_modules">Axon Framework extension modules</a>, so whenever you use the Axoniq Framework BOM you do not need to additionally include the <a href="#axon-framework-bom">Axon Framework BOM</a>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../framework-comparison/">Framework Comparison</a></span>
+  <span class="next"><a href="../release-notes/">Release Notes</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

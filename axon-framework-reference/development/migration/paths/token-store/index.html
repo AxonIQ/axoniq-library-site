@@ -4,6 +4,7 @@
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Token Store Migration</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.2/migration/paths/token-store/">
     <link rel="prev" href="../sequencing-policies/">
     <link rel="next" href="../upcasters/">
     <meta name="generator" content="Antora 3.1.10">
@@ -322,7 +323,7 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="../../../../../home/reference/">Reference</a>
           <div class="navbar-dropdown card">
-                <a class="navbar-item" href="../../../../5.1/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../5.2/">Axon Framework</a>
                 <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
                 <a class="navbar-item" href="../../../../../axon-server-reference/v2026.0/">Axon Server</a>
                 <a class="navbar-item" href="../../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
@@ -368,6 +369,7 @@
   <button class="version-menu-toggle" title="Show other versions of page">development</button>
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">development</a>
+    <a class="version item" href="../../../../5.2/migration/paths/token-store/">5.2</a>
     <a class="version item is-missing" href="../../../../5.1/">5.1</a>
     <a class="version item is-missing" href="../../../../5.0/">5.0</a>
     <a class="version item is-missing" href="../../../../4.13/">4.13</a>
@@ -1481,19 +1483,22 @@ After this, upgrade and apply the mask migration above.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_replay_tokens"><a class="anchor" href="#_replay_tokens"></a>Replay tokens</h3>
+<h3 id="replay-tokens"><a class="anchor" href="#replay-tokens"></a>Replay tokens</h3>
 <div class="paragraph">
 <p>Replay tokens are not migrated automatically, because their format changed between versions beyond the class name.
 Axon Framework 4 named the reset context field <code>context</code>, and Axon Framework 5 renamed it to <code>resetContext</code> and changed its type.
 A replay token only exists while a processor is replaying, so complete any replay in progress before upgrading, or reset the affected processors.</p>
 </div>
 </div>
-<div class="sect2">
+<div class="sect2 axoniq-feature">
 <h3 id="_multi_source_tokens"><a class="anchor" href="#_multi_source_tokens"></a>Multi-source tokens</h3>
 <div class="paragraph">
-<p>Axon Framework 4&#8217;s <code>MultiSourceTrackingToken</code>, written by processors that read from more than one event source, has no equivalent in Axon Framework 5 and is not mapped.
-These tokens cannot be read after upgrading.
-Reset the affected processors so they rebuild their position, as described in <a href="#option-2-reset-processors-to-latest">reset the processors to latest</a>.</p>
+<p>Reading from more than one event source, and its <code>MultiSourceTrackingToken</code>, is part of the Axoniq Framework rather than Axon Framework 5 itself.
+When you use Axoniq Framework, these tokens are recognized and read after upgrading, in the same way as the tokens above.
+The exception is a token captured while one of its sources was replaying, because it contains a replay token, which cannot be migrated for the reason described under <a href="#replay-tokens">Replay tokens</a>. Reset those processors instead.</p>
+</div>
+<div class="paragraph">
+<p>On Axon Framework 5 without the Axoniq Framework there is no multi-source support, so reset the affected processors to rebuild their position, as described in <a href="#option-2-reset-processors-to-latest">reset the processors to latest</a>.</p>
 </div>
 </div>
 </div>

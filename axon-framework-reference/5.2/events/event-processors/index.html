@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Event Processors</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.2/events/event-processors/">
+    <link rel="prev" href="../event-publishing/">
+    <link rel="next" href="subscribing/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Events</a></li>
+    <li><a href="./">Event Processors</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonIQ/AxonFramework/edit/axon-5.2.x/docs/reference-guide/modules/events/pages/event-processors/index.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Event%20Processors" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Event%20Processors%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BEvent%20Processors%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.2%2Fevents%2Fevent-processors%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.2</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/events/event-processors/">development</a>
+    <a class="version item is-current" href="./">5.2</a>
+    <a class="version item" href="../../../5.1/events/event-processors/">5.1</a>
+    <a class="version item" href="../../../5.0/events/event-processors/">5.0</a>
+    <a class="version item" href="../../../4.13/events/event-processors/">4.13</a>
+    <a class="version item" href="../../../4.12/events/event-processors/">4.12</a>
+    <a class="version item" href="../../../4.11/events/event-processors/">4.11</a>
+    <a class="version item" href="../../../4.10/events/event-processors/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.2">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="./">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../message-transformation/"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/defining-transformations/">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Event Processors</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="../event-handlers/" class="xref page">Event handlers</a> define the business logic to be performed when an event is received.
+<em>Event Processors</em> are the components that take care of the technical aspects of that processing.
+They start a <a href="../../messaging-concepts/processing-context/" class="xref page">unit of work</a> and possibly a transaction.
+However, they also ensure that <a href="../../messaging-concepts/message-correlation/" class="xref page">correlation data</a> can be correctly attached to all messages created during event processing, among other non-functional requirements.</p>
+</div>
+<div class="paragraph">
+<p>Event processors have event handling components.
+Event handling components, in turn, have event handlers.
+Each event handling component belongs to a single event processor.
+The event processor manages all aspects of event processing including threading, <a href="#error-handling">error handling</a>, <a href="streaming/#sequential_processing" class="xref page">sequencing</a>, and transaction management.</p>
+</div>
+<div class="paragraph">
+<p>Event processors come in roughly two forms:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="subscribing/" class="xref page">Subscribing</a>, and</p>
+</li>
+<li>
+<p><a href="streaming/" class="xref page">Streaming</a>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Subscribing event processors subscribe to a source of events and are invoked by the thread managed by the publishing mechanism.
+Streaming event processors, on the other hand, pull their messages from a source using a thread that it manages itself.</p>
+</div>
+<div class="paragraph">
+<p>For more specifics on either type, consult their respective sections <a href="subscribing/" class="xref page">here</a> and <a href="streaming/" class="xref page">here</a>.
+The rest of this page describes the Event Processor&#8217;s common concepts and configuration options.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_assigning_handlers_to_processors"><a class="anchor" href="#_assigning_handlers_to_processors"></a>Assigning handlers to processors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All processors have a name, which identifies a processor instance across JVM instances.
+Two processors with the same name are considered as two instances of the same processor.</p>
+</div>
+<div class="paragraph">
+<p>Each event handler will belong to an event handling component.
+An event handling component can include any number of event handlers.
+These event handling components are attached to a processor, whose name by default is the package name of the event handler&#8217;s class.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Consequences of assigning an event handling component to a processor</div>
+<div class="paragraph">
+<p>There are certain consequences of grouping event handling components with the same processors.
+All event handling components assigned to a single processor will share the same configuration (for example batch size, initial segment count and thread pool configuration) and scaling considerations (if for example you split the segments).</p>
+</div>
+<div class="paragraph">
+<p>If the same event is handled in multiple event handlers across different event handling components assigned to the same processor, they are still processed in the same transaction, sharing the same <a href="../../messaging-concepts/processing-context/" class="xref page">processing context</a>.</p>
+</div>
+<div class="paragraph">
+<p>Finally, event handlers across all event handling components assigned to the same processor are <a href="streaming/#sequential_processing" class="xref page">sequenced together</a>, <a href="streaming/#replaying-events" class="xref page">replayed together</a> and share <a href="streaming/#thread_configuration" class="xref page">the same thread pool</a>
+and
+<a href="../../dead-letter-queue/" class="xref page">dead letter queue</a>.</p>
+</div>
+<div class="paragraph">
+<p>Consider this when assigning handlers to processors.
+A good rule of thumb usually is: If you want to advance and replay multiple projections as a unit or isolate failures across them, assign them to the same processor.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The default processor implementation used by Axon is the <a href="streaming/" class="xref page">PooledStreamingEventProcessor</a>.
+The event processor type can be customized, as is shown in the <a href="subscribing/#configuring" class="xref page">subscribing</a> and <a href="streaming/#configuring" class="xref page">streaming</a> sections.</p>
+</div>
+<div class="paragraph">
+<p>There are two main approaches to configuring event processors and assigning handlers:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Declarative configuration</strong> - Using Axon&#8217;s configuration API to explicitly define which event handling components belong to which processor.</p>
+</li>
+<li>
+<p><strong>Autodetected configuration</strong> - Using Spring Boot to automatically detect and assign event handling components to processors based on their package name.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><a href="../event-handlers/#registering_event_handlers" class="xref page">This</a> section describes the process to register an event handler.</p>
+</div>
+<div class="sect2">
+<h3 id="declarative_config"><a class="anchor" href="#declarative_config"></a>Declarative configuration</h3>
+<div class="paragraph">
+<p>Assuming the declarative approach is used and we have the following event handling components:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>org.axonframework.example.eventhandling.MyHandler</code></p>
+</li>
+<li>
+<p><code>org.axonframework.example.eventhandling.MyOtherHandler</code></p>
+</li>
+<li>
+<p><code>org.axonframework.example.eventhandling.module.ModuleHandler</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To register these, we need to explicitly invoke the <code>MessagingConfigurer#eventProcessing(Consumer&lt;EventProcessingConfigurer&gt;)</code>.
+In the example below, a <a href="subscribing/" class="xref page">subscribing processor</a> is constructed, which can be replaced for a <a href="streaming/" class="xref page">streaming processor</a> if desired:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
+
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.subscribing(
+                this::configureSubscribingProcessor
+        ));
+    }
+
+    private SubscribingEventProcessorsConfigurer configureSubscribingProcessor(
+            SubscribingEventProcessorsConfigurer subscribingConfigurer
+    ) {
+        return subscribingConfigurer.processor(
+                "my-processor",
+                config -&gt; config.eventHandlingComponents(this::configureHandlingComponent)
+                                .notCustomized()
+        );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected(c -&gt; new MyHandler())
+                                  .autodetected(c -&gt; new ModuleHandler())
+                                  .autodetected(c -&gt; new MyOtherHandler());
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="autodetected_config"><a class="anchor" href="#autodetected_config"></a>Autodetected configuration</h3>
+<div class="paragraph">
+<p>Using the <code>@Namespace</code> annotation on an event handling component allows you to explicitly assign it to a processor when using the autodetected configuration.</p>
+</div>
+<div class="paragraph">
+<p>Assuming the autodetected approach is used, let us consider that the following event handling components have been registered:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// MyHandler.java
+package org.axonframework.example.eventhandling;
+@Namespace("my-processor")
+public class MyHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}
+
+// MyOtherHandler.java
+package org.axonframework.example.eventhandling;
+@Namespace("my-processor")
+public class MyOtherHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}
+
+// ModuleHandler.java
+package org.axonframework.example.eventhandling.module;
+@Namespace("my-processor")
+public class ModuleHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This configuration would result in the creation of a single Streaming Processor named <code>my-processor</code> with all three event handling components.</p>
+</div>
+<div class="paragraph">
+<p>Now consider the same autodetected setup, but with the following event handling components registered without the <code>@Namespace</code> annotation:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// MyHandler.java
+package org.axonframework.example.eventhandling;
+public class MyHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}
+
+// MyOtherHandler.java
+package org.axonframework.example.eventhandling;
+public class MyOtherHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}
+
+// ModuleHandler.java
+package org.axonframework.example.eventhandling.module;
+public class ModuleHandler {
+    @EventHandler
+    public void on(MyEvent event) { /* ... */ }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Without</strong> having the <code>@Namespace</code> annotation applied to the event handling component class, this would trigger the creation of two Streaming Processors, based on the handler component&#8217;s package names:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>org.axonframework.example.eventhandling</code> with two event handling components called <code>MyHandler</code> and <code>MyOtherHandler</code>, and</p>
+</li>
+<li>
+<p><code>org.axonframework.example.eventhandling.module</code> with the event handling component <code>ModuleHandler</code>.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ordering_event_handling_components_within_a_processor"><a class="anchor" href="#_ordering_event_handling_components_within_a_processor"></a>Ordering event handling components within a processor</h3>
+<div class="paragraph">
+<p>To order event handling components within an Event Processor, the order in which components are registered (as described in the <a href="../event-handlers/#registering_event_handlers" class="xref page">Registering Event Handlers</a> section) is guiding.
+Thus, the ordering in which an Event Processor will call handling components for event handling is the same as their insertion ordering in the Configuration API.</p>
+</div>
+<div class="paragraph">
+<p>If we use an autodetected configuration like Spring as the mechanism for wiring everything, we can explicitly specify the event handler component ordering by adding the <code>@Order</code> annotation.
+This annotation is placed on the event handling component class, containing an <code>integer</code> value to specify the ordering.</p>
+</div>
+<div class="paragraph">
+<p>Note that it is <strong>not possible</strong> to order event handlers belonging to different Event Processors.
+Each Event Processor acts as an isolated component without any intervention from other Event Processors.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Ordering Event Handlers within a Processor</div>
+<div class="paragraph">
+<p>Although we can place an order among event handling components within an Event Processor, separation of components is recommended.</p>
+</div>
+<div class="paragraph">
+<p>Placing an overall ordering on event handling components means those components are inclined to interact with one another, introducing a form of coupling.
+Due to this, the event handling process will become complex to manage (for example, for new team members).
+Furthermore, embracing an ordering approach might lead to place <em>all</em> event handling components in a global ordering, decreasing processing speeds in general.</p>
+</div>
+<div class="paragraph">
+<p>In all, you are free to use an ordering, but we recommend using it sparingly.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="lifecycle"><a class="anchor" href="#lifecycle"></a>Processor lifecycle</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every <code>EventProcessor</code> exposes a common set of lifecycle methods to start, stop, and inspect state.
+These methods are available on all processor implementations, including the <a href="subscribing/" class="xref page">Subscribing</a> and <a href="streaming/" class="xref page">Streaming</a> Event Processor.</p>
+</div>
+<div class="sect2">
+<h3 id="_starting_and_stopping"><a class="anchor" href="#_starting_and_stopping"></a>Starting and stopping</h3>
+<div class="paragraph">
+<p><code>start()</code> and <code>shutdown()</code> both return a <code>CompletableFuture&lt;Void&gt;</code> that completes when the operation has fully finished.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In most scenarios, you do not need to invoke <code>start()</code> or <code>shutdown()</code> manually.
+Axon Framework manages the processor lifecycle automatically as part of application startup and shutdown.
+Only call these methods directly when you need explicit control, for example when triggering a programmatic replay or conditionally pausing processing.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_checking_state"><a class="anchor" href="#_checking_state"></a>Checking state</h3>
+<div class="paragraph">
+<p>Two synchronous methods allow you to inspect the current state of a processor at any point:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>isRunning()</code>: returns <code>true</code> when the processor is active and processing events.
+Returns <code>false</code> after a clean <code>shutdown()</code> or before <code>start()</code> has been called.</p>
+</li>
+<li>
+<p><code>isError()</code>: returns <code>true</code> when the processor has gone into error mode due to an unhandled exception.
+Returns <code>false</code> after a clean <code>shutdown()</code>.
+See <a href="streaming/#error-mode" class="xref page">Error mode</a> for more on how the Streaming Event Processor handles errors.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+
+public class ProcessorStateChecker {
+
+    private final AxonConfiguration configuration;
+
+    public ProcessorStateChecker(AxonConfiguration configuration) {
+        this.configuration = configuration;
+    }
+
+    public void printState(String processorName) {
+        EventProcessor processor = configuration.getComponent(EventProcessor.class, processorName);
+        System.out.println("Running: " + processor.isRunning());
+        System.out.println("Error:   " + processor.isError());
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="error-handling"><a class="anchor" href="#error-handling"></a>Error handling</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Errors are inevitable in any application.
+Depending on where they happen, you may want to respond differently.</p>
+</div>
+<div class="paragraph">
+<p>By default, exceptions raised by event handlers are handled by the <code>ErrorHandler</code>.
+The default <code>ErrorHandler</code> used is the <code>PropagatingErrorHandler</code>, which rethrows any exceptions it catches.</p>
+</div>
+<div class="paragraph">
+<p>In the case of a <a href="streaming/#error-mode" class="xref page">Streaming Event Processor</a>, this means the processor will go into error mode, releasing any tokens and retrying at an incremental interval (starting at 1 second, up to max 60 seconds).
+A <a href="subscribing/#error-mode" class="xref page">Subscribing Event Processor</a> will report a publication error to the component that provided the event.</p>
+</div>
+<div class="paragraph">
+<p>How the Event Processor deals with a rethrown exception differs per implementation.
+The behaviour for the Subscribing- and the Streaming Event Processor can respectively be found <a href="subscribing/#error-mode" class="xref page">here</a> and <a href="streaming/#error-mode" class="xref page">here</a>.</p>
+</div>
+<div class="paragraph">
+<p>We can configure a default <code>ErrorHandler</code> for all Event Processors or an <code>ErrorHandler</code> for specific processors:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_configuration_api_default" class="tab">
+<p>Configuration API - Default</p>
+</li>
+<li id="_tabs_1_configuration_api_specific" class="tab">
+<p>Configuration API - Specific</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_configuration_api_default--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api_default">
+<div class="paragraph">
+<p>To register a default <code>ErrorHandler</code> for any Event Processor, you can do the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorContext;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
+
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.defaults(
+                defaults -&gt; defaults.errorHandler(new CustomErrorHandler())
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_configuration_api_specific--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api_specific">
+<div class="paragraph">
+<p>To register a custom <code>ErrorHandler</code> for a specific (in this case Subscribing) Processor, have a look at the following example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
+
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.subscribing(
+                this::configureSubscribingProcessor
+        ));
+    }
+
+    private SubscribingEventProcessorsConfigurer configureSubscribingProcessor(
+            SubscribingEventProcessorsConfigurer subscribingConfigurer
+    ) {
+        return subscribingConfigurer.processor(
+                "my-processor",
+                config -&gt; config.eventHandlingComponents(this::configureHandlingComponent)
+                                .customized((c, subscribingConfig) -&gt; subscribingConfig.errorHandler(
+                                        new CustomErrorHandler()
+                                ))
+        );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected(c -&gt; new MyHandler());
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>For providing a custom solution, the `ErrorHandler&#8217;s single method needs to be implemented:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface ErrorHandler {
+
+    void handleError(@Nonnull ErrorContext errorContext) throws Exception;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Based on the provided <code>ErrorContext</code> object, you can decide to ignore the error, schedule retries, or rethrow the exception.</p>
+</div>
+<div class="sect2 axoniq-feature">
+<h3 id="dead-letter-queue"><a class="anchor" href="#dead-letter-queue"></a>Dead-letter queue</h3>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">Dead-Letter Queue not available in Axon Framework 5.0</div>
+<div class="paragraph">
+<p>The Dead-Letter Queue feature is not yet available in Axon Framework 5.0.
+It will be reintroduced in Axon Framework 5.1.
+The documentation below describes the Dead-Letter Queue concepts for reference and future use.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Although configuring an <a href="#error-handling">Error Handler</a> helps you to deal with exceptions when processing events, event handling will typically still stop entirely.
+When you only log the error and allow processing to proceed, you will most likely end up with missing data until you fix the predicament and <a href="streaming/#replaying-events" class="xref page">replay</a>
+past events.
+If you instead propagate the exception so the event processor keeps retrying, the event processor will stall entirely when the cause is consistent.</p>
+</div>
+<div class="paragraph">
+<p>Although this behavior is sufficient on many occasions, sometimes it is beneficial if we can unblock event handling by parking the problematic event.
+This is where the dead-letter queue comes in.
+It is a mechanism to park events until they can be processed successfully.
+You can find more information in the <a href="../../dead-letter-queue/" class="xref page">Dead-Letter Queue</a> section.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="general_processor_configuration"><a class="anchor" href="#general_processor_configuration"></a>General processor configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Alongside <a href="#_assigning_handlers_to_processors">handler assignment</a> and <a href="#error-handling">error handling</a>, Event Processors allow configuration for other components too.
+For <a href="subscribing/#configuring" class="xref page">Subscribing</a> and <a href="streaming/#configuring" class="xref page">Streaming</a> Event Processor specific options, their respective sections should be checked.
+The remainder of this page will cover the generic configuration options for each Event Processor.</p>
+</div>
+<div class="sect2">
+<h3 id="_event_handler_interceptors"><a class="anchor" href="#_event_handler_interceptors"></a>Event handler interceptors</h3>
+<div class="paragraph">
+<p>Since the Event Processor is the invoker of event handling methods, it is a spot to configure <a href="../../messaging-concepts/message-intercepting/" class="xref page">Message Handler Interceptors</a> too.
+Since Event Processors are dedicated to event handling, the <code>MessageHandlerInterceptor</code> is required to deal with an <code>EventMessage</code>.
+Differently put, an <a href="../../messaging-concepts/message-intercepting/#event-handler-interceptors" class="xref page">EventHandlerInterceptor</a> can be registered to Event Processors.</p>
+</div>
+<div class="paragraph">
+<p>There are several approaches to registering interceptors, each with a different scope.</p>
+</div>
+<div class="sect3">
+<h4 id="_default_interceptors_for_all_processors"><a class="anchor" href="#_default_interceptors_for_all_processors"></a>Default interceptors for all processors</h4>
+<div class="paragraph">
+<p>Default handling interceptors can be attached to all Event Processors in your application through the <code>MessagingConfigurer</code>.
+This is explained in more detail <a href="../../messaging-concepts/message-intercepting/#event-handler-interceptors" class="xref page">here</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_interceptors_for_a_specific_processor_instance"><a class="anchor" href="#_interceptors_for_a_specific_processor_instance"></a>Interceptors for a specific processor instance</h4>
+<div class="paragraph">
+<p>Interceptors can be registered for a specific Event Processor instance by name.
+Use the <code>withInterceptor(MessageHandlerInterceptor&lt;? super EventMessage&gt;)</code> operation as part of customizing a processor:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonConfig {
+
+    public void registerProcessorSpecificInterceptor(MessagingConfigurer configurer) {
+        // For SubscribingEventProcessor:
+        configurer.eventProcessing()
+                  .subscribing()
+                  .customize("my-processor", config -&gt; config.withInterceptor(new CustomEventHandlerInterceptor()));
+        // For PooledStreamingEventProcessor:
+        configurer.eventProcessing()
+                  .pooledStreaming()
+                  .customize("my-processor", config -&gt; config.withInterceptor(new CustomEventHandlerInterceptor()));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_interceptors_for_specific_event_handling_components"><a class="anchor" href="#_interceptors_for_specific_event_handling_components"></a>Interceptors for specific event handling components</h4>
+<div class="paragraph">
+<p>Interceptors can be registered as part of the event handling component configuration itself, using <code>intercepted()</code> on the <code>EventHandlingComponentsConfigurer</code>.
+Calling <code>intercepted()</code> closes the component registration phase, so all components must be registered before calling it.
+Multiple <code>intercepted()</code> calls accumulate interceptors in registration order:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
+
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.subscribing(
+                this::configureSubscribingProcessor
+        ));
+    }
+
+    private SubscribingEventProcessorsConfigurer configureSubscribingProcessor(
+            SubscribingEventProcessorsConfigurer subscribingConfigurer
+    ) {
+        return subscribingConfigurer.processor(
+                "my-processor",
+                config -&gt; config.eventHandlingComponents(this::configureHandlingComponents)
+                                .notCustomized()
+        );
+    }
+
+    private EventHandlingComponentsConfigurer.CompletePhase configureHandlingComponents(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected("orderHandler", cfg -&gt; new OrderEventHandler())
+                                  .autodetected("inventoryHandler", cfg -&gt; new InventoryEventHandler())
+                                  .intercepted(cfg -&gt; new AuditLoggingInterceptor())
+                                  .intercepted(cfg -&gt; new TenantFilterInterceptor(tenantId));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Component registration ends when the first <code>.intercepted(&#8230;&#8203;)</code> is called.
+Additional interceptors can still be added with further <code>.intercepted(&#8230;&#8203;)</code> calls and are applied in registration order.</p>
+</div>
+<div class="paragraph">
+<p>Use <code>withExceptionHandler()</code> to handle exceptions thrown by event handlers in all components managed by the configurer.
+Return <code>MessageStream.empty()</code> to suppress the exception and allow event processing to continue.
+Return <code>MessageStream.failed(error)</code> (with the same or a different exception) to propagate the error to the event processor:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+
+private EventHandlingComponentsConfigurer.CompletePhase configureHandlingComponents(
+        EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+) {
+    return componentConfigurer.autodetected("orderHandler", cfg -&gt; new OrderEventHandler())
+                              .withExceptionHandler((event, context, error) -&gt; {
+                                  log.warn("Handler failed for {}: {}", event.qualifiedName(), error.getMessage());
+                                  return MessageStream.empty(); // suppress; use MessageStream.failed(error) to propagate
+                              });
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_annotated_interceptors_on_the_handler_class"><a class="anchor" href="#_annotated_interceptors_on_the_handler_class"></a>Annotated interceptors on the handler class</h4>
+<div class="paragraph">
+<p>Methods on the handler class itself can be annotated with <code>@EventHandlerInterceptor</code>.
+These methods are automatically discovered and run before every <code>@EventHandler</code> method on the same component instance, making them ideal for cross-cutting concerns that share the component&#8217;s state (such as tenant filtering or component-level auditing).</p>
+</div>
+<div class="paragraph">
+<p>Two styles are supported:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A <strong>before-interceptor</strong> is a <code>void</code> method with no <code>MessageHandlerInterceptorChain</code> parameter.
+It runs before the handler, and the chain automatically proceeds when the method returns normally.
+If the method throws, the handler is not invoked.</p>
+</li>
+<li>
+<p>A <strong>surround-interceptor</strong> declares a <code>MessageHandlerInterceptorChain</code> parameter and returns a <code>MessageStream</code>.
+It controls whether the handler is invoked by calling <code>chain.proceed(event, ctx)</code>.
+Returning without calling <code>proceed</code> short-circuits the chain.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+
+// Before-interceptor: runs before every @EventHandler on this component
+public class AuditingEventHandler {
+
+    private final AuditLog auditLog;
+
+    @EventHandlerInterceptor
+    void audit(EventMessage event) {
+        auditLog.record(event.qualifiedName());
+        // chain proceeds automatically after this returns
+    }
+
+    @EventHandler
+    void on(OrderPlaced event) { ... }
+
+    @EventHandler
+    void on(OrderCancelled event) { ... }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+
+// Surround-interceptor: short-circuit events intended for other tenants
+public class TenantScopedEventHandler {
+
+    private final TenantId tenantId;
+
+    @EventHandlerInterceptor
+    MessageStream&lt;?&gt; filterByTenant(
+            EventMessage event,
+            MessageHandlerInterceptorChain&lt;EventMessage&gt; chain,
+            ProcessingContext ctx
+    ) {
+        if (!tenantId.equals(event.metaData().get("tenantId"))) {
+            return MessageStream.empty(); // skip: not our tenant
+        }
+        return chain.proceed(event, ctx);
+    }
+
+    @EventHandler
+    void on(OrderPlaced event) { ... }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>@ExceptionHandler</code> methods handle exceptions thrown by <code>@EventHandler</code> methods on the same component.
+When an event handler throws, the framework looks for a matching <code>@ExceptionHandler</code> on the same component before propagating the error.
+If the method returns normally, the exception is suppressed and event processing continues; if the method throws (or re-throws), the exception propagates.</p>
+</div>
+<div class="paragraph">
+<p>Use the <code>resultType</code> attribute to narrow the handler to a specific exception type.
+Without it, the method is eligible for any exception that matches its declared parameter type (or any exception if there are no parameters).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.core.interception.annotation.ExceptionHandler;
+
+public class MyEventHandler {
+
+    @EventHandler
+    void on(OrderPlaced event) {
+        // may throw
+    }
+
+    @ExceptionHandler
+    void onException(RuntimeException ex) {
+        log.error("Handler failed: {}", ex.getMessage());
+        // return normally to suppress the exception and continue processing
+    }
+
+    @ExceptionHandler(resultType = OptimisticLockingFailureException.class)
+    void onConcurrencyFailure(OptimisticLockingFailureException ex) {
+        // handle a specific exception type; other exceptions are not affected
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_message_monitors"><a class="anchor" href="#_message_monitors"></a>Message monitors</h3>
+<div class="paragraph">
+<p>Any Event Processor instance provides the means to contain a Message Monitor.
+Message Monitors (discussed in more detail <a href="../../monitoring/metrics/" class="xref page">here</a>) allow for monitoring the flow of messages throughout an Axon application.
+For Event Processors, the message monitor deals explicitly with the events flowing through the Event Processor towards the event handling functions.</p>
+</div>
+<div class="paragraph">
+<p>To register a default <code>MessagMonitor</code> for events, you use the <code>MessageConfigurer#registerEventMonitor</code> operation as shown:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonConfig {
+
+    public void registerEventMonitor(MessagingConfigurer configurer) {
+        configurer.registerEventMonitor(config -&gt; new CustomMessageMonitor());
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../event-publishing/">Publishing</a></span>
+  <span class="next"><a href="subscribing/">Subscribing Event Processor</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

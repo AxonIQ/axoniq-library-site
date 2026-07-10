@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Major Releases</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.2/release-notes/major-releases/">
+    <link rel="prev" href="../">
+    <link rel="next" href="../minor-releases/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Release Notes</a></li>
+    <li>Axon Framework</li>
+    <li><a href="./">Major Releases</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonIQ/AxonFramework/edit/axon-5.2.x/docs/reference-guide/modules/release-notes/pages/major-releases.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Major%20Releases" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Major%20Releases%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BMajor%20Releases%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.2%2Frelease-notes%2Fmajor-releases%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.2</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/release-notes/major-releases/">development</a>
+    <a class="version item is-current" href="./">5.2</a>
+    <a class="version item" href="../../../5.1/release-notes/major-releases/">5.1</a>
+    <a class="version item" href="../../../5.0/release-notes/major-releases/">5.0</a>
+    <a class="version item" href="../../../4.13/release-notes/major-releases/">4.13</a>
+    <a class="version item" href="../../../4.12/release-notes/major-releases/">4.12</a>
+    <a class="version item" href="../../../4.11/release-notes/major-releases/">4.11</a>
+    <a class="version item" href="../../../4.10/release-notes/major-releases/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.2">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../message-transformation/"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/defining-transformations/">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="./">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Major Releases</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>All the enhancements and features which have been introduced to our major releases of the Axon Framework are noted here.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="release_5_2"><a class="anchor" href="#release_5_2"></a>Release 5.2</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_features"><a class="anchor" href="#_features"></a>Features</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>[#4291] feat(eventsourcing): <code>EventStoreTransaction</code> - allow overriding <code>AppendCondition</code> calculated from sourcing <a href="https://github.com/AxonIQ/AxonFramework/pull/4295">#4295</a></p>
+</li>
+<li>
+<p>[#3485] Add annotated and declarative handler interceptor support for events, commands, and queries <a href="https://github.com/AxonIQ/AxonFramework/pull/4515">#4515</a></p>
+</li>
+<li>
+<p>[#3062] Add exception handler support for command, event, and query handling components <a href="https://github.com/AxonIQ/AxonFramework/pull/4520">#4520</a></p>
+</li>
+<li>
+<p>[#3083] Configure application wide Clock <a href="https://github.com/AxonIQ/AxonFramework/pull/4592">#4592</a></p>
+</li>
+<li>
+<p>[#137] Message Transformation / Upcasting - Demo <a href="https://github.com/AxonIQ/AxonFramework/pull/4624">#4624</a></p>
+</li>
+<li>
+<p>Add collect, flatMap and mapMulti methods to MessageStream API <a href="https://github.com/AxonIQ/AxonFramework/pull/4627">#4627</a></p>
+</li>
+<li>
+<p>[#137] Message Transformation - Sourcing Criteria widening for sourcing <a href="https://github.com/AxonIQ/AxonFramework/pull/4638">#4638</a></p>
+</li>
+<li>
+<p>[#137] Message Transformation - Rename support (phase 4) <a href="https://github.com/AxonIQ/AxonFramework/pull/4642">#4642</a></p>
+</li>
+<li>
+<p>[#137] Message Transformation - Drop / Filter support (phase 5) <a href="https://github.com/AxonIQ/AxonFramework/pull/4648">#4648</a></p>
+</li>
+<li>
+<p>[#4652] Decorate <code>CommandBus</code> in <code>RetryingCommandBus</code> when a <code>RetryScheduler</code> is present <a href="https://github.com/AxonIQ/AxonFramework/pull/4662">#4662</a></p>
+</li>
+<li>
+<p>[#137] Merge Message Transformation support <a href="https://github.com/AxonIQ/AxonFramework/pull/4689">#4689</a></p>
+</li>
+<li>
+<p>[#3594] chore(tracing): remove OpenTelemetry extension (will be moved to Axoniq Framework) <a href="https://github.com/AxonIQ/AxonFramework/pull/4720">#4720</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_enhancements"><a class="anchor" href="#_enhancements"></a>Enhancements</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Fix fromFuture to return Empty stream when future completes with null <a href="https://github.com/AxonIQ/AxonFramework/pull/4516">#4516</a></p>
+</li>
+<li>
+<p>Cleanup/remove deprecated modules <a href="https://github.com/AxonIQ/AxonFramework/pull/4524">#4524</a></p>
+</li>
+<li>
+<p>[#3773] phase 0 Replace thenRun + joinAndUnwrap with thenCompose in Coordinator#abortWorkPackage <a href="https://github.com/AxonIQ/AxonFramework/pull/4527">#4527</a></p>
+</li>
+<li>
+<p>[#3773] phase 1 Make ClaimTask, SplitTask and MergeTask fully async <a href="https://github.com/AxonIQ/AxonFramework/pull/4530">#4530</a></p>
+</li>
+<li>
+<p>[#3773] phase 2 remove joinAndUnwrap from workPackage and coordinator <a href="https://github.com/AxonIQ/AxonFramework/pull/4536">#4536</a></p>
+</li>
+<li>
+<p>[#3773] phase 3 Remove joinAndUnwrap from PooledStreamingEventProcessor <a href="https://github.com/AxonIQ/AxonFramework/pull/4540">#4540</a></p>
+</li>
+<li>
+<p>[#3773] Document PooledStreamingEventProcessor lifecycle and start() … <a href="https://github.com/AxonIQ/AxonFramework/pull/4541">#4541</a></p>
+</li>
+<li>
+<p>[#3773] Replace <code>joinunwrap</code> usage from <code>PooledStreamingEventProcessor</code> <a href="https://github.com/AxonIQ/AxonFramework/pull/4552">#4552</a></p>
+</li>
+<li>
+<p>[#4546] Return failed futures from InMemoryTokenStore <a href="https://github.com/AxonIQ/AxonFramework/pull/4559">#4559</a></p>
+</li>
+<li>
+<p>Account for async snapshot storage in SnapshottingEntityLifecycleHandlerTestSuite <a href="https://github.com/AxonIQ/AxonFramework/pull/4595">#4595</a></p>
+</li>
+<li>
+<p>[#4632] fix(messaging): token store intit loses spring transaction pooled streaming processor <a href="https://github.com/AxonIQ/AxonFramework/pull/4645">#4645</a></p>
+</li>
+<li>
+<p>Added a DCB skill based on AF API, AS API, and theoretical resources available <a href="https://github.com/AxonIQ/AxonFramework/pull/4654">#4654</a></p>
+</li>
+<li>
+<p>[#137] Message Transformation - Semantic matching docs + demo <a href="https://github.com/AxonIQ/AxonFramework/pull/4660">#4660</a></p>
+</li>
+<li>
+<p>Disable sonar for builds <a href="https://github.com/AxonIQ/AxonFramework/pull/4680">#4680</a></p>
+</li>
+<li>
+<p>Surface <code>Errors</code> from <code>UnitOfWork</code> actions instead of hanging silently <a href="https://github.com/AxonIQ/AxonFramework/pull/4697">#4697</a></p>
+</li>
+<li>
+<p>[Port] fix(migration): honor skipTests property <a href="https://github.com/AxonIQ/AxonFramework/pull/4700">#4700</a></p>
+</li>
+<li>
+<p>Migrate <code>routingKey</code> to <code>@Command</code> annotations <a href="https://github.com/AxonIQ/AxonFramework/pull/4704">#4704</a></p>
+</li>
+<li>
+<p>Adjust generics of registerIfNotPresent to match register <a href="https://github.com/AxonIQ/AxonFramework/pull/4717">#4717</a></p>
+</li>
+<li>
+<p>[#4721] Allow <code>EventProcessorDefinitions</code> to supply an event source for a subscribing processor <a href="https://github.com/AxonIQ/AxonFramework/pull/4722">#4722</a></p>
+</li>
+<li>
+<p>[#4633] AF4 MultiSourceLegacyToken classname compatibility fix <a href="https://github.com/AxonIQ/AxonFramework/pull/4724">#4724</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_bug_fixes"><a class="anchor" href="#_bug_fixes"></a>Bug fixes</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Port 5.1.x to main <a href="https://github.com/AxonIQ/AxonFramework/pull/4399">#4399</a></p>
+</li>
+<li>
+<p>Port post 5.1.0-RC3 release to <code>main</code> <a href="https://github.com/AxonIQ/AxonFramework/pull/4452">#4452</a></p>
+</li>
+<li>
+<p>Port 5.1.x to main <a href="https://github.com/AxonIQ/AxonFramework/pull/4472">#4472</a></p>
+</li>
+<li>
+<p>Fix documentation build <a href="https://github.com/AxonIQ/AxonFramework/pull/4547">#4547</a></p>
+</li>
+<li>
+<p>[#3934] Fix duplicate command handler registration when subtype overrides handler <a href="https://github.com/AxonIQ/AxonFramework/pull/4550">#4550</a></p>
+</li>
+<li>
+<p>[#4060] revert main to state before 4060 <a href="https://github.com/AxonIQ/AxonFramework/pull/4557">#4557</a></p>
+</li>
+<li>
+<p>Port: axon 5.1.x &#8594; main <a href="https://github.com/AxonIQ/AxonFramework/pull/4572">#4572</a></p>
+</li>
+<li>
+<p>Merge branch 'axon-5.1.x' <a href="https://github.com/AxonIQ/AxonFramework/pull/4590">#4590</a></p>
+</li>
+<li>
+<p>[#4594] Validate <code>ProcessingContext</code> is committed in <code>SimpleQueryBus</code> on <code>emitUpdate</code>, <code>completeSubscriptions</code>, and <code>completeSubscriptionsExceptionally</code> invocations <a href="https://github.com/AxonIQ/AxonFramework/pull/4602">#4602</a></p>
+</li>
+<li>
+<p>Port/axon 5.1.x main <a href="https://github.com/AxonIQ/AxonFramework/pull/4617">#4617</a></p>
+</li>
+<li>
+<p>Avoid costly stack walk on every task start in AxonTimeLimitedTask <a href="https://github.com/AxonIQ/AxonFramework/pull/4635">#4635</a></p>
+</li>
+<li>
+<p>[#4625] Introduce the <code>EventTypeResolver</code> for <code>EventStorageEngines</code> | Allows for default versions <a href="https://github.com/AxonIQ/AxonFramework/pull/4665">#4665</a></p>
+</li>
+<li>
+<p>[#4634] Register the Micrometer <code>MetricsConfigurationEnhancer</code> only once when using Spring Boot <a href="https://github.com/AxonIQ/AxonFramework/pull/4666">#4666</a></p>
+</li>
+<li>
+<p>[#4647] Propagate all entry resources to per-event ProcessingContext <a href="https://github.com/AxonIQ/AxonFramework/pull/4669">#4669</a></p>
+</li>
+<li>
+<p>[Port] fix(messaging): disposing a Flux does not close the underlying subscription query <a href="https://github.com/AxonIQ/AxonFramework/pull/4678">#4678</a></p>
+</li>
+<li>
+<p>[#4643] <code>AggregateBasedJpaEventStorageEngine#stream</code> loops until <code>StreamingCondition</code> matching events are retrieved <a href="https://github.com/AxonIQ/AxonFramework/pull/4684">#4684</a></p>
+</li>
+<li>
+<p>[Port] Align <code>QualifiedName#(Class)</code> outcome with annotated approach for nested classes <a href="https://github.com/AxonIQ/AxonFramework/pull/4685">#4685</a></p>
+</li>
+<li>
+<p>Re-Add JdbcTokenstore to the streaming event processors reference <a href="https://github.com/AxonIQ/AxonFramework/pull/4692">#4692</a></p>
+</li>
+<li>
+<p>[#4705] Skip interceptor members when applying @SequencingPolicy <a href="https://github.com/AxonIQ/AxonFramework/pull/4706">#4706</a></p>
+</li>
+<li>
+<p>fix(messaging): preserve enhancers in UnitOfWorkConfiguration#forcedSameThreadInvocation <a href="https://github.com/AxonIQ/AxonFramework/pull/4714">#4714</a></p>
+</li>
+<li>
+<p>Align snapshotting annotation with documentation <a href="https://github.com/AxonIQ/AxonFramework/pull/4715">#4715</a></p>
+</li>
+<li>
+<p>Wrap ESE when it is not the same instance providing SnapshotStore <a href="https://github.com/AxonIQ/AxonFramework/pull/4716">#4716</a></p>
+</li>
+<li>
+<p>[#4633] AF5 application cannot start with TokenStore containing AF4 tokens bug <a href="https://github.com/AxonIQ/AxonFramework/pull/4718">#4718</a></p>
+</li>
+<li>
+<p>SpringComponentRegistry - Handle missing Spring components adhering to the <code>ComponentRegistry</code> contract <a href="https://github.com/AxonIQ/AxonFramework/pull/4719">#4719</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_documentation"><a class="anchor" href="#_documentation"></a>Documentation</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Repository Transfer notice - main <a href="https://github.com/AxonIQ/AxonFramework/pull/4416">#4416</a></p>
+</li>
+<li>
+<p>Migration Path AI instructions <a href="https://github.com/AxonIQ/AxonFramework/pull/4479">#4479</a></p>
+</li>
+<li>
+<p>[#4414] Add Note for change in Jackson 3 converter default behaviour <a href="https://github.com/AxonIQ/AxonFramework/pull/4496">#4496</a></p>
+</li>
+<li>
+<p>[#4414] Fix Note for change in Jackson 3 converter default behaviour <a href="https://github.com/AxonIQ/AxonFramework/pull/4501">#4501</a></p>
+</li>
+<li>
+<p>Restructure Release Notes navigation in framework reference <a href="https://github.com/AxonIQ/AxonFramework/pull/4503">#4503</a></p>
+</li>
+<li>
+<p>Relocate the Kotlin module description to include it in the correct section <a href="https://github.com/AxonIQ/AxonFramework/pull/4506">#4506</a></p>
+</li>
+<li>
+<p>[#28] Migration path - Data Protection - Reference to path in other repository <a href="https://github.com/AxonIQ/AxonFramework/pull/4525">#4525</a></p>
+</li>
+<li>
+<p>Include Axoniq Feature Indicator in navigation <a href="https://github.com/AxonIQ/AxonFramework/pull/4529">#4529</a></p>
+</li>
+<li>
+<p>docs: fix Antora build warnings and Vale style suggestions <a href="https://github.com/AxonIQ/AxonFramework/pull/4532">#4532</a></p>
+</li>
+<li>
+<p>[#4060] Align completeness between old Aggregate and new Entity description <a href="https://github.com/AxonIQ/AxonFramework/pull/4562">#4562</a></p>
+</li>
+<li>
+<p>Add agent hints for branch naming and commit messages <a href="https://github.com/AxonIQ/AxonFramework/pull/4569">#4569</a></p>
+</li>
+<li>
+<p>[#4063] Update Documentation readme and local build/preview script <a href="https://github.com/AxonIQ/AxonFramework/pull/4582">#4582</a></p>
+</li>
+<li>
+<p>Integrate "Framework Comparison" page into Navigation and Introduction <a href="https://github.com/AxonIQ/AxonFramework/pull/4597">#4597</a></p>
+</li>
+<li>
+<p>Adjust Subscribable Eventsource API and move reference documentation for persistent streams <a href="https://github.com/AxonIQ/AxonFramework/pull/4616">#4616</a></p>
+</li>
+<li>
+<p>[#137] Message Transformation / Upcasting - Documentation <a href="https://github.com/AxonIQ/AxonFramework/pull/4629">#4629</a></p>
+</li>
+<li>
+<p>Adjust documentation on event processor assignment <a href="https://github.com/AxonIQ/AxonFramework/pull/4646">#4646</a></p>
+</li>
+<li>
+<p>[#137] move Event Transformation reference docs to Axoniq Framework <a href="https://github.com/AxonIQ/AxonFramework/pull/4664">#4664</a></p>
+</li>
+<li>
+<p>Add AF 5.1.2 Release Notes <a href="https://github.com/AxonIQ/AxonFramework/pull/4687">#4687</a></p>
+</li>
+<li>
+<p>Re-Add JdbcTokenstore to the streaming event processors reference <a href="https://github.com/AxonIQ/AxonFramework/pull/4690">#4690</a></p>
+</li>
+<li>
+<p>docs: change DLQ migration docs to use DeadLetterQueueConfiguration extension API <a href="https://github.com/AxonIQ/AxonFramework/pull/4696">#4696</a></p>
+</li>
+<li>
+<p>[#4640] Document Axon Framework 4 snapshot reuse limitation <a href="https://github.com/AxonIQ/AxonFramework/pull/4725">#4725</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_contributors"><a class="anchor" href="#_contributors"></a>Contributors</h3>
+<div class="paragraph">
+<p>We&#8217;d like to thank all the contributors who worked on this section!</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/abuijze">@abuijze</a></p>
+</li>
+<li>
+<p><a href="https://github.com/hatzlj">@hatzlj</a></p>
+</li>
+<li>
+<p><a href="https://github.com/hjohn">@hjohn</a></p>
+</li>
+<li>
+<p><a href="https://github.com/jangalinski">@jangalinski</a></p>
+</li>
+<li>
+<p><a href="https://github.com/klauss42">@klauss42</a></p>
+</li>
+<li>
+<p><a href="https://github.com/laura-devriendt-lemon">@laura-devriendt-lemon</a></p>
+</li>
+<li>
+<p><a href="https://github.com/m1l4n54v1c">@m1l4n54v1c</a></p>
+</li>
+<li>
+<p><a href="https://github.com/MateuszNaKodach">@MateuszNaKodach</a></p>
+</li>
+<li>
+<p><a href="https://github.com/smcvb">@smcvb</a></p>
+</li>
+<li>
+<p><a href="https://github.com/wadhwaroh-lang">@wadhwaroh-lang</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="release_5_1"><a class="anchor" href="#release_5_1"></a>Release 5.1</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This release marks the first release wherein the split between Axon Framework and Axoniq Framework is apparent.
+As such, the feature-specific sections are split between Axon Framework and Axoniq Framework features, enhancements, fixes, documentation, and dependency changes.
+For those looking for a quick overview of "what is Axon and what is Axoniq Framework", the following components have been ported to Axoniq Framework are:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The <code>axon-server-connector</code> module.</p>
+</li>
+<li>
+<p>All Axon Server Spring integration.</p>
+</li>
+<li>
+<p>The <code>AxonServerContainer</code> for Testcontainer support</p>
+</li>
+<li>
+<p>The <code>DistributedCommandBus</code> and <code>CommandBusConnector</code>. In line with the move of the <code>axon-server-connector</code></p>
+</li>
+<li>
+<p>The <code>DistributedQueryBus</code> and <code>QueryBusConnector</code>. In line with the move of the <code>axon-server-connector</code></p>
+</li>
+<li>
+<p>The <code>SequencedDeadLetterQueue</code>, <code>SequencedDeadLetterQueue</code> integration into Event Handling Components, and the JPA/JDBC/InMemory storage solutions for the <code>SequencedDeadLetterQueue</code></p>
+</li>
+<li>
+<p>The <code>MultiStreamableEventSource</code></p>
+</li>
+</ol>
+</div>
+<div class="sect2">
+<h3 id="_features_2"><a class="anchor" href="#_features_2"></a>Features</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>[#3105] Revise Snapshotting logic</p>
+</li>
+<li>
+<p>[#3105] Reintroduce Snapshotting by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4204">#4204</a></p>
+</li>
+<li>
+<p>[#3105] Set AxonServerSnapshotStore in the AxonServerConfigurationEnhancer by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4307">#4307</a></p>
+</li>
+<li>
+<p>Snapshotting rework to allow snapshots to be part of event stream by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4335">#4335</a></p>
+</li>
+<li>
+<p>[#3514] First-class Spring support for AxonTestFixture</p>
+</li>
+<li>
+<p>feat(extensions): init axon-spring-boot-starter-test with AxonTestFixture bean support by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4213">#4213</a></p>
+</li>
+<li>
+<p>[#3618] Last-minute Message#payload conversion</p>
+</li>
+<li>
+<p>[#3618] Introduce conversion awareness to the GenericMessage by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4312">#4312</a></p>
+</li>
+<li>
+<p>[#3618] Make lastminute/inline payload conversion available for command handling by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4314">#4314</a></p>
+</li>
+<li>
+<p>[#3618] Make lastminute/inline payload conversion available for event handling by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4313">#4313</a></p>
+</li>
+<li>
+<p>[#3618] Make lastminute/inline payload conversion available for query handling by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4315">#4315</a></p>
+</li>
+<li>
+<p>[#3879] Provide Kotlin extension for 5.0</p>
+</li>
+<li>
+<p>[#3879] Introduce Kotlin extension by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4432">#4432</a></p>
+</li>
+<li>
+<p>[#3886] Support Spring Data Page through the JacksonConverter</p>
+</li>
+<li>
+<p>[#3886] Add Jackson module for Spring Data Page deserialization by @theoema in <a href="https://github.com/AxonIQ/AxonFramework/pull/3937">#3937</a></p>
+</li>
+<li>
+<p>[#3891] Introduce @Namespace annotation and use for Event Processor naming</p>
+</li>
+<li>
+<p>[#3891] Introduce and use the @Namespace annotation by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4226">#4226</a></p>
+</li>
+<li>
+<p>[#3923] Filter events while streaming with given EventCriteria for aggregate-based storage solutions</p>
+</li>
+<li>
+<p>[#3923] Filter events while streaming with given EventCriteria for aggregate-based storage solutions by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4005">#4005</a></p>
+</li>
+<li>
+<p>[#4111] Enable decorator pattern for EventProcessors (register as interface type)</p>
+</li>
+<li>
+<p>[#4111] Register event processors as interface types for decorator support by @theoema in <a href="https://github.com/AxonIQ/AxonFramework/pull/4113">#4113</a></p>
+</li>
+<li>
+<p>[#4182] Reintroduce JdbcAutoConfiguration</p>
+</li>
+<li>
+<p>[#4384] Introduce configuration section functionality</p>
+</li>
+<li>
+<p>[#4384] feat: introduce extensible configuration + adjust DLQ to use the approach by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4385">#4385</a></p>
+</li>
+<li>
+<p>Introduce ReplayStatusChangedHandler by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4297">#4297</a></p>
+</li>
+<li>
+<p>Port Reactor Extension to Axon Framework 5 by @theoema in <a href="https://github.com/AxonIQ/AxonFramework/pull/4245">#4245</a></p>
+</li>
+<li>
+<p>Introduce dedicated examples for Spring Boot 3 and 4 by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4367">#4367</a></p>
+</li>
+<li>
+<p>feat(integrationtests): base AbstractIntegrationTest class decoupled from Axon Server by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4413">#4413</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_enhancements_2"><a class="anchor" href="#_enhancements_2"></a>Enhancements</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>[#3149] Allow queries with a local handler to shortcut to the local segment</p>
+</li>
+<li>
+<p>[#3194] DbScheduler 15+ incompatible with Axon Framework 4.10.2</p>
+</li>
+<li>
+<p>[#3304] Integrate event replay logic into Event Handling Component</p>
+</li>
+<li>
+<p>[#3304] Support resets for the PooledStreamingEventProcessor resulting in EventHandlingComponent replays by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/3957">#3957</a></p>
+</li>
+<li>
+<p>[#3304] Deserialize ReplayToken#context with the Converter by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/3979">#3979</a></p>
+</li>
+<li>
+<p>[#3577] Modules should inherit ConfigurationEnhancer settings from the parent</p>
+</li>
+<li>
+<p>[#3577] Module registry inheritance by @zambrovski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4090">#4090</a></p>
+</li>
+<li>
+<p>[#3816] Adopt JSpecify nullability annotations</p>
+</li>
+<li>
+<p>[#3816] Adopt JSpecify nullability annotations by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4233">#4233</a></p>
+</li>
+<li>
+<p>[#3816] Adopt JSpecify nullability annotations - Nullmarked by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4251">#4251</a></p>
+</li>
+<li>
+<p>[#3952] Transactional resources should be managed by resource executors as part of the processing context</p>
+</li>
+<li>
+<p>[#3962] Validate necessity of SpringLazyCreatingModule</p>
+</li>
+<li>
+<p>[#3962] LazyInitializedModule is still required, but can be slightly improved by @zambrovski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4033">#4033</a></p>
+</li>
+<li>
+<p>[#3998] Allow SimpleUnitOfWorkFactory to augment its work units with enhancers</p>
+</li>
+<li>
+<p>Allow SimpleUnitOfWorkFactory to augment its work units with enhancers by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/3999">#3999</a></p>
+</li>
+<li>
+<p>Show failed message handler in logs by @Sam-Kruglov in <a href="https://github.com/AxonIQ/AxonFramework/pull/3913">#3913</a></p>
+</li>
+<li>
+<p>Default to the AnnotationMessageTypeResolver in annotation-specific components by @Sam-Kruglov in <a href="https://github.com/AxonIQ/AxonFramework/pull/3894">#3894</a></p>
+</li>
+<li>
+<p>Refactor JPA Spring Boot auto configuration and slight SpringComponentRegistry tweak by @Sam-Kruglov in <a href="https://github.com/AxonIQ/AxonFramework/pull/3892">#3892</a></p>
+</li>
+<li>
+<p>Some codestyle improvements by @abuijze in <a href="https://github.com/AxonIQ/AxonFramework/pull/3951">#3951</a></p>
+</li>
+<li>
+<p>Event Storage Engine Test Suite improvements - Add stream-sees-appended-events tests and make methods protected by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/3956">#3956</a></p>
+</li>
+<li>
+<p>feat(test-fixture): AxonTestThenCommand - resultMessagePayload - convert payload before executing the check by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/3995">#3995</a></p>
+</li>
+<li>
+<p>Introduce ArchUnit into commons module by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4015">#4015</a></p>
+</li>
+<li>
+<p>Add new integration test using event store and unit of work by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4014">#4014</a></p>
+</li>
+<li>
+<p>[#3517] feat(eventhandling): PooledStreamingEventProcessor - introduce SegmentChangeListener by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4183">#4183</a></p>
+</li>
+<li>
+<p>EntityManagerTransactionManager - supports JPA transactions without Spring by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4232">#4232</a></p>
+</li>
+<li>
+<p>EventProcessors - enforce explicitly named event components by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4265">#4265</a></p>
+</li>
+<li>
+<p>Make Property#get method return nullable value by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4358">#4358</a></p>
+</li>
+<li>
+<p>Enhancement/university java springboot3 setup by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4374">#4374</a></p>
+</li>
+<li>
+<p>Refactor AbstractMessageStream and implementations by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4396">#4396</a></p>
+</li>
+<li>
+<p>Replace AxonTestFixture setting axonServerEnabled for integrationEnabled by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4445">#4445</a></p>
+</li>
+<li>
+<p>Replace AxonIQ references with Axoniq by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4471">#4471</a></p>
+</li>
+<li>
+<p>Provide default ResetHandler#handle(ResetContext, ProcessingContext) for EventHandlingComponent by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4350">#4350</a></p>
+</li>
+<li>
+<p>Fix javadocs / warnings in EventSourcing module by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4360">#4360</a></p>
+</li>
+<li>
+<p>Fix warnings in messaging by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4368">#4368</a></p>
+</li>
+<li>
+<p>Add test case for appending multiple events with append condition set by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4478">#4478</a></p>
+</li>
+<li>
+<p>fix(test): disable PostgresqlConfigurationEnhancer in AxonTestFixture to prevent using Postgres db in non-integration tests by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4480">#4480</a></p>
+</li>
+<li>
+<p>Remove unused imports by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4235">#4235</a></p>
+</li>
+<li>
+<p>Update copyright notice for 2026 by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4066">#4066</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_bug_fixes_2"><a class="anchor" href="#_bug_fixes_2"></a>Bug fixes</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>[#3784] Polymorphic @EventSourcedEntity - doesn&#8217;t evolve immutable entities</p>
+</li>
+<li>
+<p>[#3784] Support Polymorphic Sealed Interface Entity Evolution by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/3975">#3975</a></p>
+</li>
+<li>
+<p>[#3853] Setting a callback on a MessageStream which throws an error during callback should result in the stream completing with that error</p>
+</li>
+<li>
+<p>[#3853] Fix exceptions on callback should report error and close MessageStream by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4072">#4072</a></p>
+</li>
+<li>
+<p>[#3855] When a sourcing completes, the callback should be called per MessageStream contract</p>
+</li>
+<li>
+<p>[#3855] Re-Enable callback test on AggregateBasedStorageEngineTestSuite by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4352">#4352</a></p>
+</li>
+<li>
+<p>Make initial callback execution for InMemory engine unconditional by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4176">#4176</a></p>
+</li>
+<li>
+<p>[#3982] fix(test): Event events(@Nonnull List&lt;?&gt;&#8230;&#8203; events) - invalid usage of varargs by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/3984">#3984</a></p>
+</li>
+<li>
+<p>Fix toString in GenericEventMessage by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4000">#4000</a></p>
+</li>
+<li>
+<p>[#4006] AggregateBasedJpaEventStorageEngine should return the max (or latest) token when tokenAt is called with a date in the future</p>
+</li>
+<li>
+<p>Feature/fix token at future date by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4007">#4007</a></p>
+</li>
+<li>
+<p>[#4012] Resolve MessageType for query handlers based on MessageTypeResolver</p>
+</li>
+<li>
+<p>Resolve MessageType for query handlers based on MessageTypeResolver by @CodeDrivenMitch in <a href="https://github.com/AxonIQ/AxonFramework/pull/4012">#4012</a></p>
+</li>
+<li>
+<p>[#4200] DefaultEventStoreTransaction can under some circumstances return a sourced stream without filtering the consistency marker</p>
+</li>
+<li>
+<p>[#4203] When snapshot loading fails (for any reason), fallback to normal loading</p>
+</li>
+<li>
+<p>[#4220] When using EventStore::publish with multiple events, no processing context, and with the default interceptor, events can be published in different order</p>
+</li>
+<li>
+<p>[#4288] Fix token advancement in AggregateBasedJpaEventStorageEngine by @markuseckstein in <a href="https://github.com/AxonIQ/AxonFramework/pull/4290">#4290</a></p>
+</li>
+<li>
+<p>[#4339] AF 5.1.0-RC1 regression: JpaTransactionAutoConfiguration and JdbcTransactionAutoConfiguration break on Spring Boot 4 due to hard class references</p>
+</li>
+<li>
+<p>[#4339] fix(extensions/spring-boot): Spring Boot 4.x support - use afterName in AutoConfiguration classes by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4344">#4344</a></p>
+</li>
+<li>
+<p>[#4340] AF 5.1.0-RC1 regression: circular dependency BoundConfigurationProperties / AxonServerConfiguration on Spring Boot 4</p>
+</li>
+<li>
+<p>[#4340] Break cyclic dependencies in spring autoconfiguration by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4354">#4354</a></p>
+</li>
+<li>
+<p>[#4340] fix(extensions/spring-boot): defer SpringComponentRegistry initialization for infrastructure beans to prevent BoundConfigurationProperties cycle by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4365">#4365</a></p>
+</li>
+<li>
+<p>fix(messaging): prevent StackOverflowError from double LocalConfiguration in module parent chain by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4351">#4351</a></p>
+</li>
+<li>
+<p>[#4355] ConcatenatingMessageStream should ensure it interacts with its first stream before calling isCompleted as this flag may otherwise be out of date</p>
+</li>
+<li>
+<p>[#4355] ConcatenatingMessageStream ensures it interacts with its first stream before calling isCompleted by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4357">#4357</a></p>
+</li>
+<li>
+<p>[#4356] QueueMessageStream should only return true for isCompleted when actually completed</p>
+</li>
+<li>
+<p>[#4366] JpaPollingEventCoordinator daemon thread races against EntityManagerFactory.close() during Spring context shutdown</p>
+</li>
+<li>
+<p>Wait for polling thread to terminate for JPA event storage engine by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4372">#4372</a></p>
+</li>
+<li>
+<p>[#4377] Remove hard dependency on Jackson 3 from autoconfigured JpaTokenStore and JdbcTokenStore</p>
+</li>
+<li>
+<p>Bug/4377/tokenstore autoconfig jackson3 dependency by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4380">#4380</a></p>
+</li>
+<li>
+<p>[#4392] Event Processors Spring Boot properties are not applied</p>
+</li>
+<li>
+<p>[#4392] fix(messaging): consistent EventProcessor module naming by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4393">#4393</a></p>
+</li>
+<li>
+<p>fix(extensions/spring-boot): do not ignore @Namespace annotation on @Component with @EventHandler annotations if the matching EventProcessorDefinition is not present by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4369">#4369</a></p>
+</li>
+<li>
+<p>test(messaging): fix command-threads property test using wrong prefix and weak assertion by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4381">#4381</a></p>
+</li>
+<li>
+<p>Fix test isolation for the ReplayStatusChangedHandlerIT by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4321">#4321</a></p>
+</li>
+<li>
+<p>[#4427] Re-enable Examples build</p>
+</li>
+<li>
+<p>[#4427] Re-enable Examples build by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4447">#4447</a></p>
+</li>
+<li>
+<p>[#4437] Fix consistency marker when sourcing an empty stream in the AggregateBasedJpaEventStorageEngine by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4454">#4454</a></p>
+</li>
+<li>
+<p>[#4455] NullPointerException in <code>AbstractMessageStream.next()</code> - <code>FetchResult.Value(@Nullable)</code> + <code>Optional.of()</code> crash PooledStreamingEventProcessors</p>
+</li>
+<li>
+<p>[#4455] Support a null <code>MessageStream.Entry</code> on the <code>AbstractMessageStream.FetchResult</code> by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4457">#4457</a></p>
+</li>
+<li>
+<p>[#4450] Order JdbcAutoConfiguration correctly for Datasource by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4451">#4451</a></p>
+</li>
+<li>
+<p>Ensure UnitOfWork recorded cause on runErrorHandlers is set by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4435">#4435</a></p>
+</li>
+<li>
+<p>Fix flakey test in AbstractSubscriptionQueryTestSuite by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4433">#4433</a></p>
+</li>
+<li>
+<p>Possible fix for CI flakyness problem by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4481">#4481</a></p>
+</li>
+<li>
+<p>Reintroduce Getting Started AI-specific files by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4268">#4268</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_documentation_2"><a class="anchor" href="#_documentation_2"></a>Documentation</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>[#3311] Construct a migration guide for Axon Framework 5</p>
+</li>
+<li>
+<p>[#3961] Rework Documentation to align with AF5 API</p>
+</li>
+<li>
+<p>[#3961] Rework Documentation to align with AF5 API by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4074">#4074</a></p>
+</li>
+<li>
+<p>[#4030] Add documentation explaining application startup event</p>
+</li>
+<li>
+<p>Add documentation explaining application startup event by @corradom in <a href="https://github.com/AxonIQ/AxonFramework/pull/4284">#4284</a></p>
+</li>
+<li>
+<p>[#4059] Explain use of @EventTag annotation in event-dispatchers.adoc</p>
+</li>
+<li>
+<p>[#4059] Reference DCB/EventTag in for event dispatchers by @jangalinski in <a href="https://github.com/AxonIQ/AxonFramework/pull/4064">#4064</a></p>
+</li>
+<li>
+<p>[#4092] Migration path - Configuration and Configurer Modules in AF5</p>
+</li>
+<li>
+<p>[#4092] Introduce Configuration migration path by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4353">#4353</a></p>
+</li>
+<li>
+<p>[#4095] Rewrite Tuning section to comply with AF5 API</p>
+</li>
+<li>
+<p>[#4325] Migration path - Snapshotting</p>
+</li>
+<li>
+<p>[#4414] Add note on Converter/Serializer Documentation</p>
+</li>
+<li>
+<p>Updated documentation for dispatching of Commands, Events and Queries by @abuijze in <a href="https://github.com/AxonIQ/AxonFramework/pull/3939">#3939</a></p>
+</li>
+<li>
+<p>Documentation for command handlers by @abuijze in <a href="https://github.com/AxonIQ/AxonFramework/pull/3946">#3946</a></p>
+</li>
+<li>
+<p>Migrated documentation for query handlers by @abuijze in <a href="https://github.com/AxonIQ/AxonFramework/pull/3963">#3963</a></p>
+</li>
+<li>
+<p>Migrated messaging concepts section to Axon 5 style by @abuijze in <a href="https://github.com/AxonIQ/AxonFramework/pull/3967">#3967</a></p>
+</li>
+<li>
+<p>Migrated event handling documentation by @abuijze in <a href="https://github.com/AxonIQ/AxonFramework/pull/3974">#3974</a></p>
+</li>
+<li>
+<p>docs: update modules structure and platform branding by @abuijze in <a href="https://github.com/AxonIQ/AxonFramework/pull/3960">#3960</a></p>
+</li>
+<li>
+<p>Doc/doc migration conversion by @abuijze in <a href="https://github.com/AxonIQ/AxonFramework/pull/3954">#3954</a></p>
+</li>
+<li>
+<p>Rewrote documentation about test fixtures by @abuijze in <a href="https://github.com/AxonIQ/AxonFramework/pull/3991">#3991</a></p>
+</li>
+<li>
+<p>Fix documentation for EventStoreTransaction methods by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/3983">#3983</a></p>
+</li>
+<li>
+<p>docs(af5-getting-started): Update Axon Framework version to 5.0.1 by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/3987">#3987</a></p>
+</li>
+<li>
+<p>docs(messaging): clarify that @Timestamp annotation is required to inject event timestamp in @EventHandler and @EventSourcingHandler annotations by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4106">#4106</a></p>
+</li>
+<li>
+<p>[#3517] docs(reference-guide): update DLQ docs for Axon Framework 5 by @MateuszNaKodach in <a href="https://github.com/AxonIQ/AxonFramework/pull/4292">#4292</a></p>
+</li>
+<li>
+<p>Introduce the base migration guide by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4075">#4075</a></p>
+</li>
+<li>
+<p>Mark documentation as pre-release for development branch by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4103">#4103</a></p>
+</li>
+<li>
+<p>[#3105] Add snapshot documentation by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4298">#4298</a></p>
+</li>
+<li>
+<p>Add reference documentation for inline message payload conversion by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4316">#4316</a></p>
+</li>
+<li>
+<p>Improvements for queries documentation in the reference guide by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4322">#4322</a></p>
+</li>
+<li>
+<p>Improve Javadoc on QueryUpdateEmitter by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4327">#4327</a></p>
+</li>
+<li>
+<p>Doc typo - refer to Event schedulers instead of Deadlines by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4310">#4310</a></p>
+</li>
+<li>
+<p>Add missing author and since tags by @hjohn in <a href="https://github.com/AxonIQ/AxonFramework/pull/4371">#4371</a></p>
+</li>
+<li>
+<p>Add a module overview diagram to the Axon Framework Documentation by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4386">#4386</a></p>
+</li>
+<li>
+<p>Color-code the module overview in the reference by @hatzlj in <a href="https://github.com/AxonIQ/AxonFramework/pull/4387">#4387</a></p>
+</li>
+<li>
+<p>Repository Transfer notice by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4415">#4415</a></p>
+</li>
+<li>
+<p>Remove image link about AxonIQ Console by @smcvb in <a href="https://github.com/AxonIQ/AxonFramework/pull/4421">#4421</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_contributors_2"><a class="anchor" href="#_contributors_2"></a>Contributors</h3>
+<div class="paragraph">
+<p>We&#8217;d like to thank all the contributors who worked on this release!</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/abuijze">@abuijze</a></p>
+</li>
+<li>
+<p><a href="https://github.com/CodeDrivenMitch">@CodeDrivenMitch</a></p>
+</li>
+<li>
+<p><a href="https://github.com/corradom">@corradom</a></p>
+</li>
+<li>
+<p><a href="https://github.com/dilgerma">@dilgerma</a></p>
+</li>
+<li>
+<p><a href="https://github.com/hatzlj">@hatzlj</a></p>
+</li>
+<li>
+<p><a href="https://github.com/hjohn">@hjohn</a></p>
+</li>
+<li>
+<p><a href="https://github.com/jangalinski">@jangalinski</a></p>
+</li>
+<li>
+<p><a href="https://github.com/Kirboyyy">@Kirboyyy</a></p>
+</li>
+<li>
+<p><a href="https://github.com/markuseckstein">@markuseckstein</a></p>
+</li>
+<li>
+<p><a href="https://github.com/masaha03">@masaha03</a></p>
+</li>
+<li>
+<p><a href="https://github.com/MateuszNaKodach">@MateuszNaKodach</a></p>
+</li>
+<li>
+<p><a href="https://github.com/Sam-Kruglov">@Sam-Kruglov</a></p>
+</li>
+<li>
+<p><a href="https://github.com/smcvb">@smcvb</a></p>
+</li>
+<li>
+<p><a href="https://github.com/stefanmirkovic">@stefanmirkovic</a></p>
+</li>
+<li>
+<p><a href="https://github.com/theoema">@theoema</a></p>
+</li>
+<li>
+<p><a href="https://github.com/vcanuel">@vcanuel</a></p>
+</li>
+<li>
+<p><a href="https://github.com/zambrovski">@zambrovski</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="release_5_0"><a class="anchor" href="#release_5_0"></a>Release 5.0</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework 5 is finally here!
+The list below contains all the features, enhancements, bugs, and documentation changes we&#8217;ve done since the <strong>start</strong> of development of Axon Framework 5. Hence, the list includes changes made in all milestones and release candidates, to be as complete as possible.</p>
+</div>
+<div class="paragraph">
+<p>For those looking to start with Axon Framework 5, we recommend you go through the [Getting Started](<a href="https://docs.axoniq.io/axon-framework-5-getting-started/" class="bare">https://docs.axoniq.io/axon-framework-5-getting-started/</a>) section of Axoniq Docs.
+If you have an Axon Framework 4 background, for example because you are looking to migrate an Axon Framework 4 application to Axon Framework 5, note that thorough migration tooling will follow in release 5.1.0 (please follow [this issue](<a href="https://github.com/AxonFramework/AxonFramework/issues/3195" class="bare">https://github.com/AxonFramework/AxonFramework/issues/3195</a>) when curious).
+If you want to give a manual migration a go, we strongly recommend that you check out the <code>/axon-5/api-changes/</code> <a href="https://github.com/AxonFramework/AxonFramework/blob/main/axon-5/api-changes/index.md">directory</a> present in the Axon Framework project.
+Although the <code>api-changes/</code> files are not strictly the migration guide, we will use them as the basis to form our future migration guide and documentation.</p>
+</div>
+<div class="paragraph">
+<p>Given the shear amount of changes, we recommend checking out the full change list <a href="https://github.com/AxonFramework/AxonFramework/releases/tag/axon-5.0.0">here</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_contributors_3"><a class="anchor" href="#_contributors_3"></a>Contributors</h3>
+<div class="paragraph">
+<p>We&#8217;d like to thank all the contributors who worked on this release!</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/abuijze">@abuijze</a></p>
+</li>
+<li>
+<p><a href="https://github.com/CodeDrivenMitch">@CodeDrivenMitch</a></p>
+</li>
+<li>
+<p><a href="https://github.com/gklijs">@gklijs</a></p>
+</li>
+<li>
+<p><a href="https://github.com/hjohn">@hjohn</a></p>
+</li>
+<li>
+<p><a href="https://github.com/jangalinski">@jangalinski</a></p>
+</li>
+<li>
+<p><a href="https://github.com/m1l4n54v1c">@m1l4n54v1c</a></p>
+</li>
+<li>
+<p><a href="https://github.com/MateuszNaKodach">@MateuszNaKodach</a></p>
+</li>
+<li>
+<p><a href="https://github.com/nordicthings">@nordicthings</a></p>
+</li>
+<li>
+<p><a href="https://github.com/mnegacz">@mnegacz</a></p>
+</li>
+<li>
+<p><a href="https://github.com/rubenahrens">@rubenahrens</a></p>
+</li>
+<li>
+<p><a href="https://github.com/saratry">@saratry</a></p>
+</li>
+<li>
+<p><a href="https://github.com/smcvb">@smcvb</a></p>
+</li>
+<li>
+<p><a href="https://github.com/TeraSeo">@TeraSeo</a></p>
+</li>
+<li>
+<p><a href="https://github.com/trimoq">@trimoq</a></p>
+</li>
+<li>
+<p><a href="https://github.com/zambrovski">@zambrovski</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../">Release Notes</a></span>
+  <span class="next"><a href="../minor-releases/">Minor Releases</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

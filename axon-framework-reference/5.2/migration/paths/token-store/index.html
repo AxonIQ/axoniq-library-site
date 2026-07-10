@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Token Store Migration</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.2/migration/paths/token-store/">
+    <link rel="prev" href="../sequencing-policies/">
+    <link rel="next" href="../upcasters/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../../_'</script>
+
+
+<link rel="icon" href="../../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../../">Axon Framework Reference</a></li>
+    <li><a href="../../">Migration Guide</a></li>
+    <li><a href="../">Migration Paths</a></li>
+    <li><a href="./">Token Store</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonIQ/AxonFramework/edit/axon-5.2.x/docs/reference-guide/modules/migration/pages/paths/token-store.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Token%20Store%20Migration" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Token%20Store%20Migration%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BToken%20Store%20Migration%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.2%2Fmigration%2Fpaths%2Ftoken-store%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.2</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../../development/migration/paths/token-store/">development</a>
+    <a class="version item is-current" href="./">5.2</a>
+    <a class="version item is-missing" href="../../../../5.1/">5.1</a>
+    <a class="version item is-missing" href="../../../../5.0/">5.0</a>
+    <a class="version item is-missing" href="../../../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.2">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="./">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../message-transformation/"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../message-transformation/defining-transformations/">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../message-transformation/configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../message-transformation/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Token Store Migration</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework 5 adds a <code>mask</code> column to the token store table used by streaming event processors.
+This column is required: without it, the framework cannot start.
+If you are migrating from Axon Framework 4, the existing schema must be updated and the column must be populated with correct values.</p>
+</div>
+<div class="paragraph">
+<p>Alongside this schema change, the tracking token classes moved to a new package, so the class names stored in existing token data also need attention.
+See <a href="#token-class-names">Token class names</a> for what that means and when you need to act.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_understanding_the_mask_column"><a class="anchor" href="#_understanding_the_mask_column"></a>Understanding the mask column</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Streaming event processors divide the event stream into <a href="../../../events/event-processors/streaming/" class="xref page">segments</a>.
+Each row in the token store represents one segment for a given processor.
+In Axon Framework 5, a <code>mask</code> column is stored alongside the <code>segment</code> column.</p>
+</div>
+<div class="paragraph">
+<p>The mask is a bitmask that, together with the segment ID, determines which events that segment processes.
+It is derived from how many times the root segment has been split and changes whenever the processor scales up or down.</p>
+</div>
+<div class="paragraph">
+<p>For a processor with four equal-size segments, the token store contains:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><code>processorName</code></th>
+<th class="tableblock halign-left valign-top"><code>segment</code></th>
+<th class="tableblock halign-left valign-top"><code>mask</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>inventory-projection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>inventory-projection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>inventory-projection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>inventory-projection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>For a processor with two segments:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><code>processorName</code></th>
+<th class="tableblock halign-left valign-top"><code>segment</code></th>
+<th class="tableblock halign-left valign-top"><code>mask</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>inventory-projection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>inventory-projection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The non-trivial case is when the number of segments is not a power of two.
+A processor that started with two segments and then had one of them split produces three segments:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><code>processorName</code></th>
+<th class="tableblock halign-left valign-top"><code>segment</code></th>
+<th class="tableblock halign-left valign-top"><code>mask</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>inventory-projection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>inventory-projection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>inventory-projection</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Segments <code>0</code> and <code>2</code> (the split pair) have mask <code>3</code>, while segment <code>1</code> (which was never split) retains mask <code>1</code>.
+The correct mask for each segment can be determined unambiguously from the complete set of segment IDs for that processor, but not from any individual segment ID in isolation.
+This is what makes the migration non-trivial: you must read all segment IDs for a processor together and compute their masks as a group.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_choosing_a_migration_strategy"><a class="anchor" href="#_choosing_a_migration_strategy"></a>Choosing a migration strategy</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Three strategies are available. Choose based on your constraints:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 50%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Strategy</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Downtime</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#option-1-scale-to-a-single-segment">Scale to single segment</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale all processors to one segment before migrating. The mask is trivially <code>0</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Brief outage</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#option-2-reset-processors-to-latest">Reset processors to latest</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete all token entries and let Axon Framework 5 create them fresh at the latest position.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Brief outage</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#option-3-programmatic-mask-migration">Programmatic mask migration</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Compute and set the correct mask for every existing token entry.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Zero downtime possible</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="option-1-scale-to-a-single-segment"><a class="anchor" href="#option-1-scale-to-a-single-segment"></a>Option 1: Scale to a single segment</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is the simplest strategy.
+Before the schema change, scale every processor down to a single segment.
+The single remaining segment is always the root segment (segment ID <code>0</code>, mask <code>0</code>), where both segment ID and mask are <code>0</code>.
+The SQL migration is a single <code>ALTER TABLE</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Steps:</strong></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Scale all event processors to a single segment by repeatedly merging segments until only segment <code>0</code> remains.
+See <a href="../../../events/event-processors/streaming/#splitting_and_merging_segments" class="xref page">Splitting and merging segments</a> for how to trigger a merge.</p>
+</li>
+<li>
+<p>Shut down the application.</p>
+</li>
+<li>
+<p>Apply the schema change:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">ALTER TABLE token_entry ADD COLUMN mask INTEGER NOT NULL DEFAULT 0;</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Upgrade to Axon Framework 5 and restart.</p>
+</li>
+<li>
+<p>Scale the processors back up to the desired number of segments.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>After merging down to a single segment, every processor has exactly one row with <code>segment = 0</code>.
+The root segment always has both segment ID and mask equal to <code>0</code>, so the default of <code>0</code> is correct.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="option-2-reset-processors-to-latest"><a class="anchor" href="#option-2-reset-processors-to-latest"></a>Option 2: Reset processors to latest</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If scaling processors down first is impractical, you can delete the existing token entries and let Axon Framework 5 reinitialize them at the latest position in the event stream.
+No mask computation is needed because the framework creates the new entries with correct mask values.</p>
+</div>
+<div class="paragraph">
+<p>For this to be safe, the processors must be fully caught up before the restart, so that no events are missed when they reinitialize at the latest position.</p>
+</div>
+<div class="paragraph">
+<p><strong>Steps:</strong></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Halt all writes to the application so that no new events are produced.</p>
+</li>
+<li>
+<p>Wait for all event processors to catch up to the latest position in the event stream.</p>
+</li>
+<li>
+<p>Shut down the application.</p>
+</li>
+<li>
+<p>Add the <code>mask</code> column and delete all existing token entries:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">ALTER TABLE token_entry ADD COLUMN mask INTEGER NOT NULL DEFAULT 0;
+DELETE FROM token_entry;</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Configure the processors to start at the latest position when no token entry exists, using <code>LatestTrackingToken</code>.
+Refer to <a href="../../../events/event-processors/streaming/" class="xref page">Streaming Event Processor</a> for the initial token configuration.</p>
+</li>
+<li>
+<p>Upgrade to Axon Framework 5 and restart.
+The processors find no existing tokens, initialize at the latest position, and create fresh entries with the correct mask values.</p>
+</li>
+<li>
+<p>Re-enable writes.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Events that arrive between step 1 (halting writes) and step 7 (re-enabling writes) are not processed by the reset processors, because they initialize at the latest position that existed at startup time.
+After writes are re-enabled, the processors continue from that point forward.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="option-3-programmatic-mask-migration"><a class="anchor" href="#option-3-programmatic-mask-migration"></a>Option 3: Programmatic mask migration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This option computes the correct mask for every existing token entry and updates the table in place.
+It can run while the application is offline or be integrated into a schema migration tool such as <a href="#flyway-java-migration">Flyway</a> or <a href="#liquibase">Liquibase</a>.
+No scaling or token deletion is required.</p>
+</div>
+<div class="paragraph">
+<p>The mask computation mirrors the split logic of
+<code>org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment</code>.
+Given the full set of segment IDs for a processor, the algorithm reconstructs the segment hierarchy by
+simulating splits from the root and identifies the mask for each leaf segment.</p>
+</div>
+<div class="sect2">
+<h3 id="_add_the_column"><a class="anchor" href="#_add_the_column"></a>Add the column</h3>
+<div class="paragraph">
+<p>First, add the <code>mask</code> column as nullable so existing rows are not immediately rejected:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">ALTER TABLE token_entry ADD COLUMN mask INTEGER;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="flyway-java-migration"><a class="anchor" href="#flyway-java-migration"></a>Flyway Java migration</h3>
+<div class="paragraph">
+<p>Add a versioned Flyway Java migration that reads the segment IDs, computes the masks, and writes them back:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.flywaydb.core.api.migration.BaseJavaMigration;
+import org.flywaydb.core.api.migration.Context;
+
+import java.sql.*;
+import java.util.*;
+
+public class V2__PopulateTokenStoreMask extends BaseJavaMigration {
+
+    @Override
+    public void migrate(Context context) throws Exception {
+        Connection conn = context.getConnection();
+        Map&lt;String, List&lt;Integer&gt;&gt; segmentsByProcessor = readSegments(conn);
+        updateMasks(conn, segmentsByProcessor);
+    }
+
+    private Map&lt;String, List&lt;Integer&gt;&gt; readSegments(Connection conn) throws SQLException {
+        Map&lt;String, List&lt;Integer&gt;&gt; result = new LinkedHashMap&lt;&gt;();
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "SELECT processorName, segment FROM token_entry ORDER BY processorName, segment");
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                result.computeIfAbsent(rs.getString("processorName"), k -&gt; new ArrayList&lt;&gt;())
+                      .add(rs.getInt("segment"));
+            }
+        }
+        return result;
+    }
+
+    private void updateMasks(Connection conn,
+                             Map&lt;String, List&lt;Integer&gt;&gt; segmentsByProcessor) throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "UPDATE token_entry SET mask = ? WHERE processorName = ? AND segment = ?")) {
+            for (Map.Entry&lt;String, List&lt;Integer&gt;&gt; entry : segmentsByProcessor.entrySet()) {
+                String processorName = entry.getKey();
+                int[] ids = entry.getValue().stream().mapToInt(Integer::intValue).toArray();
+                for (SegmentInfo seg : computeSegments(ids)) {
+                    stmt.setInt(1, seg.mask());
+                    stmt.setString(2, processorName);
+                    stmt.setInt(3, seg.segmentId());
+                    stmt.addBatch();
+                }
+            }
+            stmt.executeBatch();
+        }
+    }
+
+    private static List&lt;SegmentInfo&gt; computeSegments(int[] segmentIds) {
+        if (segmentIds.length == 0) {
+            return List.of();
+        }
+        List&lt;Integer&gt; ids = Arrays.stream(segmentIds).boxed().toList();
+        Set&lt;SegmentInfo&gt; result = new HashSet&lt;&gt;();
+        computeSegments(new SegmentInfo(0, 0), ids, result);
+        return result.stream()
+                     .sorted(Comparator.comparingInt(SegmentInfo::segmentId))
+                     .toList();
+    }
+
+    private static void computeSegments(SegmentInfo current, List&lt;Integer&gt; segmentIds,
+                                        Set&lt;SegmentInfo&gt; result) {
+        int newMask = (current.mask() &lt;&lt; 1) | 1;
+        int sibling = current.segmentId() + (current.mask() == 0 ? 1 : newMask ^ current.mask());
+        if (segmentIds.contains(sibling)) {
+            computeSegments(new SegmentInfo(current.segmentId(), newMask), segmentIds, result);
+            computeSegments(new SegmentInfo(sibling, newMask), segmentIds, result);
+        } else {
+            result.add(current);
+        }
+    }
+
+    private record SegmentInfo(int segmentId, int mask) {}
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_apply_the_not_null_constraint"><a class="anchor" href="#_apply_the_not_null_constraint"></a>Apply the <code>NOT NULL</code> constraint</h3>
+<div class="paragraph">
+<p>Once the migration has run successfully, enforce the constraint:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">-- PostgreSQL
+ALTER TABLE token_entry ALTER COLUMN mask SET NOT NULL;
+
+-- MySQL / MariaDB
+ALTER TABLE token_entry MODIFY COLUMN mask INTEGER NOT NULL;
+
+-- SQL Server
+ALTER TABLE token_entry ALTER COLUMN mask INTEGER NOT NULL;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="liquibase"><a class="anchor" href="#liquibase"></a>Liquibase</h3>
+<div class="paragraph">
+<p>For Liquibase, extract the <code>computeSegments</code> logic above into a helper class and invoke it from a
+<code>CustomTaskChange</code> implementation.
+Use a <code>&lt;changeSet&gt;</code> to add the nullable column first, then call the custom change to populate it, and finally apply the <code>NOT NULL</code> constraint in a third changeset.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_table_and_column_names"><a class="anchor" href="#_table_and_column_names"></a>Table and column names</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The SQL examples above use the default JDBC token store column names.
+Adjust them to match your actual configuration:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Store type</th>
+<th class="tableblock halign-left valign-top">Default table name</th>
+<th class="tableblock halign-left valign-top">Column names</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JPA with Spring Boot (<code>SpringPhysicalNamingStrategy</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>token_entry</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>processor_name</code>, <code>segment</code>, <code>mask</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JDBC (<code>TokenSchema</code> defaults)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TokenEntry</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>processorName</code>, <code>segment</code>, <code>mask</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>JPA column names depend on the Hibernate physical naming strategy configured in your application.
+Spring Boot&#8217;s default <code>SpringPhysicalNamingStrategy</code> converts camelCase field names to snake_case.
+Using <code>PhysicalNamingStrategyStandardImpl</code> keeps them as-is.
+Check your persistence configuration to confirm the exact column names in your database before running any migration script.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="token-class-names"><a class="anchor" href="#token-class-names"></a>Token class names</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Between Axon Framework 4 and Axon Framework 5 the tracking token classes moved to a new package.
+A token store written by Axon Framework 4 records the old class names, for example <code>org.axonframework.eventhandling.GlobalSequenceTrackingToken</code>.
+The name appears in the token type column, and for tokens that wrap other tokens it also appears inside the serialized token.
+Whether you need to act depends on how those tokens were serialized.</p>
+</div>
+<div class="sect2">
+<h3 id="_jackson_json_stores"><a class="anchor" href="#_jackson_json_stores"></a>Jackson (JSON) stores</h3>
+<div class="paragraph">
+<p>If your Axon Framework 4 application serialized its tokens with Jackson, no action is required, as long as Axon Framework 5 reads them with a Jackson-based converter (the default).
+This applies to both the Jackson 3 and the Jackson 2 converter.
+Axon Framework 5 recognizes the old class names when reading a token and maps them to the new classes.
+The first time each token is updated it is stored under the new name, so the store migrates itself as the processors run.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_xstream_stores"><a class="anchor" href="#_xstream_stores"></a>XStream stores</h3>
+<div class="paragraph">
+<p>Axon Framework 5 does not include XStream, so it cannot read tokens serialized with the removed <code>XStreamSerializer</code>.
+See the <a href="../serializers/" class="xref page">Serializer Migration</a> for the background on that removal.
+A token only records the position a streaming event processor has reached, so these tokens can be regenerated.
+The simplest option is to <a href="#option-2-reset-processors-to-latest">reset the processors to latest</a> and let them rebuild.</p>
+</div>
+<div class="paragraph">
+<p>If a full replay is not acceptable, re-serialize the tokens to JSON while still on Axon Framework 4, before upgrading.
+Run the following for each token entry, reading the stored token with the serializer your Axon Framework 4 application already uses and writing it back with Jackson:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Serializer xStreamSerializer = /* the serializer your Axon 4 application is configured with */;
+Serializer jacksonSerializer = JacksonSerializer.defaultSerializer();
+
+// tokenColumn and tokenTypeColumn hold the current values of the token entry
+SerializedObject&lt;byte[]&gt; stored =
+        new SimpleSerializedObject&lt;&gt;(tokenColumn, byte[].class, tokenTypeColumn, null);
+TrackingToken token = xStreamSerializer.deserialize(stored);
+
+SerializedObject&lt;byte[]&gt; jsonToken = jacksonSerializer.serialize(token, byte[].class);
+// store jsonToken.getData() back in the token column</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Only the token column changes to JSON.
+The token type column can keep the old class name, because Axon Framework 5 maps it on read.
+After this, upgrade and apply the mask migration above.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="replay-tokens"><a class="anchor" href="#replay-tokens"></a>Replay tokens</h3>
+<div class="paragraph">
+<p>Replay tokens are not migrated automatically, because their format changed between versions beyond the class name.
+Axon Framework 4 named the reset context field <code>context</code>, and Axon Framework 5 renamed it to <code>resetContext</code> and changed its type.
+A replay token only exists while a processor is replaying, so complete any replay in progress before upgrading, or reset the affected processors.</p>
+</div>
+</div>
+<div class="sect2 axoniq-feature">
+<h3 id="_multi_source_tokens"><a class="anchor" href="#_multi_source_tokens"></a>Multi-source tokens</h3>
+<div class="paragraph">
+<p>Reading from more than one event source, and its <code>MultiSourceTrackingToken</code>, is part of the Axoniq Framework rather than Axon Framework 5 itself.
+When you use Axoniq Framework, these tokens are recognized and read after upgrading, in the same way as the tokens above.
+The exception is a token captured while one of its sources was replaying, because it contains a replay token, which cannot be migrated for the reason described under <a href="#replay-tokens">Replay tokens</a>. Reset those processors instead.</p>
+</div>
+<div class="paragraph">
+<p>On Axon Framework 5 without the Axoniq Framework there is no multi-source support, so reset the affected processors to rebuild their position, as described in <a href="#option-2-reset-processors-to-latest">reset the processors to latest</a>.</p>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../sequencing-policies/">Sequencing Policy Migration</a></span>
+  <span class="next"><a href="../upcasters/"><span class="advanced-framework">Upcaster Migration</span></a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../../_/js/site.js" data-ui-root-path="../../../../../_"></script>
+<script async src="../../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../../.." data-snippet-length="100" data-stylesheet="../../../../../_/css/search.css"></script>
+<script async src="../../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

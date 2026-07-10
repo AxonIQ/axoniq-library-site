@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Component Message Intercepting</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.2/messaging-concepts/component-message-intercepting/">
+    <link rel="prev" href="../message-correlation/">
+    <link rel="next" href="../exception-handling/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Messaging Concepts</a></li>
+    <li><a href="./">Component Message Intercepting</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonIQ/AxonFramework/edit/axon-5.2.x/docs/reference-guide/modules/messaging-concepts/pages/component-message-intercepting.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Component%20Message%20Intercepting" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Component%20Message%20Intercepting%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BComponent%20Message%20Intercepting%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.2%2Fmessaging-concepts%2Fcomponent-message-intercepting%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.2</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/messaging-concepts/component-message-intercepting/">development</a>
+    <a class="version item is-current" href="./">5.2</a>
+    <a class="version item" href="../../../5.1/messaging-concepts/component-message-intercepting/">5.1</a>
+    <a class="version item" href="../../../5.0/messaging-concepts/component-message-intercepting/">5.0</a>
+    <a class="version item is-missing" href="../../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.2">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../message-transformation/"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/defining-transformations/">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Component Message Intercepting</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Component-level interceptors apply cross-cutting behavior within a single handling component instance.
+They complement bus-level interceptors, which apply globally to all messages on a bus, by targeting only the handlers within a specific component.
+Axon Framework supports two approaches: annotated interceptor methods placed directly on the component class, and declarative interceptors registered during module configuration.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="command-handler-interceptor-annotation"><a class="anchor" href="#command-handler-interceptor-annotation"></a><code>@CommandHandlerInterceptor</code> annotation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Annotated interceptors are methods placed on a handling component class and marked with one of the interceptor annotations.
+The framework invokes these methods around the regular handler methods on the same component instance.</p>
+</div>
+<div class="paragraph">
+<p>Two styles are supported:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Before-interceptor</strong>: a <code>void</code> method with no <code>MessageHandlerInterceptorChain</code> parameter.
+The framework runs the method before the handler and automatically proceeds the chain after the method returns normally.
+If the interceptor throws, the handler is not invoked.</p>
+</li>
+<li>
+<p><strong>Surround-interceptor</strong>: a method that returns <code>MessageStream&lt;?&gt;</code> and declares a <code>MessageHandlerInterceptorChain&lt;M&gt;</code> parameter.
+The method controls whether and when to call <code>chain.proceed(message, context)</code>.
+It can short-circuit processing entirely by returning without calling proceed, or by returning <code>MessageStream.failed(&#8230;&#8203;)</code>.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_commandhandlerinterceptor"><a class="anchor" href="#_commandhandlerinterceptor"></a><code>@CommandHandlerInterceptor</code></h3>
+<div class="paragraph">
+<p>The <code>@CommandHandlerInterceptor</code> annotation marks a method as an interceptor for command handlers on the same component.
+It is a specialization of <code>@MessageHandlerInterceptor</code> scoped to <code>CommandMessage</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Before-interceptor (logging all commands):</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandlerInterceptor;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+
+public class OrderCommandHandler {
+
+    @CommandHandlerInterceptor
+    void logCommand(CommandMessage command) {
+        log.info("Handling command: {}", command.qualifiedName());
+    }
+
+    @CommandHandler
+    void handle(PlaceOrderCommand command, ProcessingContext context) {
+        // Handle the command
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Surround-interceptor (authorization check):</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+
+public class OrderCommandHandler {
+
+    @CommandHandlerInterceptor
+    MessageStream&lt;?&gt; authorize(
+            CommandMessage command,
+            MessageHandlerInterceptorChain&lt;CommandMessage&gt; chain,
+            ProcessingContext context
+    ) {
+        if (!securityContext.isAuthorized(command)) {
+            return MessageStream.failed(new AccessDeniedException("Not authorized"));
+        }
+        return chain.proceed(command, context);
+    }
+
+    @CommandHandler
+    void handle(PlaceOrderCommand command, ProcessingContext context) {
+        // Handle the command
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_eventhandlerinterceptor"><a class="anchor" href="#_eventhandlerinterceptor"></a><code>@EventHandlerInterceptor</code></h3>
+<div class="paragraph">
+<p>The <code>@EventHandlerInterceptor</code> annotation marks a method as an interceptor for event handlers on the same component.
+It is a specialization of <code>@MessageHandlerInterceptor</code> scoped to <code>EventMessage</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Before-interceptor (tracing):</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+
+public class CardSummaryProjection {
+
+    @EventHandlerInterceptor
+    void trace(EventMessage event) {
+        tracer.startSpan(event.qualifiedName());
+    }
+
+    @EventHandler
+    void on(CardIssuedEvent event, ProcessingContext context) {
+        // Handle event
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Surround-interceptor (conditional processing):</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+
+public class CardSummaryProjection {
+
+    @EventHandlerInterceptor
+    MessageStream&lt;?&gt; filterByTenant(
+            EventMessage event,
+            MessageHandlerInterceptorChain&lt;EventMessage&gt; chain,
+            ProcessingContext context
+    ) {
+        if (!tenantId.equals(event.metadata().get("tenantId"))) {
+            return MessageStream.empty();
+        }
+        return chain.proceed(event, context);
+    }
+
+    @EventHandler
+    void on(CardIssuedEvent event, ProcessingContext context) {
+        // Handle event
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_queryhandlerinterceptor"><a class="anchor" href="#_queryhandlerinterceptor"></a><code>@QueryHandlerInterceptor</code></h3>
+<div class="paragraph">
+<p>The <code>@QueryHandlerInterceptor</code> annotation marks a method as an interceptor for query handlers on the same component.
+It is a specialization of <code>@MessageHandlerInterceptor</code> scoped to <code>QueryMessage</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Before-interceptor (access logging):</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.annotation.QueryHandlerInterceptor;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
+
+public class CourseQueryHandler {
+
+    @QueryHandlerInterceptor
+    void auditQuery(QueryMessage query) {
+        auditLog.record(query.qualifiedName(), securityContext.currentUser());
+    }
+
+    @QueryHandler
+    CourseView handle(FindCourseQuery query, ProcessingContext context) {
+        // Handle the query
+        return null;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Surround-interceptor (tenant authorization):</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.annotation.QueryHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+
+public class CourseQueryHandler {
+
+    @QueryHandlerInterceptor
+    MessageStream&lt;?&gt; checkTenant(
+            QueryMessage query,
+            MessageHandlerInterceptorChain&lt;QueryMessage&gt; chain,
+            ProcessingContext context
+    ) {
+        if (!tenantId.equals(query.metadata().get("tenantId"))) {
+            return MessageStream.failed(new AccessDeniedException("Wrong tenant"));
+        }
+        return chain.proceed(query, context);
+    }
+
+    @QueryHandler
+    CourseView handle(FindCourseQuery query, ProcessingContext context) {
+        // Handle the query
+        return null;
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_generic_messagehandlerinterceptor"><a class="anchor" href="#_generic_messagehandlerinterceptor"></a>Generic <code>@MessageHandlerInterceptor</code></h3>
+<div class="paragraph">
+<p>The base <code>@MessageHandlerInterceptor</code> annotation is available when you need to cover multiple message types or want to use the annotation directly.
+Specify the <code>messageType</code> attribute to limit the interceptor to a particular message type.
+Omitting <code>messageType</code> defaults to matching any <code>Message</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Intercepting all messages on a component:</strong></p>
+</div>
+<div class="paragraph">
+<p>Omitting <code>messageType</code> matches any message, so the interceptor runs before every handler on the component, including event handlers and query handlers.
+This is useful for cross-cutting concerns such as logging or security checks that should apply regardless of the message type being processed.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptor;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
+
+public class CardSummaryProjection {
+
+    @MessageHandlerInterceptor
+    void interceptAll(Message message) {
+        // Runs before every @EventHandler and @QueryHandler on this component
+    }
+
+    @EventHandler
+    void on(CardIssuedEvent event, ProcessingContext context) {
+        // Handle event
+    }
+
+    @QueryHandler
+    CardSummaryView handle(FindCardSummaryQuery query, ProcessingContext context) {
+        // Handle query
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Surround-interceptor using the base annotation:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+
+public class CourseQueryHandler {
+
+    @MessageHandlerInterceptor(messageType = QueryMessage.class)
+    MessageStream&lt;?&gt; intercept(
+            QueryMessage query,
+            MessageHandlerInterceptorChain&lt;QueryMessage&gt; chain,
+            ProcessingContext context
+    ) {
+        // Logic before handling
+        MessageStream&lt;?&gt; result = chain.proceed(query, context);
+        // Logic after handling (if needed, chain the stream)
+        return result;
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_declarative_interceptors"><a class="anchor" href="#_declarative_interceptors"></a>Declarative interceptors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Declarative interceptors are registered at module configuration time rather than by annotating methods on the component class.
+This is useful when an interceptor is implemented as a standalone class, when the same interceptor must apply uniformly across an entire module, or when you want to keep cross-cutting logic separate from handler classes.</p>
+</div>
+<div class="paragraph">
+<p>Each module configuration API provides an <code>intercepted</code> method that accepts a <code>ComponentBuilder</code> for the interceptor.
+Multiple calls to <code>intercepted</code> accumulate interceptors in registration order.</p>
+</div>
+<div class="sect2">
+<h3 id="_command_interceptors"><a class="anchor" href="#_command_interceptors"></a>Command interceptors</h3>
+<div class="paragraph">
+<p>Use <code>CommandHandlingModule.CommandHandlerPhase.intercepted()</code> to register an interceptor for the command handling component assembled by a module.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.core.MessageStream;
+
+CommandHandlingModule.named("orders")
+        .commandHandlers()
+        .autodetectedCommandHandlingComponent(cfg -&gt; new OrderCommandHandler())
+        .intercepted(cfg -&gt; (message, context, chain) -&gt; {
+            log.info("Intercepting command: {}", message.qualifiedName());
+            return chain.proceed(message, context);
+        })
+        .build();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Multiple interceptors are applied in registration order:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">CommandHandlingModule.named("orders")
+        .commandHandlers()
+        .autodetectedCommandHandlingComponent(cfg -&gt; new OrderCommandHandler())
+        .intercepted(cfg -&gt; new AuthorizationCommandInterceptor(cfg.getComponent(SecurityContext.class)))
+        .intercepted(cfg -&gt; new AuditCommandInterceptor(cfg.getComponent(AuditLog.class)))
+        .build();</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_query_interceptors"><a class="anchor" href="#_query_interceptors"></a>Query interceptors</h3>
+<div class="paragraph">
+<p>Use <code>QueryHandlingModule.QueryHandlerPhase.intercepted()</code> to register an interceptor for the query handling component assembled by a module.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
+
+QueryHandlingModule.named("courses")
+        .queryHandlers()
+        .autodetectedQueryHandlingComponent(cfg -&gt; new CourseQueryHandler())
+        .intercepted(cfg -&gt; (message, context, chain) -&gt; {
+            if (!securityContext.canQuery()) {
+                return MessageStream.failed(new AccessDeniedException("Query not permitted"));
+            }
+            return chain.proceed(message, context);
+        })
+        .build();</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_event_interceptors"><a class="anchor" href="#_event_interceptors"></a>Event interceptors</h3>
+<div class="paragraph">
+<p>Use <code>EventHandlingComponentsConfigurer.CompletePhase.intercepted()</code> to register an interceptor for all event handling components in a processor.
+This method closes the component registration phase, so no further components may be added after calling it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
+EventProcessorModule
+        .subscribing("card-summary")
+        .eventHandlingComponents(components -&gt; components
+                .autodetected("card-summary-projection", cfg -&gt; new CardSummaryProjection())
+                .intercepted(cfg -&gt; (message, context, chain) -&gt; {
+                    log.info("Handling event: {}", message.qualifiedName());
+                    return chain.proceed(message, context);
+                })
+        )
+        .notCustomized();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Multiple event interceptors are also accumulated in registration order:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">EventProcessorModule
+        .pooledStreaming("card-summary")
+        .eventHandlingComponents(components -&gt; components
+                .autodetected("card-summary-projection", cfg -&gt; new CardSummaryProjection())
+                .intercepted(cfg -&gt; new TracingEventInterceptor(cfg.getComponent(Tracer.class)))
+                .intercepted(cfg -&gt; new TenantFilterEventInterceptor(tenantId))
+        )
+        .notCustomized();</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="ExceptionHandler"><a class="anchor" href="#ExceptionHandler"></a><code>@ExceptionHandler</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>@ExceptionHandler</code> annotation is a more specific variant of <code>@MessageHandlerInterceptor</code>.
+The framework invokes <code>@ExceptionHandler</code> annotated methods <em>only</em> for exceptional results of message handling.
+This makes it suitable for cross-cutting exception handling concerns such as logging, translating technical exceptions to business errors, or suppressing recoverable failures.</p>
+</div>
+<div class="paragraph">
+<p>You can wire the exception and the full message (for example, <code>CommandMessage</code> or <code>EventMessage</code>) as parameters.
+The framework matches an exception handler based on which parameters it declares: the exception type must be assignable from the thrown exception, and the message type must be assignable from the message being handled.
+Omitting a parameter means it is not used for matching. Any value is accepted.</p>
+</div>
+<div class="paragraph">
+<p>You can introduce <code>@ExceptionHandler</code> annotated methods in any message handling component.</p>
+</div>
+<div class="paragraph">
+<p><strong>Command handler exception handlers:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class OrderCommandHandler {
+
+    // Command handlers omitted
+
+    @ExceptionHandler
+    public void handleAll(Exception exception) {
+        // Handles all exceptions thrown within this component
+    }
+
+    @ExceptionHandler
+    public void handleIllegalStateExceptions(IllegalStateException exception) {
+        // Handles all IllegalStateExceptions thrown within this component
+    }
+
+    @ExceptionHandler(resultType = IllegalStateException.class)
+    public void handleIllegalStateExceptions(Exception exception) {
+        // Equivalent: handles IllegalStateExceptions using the resultType attribute
+    }
+
+    @ExceptionHandler
+    public void logFailedCommand(CommandMessage command, Exception exception) {
+        // Access the full command message for cross-cutting concerns such as logging
+        log.warn("Command {} failed: {}", command.qualifiedName(), exception.getMessage());
+    }
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Exception handling for static creation handlers</div>
+<div class="paragraph">
+<p>The <code>@ExceptionHandler</code> annotated methods require an existing component instance to work.
+Because of this, exception handlers <strong>do not</strong> work for static creation command handlers, since no instance exists when they run.</p>
+</div>
+<div class="paragraph">
+<p>If you need to handle exceptions from a static creation handler, handle them directly within that method.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><strong>Projection exception handlers:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class CardSummaryProjection {
+
+    // Event handlers and query handlers omitted
+
+    @ExceptionHandler
+    public void handleAll(Exception exception) {
+        // Handles all exceptions thrown within this component
+    }
+
+    @ExceptionHandler
+    public void handleIllegalArgumentExceptions(IllegalArgumentException exception) {
+        // Handles all IllegalArgumentExceptions within this component
+    }
+
+    @ExceptionHandler(resultType = IllegalArgumentException.class)
+    public void handleIllegalArgumentExceptions(Exception exception) {
+        // Equivalent: handles IllegalArgumentExceptions using the resultType attribute
+    }
+
+    @ExceptionHandler
+    public void logFailedEvent(EventMessage event, Exception exception) {
+        // Access the full event message for cross-cutting concerns such as logging
+        log.warn("Event {} failed: {}", event.qualifiedName(), exception.getMessage());
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../message-correlation/">Message Correlation</a></span>
+  <span class="next"><a href="../exception-handling/">Exception Handling</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>

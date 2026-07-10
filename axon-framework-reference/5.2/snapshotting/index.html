@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Snapshots</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.2/snapshotting/">
+    <link rel="prev" href="../tuning/command-processing/">
+    <link rel="next" href="../caching/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../_'</script>
+
+
+<link rel="icon" href="../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article axoniq-feature">
+    <div class="header_container">
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../">Axon Framework</a>
+                <a class="navbar-item" href="../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../">Axon Framework Reference</a></li>
+    <li><a href="../tuning/">Tuning</a></li>
+    <li><a href="./"><span class="advanced-framework">Snapshots</span></a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Snapshots" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Snapshots%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BSnapshots%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.2%2Fsnapshotting%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.2</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../development/snapshotting/">development</a>
+    <a class="version item is-current" href="./">5.2</a>
+    <a class="version item" href="../../5.1/snapshotting/">5.1</a>
+    <a class="version item is-missing" href="../../5.0/">5.0</a>
+    <a class="version item is-missing" href="../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.2">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../migration/paths/upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../data-protection-migration/migration-path/">Data Protection module migration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../events/event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../message-transformation/"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../message-transformation/defining-transformations/">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../message-transformation/configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../message-transformation/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc axoniq-feature">
+                <h1 class="page">Snapshots</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Event-sourced entities reconstruct their state by replaying events from the event store. For entities that change frequently or exist for a long time, the number of events can grow significantly. Replaying all events each time an entity is loaded may eventually impact performance.</p>
+</div>
+<div class="paragraph">
+<p>A snapshot captures the state of an entity at a specific position in the event stream. When the entity is loaded later, the snapshot can be used as the starting point for reconstruction. Only the events that occurred after the snapshot need to be applied to rebuild the current state.</p>
+</div>
+<div class="paragraph">
+<p>Snapshots are therefore a performance optimization. They do not replace events and are not required to reconstruct the entity&#8217;s state. If no snapshot is available, or if a snapshot cannot be used, the entity can always be reconstructed by replaying the full event stream.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">To measure it to know!</div>
+<div class="paragraph">
+<p><a href="../../../axoniq-platform-reference/features/metrics/#aggregate_metrics" class="xref page">Axoniq Platform</a> can measure the number of events that were loaded during command handling, so you know if you need to create snapshots or not. It&#8217;s also able to track many more interesting metrics, such as the load time of the aggregate, and the time it took to store the events.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why_use_snapshots"><a class="anchor" href="#_why_use_snapshots"></a>Why use snapshots</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Snapshots can significantly reduce the number of events that must be replayed when sourcing an entity. This can improve the performance of loading entities whose event streams have grown large over time.</p>
+</div>
+<div class="paragraph">
+<p>For example, consider an entity representing an inventory item. Each sale decreases the stock level and produces an event, while restocking increases the stock level and produces another event. If hundreds or thousands of these events accumulate, reconstructing the entity requires replaying each one to determine the current stock level.</p>
+</div>
+<div class="paragraph">
+<p>By storing a snapshot of the entity state at regular intervals, the system can restore the entity directly from that snapshot and only apply the events that occurred afterwards. This greatly reduces the work required to reconstruct the current state.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_snapshot_lifecycle"><a class="anchor" href="#_snapshot_lifecycle"></a>Snapshot lifecycle</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Snapshotting takes place during the sourcing of an event-sourced entity and is activated by configuring a <code>SnapshotPolicy</code> on the repository.</p>
+</div>
+<div class="paragraph">
+<p>When an entity is loaded, the underlying event store may first provide a snapshot for that entity. If a snapshot is available and can be used, the entity is initialized from that snapshot. Any events that occurred after the snapshot&#8217;s position are then applied to bring the entity up to date.</p>
+</div>
+<div class="paragraph">
+<p>As events are applied during sourcing, the configured <code>SnapshotPolicy</code> is invoked for each event. This allows the policy to detect whether a snapshot should be triggered based on the events being processed.</p>
+</div>
+<div class="paragraph">
+<p>After sourcing has completed, the policy is evaluated based on the full evolution of the entity. If the policy indicates that a snapshot should be created—either based on the overall evolution (such as event count or sourcing time) or because a triggering event was observed—a new snapshot is created and stored.</p>
+</div>
+<div class="paragraph">
+<p>This snapshot can then be used the next time the entity is loaded, reducing the number of events that need to be replayed.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_snapshot_policies"><a class="anchor" href="#_snapshot_policies"></a>Snapshot policies</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Snapshot creation is driven by a <code>SnapshotPolicy</code>, which determines whether a snapshot should be created after an entity has been sourced. A policy is configured on the repository and evaluated during sourcing.</p>
+</div>
+<div class="paragraph">
+<p>A <code>SnapshotPolicy</code> can influence snapshot creation in two ways:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>During event application</strong> - The <code>shouldSnapshot(EventMessage event)</code> method is invoked for each event. If it returns <code>true</code> for any event, a snapshot will be created when sourcing completes.</p>
+</li>
+<li>
+<p><strong>After sourcing completes</strong> - The policy is evaluated using an evolution result, a record which contains the number of events applied and the total time sourcing took, allowing decisions based on these factors.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Axon Framework provides a set of standard snapshot policies:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>After a fixed number of events</strong> - Triggers a snapshot once the entity has evolved through a configurable number of events.</p>
+</li>
+<li>
+<p><strong>Based on sourcing time</strong> - Triggers a snapshot when the time to source an entity exceeds a configured threshold.</p>
+</li>
+<li>
+<p><strong>When an event matches a predicate</strong> - Triggers a snapshot when a specific event is encountered during sourcing, using <code>whenEventMatches(Predicate&lt;EventMessage&gt;)</code>. This allows snapshots to be forced for domain-specific events, such as when an entity reaches a terminal state.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>These policies can be combined to form more advanced strategies.</p>
+</div>
+<div class="paragraph">
+<p>Custom policies may also be implemented. Implementations should be thread-safe and side-effect free, and may use both the individual events and the overall evolution result to determine whether a snapshot should be created.</p>
+</div>
+<div class="paragraph">
+<p>To create a policy which snapshots after 5 events or if sourcing time exceeds 500 milliseconds:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">SnapshotPolicy snapshotPolicy =
+        SnapshotPolicy.afterEvents(5)
+                      .or(SnapshotPolicy.whenSourcingTimeExceeds(
+                          Duration.millis(500)
+                      ));</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_snapshot_storage"><a class="anchor" href="#_snapshot_storage"></a>Snapshot storage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Snapshots are persisted using a <code>SnapshotStore</code>, which abstracts the underlying storage mechanism. Note that <code>SnapshotStore</code> is currently a tentative API and may eventually be rolled into the <code>EventStore</code>. When using Axon Server, an <code>AxonServerSnapshotStore</code> is automatically provided.</p>
+</div>
+<div class="paragraph">
+<p>When sourcing an entity that has a snapshot, the framework performs two operations: it loads the latest compatible snapshot, then loads all events after the snapshot&#8217;s position.
+If the <code>EventStorageEngine</code> and <code>SnapshotStore</code> are backed by the same storage system, these two operations can be combined into a single round-trip.
+If they use different backends, two separate queries are required regardless of how fast each individual store is: one for the snapshot and one for the events.</p>
+</div>
+<div class="paragraph">
+<p>For this reason, it is strongly recommended to use the same backend for both.
+The framework allows arbitrary combinations (for example, Axon Server for events and PostgreSQL for snapshots), but any such combination sacrifices the single round-trip benefit.
+Choose a different <code>SnapshotStore</code> only when there is a compelling reason to do so.</p>
+</div>
+<div class="paragraph">
+<p>Current implementations include:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong><code>InMemorySnapshotStore</code></strong> - Useful for testing or ephemeral scenarios.</p>
+</li>
+<li>
+<p><strong><code>AxonServerSnapshotStore</code></strong> - Stores snapshots in Axon Server with thread-safe, concurrent access.</p>
+</li>
+<li>
+<p><strong><code>PostgresqlEventStorageEngine</code></strong> - Stores both events and snapshots in PostgreSQL.
+When no other <code>SnapshotStore</code> is configured, it registers itself as the <code>SnapshotStore</code> as well,
+enabling the single round-trip optimisation described above.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Each snapshot contains the entity identifier, payload, position, version, timestamp, and optional metadata. By default, only a single snapshot per entity is retained; new snapshots overwrite the previous one. Future versions of the framework may allow storing multiple snapshots per entity, enabling scenarios such as rollbacks or retaining older snapshot versions.</p>
+</div>
+<div class="paragraph">
+<p>A suitable <code>SnapshotStore</code> is typically registered automatically by Axon Framework, but may be overridden when required. For example, to register a custom Axon Server-based snapshot store:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">registry.registerComponent(SnapshotStore.class, c -&gt; {
+    AxonServerConnectionManager connectionManager =
+            c.getComponent(AxonServerConnectionManager.class);
+
+    return new AxonServerSnapshotStore(
+            connectionManager.getConnection(),
+            c.getComponent(Converter.class)
+    );
+});</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For testing or simple setups, an in-memory store can be used instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">registry.registerComponent(
+        SnapshotStore.class,
+        c -&gt; new InMemorySnapshotStore()
+);</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuring_snapshotting"><a class="anchor" href="#_configuring_snapshotting"></a>Configuring snapshotting</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Snapshotting is enabled by providing a <code>SnapshotPolicy</code> for an event-sourced entity. When a policy is configured, the repository automatically handles the creation and application of snapshots during sourcing. If no policy is provided, snapshotting is disabled, and the entity is always reconstructed from the event stream.</p>
+</div>
+<div class="paragraph">
+<p>The <code>SnapshotPolicy</code> is configured as part of the entity registration. The example below shows how to configure snapshotting for an event-sourced entity:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">SnapshotPolicy snapshotPolicy = SnapshotPolicy.afterEvents(5)
+        .or(SnapshotPolicy.whenEventMatches(
+                msg -&gt; msg.type().qualifiedName().equals(
+                        new QualifiedName(AccountClosed.class)
+                )
+        ));
+
+EventSourcedEntityModule&lt;String, Account&gt; accountModule =
+        EventSourcedEntityModule.declarative(String.class, Account.class)
+                                // other entity configuration omitted
+                                .snapshotPolicy(c -&gt; snapshotPolicy)
+                                .build();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this configuration:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A <code>SnapshotPolicy</code> determines when a snapshot should be created. In the example, a snapshot is created after more than five events have been applied or when a matching event is encountered during sourcing.</p>
+</li>
+<li>
+<p>Snapshotting is activated automatically when a <code>SnapshotPolicy</code> is configured. If no policy is provided, snapshotting is not used and the entity is always sourced from events only.</p>
+</li>
+<li>
+<p>The repository requires several supporting components to be present when snapshotting is enabled:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>A <code>Converter</code> to serialize and deserialize snapshot payloads.</p>
+</li>
+<li>
+<p>A <code>MessageTypeResolver</code> capable of resolving a <code>MessageType</code> for the entity type. This type is used to identify the snapshot and its version.</p>
+</li>
+<li>
+<p>A <code>SnapshotStore</code> to persist snapshots (this requirement will change in future versions as snapshotting becomes more tightly integrated with the event store).</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If any of these components are missing, configuration will fail when snapshotting is enabled.</p>
+</div>
+<div class="paragraph">
+<p>Custom snapshot behavior can be achieved by using <code>whenEventMatches</code> for domain-specific triggers, as shown in the example, or by implementing the <code>SnapshotPolicy</code> interface directly.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_entity_conversion_for_snapshots"><a class="anchor" href="#_entity_conversion_for_snapshots"></a>Entity conversion for snapshots</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When a snapshot is created, the configured <code>Converter</code> must be able to serialize the entity into a storable format. This is similar to how events are converted, but now applies to the entity itself.</p>
+</div>
+<div class="paragraph">
+<p>Modern best practices favor immutable entities that provide a constructor capable of reconstructing the full state. Most JSON-based converters (such as Jackson, when compiled with parameter names and properly configured) can use the constructor directly without requiring annotations like <code>@JsonCreator</code> or <code>@JsonProperty</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class Account {
+    private final String accountId;
+    private final int balance;
+
+    public Account(String accountId, int balance) {
+        this.accountId = accountId;
+        this.balance = balance;
+    }
+
+    public String getAccountId() { return accountId; }
+    public int getBalance() { return balance; }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Or using a <code>record</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public record Account(String accountId, int balance) {}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>While setters and default constructors can still be used if necessary, the constructor-based approach ensures immutability and aligns with modern Java development practices.</p>
+</div>
+<div class="paragraph">
+<p>Ensuring the entity is properly serializable guarantees that snapshots can be persisted and later restored correctly. If the converter cannot handle the entity, a warning will be logged, and snapshot loading will fall back to full event replay.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_entity_conversion_for_snapshots_2"><a class="anchor" href="#_entity_conversion_for_snapshots_2"></a>Entity conversion for snapshots</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Snapshots store a representation of an event-sourced entity at a specific point in time. To persist this representation, the framework uses the configured <code>Converter</code> to serialize the entity into a storable format.</p>
+</div>
+<div class="paragraph">
+<p>Because the default behavior is to serialize the entity object itself, the entity must be compatible with the converter being used. For example, when using a JSON-based converter such as Jackson, this may require:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Ensuring the entity has accessible getters and a suitable constructor (or setters).</p>
+</li>
+<li>
+<p>Adding annotations like <code>@JsonGetter</code> and <code>@JsonSetter</code> to guide serialization and deserialization.</p>
+</li>
+<li>
+<p>Providing a default constructor if needed for deserialization.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When a snapshot is loaded, the converter reconstructs the entity in the same state it would have after sourcing all preceding events. This ensures that snapshots provide a safe caching mechanism while still allowing full reconstruction from the event stream if needed.</p>
+</div>
+<div class="paragraph">
+<p>Users should verify that their entities are compatible with the configured converter, especially when using complex or custom types. Proper configuration prevents runtime errors during snapshot creation or loading.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_snapshot_compatibility_and_fallback_behavior"><a class="anchor" href="#_snapshot_compatibility_and_fallback_behavior"></a>Snapshot compatibility and fallback behavior</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Snapshots are a performance optimization and act as a cache of an entity&#8217;s state at a specific position in the event stream. Because they are not required to reconstruct the entity, the framework always provides a safe fallback: if a snapshot cannot be used, the entity is reconstructed by replaying events from the event store.</p>
+</div>
+<div class="paragraph">
+<p>When a snapshot is loaded, the framework verifies that it can be used. For example, the snapshot version may no longer match the current version expected by the application, or the snapshot payload may not be convertible to the expected entity representation. In such cases, the snapshot is ignored and sourcing continues from the beginning of the event stream.</p>
+</div>
+<div class="paragraph">
+<p>This behavior ensures that incompatible or corrupted snapshots do not affect correctness. The entity state is always derived from the event stream if a snapshot cannot be applied.</p>
+</div>
+<div class="paragraph">
+<p>When a snapshot is successfully loaded, sourcing resumes from the snapshot&#8217;s position. Only the events that occurred after that position are applied to bring the entity to its current state.</p>
+</div>
+<div class="paragraph">
+<p>If a snapshot cannot be used, the full event stream is replayed and a new snapshot may be created after sourcing completes, depending on the configured <code>SnapshotPolicy</code>. This new snapshot replaces the previous one according to the current storage behavior.</p>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../tuning/command-processing/">Command Processing</a></span>
+  <span class="next"><a href="../caching/"><span class="advanced-framework">Caching</span></a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../_/js/vendor/lunr.js"></script>
+<script src="../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../.." data-snippet-length="100" data-stylesheet="../../../_/css/search.css"></script>
+<script async src="../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
