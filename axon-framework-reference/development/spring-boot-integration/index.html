@@ -478,6 +478,9 @@
     <a class="nav-link" href="../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../advanced-migration/paths/5.2.0-to-5.2.1/">Axoniq Framework 5.2.0 to 5.2.1 Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../data-protection-migration/migration-path/"><span class="advanced-framework">Data Protection Module Migration</span></a>
   </li>
 </ul>
@@ -1121,6 +1124,88 @@ While Axon can be configured programmatically without Spring, the Spring Boot in
 </div>
 </dd>
 </dl>
+</div>
+</div>
+</div>
+<div class="sect1 axoniq-feature">
+<h2 id="connection_security"><a class="anchor" href="#connection_security"></a>Connection security</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The connection between an application and Axon Server can be secured with Transport Layer Security (TLS). All security-related settings live under the <code>axon.axonserver.</code> property prefix.</p>
+</div>
+<div class="sect2">
+<h3 id="_server_authentication_tls"><a class="anchor" href="#_server_authentication_tls"></a>Server authentication (TLS)</h3>
+<div class="paragraph">
+<p>To enable TLS, set <code>axon.axonserver.ssl-enabled</code> to <code>true</code>. By default, the server&#8217;s certificate is verified against the Certificate Authorities trusted by the JVM. When the server uses a certificate signed by a private CA, point <code>axon.axonserver.cert-file</code> to a PEM file containing the CA certificates to trust instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.axonserver.ssl-enabled=true
+axon.axonserver.cert-file=/etc/my-app/tls/server-ca.pem</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mutual_tls_client_certificates"><a class="anchor" href="#_mutual_tls_client_certificates"></a>Mutual TLS (client certificates)</h3>
+<div class="paragraph">
+<p>In addition to verifying the server, the application can present its own certificate during the TLS handshake, allowing the server to authenticate the application. Configure the client certificate chain and the matching private key (in PKCS#8 PEM format):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.axonserver.ssl-enabled=true
+axon.axonserver.cert-file=/etc/my-app/tls/server-ca.pem
+axon.axonserver.client-cert-file=/etc/my-app/tls/client-cert.pem
+axon.axonserver.client-key-file=/etc/my-app/tls/client-key.pem</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Both <code>client-cert-file</code> and <code>client-key-file</code> must be configured together; setting only one of them fails at startup. The certificate files are read once, when the connection is set up, so the application must be restarted when its client certificate is rotated.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Make sure the version of Axon Server and/or Axon Server Proxy you connect to supports mutual TLS. At the time of writing, Axon Server Proxy can verify client certificates (see the <code>proxy.tlsClientAuth</code> and <code>proxy.tlsTrustCerts</code> settings in the Axon Server Proxy reference), while Axon Server does not accept them yet.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_property_overview"><a class="anchor" href="#_property_overview"></a>Property overview</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.ssl-enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enables TLS for the connection. Defaults to <code>false</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.cert-file</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PEM file with CA certificates used to verify the server&#8217;s certificate. When unset, the JVM&#8217;s default trusted CAs are used.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.client-cert-file</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PEM file with the client certificate (chain) presented to the server (mutual TLS). Requires <code>client-key-file</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.client-key-file</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PEM file with the client&#8217;s PKCS#8 private key (mutual TLS). Requires <code>client-cert-file</code>.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>

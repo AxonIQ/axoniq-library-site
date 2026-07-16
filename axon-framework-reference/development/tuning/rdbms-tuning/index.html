@@ -479,6 +479,9 @@
     <a class="nav-link" href="../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
   </li>
   <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.2.0-to-5.2.1/">Axoniq Framework 5.2.0 to 5.2.1 Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="../../data-protection-migration/migration-path/"><span class="advanced-framework">Data Protection Module Migration</span></a>
   </li>
 </ul>
@@ -1277,6 +1280,7 @@ For production deployments, managing the schema through a migration tool such as
   metadata     JSON        NOT NULL,
   identifier   VARCHAR     NOT NULL,
   type         VARCHAR     NOT NULL,
+  type_version VARCHAR     NOT NULL,
   PRIMARY KEY (global_index)
 );
 
@@ -1299,11 +1303,17 @@ CREATE SEQUENCE IF NOT EXISTS events_monotonic_seq
   OWNED BY events.global_index;
 
 CREATE INDEX IF NOT EXISTS consistency_tags_global_index_idx
-  ON consistency_tags (global_index);</code></pre>
+  ON consistency_tags (global_index);
+
+CREATE INDEX IF NOT EXISTS tags_global_index_idx
+  ON tags (global_index);
+
+CREATE UNIQUE INDEX IF NOT EXISTS tags_type_unique
+  ON tags (global_index) WHERE key = '__T';</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>events</code> table is the main event log; <code>payload</code> holds the serialized event as bytes and <code>metadata</code> is stored as JSON.
+<p>The <code>events</code> table is the main event log; <code>payload</code> holds the serialized event as bytes, <code>metadata</code> is stored as JSON, and <code>type</code>/<code>type_version</code> together form the event&#8217;s message type.
 The <code>tags</code> table associates DCB tags with events.
 The <code>consistency_tags</code> table is a bounded conflict-detection structure used when appending events with consistency requirements; it does not grow with event volume.</p>
 </div>
