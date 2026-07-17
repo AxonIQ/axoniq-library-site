@@ -654,12 +654,105 @@ TLS support exists so the proxy can operate in environments that require it, not
 </dl>
 </div>
 <div class="sect3">
+<h4 id="_mutual_tls_client_certificates"><a class="anchor" href="#_mutual_tls_client_certificates"></a>Mutual TLS (client certificates)</h4>
+<div class="paragraph">
+<p>In addition to serving its own certificate, the proxy can verify certificates presented by connecting applications (mutual TLS). This requires <code>proxy.tlsEnabled=true</code>.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>proxy.tlsClientAuth</code></dt>
+<dd>
+<p>Whether applications must present a client certificate. Valid values:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>NONE</code> (default): Applications are not asked for a certificate</p>
+</li>
+<li>
+<p><code>OPTIONAL</code>: A certificate is requested; connections without one are still accepted, but a presented certificate must be valid</p>
+</li>
+<li>
+<p><code>REQUIRE</code>: Connections without a valid client certificate are rejected</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.tlsClientAuth=REQUIRE</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<code>REQUIRE</code> applies to <strong>all</strong> applications connecting to the proxy at once. Use <code>OPTIONAL</code> during a migration phase to roll out client certificates gradually, then switch to <code>REQUIRE</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<code>OPTIONAL</code> does not guarantee that applications with untrusted certificates are rejected. A standard TLS client withholds a certificate that does not match the CAs the proxy advertises, and the connection is then accepted as if no certificate was configured. Only <code>REQUIRE</code> guarantees that every connected application holds a trusted certificate.
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><code>proxy.tlsTrustCerts</code></dt>
+<dd>
+<p>Path to a PEM file containing the CA certificates used to verify client certificates. Required when <code>proxy.tlsClientAuth</code> is <code>OPTIONAL</code> or <code>REQUIRE</code>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.tlsTrustCerts=/etc/axon-proxy/tls/trusted-clients.pem</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The file is re-read every minute, so the set of trusted CA certificates can be rotated without restarting the proxy.</p>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
 <h4 id="_complete_client_tls_example"><a class="anchor" href="#_complete_client_tls_example"></a>Complete client TLS example</h4>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.tlsEnabled=true
 proxy.tlsKey=/etc/axon-proxy/tls/server-key.pem
 proxy.tlsCert=/etc/axon-proxy/tls/server-cert.pem</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_complete_mutual_tls_example"><a class="anchor" href="#_complete_mutual_tls_example"></a>Complete mutual TLS example</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">proxy.tlsEnabled=true
+proxy.tlsKey=/etc/axon-proxy/tls/server-key.pem
+proxy.tlsCert=/etc/axon-proxy/tls/server-cert.pem
+proxy.tlsClientAuth=REQUIRE
+proxy.tlsTrustCerts=/etc/axon-proxy/tls/trusted-clients.pem</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On the application side, configure the AxonServer Connector for Java with a client certificate using <code>useMutualTransportSecurity</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">AxonServerConnectionFactory.forClient("my-component")
+        .routingServers(new ServerAddress("proxy.example.com", 8124))
+        .useMutualTransportSecurity(new File("client-cert.pem"),
+                                    new File("client-key.pem"),
+                                    new File("proxy-ca.pem"))
+        .build();</code></pre>
 </div>
 </div>
 </div>
@@ -975,6 +1068,14 @@ proxy.monitoring.port=8080</code></pre>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_TLS_CERT</code></p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.tlsClientAuth</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_TLS_CLIENT_AUTH</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.tlsTrustCerts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_TLS_TRUST_CERTS</code></p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>proxy.internalTlsEnabled</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>PROXY_INTERNAL_TLS_ENABLED</code></p></td>
 </tr>
@@ -1028,6 +1129,12 @@ export PROXY_TLS_ENABLED=true</code></pre>
 </li>
 <li>
 <p><code>proxy.tlsEnabled=true</code> but <code>proxy.tlsKey</code> or <code>proxy.tlsCert</code> is missing</p>
+</li>
+<li>
+<p><code>proxy.tlsClientAuth</code> is <code>OPTIONAL</code> or <code>REQUIRE</code> but <code>proxy.tlsEnabled</code> is <code>false</code></p>
+</li>
+<li>
+<p><code>proxy.tlsClientAuth</code> is <code>OPTIONAL</code> or <code>REQUIRE</code> but <code>proxy.tlsTrustCerts</code> is missing</p>
 </li>
 <li>
 <p><code>proxy.internalTlsEnabled=true</code> but <code>proxy.internalTrustCerts</code> is missing</p>

@@ -632,6 +632,38 @@ proxy.tlsCert=/path/to/cert.pem</code></pre>
 </div>
 </div>
 </li>
+<li>
+<p><strong>Missing or untrusted client certificate (mutual TLS)</strong></p>
+<div class="paragraph">
+<p>When the proxy is configured with <code>proxy.tlsClientAuth=REQUIRE</code>, applications that do not present a client certificate (or present one that is not signed by a CA in <code>proxy.tlsTrustCerts</code>) are rejected during the handshake, typically with a <code>certificate required</code> alert:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">io.grpc.StatusRuntimeException: UNAVAILABLE:
+  ssl exception: ... TLSV1_ALERT_CERTIFICATE_REQUIRED</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Configure the application with a client certificate, for example with the AxonServer Connector for Java:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">AxonServerConnectionFactory.forClient("my-component")
+        .useMutualTransportSecurity(new File("client-cert.pem"),
+                                    new File("client-key.pem"),
+                                    new File("proxy-ca.pem"))
+        ...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Verify the client certificate is signed by a CA the proxy trusts:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">openssl verify -CAfile trusted-clients.pem client-cert.pem</code></pre>
+</div>
+</div>
+</li>
 </ol>
 </div>
 </div>
