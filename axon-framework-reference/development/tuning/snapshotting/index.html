@@ -1080,7 +1080,7 @@ Implementations should be thread-safe and side-effect free, and may use both the
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">SnapshotPolicy snapshotPolicy =
         SnapshotPolicy.afterEvents(5)
                       .or(SnapshotPolicy.whenSourcingTimeExceeds(
-                          Duration.millis(500)
+                          Duration.ofMillis(500)
                       ));</code></pre>
 </div>
 </div>
@@ -1114,7 +1114,7 @@ Future versions of the framework may allow storing multiple snapshots per entity
 <p>A suitable <code>SnapshotStore</code> is typically registered automatically by Axon Framework, but may be overridden when required.
 For example, to register a custom Axon Server-based snapshot store:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">registry.registerComponent(SnapshotStore.class, c -&gt; {
     AxonServerConnectionManager connectionManager =
@@ -1175,7 +1175,9 @@ At least one threshold must be configured, either directly on the annotation or 
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity
 @Snapshotting(afterEvents = 100)
-public class Course { ... }</code></pre>
+public class Course {
+    // entity behavior omitted for brevity
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1187,20 +1189,22 @@ When both are set, either condition independently triggers a snapshot.</p>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity
 @Snapshotting(afterEvents = 100, afterSourcingTime = "PT5S")
-public class Course { ... }</code></pre>
+public class Course {
+    // entity behavior omitted for brevity
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>A shared default can be provided at the package level, so individual entity classes can opt in with a bare <code>@Snapshotting</code> annotation:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// package-info.java
 @Snapshotting(afterEvents = 50)
 package com.example.faculty;</code></pre>
 </div>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity
 @Snapshotting  // inherits afterEvents = 50 from the package annotation
@@ -1232,7 +1236,7 @@ The example below shows how to configure snapshotting for an event-sourced entit
 EventSourcedEntityModule&lt;CourseId, Course&gt; courseModule =
         EventSourcedEntityModule.declarative(CourseId.class, Course.class)
                                 // other entity configuration omitted
-                                .snapshotPolicy(c -&gt; snapshotPolicy)
+                                .snapshotPolicy(snapshotPolicy)
                                 .build();</code></pre>
 </div>
 </div>

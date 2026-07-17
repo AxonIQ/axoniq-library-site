@@ -1022,7 +1022,7 @@ In Axon Framework 5.1, snapshot decisions are made by a <code>SnapshotPolicy</co
 </ul>
 </div>
 <div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">SnapshotTriggerDefinition triggerDefinition = new EventCountSnapshotTriggerDefinition(100);
 repository.setSnapshotTriggerDefinition(triggerDefinition);</code></pre>
@@ -1038,7 +1038,7 @@ repository.setSnapshotTriggerDefinition(triggerDefinition);</code></pre>
 
 EventSourcedEntityModule&lt;String, Account&gt; accountModule =
         EventSourcedEntityModule.declarative(String.class, Account.class)
-                                .snapshotPolicy(c -&gt; snapshotPolicy)
+                                .snapshotPolicy(snapshotPolicy)
                                 .build();</code></pre>
 </div>
 </div>
@@ -1064,7 +1064,7 @@ This is the recommended approach for applications that want explicit control ove
 
 EventSourcedEntityModule&lt;String, Account&gt; accountModule =
         EventSourcedEntityModule.declarative(String.class, Account.class)
-                                .snapshotPolicy(c -&gt; snapshotPolicy)
+                                .snapshotPolicy(snapshotPolicy)
                                 .build();
 
 EventSourcingConfigurer.create()
@@ -1104,7 +1104,9 @@ EventSourcingConfigurer.create()
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourced
 @Snapshotting(afterEvents = 100)
-public class Account { ... }</code></pre>
+public class Account {
+    // entity behavior omitted for brevity
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1129,26 +1131,27 @@ See <a href="../../../tuning/snapshotting/#_annotation_based_configuration" clas
 <p>For more complex policies that require payload inspection, declare the entity as an explicit <code>EventSourcedEntityModule</code> bean and configure the <code>SnapshotPolicy</code> programmatically.
 Spring&#8217;s component registry picks up <code>Module</code> beans automatically, so this integrates with the regular Spring Boot setup:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
 class AccountConfiguration {
 
     @Bean
     EventSourcedEntityModule&lt;String, Account&gt; accountModule() {
+        SnapshotPolicy snapshotPolicy = SnapshotPolicy.afterEvents(250)
+                .or(SnapshotPolicy.whenEventMatches(
+                        msg -&gt; msg.type().qualifiedName().equals(
+                                new QualifiedName(AccountClosed.class)
+                        )
+                ));
         return EventSourcedEntityModule.declarative(String.class, Account.class)
-                .snapshotPolicy(c -&gt; SnapshotPolicy.afterEvents(250)
-                        .or(SnapshotPolicy.whenEventMatches(
-                                msg -&gt; msg.type().qualifiedName().equals(
-                                        new QualifiedName(AccountClosed.class)
-                                )
-                        )))
+                .snapshotPolicy(snapshotPolicy)
                 .build();
     }
 
     @Bean
-    SnapshotStore snapshotStore() {
-        return new AxonServerSnapshotStore(/* Axon Server connection */, /* Converter */);
+    SnapshotStore snapshotStore(AxonServerConnectionManager connectionManager, EventConverter converter) {
+        return new AxonServerSnapshotStore(connectionManager.getConnection(), converter);
     }
 }</code></pre>
 </div>

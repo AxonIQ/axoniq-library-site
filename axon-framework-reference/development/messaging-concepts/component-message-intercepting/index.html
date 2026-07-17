@@ -1003,14 +1003,14 @@ It is a specialization of <code>@MessageHandlerInterceptor</code> scoped to <cod
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandlerInterceptor;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.interception.annotation.CommandHandlerInterceptor;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 
 public class OrderCommandHandler {
 
     @CommandHandlerInterceptor
     void logCommand(CommandMessage command) {
-        log.info("Handling command: {}", command.qualifiedName());
+        log.info("Handling command: {}", command.type().qualifiedName());
     }
 
     @CommandHandler
@@ -1025,7 +1025,7 @@ public class OrderCommandHandler {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandlerInterceptor;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.interception.annotation.CommandHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 
@@ -1062,14 +1062,14 @@ It is a specialization of <code>@MessageHandlerInterceptor</code> scoped to <cod
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.interception.annotation.EventHandlerInterceptor;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 
 public class CardSummaryProjection {
 
     @EventHandlerInterceptor
     void trace(EventMessage event) {
-        tracer.startSpan(event.qualifiedName());
+        tracer.startSpan(event.type().qualifiedName());
     }
 
     @EventHandler
@@ -1084,7 +1084,7 @@ public class CardSummaryProjection {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.interception.annotation.EventHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 
@@ -1121,14 +1121,14 @@ It is a specialization of <code>@MessageHandlerInterceptor</code> scoped to <cod
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.annotation.QueryHandlerInterceptor;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.interception.annotation.QueryHandlerInterceptor;
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 
 public class CourseQueryHandler {
 
     @QueryHandlerInterceptor
     void auditQuery(QueryMessage query) {
-        auditLog.record(query.qualifiedName(), securityContext.currentUser());
+        auditLog.record(query.type().qualifiedName(), securityContext.currentUser());
     }
 
     @QueryHandler
@@ -1144,7 +1144,7 @@ public class CourseQueryHandler {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.annotation.QueryHandlerInterceptor;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.interception.annotation.QueryHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 
@@ -1207,6 +1207,7 @@ public class CardSummaryProjection {
     @QueryHandler
     CardSummaryView handle(FindCardSummaryQuery query, ProcessingContext context) {
         // Handle query
+        return null;
     }
 }</code></pre>
 </div>
@@ -1265,7 +1266,7 @@ CommandHandlingModule.named("orders")
         .commandHandlers()
         .autodetectedCommandHandlingComponent(cfg -&gt; new OrderCommandHandler())
         .intercepted(cfg -&gt; (message, context, chain) -&gt; {
-            log.info("Intercepting command: {}", message.qualifiedName());
+            log.info("Intercepting command: {}", message.type().qualifiedName());
             return chain.proceed(message, context);
         })
         .build();</code></pre>
@@ -1322,7 +1323,7 @@ EventProcessorModule
         .eventHandlingComponents(components -&gt; components
                 .autodetected("card-summary-projection", cfg -&gt; new CardSummaryProjection())
                 .intercepted(cfg -&gt; (message, context, chain) -&gt; {
-                    log.info("Handling event: {}", message.qualifiedName());
+                    log.info("Handling event: {}", message.type().qualifiedName());
                     return chain.proceed(message, context);
                 })
         )
@@ -1390,7 +1391,7 @@ Omitting a parameter means it is not used for matching. Any value is accepted.</
     @ExceptionHandler
     public void logFailedCommand(CommandMessage command, Exception exception) {
         // Access the full command message for cross-cutting concerns such as logging
-        log.warn("Command {} failed: {}", command.qualifiedName(), exception.getMessage());
+        log.warn("Command {} failed: {}", command.type().qualifiedName(), exception.getMessage());
     }
 }</code></pre>
 </div>
@@ -1441,7 +1442,7 @@ Because of this, exception handlers <strong>do not</strong> work for static crea
     @ExceptionHandler
     public void logFailedEvent(EventMessage event, Exception exception) {
         // Access the full event message for cross-cutting concerns such as logging
-        log.warn("Event {} failed: {}", event.qualifiedName(), exception.getMessage());
+        log.warn("Event {} failed: {}", event.type().qualifiedName(), exception.getMessage());
     }
 }</code></pre>
 </div>

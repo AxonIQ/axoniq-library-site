@@ -1128,48 +1128,52 @@ The only additions for hierarchies are the <code>EntityChildMetamodel</code> for
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageTypeResolver;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
+
 public class AxonConfiguration {
 
-    EventSourcingConfigurer configureEntity(EventSourcingConfigurer configurer) {
-MessageTypeResolver resolver = config.getComponent(MessageTypeResolver.class);
+    // The body of the messagingModel((config, model) -&gt; { ... }) callback:
+    EntityMetamodel&lt;CourseEntity&gt; buildMetamodel(Configuration config, EntityMetamodelBuilder&lt;CourseEntity&gt; model) {
+        MessageTypeResolver resolver = config.getComponent(MessageTypeResolver.class);
 
-// Build the child metamodel: same shape as a parent metamodel, without children.
-EntityMetamodel&lt;EnrollmentEntity&gt; enrollmentMetamodel = ConcreteEntityMetamodel
-        .forEntityClass(EnrollmentEntity.class)
-        // ... child command handlers and evolver
-        .build();
+        // Build the child metamodel: same shape as a parent metamodel, without children.
+        EntityMetamodel&lt;EnrollmentEntity&gt; enrollmentMetamodel = ConcreteEntityMetamodel
+                .forEntityClass(EnrollmentEntity.class)
+                // ... child command handlers and evolver
+                .build();
 
-// Attach it to the parent metamodel via addChild.
-return model
-        // ... parent command handlers and evolver
-        .addChild(EntityChildMetamodel <i class="conum" data-value="1"></i><b>(1)</b>
-                .list(CourseEntity.class, enrollmentMetamodel)
-                .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterEvolver( <i class="conum" data-value="2"></i><b>(2)</b>
-                        CourseEntity::getEnrollments,
-                        CourseEntity::withEnrollments
-                ))
-                .commandTargetResolver((candidates, command, ctx) -&gt; { <i class="conum" data-value="3"></i><b>(3)</b>
-                    DropEnrollment cmd = command.payloadAs(DropEnrollment.class);
-                    return candidates.stream()
-                                     .filter(e -&gt; e.getStudentId().equals(cmd.studentId()))
-                                     .findFirst()
-                                     .orElse(null);
-                })
-                .eventTargetMatcher((child, event, ctx) -&gt; { <i class="conum" data-value="4"></i><b>(4)</b>
-                    if (event.type().qualifiedName().equals(resolver.resolveOrThrow(EnrollmentDropped.class).qualifiedName())) {
-                        EnrollmentDropped e = event.payloadAs(EnrollmentDropped.class);
-                        return child.getStudentId().equals(e.studentId());
-                    }
-                    return false;
-                })
-                .build()
-        )
-        .build();
+        // Attach it to the parent metamodel via addChild.
+        return model
+                // ... parent command handlers and evolver
+                .addChild(EntityChildMetamodel <i class="conum" data-value="1"></i><b>(1)</b>
+                        .list(CourseEntity.class, enrollmentMetamodel)
+                        .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterEvolver( <i class="conum" data-value="2"></i><b>(2)</b>
+                                CourseEntity::getEnrollments,
+                                CourseEntity::withEnrollments
+                        ))
+                        .commandTargetResolver((candidates, command, ctx) -&gt; { <i class="conum" data-value="3"></i><b>(3)</b>
+                            DropEnrollment cmd = command.payloadAs(DropEnrollment.class);
+                            return candidates.stream()
+                                             .filter(e -&gt; e.getStudentId().equals(cmd.studentId()))
+                                             .findFirst()
+                                             .orElse(null);
+                        })
+                        .eventTargetMatcher((child, event, ctx) -&gt; { <i class="conum" data-value="4"></i><b>(4)</b>
+                            if (event.type().qualifiedName().equals(resolver.resolveOrThrow(EnrollmentDropped.class).qualifiedName())) {
+                                EnrollmentDropped e = event.payloadAs(EnrollmentDropped.class);
+                                return child.getStudentId().equals(e.studentId());
+                            }
+                            return false;
+                        })
+                        .build()
+                )
+                .build();
     }
 }</code></pre>
 </div>

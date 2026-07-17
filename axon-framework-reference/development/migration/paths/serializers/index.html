@@ -1025,9 +1025,12 @@
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Configuring Jackson for XML conversion
-XmlMapper xmlMapper = new XmlMapper();
-Converter xmlConverter = new JacksonConverter(xmlMapper);</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void configureXmlConversion() {
+    XmlMapper xmlMapper = XmlMapper.builder()
+            .findAndAddModules()
+            .build();
+    Converter xmlConverter = new JacksonConverter(xmlMapper);
+}</code></pre>
 </div>
 </div>
 <div class="admonitionblock warning">
@@ -1088,16 +1091,29 @@ Converter xmlConverter = new JacksonConverter(xmlMapper);</code></pre>
 <div class="paragraph">
 <p>When using the <code>MessagingConfigurer</code> in a non-Spring environment, the configuration has shifted from the <code>Configurer</code> to a more modular approach.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4
 public void configure(Configurer configurer) {
     configurer.configureSerializer(c -&gt; JacksonSerializer.defaultSerializer())
               .configureMessageSerializer(c -&gt; JacksonSerializer.defaultSerializer())
               .configureEventSerializer(c -&gt; JacksonSerializer.defaultSerializer());
-}
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF5
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.DelegatingGeneralConverter;
+import org.axonframework.conversion.GeneralConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
-// AF5
 public void configure(MessagingConfigurer configurer, ObjectMapper objectMapper) {
     configurer.componentRegistry(registry -&gt; {
         Converter generalConverter = new JacksonConverter(objectMapper);
@@ -1114,7 +1130,7 @@ public void configure(MessagingConfigurer configurer, ObjectMapper objectMapper)
 <div class="paragraph">
 <p>In a Spring environment, you can define beans for the different converter levels. Axon&#8217;s auto-configuration will automatically pick them up.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4
 @Configuration
@@ -1124,11 +1140,28 @@ public class SerializationConfig {
     public Serializer serializer() {
         return JacksonSerializer.defaultSerializer();
     }
-}
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF5
+import org.axonframework.conversion.DelegatingGeneralConverter;
+import org.axonframework.conversion.GeneralConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
-// AF5
+import tools.jackson.databind.ObjectMapper;
+
 @Configuration
 public class ConversionConfig {
+
     @Bean
     @Primary
     public GeneralConverter converter(ObjectMapper objectMapper) {

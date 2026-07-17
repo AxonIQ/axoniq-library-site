@@ -1041,7 +1041,7 @@ Instead, you take Spring&#8217;s bean creation approach or adjust the configurat
 </ul>
 </div>
 <div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
@@ -1084,10 +1084,10 @@ class AxonApp {
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Messaging only
-MessagingConfigurer configurer = MessagingConfigurer.create();
+MessagingConfigurer messagingConfigurer = MessagingConfigurer.create();
 
 // Messaging + entity modelling (no event sourcing)
-ModellingConfigurer configurer = ModellingConfigurer.create();</code></pre>
+ModellingConfigurer modellingConfigurer = ModellingConfigurer.create();</code></pre>
 </div>
 </div>
 </div>
@@ -1099,7 +1099,10 @@ ModellingConfigurer configurer = ModellingConfigurer.create();</code></pre>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 
 class AxonApp {
 
@@ -1107,10 +1110,14 @@ class AxonApp {
         EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
 
         // Access the modelling layer
-        configurer.modelling(modellingConfigurer -&gt; modellingConfigurer.registerEntity(/*...*/));
+        configurer.modelling(modellingConfigurer -&gt; modellingConfigurer.registerEntity(
+                EventSourcedEntityModule.autodetected(String.class, MyEntity.class)
+        ));
 
         // Access the messaging layer
-        configurer.messaging(messagingConfigurer -&gt; messagingConfigurer.registerCommandBus(config -&gt; /*...*/));
+        configurer.messaging(messagingConfigurer -&gt; messagingConfigurer.registerCommandBus(
+                config -&gt; new SimpleCommandBus(config.getComponent(UnitOfWorkFactory.class))
+        ));
     }
 }</code></pre>
 </div>
@@ -1146,7 +1153,7 @@ Furthermore, just as the <code>ConfigurerModule</code>, the <code>ConfigurationE
 </ul>
 </div>
 <div id="_tabs_2_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
@@ -1212,7 +1219,7 @@ The specific registration methods are thus just convenience methods, or syntacti
 </ul>
 </div>
 <div id="_tabs_3_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_3_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.config.Configurer;
@@ -1325,7 +1332,7 @@ In Axon Framework 5, these have moved to the <code>LifecycleRegistry</code>, acc
 </ul>
 </div>
 <div id="_tabs_4_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_4_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.config.Configurer;
@@ -1401,7 +1408,7 @@ This interface no longer exists in Axon Framework 5. Instead, lifecycle handler 
 </ul>
 </div>
 <div id="_tabs_5_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_5_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.lifecycle.Lifecycle;
@@ -1433,8 +1440,8 @@ class AxonApp {
         configurer.componentRegistry(cr -&gt; cr.registerComponent(
                 ComponentDefinition.ofType(MyComponent.class)
                                    .withBuilder(config -&gt; new MyComponent())
-                                   .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -&gt; {})
-                                   .onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -&gt; {})
+                                   .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, component -&gt; {})
+                                   .onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, component -&gt; {})
         ));
     }
 }</code></pre>
@@ -1465,7 +1472,7 @@ Moving from the <code>ConfigurerModule</code> to the <code>ConfigurationEnhancer
 </ul>
 </div>
 <div id="_tabs_6_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_6_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.config.ConfigurerModule;
 import org.springframework.context.annotation.Bean;

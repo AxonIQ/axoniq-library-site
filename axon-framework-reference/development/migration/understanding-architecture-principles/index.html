@@ -1053,7 +1053,7 @@ This breaks down into specific layer configurers:</p>
 <div class="paragraph">
 <p>Instead of a monolithic configuration class, you now compose modular configurers:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.framework.axonserver.connector.event.AxonServerEventStorageEngine;
@@ -1192,16 +1192,19 @@ Axon Framework 5 breaks down the <code>UnitOfWork</code> interface into two inte
 As such, you will notice that the <code>ProcessingContext</code> will become a parameter throughout virtually all infrastructure interfaces Axon Framework provides.
 This will become most apparent on all message handlers.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Axon Framework 4.x: Implicit ThreadLocal-based unit of work
 @EventHandler
 public void handle(MyEvent event) {
     UnitOfWork uow = CurrentUnitOfWork.get();
     // Process event
-}
-
-// Axon Framework 5: Explicit ProcessingContext
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Axon Framework 5: Explicit ProcessingContext
 @EventHandler
 public void handle(MyEvent event, ProcessingContext context) {
     // Context is explicit, can be reasoned about
@@ -1394,7 +1397,7 @@ In Axon Framework 4.x, a <code>Serializer</code> had to:</p>
 <div class="paragraph">
 <p>Infrastructure components now enforce the use of the appropriate converter due to the concrete types for each layer:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.axonserver.connector.api.AxonServerConnectionManager;
 import io.axoniq.framework.axonserver.connector.event.AxonServerEventStorageEngine;
@@ -1430,13 +1433,16 @@ JacksonConverter xmlConverter = new JacksonConverter(
 <p>Version resolution moved from the <code>Serializer</code> layer to the <code>MessageType</code> itself.
 Rather than having a <code>RevisionResolver</code> determine message version at serialization time, the version is now part of the message&#8217;s identity:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Old Axon Framework 4.x approach
 @Revision("2.0")
-public class AccountCreatedEvent { }
-
-// New Axon 5 approach
+public class AccountCreatedEvent { }</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// New Axon 5 approach
 @Event(name = "AccountCreatedEvent", version = "2.0")
 public class AccountCreatedEvent { }</code></pre>
 </div>

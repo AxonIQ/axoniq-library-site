@@ -1092,7 +1092,7 @@ public class GiftCard {
 </div>
 </div>
 <div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@AggregateRoot <i class="conum" data-value="1"></i><b>(1)</b>
 public class GiftCard {
@@ -1233,7 +1233,7 @@ These methods are combined with the <span class="anchor=entitycreator-annotation
 <div class="paragraph">
 <p>The identifier is then typically set in the <code>@EventSourcingHandler</code> of the creation event or injected into the <code>@EntityCreator</code>.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4
 @Aggregate
@@ -1245,9 +1245,12 @@ public class GiftCard {
     public GiftCard(IssueCardCommand cmd) {
         apply(new CardIssuedEvent(cmd.getCardId(), cmd.getAmount()));
     }
-}
-
-// AF5
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF5
 @EventSourcedEntity
 public class GiftCard {
     private String cardId; // No annotation needed on the field
@@ -1329,15 +1332,18 @@ public GiftCard(CardIssuedEvent event) {
 <div class="paragraph">
 <p>The <code>AggregateLifecycle.apply()</code> method is replaced by the <code>EventAppender</code> interface, which is passed as a parameter to your command handling methods. This makes the dependency on the event publishing mechanism explicit. This decision is documented in more detail in the <a href="../../solved-architecture-choices/#remove_threadlocal_usage" class="xref page">ThreadLocal usage prevents proper asynchronous and reactive programming</a> section.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Axon Framework 4
 @CommandHandler
 public void handle(RedeemCardCommand cmd) {
     AggregateLifecycle.apply(new CardRedeemedEvent(id, cmd.getAmount()));
-}
-
-// Axon Framework 5
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Axon Framework 5
 @CommandHandler
 public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
     eventAppender.append(new CardRedeemedEvent(id, cmd.amount()));

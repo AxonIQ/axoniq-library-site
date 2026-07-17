@@ -1025,11 +1025,11 @@ That makes it a good fit for fine-grained control over concurrency without chang
 <div class="paragraph">
 <p>The <code>SequencingPolicy</code> interface determines which commands should be sequenced together:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock api-excerpt">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface SequencingPolicy {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface SequencingPolicy&lt;M extends Message&gt; {
 
-    Optional&lt;Object&gt; sequenceIdentifierFor(CommandMessage command, ProcessingContext context);
+    Optional&lt;Object&gt; sequenceIdentifierFor(M message, @Nullable ProcessingContext context);
 }</code></pre>
 </div>
 </div>
@@ -1060,11 +1060,11 @@ Common alternatives are metadata-driven sequencing, tenant-based sequencing, or 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class TenantBasedSequencingPolicy implements SequencingPolicy {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class TenantBasedSequencingPolicy implements SequencingPolicy&lt;CommandMessage&gt; {
 
     @Override
     public Optional&lt;Object&gt; sequenceIdentifierFor(CommandMessage command, ProcessingContext context) {
-        return Optional.ofNullable(command.metadata().get("tenantId"));
+        return Optional.ofNullable(command.metadata().get("tenantId")).map(Object.class::cast);
     }
 }</code></pre>
 </div>
@@ -1090,6 +1090,7 @@ Common alternatives are metadata-driven sequencing, tenant-based sequencing, or 
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void configureSequencingPolicy(MessagingConfigurer configurer) {
     configurer.componentRegistry(cr -&gt; cr.registerComponent(
             SequencingPolicy.class,
+            MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
             c -&gt; new TenantBasedSequencingPolicy())
     );
 }</code></pre>
@@ -1127,6 +1128,7 @@ That lets the framework fall back to concurrent execution for those commands.</p
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void configureSequencingPolicy(MessagingConfigurer configurer) {
     configurer.componentRegistry(cr -&gt; cr.registerComponent(
             SequencingPolicy.class,
+            MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
             c -&gt; NoOpSequencingPolicy.INSTANCE)
     );
 }</code></pre>

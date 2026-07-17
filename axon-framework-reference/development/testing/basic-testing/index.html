@@ -1061,8 +1061,7 @@ class AccountTest {
                                        ));
         fixture = AxonTestFixture.with(
                 configurer,
-                customization -&gt; customization.disableAxonServer()  // Disable Axon Server for tests
-                                              .registerIgnoredField(MyEvent.class, "timestamp")
+                customization -&gt; customization.registerIgnoredField(MyEvent.class, "timestamp")
                                               .registerIgnoredField(MyEvent.class, "eventId")
         );
     }
@@ -1081,7 +1080,7 @@ class AccountTest {
 <div class="ulist">
 <ul>
 <li>
-<p><code>disableAxonServer()</code> - Disable Axon Server connector (useful for local testing).</p>
+<p><code>asIntegrationTest()</code> - Enable heavier infrastructure components, like the Axon Server connector, which are disabled by default.</p>
 </li>
 <li>
 <p><code>registerIgnoredField(Class&lt;?&gt; clazz, String field)</code> - Ignore specific fields during equality checks.</p>
@@ -1133,7 +1132,7 @@ public class AxonConfig {
                                       .messaging(messaging -&gt; messaging.registerCommandHandlingModule(
                                               CommandHandlingModule.named("payment")
                                                                    .commandHandlers()
-                                                                   .annotatedCommandHandlingComponent(c -&gt; new PaymentCommandHandler())
+                                                                   .autodetectedCommandHandlingComponent(c -&gt; new PaymentCommandHandler())
                                       ))
                                       .messaging(messaging -&gt; messaging.eventProcessing(AxonConfig::registerEventHandlers));
     }
@@ -1142,7 +1141,7 @@ public class AxonConfig {
         return eventProcessing.pooledStreaming(pooledConfig -&gt; pooledConfig.processor(
                 "my-processor",
                 processorConfig -&gt; processorConfig.eventHandlingComponents(components -&gt; components.autodetected(
-                        c -&gt; new NotificationEventHandler())
+                        "account-notifications", c -&gt; new NotificationEventHandler())
                 ).notCustomized()
         ));
     }
@@ -1172,7 +1171,7 @@ class AccountTest {
 <p>When using Spring Boot, the configurer is created by the Axon&#8217;s Spring Boot integration.
 Inject it as a bean into your test for realistic integration testing:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.test.fixture.AxonTestFixture;
@@ -1484,6 +1483,7 @@ This can be useful whenever you need to set up external state, mock (complex) te
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.modelling.repository.Repository;
 import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.Test;
 
 class AccountTest {
 
@@ -1668,7 +1668,7 @@ class AccountTest {
         fixture.given()
                // ...
                .when()
-               .events(
+               .event(
                    new ExternalPaymentReceivedEvent("account-1", 100.00),
                    Metadata.with("userId", "user-123")
                );
@@ -2289,6 +2289,7 @@ class AccountTest {
                .then()
                .commandsMatch(commands -&gt; commands.size() == 1
                        &amp;&amp; commands.getFirst().payloadAs(SendEmailCommand.class)
+                                  .recipient()
                                   .equals("user@example.com"));
     }
 }</code></pre>
@@ -2553,7 +2554,7 @@ This extension automatically creates and stops the fixture for you, so you do no
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@ExtendWith(AxonFrameworkExtension.class) <i class="conum" data-value="1"></i><b>(1)</b>
 class AccountEntityTest {
 
-    @ProvideAxonTestFixture <i class="conum" data-value="2"></i><b>(2)</b>
+    @ProvidedAxonTestFixture <i class="conum" data-value="2"></i><b>(2)</b>
     private AxonTestFixtureProvider provider = () -&gt; AxonTestFixture.with(
             EventSourcingConfigurer.create().registerEntity(
                 EventSourcedEntityModule.autodetected(
@@ -2575,7 +2576,7 @@ class AccountEntityTest {
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>The <code>@ProvideAxonTestFixture</code> annotation indicates that the <code>provider</code> field can create a new instance of an  <code>AxonTestFixture</code> for every test run.</td>
+<td>The <code>@ProvidedAxonTestFixture</code> annotation indicates that the <code>provider</code> field can create a new instance of an  <code>AxonTestFixture</code> for every test run.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
@@ -2590,19 +2591,19 @@ class AccountEntityTest {
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-<code>@ProvidedAxonTestFixture</code> cannot be applied on static fields, as this breaks the lifecycle contract of getting a new instance of the fixture on every test run. You can however use <code>@ProvideAxonTestFixture</code> on static and non-static methods if you want.
+<code>@ProvidedAxonTestFixture</code> cannot be applied on static fields, as this breaks the lifecycle contract of getting a new instance of the fixture on every test run. You can however use <code>@ProvidedAxonTestFixture</code> on static and non-static methods if you want.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>Alternatively, you can also parameterize <code>@ProvideAxonTestFixture</code> with a class value implementing the <code>@AxonTestFixtureProvider</code> interface. By doing so, you can reuse the same provider across multiple test classes, or even share it across your entire test suite by using a common base class.
-By using the <code>@ProvideAxonTestFixture</code> directly on a test method, you can override the default configured on class level.</p>
+<p>Alternatively, you can also parameterize <code>@ProvidedAxonTestFixture</code> with a class value implementing the <code>AxonTestFixtureProvider</code> interface. By doing so, you can reuse the same provider across multiple test classes, or even share it across your entire test suite by using a common base class.
+By using the <code>@ProvidedAxonTestFixture</code> directly on a test method, you can override the default configured on class level.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@ExtendWith(AxonFrameworkExtension.class)
-@ProvideAxonTestFixture(GlobalFixtureProvider.class) <i class="conum" data-value="1"></i><b>(1)</b>
+@ProvidedAxonTestFixture(GlobalFixtureProvider.class) <i class="conum" data-value="1"></i><b>(1)</b>
 class AccountEntityTest {
 
     @Test <i class="conum" data-value="2"></i><b>(2)</b>
@@ -2611,7 +2612,7 @@ class AccountEntityTest {
     }
 
     @Test
-    @ProvideAxonTestFixture(SpecificFixtureProvider.class) <i class="conum" data-value="3"></i><b>(3)</b>
+    @ProvidedAxonTestFixture(SpecificFixtureProvider.class) <i class="conum" data-value="3"></i><b>(3)</b>
     void testUsingSpecificProvider(AxonTestFixture fixture) {
         // This test will use the SpecificFixtureProvider to create the fixture instance
     }
@@ -2619,8 +2620,8 @@ class AccountEntityTest {
 
 class GlobalFixtureProvider implements AxonTestFixtureProvider {
     @Override
-    public AxonTestFixture createFixture() {
-        return AxonTestFixture.with(...);
+    public AxonTestFixture get() {
+        return AxonTestFixture.with(EventSourcingConfigurer.create());
     }
 }</code></pre>
 </div>
@@ -2629,7 +2630,7 @@ class GlobalFixtureProvider implements AxonTestFixtureProvider {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The <code>@ProvideAxonTestFixture(MyFixtureProvider.class)</code> annotation tells the extension to use the <code>MyFixtureProvider</code> class to create new instances of the <code>AxonTestFixture</code> for every test run. This allows you to centralize your fixture configuration in one place and reuse it across multiple test classes.</td>
+<td>The <code>@ProvidedAxonTestFixture(GlobalFixtureProvider.class)</code> annotation tells the extension to use the <code>GlobalFixtureProvider</code> class to create new instances of the <code>AxonTestFixture</code> for every test run. This allows you to centralize your fixture configuration in one place and reuse it across multiple test classes.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
@@ -2677,7 +2678,7 @@ class AccountCommandHandlerTest {
         ModuleBuilder&lt;CommandHandlingModule&gt; accountCommandHandlingModule =
                 CommandHandlingModule.named("account")
                                      .commandHandlers()
-                                     .annotatedCommandHandlingComponent(c -&gt; new AccountCommandHandler());
+                                     .autodetectedCommandHandlingComponent(c -&gt; new AccountCommandHandler());
         EventSourcingConfigurer configurer =
                 EventSourcingConfigurer.create()
                                        .registerEntity(eventSourcedEntity)
@@ -2763,7 +2764,7 @@ class NotificationEventHandlerTest {
             EventProcessorModule.EventHandlingPhase&lt;PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration&gt; processor
     ) {
         return processor.eventHandlingComponents(components -&gt; components.autodetected(
-                                c -&gt; new NotificationEventHandler())
+                                "account-notifications", c -&gt; new NotificationEventHandler())
                         )
                         .notCustomized();
     }
@@ -2885,6 +2886,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.pooled.Poo
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -2897,9 +2899,14 @@ class AccountQueryHandlerTest {
         ModuleBuilder&lt;QueryHandlingModule&gt; accountQueryHandlingModule =
                 QueryHandlingModule.named("account")
                                    .queryHandlers()
-                                   .annotatedQueryHandlingComponent(c -&gt; new AccountQueryHandler());
+                                   .autodetectedQueryHandlingComponent(
+                                           c -&gt; c.getComponent(AccountQueryHandler.class)
+                                   );
         MessagingConfigurer configurer =
                 MessagingConfigurer.create()
+                                   .componentRegistry(cr -&gt; cr.registerComponent(
+                                           AccountQueryHandler.class, c -&gt; new AccountQueryHandler()
+                                   ))
                                    .registerQueryHandlingModule(accountQueryHandlingModule)
                                    .eventProcessing(
                                            processing -&gt; processing.pooledStreaming(
@@ -2917,7 +2924,7 @@ class AccountQueryHandlerTest {
             EventProcessorModule.EventHandlingPhase&lt;PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration&gt; processor
     ) {
         return processor.eventHandlingComponents(components -&gt; components.autodetected(
-                                c -&gt; new NotificationEventHandler())
+                                "account-projection", c -&gt; c.getComponent(AccountQueryHandler.class))
                         )
                         .notCustomized();
     }

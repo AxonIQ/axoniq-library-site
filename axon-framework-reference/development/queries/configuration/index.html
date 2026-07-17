@@ -1029,7 +1029,7 @@ public class AxonApp {
         QueryHandlingModule cardSummaryModule =
                 QueryHandlingModule.named("card-summary-projection")
                                    .queryHandlers()
-                                   .annotatedQueryHandlingComponent(config -&gt; new CardSummaryProjection())
+                                   .autodetectedQueryHandlingComponent(config -&gt; new CardSummaryProjection())
                                    .build();
         MessagingConfigurer configurer =
             MessagingConfigurer.create()
@@ -1042,8 +1042,8 @@ public class AxonApp {
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>annotatedQueryHandlingComponent()</code> method scans the provided object for methods annotated with <code>@QueryHandler</code> and automatically registers them with the <code>QueryBus</code>.
-For most use cases, using <code>annotatedQueryHandlingComponent()</code> with <code>@QueryHandler</code> annotated methods is the recommended approach. The framework also provides low-level APIs for registering lambda query handlers directly, but these require working with <code>QueryMessage</code> and <code>MessageStream</code> types and are primarily intended for advanced scenarios (for example when annotations are not desired) or framework integrations.</p>
+<p>The <code>autodetectedQueryHandlingComponent()</code> method scans the provided object for methods annotated with <code>@QueryHandler</code> and automatically registers them with the <code>QueryBus</code>.
+For most use cases, using <code>autodetectedQueryHandlingComponent()</code> with <code>@QueryHandler</code> annotated methods is the recommended approach. The framework also provides low-level APIs for registering lambda query handlers directly, but these require working with <code>QueryMessage</code> and <code>MessageStream</code> types and are primarily intended for advanced scenarios (for example when annotations are not desired) or framework integrations.</p>
 </div>
 </div>
 <div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
@@ -1278,12 +1278,13 @@ import org.axonframework.messaging.queryhandling.QueryMessage;
 @Component
 public class LoggingQueryDispatchInterceptor implements MessageDispatchInterceptor&lt;QueryMessage&gt; {
 
-    @Nonnull
+    private static final Logger logger = LoggerFactory.getLogger(LoggingQueryDispatchInterceptor.class);
+
     @Override
     public MessageStream&lt;?&gt; interceptOnDispatch(
-            @Nonnull QueryMessage message,
-            @Nullable ProcessingContext context,
-            @Nonnull MessageDispatchInterceptorChain&lt;QueryMessage&gt; chain
+            QueryMessage message,
+            ProcessingContext context,
+            MessageDispatchInterceptorChain&lt;QueryMessage&gt; chain
     ) {
         logger.info("Dispatching: {}", message.type().name());
         return chain.proceed(message, context);

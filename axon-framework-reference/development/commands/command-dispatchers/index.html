@@ -1037,12 +1037,9 @@ public void dispatchCommands() {
     <i class="conum" data-value="5"></i><b>(5)</b>
     resultFuture.whenComplete((resultMsg, exception) -&gt; {
         if (exception != null) {
-            // Handle exception
-        } else if (resultMsg.isExceptional()) {
-            Throwable throwable = resultMsg.exceptionResult();
             // Handle command execution failure
         } else {
-            String commandResult = resultMsg.getPayload();
+            Object commandResult = resultMsg.payload();
             // Handle successful result
         }
     });
@@ -1080,7 +1077,7 @@ See the <a href="#command-dispatcher">CommandDispatcher</a> section for a more c
 <tr>
 <td><i class="conum" data-value="5"></i><b>5</b></td>
 <td>Use the <code>CompletableFuture#whenComplete</code> method (or other <code>CompletableFuture</code> methods) to handle the result.
-The <code>CommandResultMessage</code> provides the API to verify whether command execution was exceptional or successful.</td>
+When command handling fails, the <code>CompletableFuture</code> completes exceptionally; on success, the <code>CommandResultMessage</code> carries the result of the command handler.</td>
 </tr>
 </table>
 </div>
@@ -1559,8 +1556,8 @@ The <code>RoutingStrategy</code> is used by the <code>CommandGateway</code> when
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Using Configuration API
 public ApplicationConfigurer configureRouting(ApplicationConfigurer configurer) {
-    return configurer.messagingConfigurer(messagingConfigurer -&gt;
-        messagingConfigurer.registerComponent(
+    return configurer.componentRegistry(registry -&gt;
+        registry.registerComponent(
             RoutingStrategy.class,
             config -&gt; new MetadataRoutingStrategy("tenantId") <i class="conum" data-value="1"></i><b>(1)</b>
         )
@@ -1609,7 +1606,7 @@ public class AxonConfig {
     @Override
     public String getRoutingKey(CommandMessage command) {
         // Custom logic to determine routing key
-        MyCommand payload = command.payload();
+        MyCommand payload = (MyCommand) command.payload();
         return payload.tenantId() + ":" + payload.entityId(); <i class="conum" data-value="1"></i><b>(1)</b>
     }
 }</code></pre>

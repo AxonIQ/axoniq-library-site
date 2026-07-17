@@ -1105,9 +1105,9 @@ public class AxonConfig {
     private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
             EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
     ) {
-        return componentConfigurer.autodetected(c -&gt; new MyHandler())
-                                  .autodetected(c -&gt; new ModuleHandler())
-                                  .autodetected(c -&gt; new MyOtherHandler());
+        return componentConfigurer.autodetected("my-handler", c -&gt; new MyHandler())
+                                  .autodetected("module-handler", c -&gt; new ModuleHandler())
+                                  .autodetected("my-other-handler", c -&gt; new MyOtherHandler());
     }
 }</code></pre>
 </div>
@@ -1121,7 +1121,7 @@ public class AxonConfig {
 <div class="paragraph">
 <p>Assuming the autodetected approach is used, let us consider that the following event handling components have been registered:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// MyHandler.java
 package org.axonframework.example.eventhandling;
@@ -1154,7 +1154,7 @@ public class ModuleHandler {
 <div class="paragraph">
 <p>Now consider the same autodetected setup, but with the following event handling components registered without the <code>@Namespace</code> annotation:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// MyHandler.java
 package org.axonframework.example.eventhandling;
@@ -1343,12 +1343,7 @@ The behaviour for the Subscribing- and the Streaming Event Processor can respect
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorContext;
-import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
-
-public class AxonConfig {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
 
     public void configureEventProcessing(MessagingConfigurer configurer) {
         configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.defaults(
@@ -1365,11 +1360,7 @@ public class AxonConfig {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
-import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
-
-public class AxonConfig {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
 
     public void configureEventProcessing(MessagingConfigurer configurer) {
         configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.subscribing(
@@ -1392,7 +1383,7 @@ public class AxonConfig {
     private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
             EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
     ) {
-        return componentConfigurer.autodetected(c -&gt; new MyHandler());
+        return componentConfigurer.autodetected("my-handler", c -&gt; new MyHandler());
     }
 }</code></pre>
 </div>
@@ -1403,11 +1394,11 @@ public class AxonConfig {
 <div class="paragraph">
 <p>For providing a custom solution, the `ErrorHandler&#8217;s single method needs to be implemented:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock api-excerpt">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface ErrorHandler {
 
-    void handleError(@Nonnull ErrorContext errorContext) throws Exception;
+    void handleError(ErrorContext errorContext) throws Exception;
 }</code></pre>
 </div>
 </div>
@@ -1481,19 +1472,35 @@ Use the <code>withInterceptor(MessageHandlerInterceptor&lt;? super EventMessage&
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-
-public class AxonConfig {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
 
     public void registerProcessorSpecificInterceptor(MessagingConfigurer configurer) {
         // For SubscribingEventProcessor:
-        configurer.eventProcessing()
-                  .subscribing()
-                  .customize("my-processor", config -&gt; config.withInterceptor(new CustomEventHandlerInterceptor()));
+        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.subscribing(
+                subscribingConfigurer -&gt; subscribingConfigurer.processor(
+                        "my-processor",
+                        config -&gt; config.eventHandlingComponents(this::configureHandlingComponent)
+                                        .customized((c, processorConfig) -&gt; processorConfig.withInterceptor(
+                                                new CustomEventHandlerInterceptor()
+                                        ))
+                )
+        ));
         // For PooledStreamingEventProcessor:
-        configurer.eventProcessing()
-                  .pooledStreaming()
-                  .customize("my-processor", config -&gt; config.withInterceptor(new CustomEventHandlerInterceptor()));
+        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.pooledStreaming(
+                pooledStreamingConfigurer -&gt; pooledStreamingConfigurer.processor(
+                        "my-processor",
+                        config -&gt; config.eventHandlingComponents(this::configureHandlingComponent)
+                                        .customized((c, processorConfig) -&gt; processorConfig.withInterceptor(
+                                                new CustomEventHandlerInterceptor()
+                                        ))
+                )
+        ));
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected("my-handler", c -&gt; new MyHandler());
     }
 }</code></pre>
 </div>
@@ -1508,11 +1515,9 @@ Multiple <code>intercepted()</code> calls accumulate interceptors in registratio
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
-import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorsConfigurer;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
 
-public class AxonConfig {
+    private final String tenantId = "tenant-a";
 
     public void configureEventProcessing(MessagingConfigurer configurer) {
         configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.subscribing(
@@ -1559,8 +1564,8 @@ private EventHandlingComponentsConfigurer.CompletePhase configureHandlingCompone
         EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
 ) {
     return componentConfigurer.autodetected("orderHandler", cfg -&gt; new OrderEventHandler())
-                              .withExceptionHandler((event, context, error) -&gt; {
-                                  log.warn("Handler failed for {}: {}", event.qualifiedName(), error.getMessage());
+                              .withExceptionHandler(cfg -&gt; (event, context, error) -&gt; {
+                                  log.warn("Handler failed for {}: {}", event.type().qualifiedName(), error.getMessage());
                                   return MessageStream.empty(); // suppress; use MessageStream.failed(error) to propagate
                               });
 }</code></pre>
@@ -1594,24 +1599,24 @@ Returning without calling <code>proceed</code> short-circuits the chain.</p>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+import org.axonframework.messaging.eventhandling.interception.annotation.EventHandlerInterceptor;
 
 // Before-interceptor: runs before every @EventHandler on this component
 public class AuditingEventHandler {
 
-    private final AuditLog auditLog;
+    private AuditLog auditLog;
 
     @EventHandlerInterceptor
     void audit(EventMessage event) {
-        auditLog.record(event.qualifiedName());
+        auditLog.record(event.type().qualifiedName());
         // chain proceeds automatically after this returns
     }
 
     @EventHandler
-    void on(OrderPlaced event) { ... }
+    void on(OrderPlaced event) { /* ... */ }
 
     @EventHandler
-    void on(OrderCancelled event) { ... }
+    void on(OrderCancelled event) { /* ... */ }
 }</code></pre>
 </div>
 </div>
@@ -1622,12 +1627,12 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.EventHandlerInterceptor;
+import org.axonframework.messaging.eventhandling.interception.annotation.EventHandlerInterceptor;
 
 // Surround-interceptor: short-circuit events intended for other tenants
 public class TenantScopedEventHandler {
 
-    private final TenantId tenantId;
+    private String tenantId;
 
     @EventHandlerInterceptor
     MessageStream&lt;?&gt; filterByTenant(
@@ -1635,14 +1640,14 @@ public class TenantScopedEventHandler {
             MessageHandlerInterceptorChain&lt;EventMessage&gt; chain,
             ProcessingContext ctx
     ) {
-        if (!tenantId.equals(event.metaData().get("tenantId"))) {
+        if (!tenantId.equals(event.metadata().get("tenantId"))) {
             return MessageStream.empty(); // skip: not our tenant
         }
         return chain.proceed(event, ctx);
     }
 
     @EventHandler
-    void on(OrderPlaced event) { ... }
+    void on(OrderPlaced event) { /* ... */ }
 }</code></pre>
 </div>
 </div>
@@ -1657,10 +1662,15 @@ Without it, the method is eligible for any exception that matches its declared p
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.core.interception.annotation.ExceptionHandler;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.interception.annotation.ExceptionHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.modelling.ConcurrencyException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MyEventHandler {
+
+    private final Logger log = LoggerFactory.getLogger(MyEventHandler.class);
 
     @EventHandler
     void on(OrderPlaced event) {
@@ -1673,8 +1683,8 @@ public class MyEventHandler {
         // return normally to suppress the exception and continue processing
     }
 
-    @ExceptionHandler(resultType = OptimisticLockingFailureException.class)
-    void onConcurrencyFailure(OptimisticLockingFailureException ex) {
+    @ExceptionHandler(resultType = ConcurrencyException.class)
+    void onConcurrencyFailure(ConcurrencyException ex) {
         // handle a specific exception type; other exceptions are not affected
     }
 }</code></pre>
@@ -1694,9 +1704,7 @@ For Event Processors, the message monitor deals explicitly with the events flowi
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-
-public class AxonConfig {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
 
     public void registerEventMonitor(MessagingConfigurer configurer) {
         configurer.registerEventMonitor(config -&gt; new CustomMessageMonitor());

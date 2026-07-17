@@ -980,9 +980,7 @@ These two pointers combined make it straightforward to use Axon&#8217;s test fix
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ApplicationConfigurer;
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.modelling.repository.Repository;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.modelling.repository.Repository;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
 
@@ -1016,7 +1014,7 @@ class AccountIntegrationTest {
                    // Retrieve components for verification
                    Repository repository = config.getComponent(Repository.class);
                    // Perform verification...
-                   assertThat(repository).has(/*...*/);
+                   assertThat(repository).isNotNull();
                });
     }
 
@@ -1161,7 +1159,7 @@ class AccountSpringBootTest {
 </div>
 <div class="paragraph">
 <p>The fixture&#8217;s <code>Customization</code> is derived automatically from the Spring environment.
-When <code>axon.axonserver.enabled</code> is <code>false</code>, the fixture disables Axon Server. When <code>true</code> or absent, it remains enabled.</p>
+When <code>axon.axonserver.enabled</code> is <code>false</code> or absent, the fixture disables Axon Server. When <code>true</code>, it remains enabled.</p>
 </div>
 <div class="paragraph">
 <p>To override the default customization, declare a <code>Customization</code> bean in the test:</p>
@@ -1183,7 +1181,7 @@ class AccountCustomizedTest {
 
         @Bean
         public AxonTestFixture.Customization customization() {
-            return new AxonTestFixture.Customization().disableAxonServer();
+            return new AxonTestFixture.Customization().asIntegrationTest();
         }
     }
 

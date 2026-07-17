@@ -1019,7 +1019,7 @@
 </ul>
 </div>
 <div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyDispatchInterceptor implements MessageDispatchInterceptor&lt;CommandMessage&lt;?&gt;&gt; {
 
@@ -1045,8 +1045,8 @@
                                                 @Nullable ProcessingContext context,
                                                 MessageDispatchInterceptorChain&lt;CommandMessage&gt; chain) {
         // Modify or enrich message
-        CommandMessage enrichedMessage = message.andMetaData(
-            Collections.singletonMap("dispatchTime", Instant.now())
+        CommandMessage enrichedMessage = message.andMetadata(
+            Collections.singletonMap("dispatchTime", Instant.now().toString())
         );
 
         // Continue chain with modified message
@@ -1118,7 +1118,7 @@
 </ul>
 </div>
 <div id="_tabs_2_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyHandlerInterceptor implements MessageHandlerInterceptor&lt;CommandMessage&lt;?&gt;&gt; {
 
@@ -1228,7 +1228,7 @@
 </ul>
 </div>
 <div id="_tabs_3_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_3_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
@@ -1335,7 +1335,7 @@ Configuration configuration = configurer.build();</code></pre>
 </ul>
 </div>
 <div id="_tabs_4_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_4_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Component
 public class MyCommandHandlerInterceptor implements MessageHandlerInterceptor&lt;CommandMessage&lt;?&gt;&gt; {
@@ -1448,21 +1448,23 @@ public class SecondInterceptor implements MessageHandlerInterceptor&lt;CommandMe
 <h2 id="_component_specific_interceptor_registration"><a class="anchor" href="#_component_specific_interceptor_registration"></a>Component-specific interceptor registration</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>For advanced scenarios where interceptors should only apply to specific components, use the factory pattern:</p>
+<p>For advanced scenarios where interceptors should only apply to specific components, decorate the <code>HandlerInterceptorRegistry</code> with a <code>HandlerInterceptorFactory</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.registerCommandHandlerInterceptor(
-    HandlerInterceptorFactory.of(
-        (config, componentType, componentName) -&gt; {
-            // Only intercept OrderAggregate commands
-            if (componentType.equals(OrderAggregate.class)) {
-                return new OrderValidationInterceptor();
-            }
-            return null; // No interceptor for other components
-        }
-    )
-);</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.componentRegistry(cr -&gt; cr.registerDecorator(
+        HandlerInterceptorRegistry.class,
+        0,
+        (config, name, registry) -&gt; registry.registerCommandInterceptor(
+                (factoryConfig, componentType, componentName) -&gt; {
+                    // Only intercept OrderAggregate commands
+                    if (componentType.equals(OrderAggregate.class)) {
+                        return new OrderValidationInterceptor();
+                    }
+                    return null; // No interceptor for other components
+                }
+        )
+));</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1533,7 +1535,7 @@ The method controls whether and when to call <code>chain.proceed(message, contex
 </ul>
 </div>
 <div id="_tabs_5_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_5_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class OrderCommandHandler {
 
@@ -1556,7 +1558,7 @@ The method controls whether and when to call <code>chain.proceed(message, contex
 <div id="_tabs_5_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_5_axon_framework_5">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandlerInterceptor;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.interception.annotation.CommandHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 
@@ -1578,7 +1580,7 @@ public class OrderCommandHandler {
     // Before-interceptor: runs before the handler, chain proceeds automatically
     @CommandHandlerInterceptor
     void log(CommandMessage command) {
-        logger.info("Handling command: {}", command.qualifiedName());
+        logger.info("Handling command: {}", command.type().qualifiedName());
     }
 
     @CommandHandler
@@ -1613,7 +1615,7 @@ The <code>payloadType</code> attribute has been removed. Narrowing is now done s
 </ul>
 </div>
 <div id="_tabs_6_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_6_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class OrderCommandHandler {
 

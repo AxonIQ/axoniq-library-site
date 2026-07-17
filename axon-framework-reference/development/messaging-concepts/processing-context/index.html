@@ -1187,7 +1187,7 @@ public void handle(CreateOrderCommand command,
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerPhaseHandlers(ProcessingContext context) {
     // Async variants
     context.onPreInvocation(ctx -&gt; doAsyncSetup());
-    context.onInvocation(ctx -&gt; handleAsync())
+    context.onInvocation(ctx -&gt; handleAsync());
     context.onPostInvocation(ctx -&gt; doAsyncPostProcessing());
     context.onPrepareCommit(ctx -&gt; validateBeforeCommit());
     context.onCommit(ctx -&gt; commitTransaction());
@@ -1357,8 +1357,8 @@ public void handle(CreateOrderCommand command, ProcessingContext context) {
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Note that this is an advanced example!
-// Axon Framework typically deals with transaction and connection details for you, so you don't have too.
-// That makes thi example useful ONLY if you are using a storage solution that is not supported by Axon Framework out of the box.
+// Axon Framework typically deals with transaction and connection details for you, so you don't have to.
+// That makes this example useful ONLY if you are using a storage solution that is not supported by Axon Framework out of the box.
 public class TransactionInterceptor implements MessageHandlerInterceptor&lt;CommandMessage&gt; {
 
     private static final ResourceKey&lt;Transaction&gt; TX_KEY = ResourceKey.withLabel("Transaction");
@@ -1517,7 +1517,7 @@ public CompletableFuture&lt;Void&gt; on(OrderPlacedEvent event,
     );
 
     // Return the CompletableFuture so the handler only completes when the command finishes
-    return result.toCompletableFuture()
+    return result.getResultMessage()
                  .thenAccept(r -&gt; logger.info("Command processed successfully"))
                  .exceptionally(ex -&gt; {
                      logger.error("Command failed: {}", ex.getMessage());
@@ -1566,12 +1566,11 @@ public void on(OrderCreatedEvent event, ProcessingContext context) {
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class CustomPhaseInterceptor implements MessageHandlerInterceptor&lt;Message&gt; {
 
-    @Nonnull
     @Override
     public MessageStream&lt;?&gt; interceptOnHandle(
-            @Nonnull Message message,
-            @Nonnull ProcessingContext context,
-            @Nonnull MessageHandlerInterceptorChain&lt;Message&gt; chain
+            Message message,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain&lt;Message&gt; chain
     ) {
         // Order between PRE_INVOCATION (order = -10000) and INVOCATION (order = 0) phase.
         ProcessingLifecycle.Phase customPhase = () -&gt; -5000;

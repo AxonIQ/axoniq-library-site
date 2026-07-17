@@ -1365,7 +1365,7 @@ import java.util.concurrent.CompletableFuture;
 
 class DirectEventPublisher {
 
-    private final EventSink eventSink;
+    private EventSink eventSink;
 
     public CompletableFuture&lt;Void&gt; publishWithMetadata() {
         EventMessage eventMessage = new GenericEventMessage(
@@ -1417,7 +1417,7 @@ import java.util.concurrent.CompletableFuture;
 
 class DirectEventPublisher {
 
-    private final EventBus eventBus;
+    private EventBus eventBus;
 
     public CompletableFuture&lt;Void&gt; publishWithMetadata() {
         EventMessage eventMessage = new GenericEventMessage(
@@ -1449,7 +1449,7 @@ import java.util.concurrent.CompletableFuture;
 
 class DirectEventPublisher {
 
-    private final EventStore eventStore;
+    private EventStore eventStore;
 
     public CompletableFuture&lt;Void&gt; publishWithMetadata() {
         EventMessage eventMessage = new GenericEventMessage(
@@ -1525,8 +1525,7 @@ By default, the tag key matches the field name, but you can override it by speci
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.annotation.Nonnull;
-import org.axonframework.eventsourcing.eventstore.TagResolver;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 
@@ -1535,7 +1534,7 @@ import java.util.Set;
 public class CustomTagResolver implements TagResolver {
 
     @Override
-    public Set&lt;Tag&gt; resolve(@Nonnull EventMessage event) {
+    public Set&lt;Tag&gt; resolve(EventMessage event) {
         Object payload = event.payload();
         if (payload instanceof OrderPlacedEvent orderEvent) {
             return Set.of(
@@ -1553,10 +1552,8 @@ public class CustomTagResolver implements TagResolver {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public ApplicationConfigurer configureTagResolver(ApplicationConfigurer configurer) {
-    return configurer.eventsourcingConfigurer(esConfigurer -&gt;
-        esConfigurer.registerTagResolver(config -&gt; new CustomTagResolver())
-    );
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public EventSourcingConfigurer configureTagResolver(EventSourcingConfigurer configurer) {
+    return configurer.registerTagResolver(config -&gt; new CustomTagResolver());
 }</code></pre>
 </div>
 </div>

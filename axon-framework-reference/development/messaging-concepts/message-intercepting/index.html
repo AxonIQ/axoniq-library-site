@@ -988,15 +988,14 @@ These interceptors are always invoked on the thread that dispatches the message.
 <div id="dispatch-interceptor" class="paragraph">
 <p>The <code>MessageDispatchInterceptor</code> interface defines a single method:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock api-excerpt">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface MessageDispatchInterceptor&lt;M extends Message&gt; {
 
-    @Nonnull
     MessageStream&lt;?&gt; interceptOnDispatch(
-            @Nonnull M message,
+            M message,
             @Nullable ProcessingContext context,
-            @Nonnull MessageDispatchInterceptorChain&lt;M&gt; interceptorChain
+            MessageDispatchInterceptorChain&lt;M&gt; interceptorChain
     );
 }</code></pre>
 </div>
@@ -1008,15 +1007,14 @@ Interceptors can even block message processing altogether, for example for secur
 <div id="handler-interceptor" class="paragraph">
 <p>The <code>MessageHandlerInterceptor</code> interface also defines a single method:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock api-excerpt">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface MessageHandlerInterceptor&lt;M extends Message&gt; {
 
-    @Nonnull
     MessageStream&lt;?&gt; interceptOnHandle(
-            @Nonnull M message,
-            @Nonnull ProcessingContext context,
-            @Nonnull MessageHandlerInterceptorChain&lt;M&gt; interceptorChain
+            M message,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain&lt;M&gt; interceptorChain
     );
 }</code></pre>
 </div>
@@ -1058,7 +1056,7 @@ The differences lie in the used interceptor chain implementation, which is uniqu
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-jave hljs" data-lang="jave">public void registerMessageHandlerInterceptor(MessagingConfigurer configurer) {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerMessageHandlerInterceptor(MessagingConfigurer configurer) {
     configurer.registerMessageHandlerInterceptor(
             // The LoggingInterceptor is provided by Axon out of the box.
             config -&gt; new LoggingInterceptor&lt;&gt;()
@@ -1520,7 +1518,7 @@ This means interceptors can access Reactor context using <code>Mono.deferContext
 <div class="paragraph">
 <p>The following example shows a reactor dispatch interceptor that extracts the authenticated user from Reactor context and attaches it as metadata:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SecurityReactorInterceptor
         implements ReactorMessageDispatchInterceptor&lt;CommandMessage&gt; {
@@ -1580,7 +1578,7 @@ In a Spring WebFlux application, this is where <code>ReactiveSecurityContextHold
 <p>Declare the interceptor as a Spring bean.
 The Reactor auto-configuration discovers <code>ReactorMessageDispatchInterceptor</code> beans and registers them on the <code>ReactorDispatchInterceptorRegistry</code>.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
 ReactorMessageDispatchInterceptor&lt;CommandMessage&gt; securityInterceptor() {
@@ -1593,7 +1591,7 @@ ReactorMessageDispatchInterceptor&lt;CommandMessage&gt; securityInterceptor() {
 <div class="paragraph">
 <p>Decorate the <code>ReactorDispatchInterceptorRegistry</code> component to register interceptors:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.componentRegistry(cr -&gt; cr.registerDecorator(
         ReactorDispatchInterceptorRegistry.class,

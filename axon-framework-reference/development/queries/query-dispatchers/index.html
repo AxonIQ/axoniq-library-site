@@ -1452,7 +1452,7 @@ public List&lt;CardSummary&gt; handle(FetchCardSummariesQuery query) {
     return cardRepository.findAll(); <i class="conum" data-value="1"></i><b>(1)</b>
 }
 
-public Publisher&lt;CardSummary&gt; consumer() {
+public Publisher&lt;CardSummary&gt; consumer(FetchCardSummariesQuery query) {
     return queryGateway.streamingQuery(query, CardSummary.class); <i class="conum" data-value="2"></i><b>(2)</b>
 }</code></pre>
 </div>
@@ -1532,7 +1532,7 @@ Hence, it&#8217;s important to cancel it once the client is not interested in re
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public Publisher&lt;CardSummary&gt; consumer() {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public Publisher&lt;CardSummary&gt; consumer(FetchCardSummariesQuery query, Predicate&lt;CardSummary&gt; somePredicate) {
     return Flux.from(queryGateway.streamingQuery(query, CardSummary.class))
                .take(100)
                .takeUntil(message -&gt; somePredicate.test(message));
@@ -1645,12 +1645,10 @@ public class ItemService {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ApplicationConfigurer configurer = DefaultConfigurer.defaultConfiguration();
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">MessagingConfigurer configurer = MessagingConfigurer.create();
 
-configurer.messaging(messagingConfigurer -&gt; {
-    // QueryBus is registered by default, but can be customized
-    messagingConfigurer.registerQueryBus(config -&gt; new CustomQueryBus());
-});
+// QueryBus is registered by default, but can be customized
+configurer.registerQueryBus(config -&gt; new SimpleQueryBus(config.getComponent(UnitOfWorkFactory.class)));
 
 Configuration configuration = configurer.start();
 QueryGateway queryGateway = configuration.getComponent(QueryGateway.class);

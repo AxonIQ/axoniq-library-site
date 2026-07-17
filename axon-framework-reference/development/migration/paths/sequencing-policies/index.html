@@ -1017,7 +1017,7 @@ In that case it is highly recommended to explicitly configure a suitable <code>S
 </ul>
 </div>
 <div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package org.axonframework.eventhandling.async;
 
@@ -1045,13 +1045,13 @@ public interface SequencingPolicy&lt;T&gt; {
 </div>
 </div>
 <div id="_tabs_1_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5">
-<div class="listingblock">
+<div class="listingblock api-excerpt">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package org.axonframework.messaging.core.sequencing;
 
 public interface SequencingPolicy&lt;M extends Message&gt; {
 
-    Optional&lt;Object&gt; sequenceIdentifierFor(M message, ProcessingContext context);
+    Optional&lt;Object&gt; sequenceIdentifierFor(M message, @Nullable ProcessingContext context);
 }</code></pre>
 </div>
 </div>
@@ -1090,7 +1090,7 @@ public interface SequencingPolicy&lt;M extends Message&gt; {
 </ul>
 </div>
 <div id="_tabs_2_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CustomerIdSequencingPolicy implements SequencingPolicy&lt;EventMessage&lt;?&gt;&gt; {
 
@@ -1108,7 +1108,13 @@ public interface SequencingPolicy&lt;M extends Message&gt; {
 <div id="_tabs_2_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_5">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CustomerIdSequencingPolicy implements SequencingPolicy&lt;EventMessage&gt; {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+
+import java.util.Optional;
+
+public class CustomerIdSequencingPolicy implements SequencingPolicy&lt;EventMessage&gt; {
 
     @Override
     public Optional&lt;Object&gt; sequenceIdentifierFor(EventMessage message, ProcessingContext context) {
@@ -1135,7 +1141,7 @@ For non-domain events (events without an aggregate identifier), the policy retur
 </div>
 <div class="paragraph">
 <p>In Axon Framework 5, the default is a <code>HierarchicalSequencingPolicy</code> that wraps <code>SequentialPerAggregatePolicy</code> as its primary policy, with <code>SequentialPolicy</code> as the fallback.
-This means that when the primary policy returns <code>Optional.empty()</code>—which happens when no aggregate identifier is found in the processing context—the fallback <code>SequentialPolicy</code> is applied instead.</p>
+This means that when the primary policy returns <code>Optional.empty()</code> (which happens when no aggregate identifier is found in the processing context), the fallback <code>SequentialPolicy</code> is applied instead.</p>
 </div>
 <div class="paragraph">
 <p>The practical impact depends on your event store solution:</p>
@@ -1144,14 +1150,14 @@ This means that when the primary policy returns <code>Optional.empty()</code>—
 <ul>
 <li>
 <p><strong>Aggregate-based event store solution</strong>: Events carry an aggregate identifier that is placed in the processing context.
-<code>SequentialPerAggregatePolicy</code> can find it, so the behavior is identical to Axon Framework 4—events from the same aggregate are handled sequentially, events from different aggregates can be processed concurrently.
+<code>SequentialPerAggregatePolicy</code> can find it, so the behavior is identical to Axon Framework 4: events from the same aggregate are handled sequentially, events from different aggregates can be processed concurrently.
 Users migrating from Axon Framework 4 without migrating their event store to DCB should observe no behavioral difference.</p>
 </li>
 <li>
 <p><strong>DCB (tag-based) event store solution</strong>: Events are stored using tags rather than aggregate identifiers.
 No aggregate identifier is placed in the processing context, so <code>SequentialPerAggregatePolicy</code> returns <code>Optional.empty()</code> for every event.
 The <code>HierarchicalSequencingPolicy</code> then falls back to <code>SequentialPolicy</code>, processing all events sequentially within a single segment (allowing no concurrency at all within the processing segment).
-This is the safe default, but limits parallelism—see the section below on defining an explicit policy.</p>
+This is the safe default, but limits parallelism: see the section below on defining an explicit policy.</p>
 </li>
 </ul>
 </div>
@@ -1202,20 +1208,23 @@ class OrderEventHandler {
 import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 
-public void configureEventProcessing(MessagingConfigurer configurer) {
-    configurer.eventProcessing(eventConfigurer -&gt;
-            eventConfigurer.pooledStreaming(pooledStreamingConfigurer -&gt;
-                    pooledStreamingConfigurer.processor("order-processor", customizer -&gt;
-                                    customizer.eventHandlingComponents(ehc -&gt;
-                                            ehc.declarative(cfg -&gt;
-                                                    SimpleEventHandlingComponent.create("orders",
-                                                            new PropertySequencingPolicy&lt;&gt;(Order.class, "customerId")
-                                                    )
-                                            )
-                                    ).notCustomized()
-                    )
-            )
-    );
+public class AxonConfig {
+
+    public void configureEventProcessing(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -&gt;
+                eventConfigurer.pooledStreaming(pooledStreamingConfigurer -&gt;
+                        pooledStreamingConfigurer.processor("order-processor", customizer -&gt;
+                                        customizer.eventHandlingComponents(ehc -&gt;
+                                                        ehc.declarative("orders", configuration -&gt;
+                                                                SimpleEventHandlingComponent.create("orders",
+                                                                        new PropertySequencingPolicy&lt;&gt;(Order.class, "customerId")
+                                                                )
+                                                        )
+                                        ).notCustomized()
+                        )
+                )
+        );
+    }
 }</code></pre>
 </div>
 </div>

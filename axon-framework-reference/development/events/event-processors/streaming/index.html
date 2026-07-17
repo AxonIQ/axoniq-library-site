@@ -1105,7 +1105,6 @@ The <code>EventProcessingConfigurer</code> lambda guides users towards:</p>
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 
 public class AxonConfig {
 
@@ -1128,7 +1127,7 @@ public class AxonConfig {
     private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
             EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
     ) {
-        return componentConfigurer.autodetected(c -&gt; new AnnotatedEventHandlingClass());
+        return componentConfigurer.autodetected("example-component", c -&gt; new AnnotatedEventHandlingClass());
     }
 }</code></pre>
 </div>
@@ -1165,16 +1164,16 @@ public class AxonConfig {
                 // Set defaults for all pooled streaming processors
                 .defaults((config, processorConfig) -&gt; processorConfig
                         .eventSource(config.getComponent(StreamableEventSource.class))
-                        .segmentCount(4)
+                        .initialSegmentCount(4)
                         .batchSize(100)
-                        .claimExtensionThreshold(Duration.ofSeconds(5))
+                        .claimExtensionThreshold(Duration.ofSeconds(5).toMillis())
                 )
                 // Configure a specific processor
                 .processor(
                         "example-processor",
                         config -&gt; config.eventHandlingComponents(this::configureHandlingComponent)
-                                        .customize((c, pooledStreamingConfig) -&gt; pooledStreamingConfig
-                                                .segmentCount(8)  // Override default for this processor
+                                        .customized((c, pooledStreamingConfig) -&gt; pooledStreamingConfig
+                                                .initialSegmentCount(8)  // Override default for this processor
                                         )
                 );
     }
@@ -1182,7 +1181,7 @@ public class AxonConfig {
     private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
             EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
     ) {
-        return componentConfigurer.autodetected(c -&gt; new AnnotatedEventHandlingClass());
+        return componentConfigurer.autodetected("example-component", c -&gt; new AnnotatedEventHandlingClass());
     }
 }</code></pre>
 </div>
@@ -1659,6 +1658,12 @@ public class AxonConfig {
                                 ))
         );
     }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected("example-component", c -&gt; new AnnotatedEventHandlingClass());
+    }
 }</code></pre>
 </div>
 </div>
@@ -1771,6 +1776,12 @@ public class AxonConfig {
                                                                            .tokenClaimInterval(7500)
                 )
         );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected("example-component", c -&gt; new AnnotatedEventHandlingClass());
     }
 }</code></pre>
 </div>
@@ -2011,6 +2022,12 @@ public class AxonConfig {
                 config.getComponent(TokenStore.class)
         ));
     }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected("example-component", c -&gt; new AnnotatedEventHandlingClass());
+    }
 }</code></pre>
 </div>
 </div>
@@ -2043,6 +2060,12 @@ public class AxonConfig {
                                 ))
         );
     }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected("example-component", c -&gt; new AnnotatedEventHandlingClass());
+    }
 }</code></pre>
 </div>
 </div>
@@ -2069,10 +2092,14 @@ public class AxonConfig {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.persistence.EntityManagerFactory;
+import org.axonframework.conversion.GeneralConverter;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStoreConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AxonConfig {
@@ -2176,6 +2203,12 @@ public class AxonConfig {
                 config -&gt; config.eventHandlingComponents(this::configureHandlingComponent)
                                 .customized((c, psepConfig) -&gt; psepConfig.initialSegmentCount(32))
         );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected("example-component", c -&gt; new AnnotatedEventHandlingClass());
     }
 }</code></pre>
 </div>
@@ -2484,7 +2517,6 @@ class CustomEventHandlingComponent {
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
@@ -2510,11 +2542,11 @@ public class AxonConfig {
     private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
             EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
     ) {
-        return componentConfigurer.declarative(c -&gt; {
+        return componentConfigurer.declarative("example-component", c -&gt; {
             PropertySequencingPolicy&lt;BaseEvent, Object&gt; policy =
                     new PropertySequencingPolicy&lt;&gt;(BaseEvent.class, "identifier");
 
-            EventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent(policy);
+            SimpleEventHandlingComponent eventHandlingComponent = SimpleEventHandlingComponent.create("example-component", policy);
             eventHandlingComponent.subscribe(
                     new QualifiedName("test-event"),
                     (event, context) -&gt; {
@@ -2530,7 +2562,7 @@ public class AxonConfig {
 </div>
 </div>
 <div id="_tabs_6_autodetected_sequencing_policy_configuration_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_6_autodetected_sequencing_policy_configuration_spring_boot">
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// TODO #4053 - Introduce Event Processor Specification bean example.</code></pre>
 </div>
@@ -2555,8 +2587,8 @@ axon.eventhandling.processors.example-processor.sequencing-policy=customSequenci
 public class AxonConfig {
     // omitting other configuration methods...
     @Bean
-    public SequencingPolicy&lt;EventMessage&lt;?&gt;&gt; customSequencingPolicy() {
-        return new FullConcurrencyPolicy();
+    public SequencingPolicy&lt;? super EventMessage&gt; customSequencingPolicy() {
+        return FullConcurrencyPolicy.INSTANCE;
     }
 }</code></pre>
 </div>
@@ -2569,11 +2601,11 @@ public class AxonConfig {
 To that end, we should implement the <code>SequencingPolicy</code> interface.
 This interface defines a single method, <code>sequenceIdentifierFor(EventMessage, ProcessingContext)</code>, that returns an <code>Optional</code> of the sequence identifier for the given event and context:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock api-excerpt">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface SequencingPolicy {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface SequencingPolicy&lt;M extends Message&gt; {
 
-    Optional&lt;Object&gt; sequenceIdentifierFor(EventMessage event, ProcessingContext context);
+    Optional&lt;Object&gt; sequenceIdentifierFor(M message, @Nullable ProcessingContext context);
 }</code></pre>
 </div>
 </div>
@@ -2671,6 +2703,12 @@ public class AxonConfig {
                                                      ))
                 )
         );
+    }
+
+    private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
+    ) {
+        return componentConfigurer.autodetected("example-component", c -&gt; new AnnotatedEventHandlingClass());
     }
 }</code></pre>
 </div>
@@ -3050,15 +3088,15 @@ class StreamingProcessorService {
     // The Configuration allows access to all the configured EventProcessors
     private Configuration configuration;
 
-    CompletableFuture&lt;CompletableFuture&lt;Void&gt;&gt; resetTokensFor(String processorName) {
+    CompletableFuture&lt;Void&gt; resetTokensFor(String processorName) {
         Map&lt;String, StreamingEventProcessor&gt; processors = configuration.getComponents(StreamingEventProcessor.class);
         StreamingEventProcessor processor = processors.get(processorName);
         // shutdown this streaming processor
         return processor.shutdown()
                         // reset the tokens to prepare the processor
-                        .thenApply(result -&gt; processor.resetTokens())
+                        .thenCompose(result -&gt; processor.resetTokens())
                         // start the processor to initiate the replay
-                        .thenApply(result -&gt; processor.start());
+                        .thenCompose(result -&gt; processor.start());
     }
 }</code></pre>
 </div>
@@ -3078,16 +3116,16 @@ class StreamingProcessorService {
     // The Configuration allows access to all the configured EventProcessors
     private Configuration configuration;
 
-    CompletableFuture&lt;CompletableFuture&lt;Void&gt;&gt; resetTokensFor(String processorName,
-                                                              Object resetContext) {
+    CompletableFuture&lt;Void&gt; resetTokensFor(String processorName,
+                                           Object resetContext) {
         Map&lt;String, StreamingEventProcessor&gt; processors = configuration.getComponents(StreamingEventProcessor.class);
         StreamingEventProcessor processor = processors.get(processorName);
         // shutdown this streaming processor
         return processor.shutdown()
                         // reset the tokens to prepare the processor
-                        .thenApply(result -&gt; processor.resetTokens(resetContext))
+                        .thenCompose(result -&gt; processor.resetTokens(resetContext))
                         // start the processor to initiate the replay
-                        .thenApply(result -&gt; processor.start());
+                        .thenCompose(result -&gt; processor.start());
     }
 }</code></pre>
 </div>
@@ -3160,8 +3198,17 @@ This context can, for the duration of the replay, be accessed using the <code>Re
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@AllowReplay <i class="conum" data-value="1"></i><b>(1)</b>
-@ProcessingGroup("card-summary")
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.annotation.Namespace;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
+import org.axonframework.messaging.eventhandling.replay.annotation.AllowReplay;
+import org.axonframework.messaging.eventhandling.replay.annotation.DisallowReplay;
+import org.axonframework.messaging.eventhandling.replay.annotation.ReplayContext;
+import org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler;
+
+@AllowReplay <i class="conum" data-value="1"></i><b>(1)</b>
+@Namespace("card-summary")
 public class CardSummaryProjection {
     //...
     @EventHandler
@@ -3271,16 +3318,16 @@ public class AxonConfig {
     private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
             EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
     ) {
-        return componentConfigurer.declarative(c -&gt; {
-            EventHandlingComponent eventHandlingComponent =
-                    new ReplayBlockingEventHandlingComponent(new SimpleEventHandlingComponent());
-            eventHandlingComponent.subscribe(
+        return componentConfigurer.declarative("example-component", c -&gt; {
+            SimpleEventHandlingComponent delegate = SimpleEventHandlingComponent.create("example-component");
+            delegate.subscribe(
                     new QualifiedName("test-event"),
                     (event, context) -&gt; {
                         // process events
                         return MessageStream.empty();
                     }
             );
+            EventHandlingComponent eventHandlingComponent = new ReplayBlockingEventHandlingComponent&lt;&gt;(delegate);
             return eventHandlingComponent;
         });
     }
@@ -3319,7 +3366,7 @@ The default implementation chooses the event with the oldest timestamp (that is,
 <div class="paragraph">
 <p>Consider the following sample when constructing a <code>MultiStreamableEventSource</code>:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
@@ -3338,7 +3385,7 @@ The default implementation chooses the event with the oldest timestamp (that is,
 <div class="paragraph">
 <p>For simple cases using the default timestamp-based comparison, you can use the <code>comparingTimestamps()</code> method:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Simple case using default timestamp comparison
 MultiStreamableEventSource source = MultiStreamableEventSource
@@ -3366,7 +3413,7 @@ MultiStreamableEventSource source = MultiStreamableEventSource
 </ul>
 </div>
 <div id="_tabs_9_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_9_configuration_api">
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // omitting other configuration methods...
@@ -3389,7 +3436,7 @@ MultiStreamableEventSource source = MultiStreamableEventSource
 <div class="paragraph">
 <p>When using <code>EventProcessorDefinition</code>, first create a <code>MultiStreamableEventSource</code> bean, then reference it in your processor configuration:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.messaging.eventstreaming.MultiStreamableEventSource;
@@ -3438,7 +3485,7 @@ axon.eventhandling.processors.example-processor.source=multiStreamableEventSourc
 <div class="paragraph">
 <p>This approach does require the bean name to be present in the Application Context of course:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
 public class AxonConfig {

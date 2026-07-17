@@ -1013,20 +1013,29 @@ Previously, this annotation was used to group event handling components into a s
 <div class="paragraph">
 <p>In Axon Framework 5, you can use the <code>@Namespace</code> annotation to <a href="../../../events/event-processors/#autodetected_config" class="xref page">assign an event handling component to an event processor</a>.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4
 @ProcessingGroup("my-processor")
 public class MyProjector {
     @EventHandler
     public void on(MyEvent event) { /* ... */ }
-}
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF5
+import org.axonframework.messaging.core.annotation.Namespace;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 
-// AF5
 @Namespace("my-processor")
 public class MyProjector {
+
     @EventHandler
-    public void on(MyEvent event) { /* ... */ }
+    public void on(MyEvent event) {
+        // ...
+    }
 }</code></pre>
 </div>
 </div>
@@ -1046,25 +1055,38 @@ public class MyProjector {
 <div class="paragraph">
 <p>For non-Spring users, the old <code>EventProcessingConfigurer</code> (and <code>EventProcessingModule</code>) has been replaced by a new flow accessed through the <code>MessagingConfigurer#eventProcessing</code> method.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4
 public void configure(Configurer configurer) {
     configurer.eventProcessing()
               .registerPooledStreamingEventProcessor("my-processor");
-}
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF5
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
-// AF5
-public void configure(MessagingConfigurer configurer) {
-    configurer.eventProcessing(
-        eventProcessing -&gt; eventProcessing.pooledStreaming(
-            pooledStreaming -&gt; pooledStreaming.processor(
-                "my-processor",
-                module -&gt; module.eventHandlingComponents(components -&gt; components) // No components added in this simple example
-                                .notCustomized()
-            )
-        )
-    );
+public class EventProcessorConfigurationExample {
+
+    public void configure(MessagingConfigurer configurer) {
+        configurer.eventProcessing(
+                eventProcessing -&gt; eventProcessing.pooledStreaming(
+                        pooledStreaming -&gt; pooledStreaming.processor(
+                                "my-processor",
+                                module -&gt; module.eventHandlingComponents(
+                                                         components -&gt; components.autodetected(
+                                                                 "my-projector",
+                                                                 cfg -&gt; new MyProjector()
+                                                         )
+                                                 )
+                                                 .notCustomized()
+                        )
+                )
+        );
+    }
 }</code></pre>
 </div>
 </div>
@@ -1088,7 +1110,7 @@ This replaces the previous way of configuring processors through the <code>Event
 </ul>
 </div>
 <div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
@@ -1171,7 +1193,7 @@ axon:
 <p>In Axon Framework 4, the <code>QueryUpdateEmitter</code> was often injected as a class-level field in projectors.
 In Axon Framework 5, the use of <code>QueryUpdateEmitter</code> is enforced as a parameter of message handlers (specifically query handlers and event handlers that emit updates).</p>
 </div>
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4
 public class MyProjector {
@@ -1182,10 +1204,17 @@ public class MyProjector {
     public void on(MyEvent event) {
         updateEmitter.emit(MyQuery.class, q -&gt; true, new MyView());
     }
-}
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF5
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
 
-// AF5
 public class MyProjector {
+
     @EventHandler
     public void on(MyEvent event, QueryUpdateEmitter updateEmitter) {
         updateEmitter.emit(MyQuery.class, q -&gt; true, new MyView());

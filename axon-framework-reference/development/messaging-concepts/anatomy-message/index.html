@@ -1023,7 +1023,7 @@ For example, all "OrderPlaced v1.0" events share the same <code>MessageType</cod
 <p>The component in charge of deciding on the <code>MessageType</code>, is the <code>MessageTypeResolver</code>. The default <code>MessageTypeResolver</code> checks for message-specific annotation.
 These annotations are the <code>@Command</code>, <code>@Event</code>, or <code>@Query</code> annotation, which you can attach on your classes:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Event(name = "OrderPlaced", version = "1.0")
 public class OrderPlacedEvent {
@@ -1097,7 +1097,7 @@ As such, it acts as a fallback for whenever you are (1) using annotations and (2
 <div class="paragraph">
 <p>To automatically set the namespace for several messages inside the same package, we could annotate the <code>package-info.java</code> file as shown below:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Namespace("orders")
 package com.example.orders.api;
@@ -1166,13 +1166,13 @@ public void handle(OrderPlacedEvent event) {
 }
 
 // Handler 2: Receives as JSON (must specify messageType)
-@EventHandler(messageType = "com.example.orders.OrderPlaced")
+@EventHandler(eventName = "com.example.orders.OrderPlaced")
 public void handle(JsonNode event) {
     // Same message, converted to JsonNode
 }
 
 // Handler 3: Receives as Map (must specify messageType)
-@EventHandler(messageType = "com.example.orders.OrderPlaced")
+@EventHandler(eventName = "com.example.orders.OrderPlaced")
 public void handle(Map&lt;String, Object&gt; event) {
     // Same message, converted to Map
 }</code></pre>
@@ -1216,7 +1216,7 @@ By default, it uses the annotations and class information to derive the qualifie
 <div class="paragraph">
 <p><strong>For events:</strong></p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.example.events;
 
@@ -1238,7 +1238,7 @@ public class UserRegisteredEvent {
 <div class="paragraph">
 <p><strong>For commands:</strong></p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.example.commands;
 
@@ -1251,7 +1251,7 @@ public class RegisterUserCommand {
 <div class="paragraph">
 <p><strong>For queries:</strong></p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.example.queries;
 
@@ -1287,7 +1287,7 @@ The fallback for when that is not present too is the package name of the class.<
 <div class="paragraph">
 <p>If you need custom logic to determine message types, you can implement the <code>MessageTypeResolver</code> interface:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
@@ -1305,7 +1305,7 @@ public class CustomMessageTypeResolver implements MessageTypeResolver {
 <div class="paragraph">
 <p>Then register it with your configuration:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ApplicationConfigurer applicationConfigurer = /* The configurer that contains this Application's configuration */
 MessagingConfigurer.enhance(applicationConfigurer)
@@ -1352,7 +1352,7 @@ While the message type describes what the message means (for example, "OrderPlac
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
 public void on(EventMessage event) {
-    // Converter is already attached — no need to pass it explicitly
+    // Converter is already attached, no need to pass it explicitly
     OrderPlacedEvent order = event.payloadAs(OrderPlacedEvent.class);
 }</code></pre>
 </div>
@@ -1525,13 +1525,13 @@ Metadata metadata = Metadata.with("count", String.valueOf(42))
 </li>
 </ul>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">EventMessage event = // ...
 Instant occurredAt = event.timestamp();</code></pre>
 </div>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">CommandMessage command = // ...
 Optional&lt;String&gt; routingKey = command.routingKey();</code></pre>

@@ -1022,7 +1022,7 @@ When you use entities for stateful command handling (see <a href="../command-han
 <div class="paragraph">
 <p>Repository operations in Axon Framework are async-native, returning <code>CompletableFuture</code> to support non-blocking operations:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock api-excerpt">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface Repository&lt;ID, E&gt; {
     // Load an existing entity
@@ -1050,7 +1050,7 @@ Command handlers automatically receive a <code>ProcessingContext</code> paramete
 <p>Repositories return entities wrapped in a <code>ManagedEntity</code> interface.
 This wrapper tracks the entity&#8217;s lifecycle and enables the repository to detect and persist changes.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock api-excerpt">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface ManagedEntity&lt;ID, E&gt; {
     ID identifier();           // Get the entity identifier
@@ -1213,8 +1213,7 @@ public class AxonConfig {
     public void configureCommandBus(MessagingConfigurer configurer) {
         configurer.registerCommandBus(
                 config -&gt; new SimpleCommandBus(
-                        config.getComponent(UnitOfWorkFactory.class),
-                        Collections.emptyList()
+                        config.getComponent(UnitOfWorkFactory.class)
                 )
         );
     }
@@ -1229,12 +1228,8 @@ public class AxonConfig {
 public class AxonConfig {
 
     @Bean
-    public CommandBus commandBus(UnitOfWorkFactory unitOfWorkFactory,
-                                 TransactionManager transactionManager) {
-        return new SimpleCommandBus(
-                unitOfWorkFactory,
-                List.of(transactionManager)
-        );
+    public CommandBus commandBus(UnitOfWorkFactory unitOfWorkFactory) {
+        return new SimpleCommandBus(unitOfWorkFactory);
     }
 }</code></pre>
 </div>
@@ -1480,7 +1475,7 @@ While you can dispatch commands directly through the command bus, the gateway is
 <div class="paragraph">
 <p>The <code>CommandGateway</code> interface provides several methods for sending commands:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock api-excerpt">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface CommandGateway {
     // Send and get CommandResult for full control
@@ -1523,7 +1518,7 @@ public class OrderController {
     @PostMapping("/orders/{id}/ship")
     public void shipOrder(@PathVariable String id) {
         // Fire and forget
-        commandGateway.sendAndWait(new ShipOrderCommand(id));
+        commandGateway.send(new ShipOrderCommand(id));
     }
 }</code></pre>
 </div>
@@ -1599,7 +1594,7 @@ public class AxonConfig {
             .registerCommandHandlingModule(
                 CommandHandlingModule.named("order-commands")
                     .commandHandlers(handlers -&gt;
-                        handlers.annotatedCommandHandlingComponent(
+                        handlers.autodetectedCommandHandlingComponent(
                             config -&gt; new OrderCommandHandler(
                                 config.getComponent(Repository.class)
                             )
@@ -1611,7 +1606,7 @@ public class AxonConfig {
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>annotatedCommandHandlingComponent()</code> method scans the handler for <code>@CommandHandler</code> annotated methods and registers them with the command bus. When the you prefer to register methods as command handlers without the use of annotations, use the <code>commandHandler(QualifiedName, CommandHandler)</code> method instead.</p>
+<p>The <code>autodetectedCommandHandlingComponent()</code> method scans the handler for <code>@CommandHandler</code> annotated methods and registers them with the command bus. When you prefer to register methods as command handlers without the use of annotations, use the <code>commandHandler(QualifiedName, CommandHandler)</code> method instead.</p>
 </div>
 <div class="paragraph">
 <p>For registering event-sourced entities and their repositories, use <code>EventSourcingConfigurer</code> or <code>ModellingConfigurer</code> which provide entity-specific registration methods.</p>

@@ -1113,7 +1113,7 @@ public class AxonConfig {
     private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
             EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
     ) {
-        return componentConfigurer.autodetected(c -&gt; new AnnotatedEventHandlingComponent());
+        return componentConfigurer.autodetected("my-handler", c -&gt; new AnnotatedEventHandlingComponent());
     }
 }</code></pre>
 </div>
@@ -1138,7 +1138,6 @@ You&#8217;re automatically guided to that point when you are configuring an even
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
@@ -1163,8 +1162,8 @@ public class AxonConfig {
     private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
             EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
     ) {
-        return componentConfigurer.declarative(c -&gt; {
-            EventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
+        return componentConfigurer.declarative("order-handler", c -&gt; {
+            SimpleEventHandlingComponent eventHandlingComponent = SimpleEventHandlingComponent.create("order-handler");
             eventHandlingComponent.subscribe(
                     new QualifiedName("OrderPlaced"),
                     (event, context) -&gt; {
@@ -1323,9 +1322,12 @@ As such, an event handler is conceptually not able to "directly" respond to the 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
-public void on(OrderPlacedEvent event) {
-    // Update state, no return value
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class VoidReturnHandler {
+
+    @EventHandler
+    public void on(OrderPlacedEvent event) {
+        // Update state, no return value
+    }
 }</code></pre>
 </div>
 </div>
@@ -1334,9 +1336,14 @@ public void on(OrderPlacedEvent event) {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
-public CompletableFuture&lt;Void&gt; on(OrderPlacedEvent event) {
-    return asyncService.processOrder(event.getOrderId());
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class CompletableFutureReturnHandler {
+
+    private AsyncService asyncService;
+
+    @EventHandler
+    public CompletableFuture&lt;Void&gt; on(OrderPlacedEvent event) {
+        return asyncService.processOrder(event.orderId());
+    }
 }</code></pre>
 </div>
 </div>
@@ -1346,9 +1353,14 @@ The same option applies for <code>Mono</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
-public Mono&lt;Void&gt; on(OrderPlacedEvent event) {
-    return reactiveService.processOrder(event.getOrderId());
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class MonoReturnHandler {
+
+    private ReactiveService reactiveService;
+
+    @EventHandler
+    public Mono&lt;Void&gt; on(OrderPlacedEvent event) {
+        return reactiveService.processOrder(event.orderId());
+    }
 }</code></pre>
 </div>
 </div>
@@ -1358,11 +1370,10 @@ When registering an <code>EventHandler</code> as a lambda directly, you are even
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageStream;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.TerminalEventMessage;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 
 public class AxonConfig {
@@ -1372,8 +1383,8 @@ public class AxonConfig {
     private EventHandlingComponentsConfigurer.AdditionalComponentPhase configureHandlingComponent(
             EventHandlingComponentsConfigurer.RequiredComponentPhase componentConfigurer
     ) {
-        return componentConfigurer.declarative(c -&gt; {
-            EventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
+        return componentConfigurer.declarative("order-handler", c -&gt; {
+            SimpleEventHandlingComponent eventHandlingComponent = SimpleEventHandlingComponent.create("order-handler");
             eventHandlingComponent.subscribe(
                     new QualifiedName("OrderPlaced"),
                     (event, context) -&gt; {
@@ -1387,10 +1398,10 @@ public class AxonConfig {
                     (event, context) -&gt; {
                         OrderDeclinedEvent eventPayload = event.payloadAs(OrderDeclinedEvent.class);
                         AsyncService asyncService = context.component(AsyncService.class);
-                        return MessageStream.fromFuture(asyncService.processOrderDeclined(eventPayload)
-                                                                    .thenApply(r -&gt; TerminalEventMessage.INSTANCE))
-                                            .cast()
-                                            .ignoreEntries();
+                        return MessageStream.fromFuture(
+                                asyncService.processOrderDeclined(eventPayload)
+                                            .thenApply(r -&gt; (Message) null)
+                        ).ignoreEntries();
                     }
             );
             return eventHandlingComponent;

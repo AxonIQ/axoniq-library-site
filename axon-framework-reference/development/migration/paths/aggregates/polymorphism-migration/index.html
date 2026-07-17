@@ -1005,7 +1005,19 @@ When using the manual configuration API, you would use <code>AggregateConfigurer
 <div id="_tabs_1_axon_framework_5_declarative--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5_declarative">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.modelling.entity.PolymorphicEntityMetamodel;
+import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
+
+public class AxonConfig {
     // ...
     public void configure(EventSourcingConfigurer configurer) {
          configurer.registerEntity(
@@ -1026,8 +1038,10 @@ When using the manual configuration API, you would use <code>AggregateConfigurer
                                         configuration.getComponent(EventConverter.class)
                                 ))
                                 .build())
+                        .entityFactory(c -&gt; EventSourcedEntityFactory.fromNoArgument(OpenLoopGiftCard::new))
+                        .criteriaResolver(c -&gt; (id, ctx) -&gt; EventCriteria.havingTags(Tag.of("cardId", id)))
+                        .build()
         );
-                                    // other phases (factory, etc.) omitted for brevity
     }
 }</code></pre>
 </div>
@@ -1039,7 +1053,12 @@ When using the manual configuration API, you would use <code>AggregateConfigurer
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity(
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.eventsourcing.annotation.reflection.InjectEntityId;
+
+@EventSourcedEntity(
+    tagKey = "cardId",
     concreteTypes = {
             OpenLoopGiftCard.class,
             RechargeableGiftCard.class
@@ -1047,7 +1066,15 @@ When using the manual configuration API, you would use <code>AggregateConfigurer
 )
 public class GiftCard extends Card {
     // ...
+
+    @EntityCreator
+    protected GiftCard(@InjectEntityId String cardId) {
+        // ...
+    }
 }
+
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 
 public class AxonConfig {
     // ...
@@ -1061,7 +1088,7 @@ public class AxonConfig {
 </div>
 </div>
 <div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
-<div class="listingblock">
+<div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
     // ...

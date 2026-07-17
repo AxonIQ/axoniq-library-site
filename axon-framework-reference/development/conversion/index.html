@@ -1036,7 +1036,7 @@ This happens independently for each handler, meaning different handlers can rece
 <div class="paragraph">
 <p>For example, consider an event stored as JSON:</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.example.events;
 
@@ -1079,7 +1079,7 @@ public void on(UserRegisteredEvent event) {
 public void on(JsonNode event) {
     // Receives the same event as a JsonNode
     // Must use the fully qualified name (namespace + name)
-    String userId = event.get("userId").asText();
+    String userId = event.get("userId").asString();
     // Process using JSON directly
 }</code></pre>
 </div>
@@ -1128,8 +1128,8 @@ The converter is attached to the message, so calling <code>payloadAs(SomeType.cl
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
-public void on(EventMessage&lt;?&gt; event) {
-    // Works without passing a converter — Axon attached one when loading the event
+public void on(EventMessage event) {
+    // Works without passing a converter (Axon attached one when loading the event)
     UserRegisteredEvent payload = event.payloadAs(UserRegisteredEvent.class);
     userRepository.save(new User(payload.getUserId(), payload.getEmail()));
 }</code></pre>
@@ -1330,9 +1330,10 @@ This makes it ideal for:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public Converter customJacksonConverter() {
-    ObjectMapper customMapper = new ObjectMapper()
-            .findAndRegisterModules()
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    ObjectMapper customMapper = JsonMapper.builder()
+            .findAndAddModules()
+            .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            .build();
 
     return new JacksonConverter(customMapper);
 }</code></pre>
@@ -1359,7 +1360,7 @@ If you have not migrated to Jackson 3 yet, Axon Framework also provides a <code>
 <td class="content">
 <div class="paragraph">
 <p>Jackson 3 changed the default deserializing <code>final</code> fields (see <a href="https://github.com/FasterXML/jackson-databind/issues/4552">the original Jackson GitHub issue</a> for details).
-This prevents <code>final</code> fields from being deserialized, which—for example—might affect usages of Kotlin <code>val</code> properties for message payloads (because they are <code>final</code> by default).</p>
+This prevents <code>final</code> fields from being deserialized, which (for example) might affect usages of Kotlin <code>val</code> properties for message payloads (because they are <code>final</code> by default).</p>
 </div>
 <div class="paragraph">
 <p>When upgrading to Jackson 3, be sure to check if any of your payloads that get serialized using the <code>JacksonConverter</code> (that is using Jackson 3 under the hood) are affected by this change.
@@ -1377,8 +1378,9 @@ If so, you can either set the Jackson 3 feature <code>ALLOW_FINAL_FIELDS_AS_MUTA
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public Converter xmlBasedJacksonConverter() {
-    XmlMapper xmlMapper = new XmlMapper();
-    xmlMapper.findAndRegisterModules();
+    XmlMapper xmlMapper = XmlMapper.builder()
+            .findAndAddModules()
+            .build();
 
     return new JacksonConverter(xmlMapper);
 }</code></pre>
@@ -1456,19 +1458,13 @@ We doing so, be sure to implement caching to maintain performance.</p>
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyCustomConverter implements Converter {
 
     @Override
-    public boolean canConvert(Type sourceType, Type targetType) {
-        // Determine if conversion is possible
-        return /* ... */;
-    }
-
-    @Override
     public &lt;T&gt; T convert(Object input, Type targetType) {
         // Perform the conversion
-        return /* ... */;
+        return null;
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("someCustomProperty", "SomeValue");
     }
 }</code></pre>
@@ -1664,11 +1660,12 @@ This is helpful when:</p>
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class ConverterConfiguration {
 
     public GeneralConverter buildConverter() {
-        return new DelegatingGeneralConverter(
-                new JacksonConverter(new ObjectMapper()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                    .findAndRegisterModules())
-            );
+        ObjectMapper lenientMapper = JsonMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .findAndAddModules()
+                .build();
+
+        return new DelegatingGeneralConverter(new JacksonConverter(lenientMapper));
     }
 }</code></pre>
 </div>
@@ -1706,14 +1703,15 @@ The recommended approach is to use the <code>@JsonTypeInfo</code> annotation:</p
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ObjectMapper mapper = new ObjectMapper()
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ObjectMapper mapper = JsonMapper.builder()
     .activateDefaultTyping(
         BasicPolymorphicTypeValidator.builder()
             .allowIfBaseType(Object.class)
             .build(),
-        ObjectMapper.DefaultTyping.NON_FINAL,
+        DefaultTyping.NON_FINAL,
         JsonTypeInfo.As.PROPERTY
-    );
+    )
+    .build();
 
 JacksonConverter converter = new JacksonConverter(mapper);</code></pre>
 </div>
@@ -1769,7 +1767,7 @@ To provide flexibility converters, Axon will automatically convert between conte
     @Override
     public MyTargetType convert(MySourceType original) {
         // Perform conversion
-        return /* ... */;
+        return null;
     }
 }</code></pre>
 </div>

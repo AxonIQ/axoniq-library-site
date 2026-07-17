@@ -1027,7 +1027,7 @@ Components are discovered and registered automatically.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.configuration.EntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 
 public class AxonConfig {
 
@@ -1036,7 +1036,7 @@ public class AxonConfig {
 
         // Register an entity module
         configurer.registerEntity(
-                EventSourcedEntityModule.autodetected(String.class, GiftCard.class).build()
+                EventSourcedEntityModule.autodetected(String.class, GiftCard.class)
         );
     }
 }</code></pre>
@@ -1168,7 +1168,7 @@ public class AxonConfig {
             .registerCommandHandlingModule(
                 CommandHandlingModule.named("gift-card-commands")
                     .commandHandlers(handlers -&gt;
-                        handlers.annotatedCommandHandlingComponent(
+                        handlers.autodetectedCommandHandlingComponent(
                             config -&gt; new GiftCardCommandHandler(
                                 config.getComponent(Repository.class)
                             )
@@ -1180,7 +1180,7 @@ public class AxonConfig {
 </div>
 </div>
 <div class="paragraph">
-<p>The <code>annotatedCommandHandlingComponent()</code> method scans for <code>@CommandHandler</code> annotations and registers them.</p>
+<p>The <code>autodetectedCommandHandlingComponent()</code> method scans for <code>@CommandHandler</code> annotations and registers them.</p>
 </div>
 <div class="paragraph">
 <p>If full manual configuration is required, for example in absence of annotations, use the <code>commandHandler(QualifiedName, CommandHandler)</code> flow instead.</p>
@@ -1276,8 +1276,7 @@ public class AxonConfig {
     public static void main(String[] args) {
         MessagingConfigurer.create().registerCommandBus(
                 config -&gt; new SimpleCommandBus(
-                        config.getComponent(UnitOfWorkFactory.class),
-                        Collections.emptyList()
+                        config.getComponent(UnitOfWorkFactory.class)
                 )
         );
     }
@@ -1326,16 +1325,16 @@ public class AxonConfig {
     }
 
     @Override
-    public CompletableFuture&lt;CommandMessage&lt;?&gt;&gt; dispatch(
-            CommandMessage&lt;?&gt; command,
+    public CompletableFuture&lt;CommandResultMessage&gt; dispatch(
+            CommandMessage command,
             ProcessingContext context) {
-        logger.info("Dispatching command: {}", command.commandName());
+        logger.info("Dispatching command: {}", command.type().name());
         return delegate.dispatch(command, context)
             .whenComplete((result, error) -&gt; {
                 if (error != null) {
-                    logger.error("Command failed: {}", command.commandName(), error);
+                    logger.error("Command failed: {}", command.type().name(), error);
                 } else {
-                    logger.info("Command succeeded: {}", command.commandName());
+                    logger.info("Command succeeded: {}", command.type().name());
                 }
             });
     }
@@ -1529,7 +1528,7 @@ public class AxonConfig {
             // Register command handlers
             .registerCommandHandlingModule(
                     CommandHandlingModule.named("gift-card-commands").commandHandlers(
-                            handlers -&gt; handlers.annotatedCommandHandlingComponent(
+                            handlers -&gt; handlers.autodetectedCommandHandlingComponent(
                                     config -&gt; new GiftCardCommandHandler(
                                             config.getComponent(Repository.class)
                                     )

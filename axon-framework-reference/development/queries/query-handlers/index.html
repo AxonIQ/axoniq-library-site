@@ -1054,7 +1054,7 @@ When <code>@Namespace</code> is also not present, this attribute defaults to the
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.QueryHandler;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 
 public class CardSummaryProjection {
 
@@ -1330,11 +1330,8 @@ Query A calls query B. Because query A is waiting on a response of query B, and 
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler
 public CardSummary handle(FetchCardSummaryQuery query, ProcessingContext context) {
-    // Access correlation data
-    String correlationId = context.correlationId();
-
     // Access resources
-    SomeService service = context.resource(SomeService.RESOURCE_KEY);
+    SomeService service = context.getResource(SomeService.RESOURCE_KEY);
 
     return cardSummaryStorage.get(query.getCardSummaryId());
 }</code></pre>
@@ -1345,7 +1342,7 @@ public CardSummary handle(FetchCardSummaryQuery query, ProcessingContext context
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.QueryGateway;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 @QueryHandler
@@ -1371,7 +1368,7 @@ public OrderDetails handle(FetchOrderDetailsQuery query,
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
-import org.axonframework.messaging.eventhandling.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 
 @Component
 public class CardSummaryProjection {
@@ -1407,7 +1404,7 @@ public class CardSummaryProjection {
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// WRONG - Do not inject as a field
 @Component
 public class CardSummaryProjection {
-    private final QueryUpdateEmitter emitter; // ❌ Wrong!
+    private final QueryUpdateEmitter emitter; // WRONG!
 
     public CardSummaryProjection(QueryUpdateEmitter emitter) {
         this.emitter = emitter;
@@ -1419,7 +1416,7 @@ public class CardSummaryProjection {
 public class CardSummaryProjection {
     @EventHandler
     public void on(CardRedeemedEvent event, QueryUpdateEmitter emitter) {
-        // ✅ Correct!
+        // CORRECT!
         // Use emitter...
     }
 }</code></pre>
@@ -1520,12 +1517,13 @@ public CardSummary handle(FetchCardSummaryQuery query,
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class QueryHandler {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class PrimitiveQueryHandler {
 
-     @QueryHandler
-     public float handle(QueryPrimitive query) {
-     }
- }</code></pre>
+    @QueryHandler
+    public float handle(QueryPrimitive query) {
+        return 0.0f;
+    }
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
