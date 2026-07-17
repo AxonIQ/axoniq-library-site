@@ -1411,6 +1411,114 @@ A filter on <code>CoursePublished</code> also matches events stored as <code>Cou
 </div>
 </div>
 <div class="sect1">
+<h2 id="_splitting_an_event"><a class="anchor" href="#_splitting_an_event"></a>Splitting an event</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Sometimes a single stored event bundles several facts that later became separate events.
+<code>split(&#8230;&#8203;)</code> replaces one stored event with several events on the read path, so each reaches the handlers written for it.</p>
+</div>
+<div class="paragraph">
+<p>An early catalog recorded a course and its initial seat count in one <code>CourseListedWithSeats</code> event.
+That later became two events: a <code>CoursePublished</code> and a <code>CourseCapacityChanged</code>.
+A split reads each stored <code>CourseListedWithSeats</code> back as both:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static final MessageType FROM             = new MessageType("coursecatalog.CourseListedWithSeats", "1.0.0");
+private static final MessageType COURSE_PUBLISHED = new MessageType("coursecatalog.CoursePublished", "1.0.0");
+private static final MessageType CAPACITY_CHANGED = new MessageType("coursecatalog.CourseCapacityChanged", "1.0.0");
+
+public static EventTransformation build() {
+    return EventTransformation.split(FROM, Listing.class)                           <i class="conum" data-value="1"></i><b>(1)</b>
+                              .producing(COURSE_PUBLISHED, CourseListedWithSeatsSplit::toPublished) <i class="conum" data-value="2"></i><b>(2)</b>
+                              .producing(CAPACITY_CHANGED, CourseListedWithSeatsSplit::toCapacityChanged)
+                              .build();                                              <i class="conum" data-value="3"></i><b>(3)</b>
+}
+
+private static PublishedV1 toPublished(Listing listing) { <i class="conum" data-value="4"></i><b>(4)</b>
+    return new PublishedV1(listing.catalogId(), listing.courseId(), listing.name(), listing.seats());
+}
+
+private static CourseCapacityChanged toCapacityChanged(Listing listing) {
+    return new CourseCapacityChanged(
+            new CourseId(listing.courseId().value()), new CapacityRange(listing.seats(), listing.seats()));
+}
+
+// Stored shapes: records mirroring the wire form, kept next to the transformation.
+record Listing(Id catalogId, Id courseId, String name, int seats) { }       <i class="conum" data-value="5"></i><b>(5)</b>
+record PublishedV1(Id catalogId, Id courseId, String name, int capacity) { }
+record Id(String value) { }</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>split(from, inputType)</code> matches the stored event by exact identity, like a concrete <code>from(&#8230;&#8203;)</code>. It does not take a predicate. The stored payload is read into the typed <code>Listing</code> record once, so field access is compile-checked and every output derives from the same converted input.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Each <code>producing(identity, mapper)</code> declares one produced event, pairing its identity with the mapper deriving its payload. A split is several 1:1 output declarations sharing one <code>from</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td><code>build()</code> completes the split. At least two <code>producing(&#8230;&#8203;)</code> declarations are required: with none you should use the drop transformation, and with one you should use a 1:1 transformation.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Each output mapper returns the produced event&#8217;s payload, wrapped by the framework into an <code>EventMessage</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>The stored shapes are small <code>record</code> types that mirror the wire form, exactly as in <a href="#_mapping_to_a_typed_event">mapping to a typed event</a>. Keep them next to the transformation and out of your domain model.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Each produced event re-enters the chain, exactly as a <a href="#_renaming_an_event">rename</a>'s output does.
+Register the split alongside the version-step transformations for a produced type, and an output emitted at an older version is lifted onward in turn.</p>
+</div>
+<div class="paragraph">
+<p>All produced events share the source event&#8217;s stream position: they carry its tracking token and sequence number, along with its identifier, metadata, and timestamp, and appear in declaration order.
+The framework does not renumber them.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">Declared outputs widen type-filtering reads</div>
+<div class="paragraph">
+<p>The identities declared through <code>producing(&#8230;&#8203;)</code> let the chain widen a read back to the source.
+This matters when you write a custom <a href="../../events/event-store-internals/#event_criteria" class="xref page"><code>EventCriteria</code></a> (through an <code>@EventCriteriaBuilder</code> method or a <code>CriteriaResolver</code>) that filters by a produced type.
+A filter on <code>CoursePublished</code> is then widened to also fetch events stored as <code>CourseListedWithSeats</code>, so an entity sourced that way still observes the split.
+This mirrors how a <a href="#_renaming_an_event">rename</a> widens a filter on its new name back to the old one.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">A split always emits its declared outputs</div>
+<div class="paragraph">
+<p>Every matched event produces exactly one event per <code>producing(&#8230;&#8203;)</code> declaration.
+To remove a stored event from the read stream instead, use <a href="#_dropping_an_event"><code>drop(&#8230;&#8203;)</code></a>: it states the intent plainly and converts no payload.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_dropping_an_event"><a class="anchor" href="#_dropping_an_event"></a>Dropping an event</h2>
 <div class="sectionbody">
 <div class="paragraph">

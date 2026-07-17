@@ -968,6 +968,7 @@ Axon Framework 5 replaces the single-event upcaster with an <a href="../../../me
 </div>
 <div class="paragraph">
 <p>This path covers migrating one-to-one <code>SingleEventUpcaster</code> implementations to event transformations.
+It also covers <a href="#_renaming_an_event">renaming</a> and <a href="#_splitting_an_event">splitting</a>, which upcasters expressed by rewriting the stored type or emitting several events.
 Like the single-event upcaster, a payload-mapping transformation is one-to-one and keeps the event&#8217;s qualified name: it may change the version and payload, but not the name. To change the name itself, use a <a href="#_renaming_an_event">rename</a>, which carries the payload over unchanged.
 You map a <em>deserialized</em> payload (<code>JsonNode</code>, <code>Map&lt;String, Object&gt;</code>, &#8230;&#8203;) rather than an <code>IntermediateEventRepresentation</code>, and mappers must be deterministic and side-effect-free, exactly as upcasters were expected to be.</p>
 </div>
@@ -1173,6 +1174,141 @@ See <a href="../../../message-transformation/defining-transformations/#_renaming
 </div>
 </div>
 <div class="sect1">
+<h2 id="_splitting_an_event"><a class="anchor" href="#_splitting_an_event"></a>Splitting an event</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>An Axon Framework 4 upcaster could turn one stored event into several, emitting multiple representations from a single input.
+Axon Framework 5 makes that a first-class <code>split(&#8230;&#8203;)</code>, pairing each produced identity with the mapper deriving its payload.
+The same split expressed in both styles:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_1_axon_framework_5" class="tab">
+<p>Axon Framework 5</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
+<div class="paragraph">
+<p>An <code>EventMultiUpcaster</code> matches the stored type and emits one representation per produced event, rewriting the serialized payload directly:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import com.fasterxml.jackson.databind.JsonNode;
+import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.upcasting.event.EventMultiUpcaster;
+import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
+
+import java.util.stream.Stream;
+
+public class CourseListedWithSeatsUpcaster extends EventMultiUpcaster {
+
+    private static final SimpleSerializedType FROM =
+            new SimpleSerializedType("coursecatalog.CourseListedWithSeats", "1.0.0");
+
+    @Override
+    protected boolean canUpcast(IntermediateEventRepresentation representation) {          <i class="conum" data-value="1"></i><b>(1)</b>
+        return representation.getType().equals(FROM);
+    }
+
+    @Override
+    protected Stream&lt;IntermediateEventRepresentation&gt; doUpcast(IntermediateEventRepresentation representation) { <i class="conum" data-value="2"></i><b>(2)</b>
+        return Stream.of(
+                representation.upcastPayload(                                               <i class="conum" data-value="3"></i><b>(3)</b>
+                        new SimpleSerializedType("coursecatalog.CoursePublished", "1.0.0"),
+                        JsonNode.class,
+                        this::toCoursePublished),
+                representation.upcastPayload(
+                        new SimpleSerializedType("coursecatalog.CourseCapacityChanged", "1.0.0"),
+                        JsonNode.class,
+                        this::toCourseCapacityChanged));
+    }
+
+    // Rewrite the stored JSON into each produced shape.
+    private JsonNode toCoursePublished(JsonNode listing) { return listing; }
+    private JsonNode toCourseCapacityChanged(JsonNode listing) { return listing; }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>canUpcast(&#8230;&#8203;)</code> gates the upcaster on the stored <code>SerializedType</code>, matching by name and revision.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>doUpcast(&#8230;&#8203;)</code> returns one <code>IntermediateEventRepresentation</code> per produced event.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Each <code>upcastPayload(&#8230;&#8203;)</code> rewrites the payload into a produced type, operating on the serialized representation rather than a typed object.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_1_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5">
+<div class="paragraph">
+<p><code>split(&#8230;&#8203;)</code> pairs each produced identity with the mapper deriving its payload from the typed input:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.transformation.events.EventTransformation;
+import org.axonframework.messaging.core.MessageType;
+
+public final class CourseListedWithSeatsSplit {
+
+    private static final MessageType FROM             = new MessageType("coursecatalog.CourseListedWithSeats", "1.0.0");
+    private static final MessageType COURSE_PUBLISHED = new MessageType("coursecatalog.CoursePublished", "1.0.0");
+    private static final MessageType CAPACITY_CHANGED = new MessageType("coursecatalog.CourseCapacityChanged", "1.0.0");
+
+    public static EventTransformation build() {
+        return EventTransformation.split(FROM, Listing.class)                              <i class="conum" data-value="1"></i><b>(1)</b>
+                                  .producing(COURSE_PUBLISHED, listing -&gt;                   <i class="conum" data-value="2"></i><b>(2)</b>
+                                          new Published(listing.courseId(), listing.name(), listing.seats()))
+                                  .producing(CAPACITY_CHANGED, listing -&gt;
+                                          new CapacityChanged(listing.courseId(), listing.seats()))
+                                  .build();                                                 <i class="conum" data-value="3"></i><b>(3)</b>
+    }
+
+    // Stored shapes read in and written out, kept next to the transformation.
+    record Listing(String courseId, String name, int seats) { }
+    record Published(String courseId, String name, int capacity) { }
+    record CapacityChanged(String courseId, int capacity) { }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>split(from, inputType)</code> matches the source by exact identity, like a concrete <code>from(&#8230;&#8203;)</code>, and reads the stored payload into the typed <code>Listing</code> record once.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Each <code>producing(identity, mapper)</code> declares one produced event. Outputs are emitted in declaration order, each inheriting the source event&#8217;s stream position, and the declared identities widen a type-filtering read back to the source.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td><code>build()</code> completes the split. At least two <code>producing(&#8230;&#8203;)</code> declarations are required: with none you should use the drop transformation, and with one you should use a 1:1 transformation.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Each produced event re-enters the chain, so version-step transformations registered for a produced type still lift it the rest of the way.
+See <a href="../../../message-transformation/defining-transformations/#_splitting_an_event" class="xref page">Splitting an event</a> for the full example.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_registering_the_transformations"><a class="anchor" href="#_registering_the_transformations"></a>Registering the transformations</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -1210,13 +1346,10 @@ When several transformations could match the same event, the most specific one w
 <h2 id="_structural_changes_not_yet_covered"><a class="anchor" href="#_structural_changes_not_yet_covered"></a>Structural changes not yet covered</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A couple of changes may arrive as the transformation API grows (see <a href="https://github.com/AxonFramework/AxonFramework/issues/3597">issue #3597</a>):</p>
+<p>One change may arrive as the transformation API grows (see <a href="https://github.com/AxonFramework/AxonFramework/issues/3597">issue #3597</a>):</p>
 </div>
 <div class="ulist">
 <ul>
-<li>
-<p><strong>Splitting one event into several</strong>: deriving multiple events from a single stored event.</p>
-</li>
 <li>
 <p><strong>Adjusting metadata</strong>: changing an event&#8217;s metadata rather than its payload or identity.</p>
 </li>
