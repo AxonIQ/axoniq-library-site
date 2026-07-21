@@ -1242,6 +1242,7 @@ The Configuration API example below uses <code>InMemorySequencedDeadLetterQueue<
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import io.axoniq.framework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 
 public class AxonConfig {
@@ -1258,7 +1259,7 @@ public class AxonConfig {
                                                 () -&gt; new DeadLetterQueueConfiguration()
                                                         .enabled()
                                                         .factory((name, config) -&gt;
-                                                                InMemorySequencedDeadLetterQueue.builder()
+                                                                InMemorySequencedDeadLetterQueue.&lt;EventMessage&gt;builder()
                                                                         .maxSequences(256)
                                                                         .maxSequenceSize(256)
                                                                         .build())))
@@ -1357,7 +1358,8 @@ public class AxonConfig {
                 .processor(
                         EventProcessorModule
                                 .pooledStreaming("my-processor")
-                                .eventHandlingComponents(/* ... */)
+                                .eventHandlingComponents(components -&gt; components
+                                        .declarative("myHandler", cfg -&gt; myHandlerComponent))
                                 .customized((cfg, processorConfig) -&gt; processorConfig
                                         .extend(DeadLetterQueueConfiguration.class,
                                                 () -&gt; new DeadLetterQueueConfiguration()
@@ -1426,12 +1428,14 @@ public class AxonConfig {
                 // This processor inherits the defaults
                 .processor(EventProcessorModule
                         .pooledStreaming("processor-with-dlq")
-                        .eventHandlingComponents(/* ... */)
+                        .eventHandlingComponents(components -&gt; components
+                                .declarative("myHandler", cfg -&gt; myHandlerComponent))
                         .notCustomized())
                 // This processor explicitly disables DLQ
                 .processor(EventProcessorModule
                         .pooledStreaming("processor-without-dlq")
-                        .eventHandlingComponents(/* ... */)
+                        .eventHandlingComponents(components -&gt; components
+                                .declarative("myHandler", cfg -&gt; myHandlerComponent))
                         .customized((cfg, c) -&gt; c
                                 .extend(DeadLetterQueueConfiguration.class,
                                         () -&gt; new DeadLetterQueueConfiguration().disabled())))
@@ -1547,10 +1551,10 @@ public class DeadLetterProcessor {
         configuration.getModuleConfiguration(processorName)
                 .flatMap(m -&gt; m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqEhc))
                 .ifPresent(dlp -&gt;
-                        dlp.process(letter -&gt; letter.message()
+                        dlp.process(letter -&gt; ((DeadLetter&lt;? extends EventMessage&gt;) letter).message()
                                                     .type()
                                                     .qualifiedName()
-                                                    .equals(ERROR_EVENT_TYPE))
+                                                    .equals(ERROR_EVENT_NAME))
                            .orTimeout(30, TimeUnit.SECONDS)
                            .join());
     }
@@ -1639,7 +1643,7 @@ class MyEventHandler {
     public void on(SomeEvent event, DeadLetter&lt;EventMessage&gt; deadLetter) {
         if (deadLetter != null) {
             // Retrying a dead letter: inspect why it was parked and how many times it was tried
-            int retries = (int) deadLetter.diagnostics().getOrDefault("retries", 0);
+            int retries = Integer.parseInt(deadLetter.diagnostics().getOrDefault("retries", "0"));
             deadLetter.cause().ifPresent(cause -&gt;
                     log.warn("Retrying dead-lettered {} (attempt {}): {} - {}",
                              event.getClass().getSimpleName(),
@@ -1774,10 +1778,10 @@ public class CustomEnqueuePolicy implements EnqueuePolicy&lt;EventMessage&gt; {
         }
 
         // All others retry max 10 times:
-        int retries = (int) letter.diagnostics().getOrDefault("retries", -1);
+        int retries = Integer.parseInt(letter.diagnostics().getOrDefault("retries", "-1"));
         if (retries &lt; 10) {
             // Let's continue and increase retries:
-            return Decisions.requeue(cause, l -&gt; l.diagnostics().and("retries", retries + 1));
+            return Decisions.requeue(cause, l -&gt; l.diagnostics().and("retries", String.valueOf(retries + 1)));
         }
 
         // Exhausted all retries:
@@ -1849,7 +1853,8 @@ public class AxonConfig {
                 .processor(
                         EventProcessorModule
                                 .pooledStreaming("my-processor")
-                                .eventHandlingComponents(/* ... */)
+                                .eventHandlingComponents(components -&gt; components
+                                        .declarative("myHandler", cfg -&gt; myHandlerComponent))
                                 .customized((cfg, processorConfig) -&gt; processorConfig
                                         .extend(DeadLetterQueueConfiguration.class,
                                                 () -&gt; new DeadLetterQueueConfiguration()
