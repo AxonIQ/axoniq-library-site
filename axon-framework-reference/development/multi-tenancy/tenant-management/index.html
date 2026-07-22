@@ -984,9 +984,25 @@ A tenant is represented by a <code>TenantDescriptor</code>, identified by its <c
 <h2 id="_enabling_multi_tenancy"><a class="anchor" href="#_enabling_multi_tenancy"></a>Enabling multi-tenancy</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Multi-tenancy is opt-in.
-Register the <code>MultiTenancyEnabled</code> component on the configurer to activate it.
-When it is absent, multi-tenancy is not active and the application behaves as a single-tenant application.</p>
+<p>Multi-tenancy is opt-in through the Configuration API.
+In a Spring Boot application it is auto-configured: with the <code>axoniq-multi-tenancy</code> module on the classpath it is active by default, and no code is needed to switch it on.
+When it is not active, the application behaves as a single-tenant application.</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_declarative_configuration_api" class="tab">
+<p>Declarative - Configuration API</p>
+</li>
+<li id="_tabs_1_autodetected_spring_boot" class="tab">
+<p>Autodetected - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_declarative_configuration_api">
+<div class="paragraph">
+<p>Register the <code>MultiTenancyEnabled</code> component on the configurer to activate multi-tenancy:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -995,24 +1011,25 @@ When it is absent, multi-tenancy is not active and the application behaves as a 
 }</code></pre>
 </div>
 </div>
+</div>
+<div id="_tabs_1_autodetected_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_autodetected_spring_boot">
 <div class="paragraph">
-<p>With multi-tenancy enabled, tenants are taken from your Axon Server contexts and the tenant of each message is resolved automatically.
+<p>Because tenants are Axon Server contexts, multi-tenancy is only active while Axon Server is enabled, and stays inactive when <code>axon.axonserver.enabled=false</code>.</p>
+</div>
+<div class="paragraph">
+<p>To switch it off entirely:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.multitenancy.enabled=false</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>With multi-tenancy active, tenants are taken from your Axon Server contexts and the tenant of each message is resolved automatically.
 The sections below show how to customize which contexts become tenants and how the tenant of a message is resolved.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>Multi-tenancy is enabled and configured through the Configuration API.
-There is no dedicated Spring Boot auto-configuration for multi-tenancy, so use the Configuration API shown here even in a Spring Boot application.</p>
-</div>
-</td>
-</tr>
-</table>
 </div>
 </div>
 </div>
@@ -1021,7 +1038,7 @@ There is no dedicated Spring Boot auto-configuration for multi-tenancy, so use t
 <div class="sectionbody">
 <div class="paragraph">
 <p>Each tenant maps to an Axon Server context.
-With multi-tenancy enabled, the contexts of the connected Axon Server are discovered as tenants at startup, and the set is kept current at runtime: contexts added or removed on Axon Server become tenants that are added or removed in the running application, without further configuration.</p>
+With multi-tenancy enabled, the contexts of the connected Axon Server are discovered as tenants at startup, and the set is kept current at runtime: contexts <a href="../../../../axon-server-reference/v2026.0/axon-server/administration/multi-context/" class="xref page">added or removed on Axon Server</a> become tenants that are added or removed in the running application, without further configuration.</p>
 </div>
 <div class="sect2">
 <h3 id="_filtering_which_contexts_are_tenants"><a class="anchor" href="#_filtering_which_contexts_are_tenants"></a>Filtering which contexts are tenants</h3>
@@ -1029,12 +1046,41 @@ With multi-tenancy enabled, the contexts of the connected Axon Server are discov
 <p>By default, every Axon Server context except the <code>_admin</code> context is treated as a tenant.
 To narrow the set, register a <code>TenantConnectPredicate</code>, for example to include only contexts matching a naming convention:</p>
 </div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_declarative_configuration_api" class="tab">
+<p>Declarative - Configuration API</p>
+</li>
+<li id="_tabs_2_autodetected_spring_boot" class="tab">
+<p>Autodetected - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_declarative_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerTenantFilter(MessagingConfigurer configurer) {
     TenantConnectPredicate predicate = tenant -&gt; tenant.tenantId().startsWith("tenant-");
     configurer.componentRegistry(registerTenantConnectPredicate(predicate));
 }</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_autodetected_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_autodetected_spring_boot">
+<div class="paragraph">
+<p>Expose the predicate as a bean of type <code>TenantConnectPredicate</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantConnectPredicate tenantConnectPredicate() {
+    return tenant -&gt; tenant.tenantId().startsWith("tenant-");
+}</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -1066,6 +1112,19 @@ A message whose metadata does not contain that key cannot be resolved and fails 
 <div class="paragraph">
 <p>To read the tenant from a different metadata key, register a <code>MetadataBasedTenantResolver</code> with that key:</p>
 </div>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_declarative_configuration_api" class="tab">
+<p>Declarative - Configuration API</p>
+</li>
+<li id="_tabs_3_autodetected_spring_boot" class="tab">
+<p>Autodetected - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_declarative_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerTenantResolverForKey(MessagingConfigurer configurer) {
@@ -1073,10 +1132,39 @@ A message whose metadata does not contain that key cannot be resolved and fails 
 }</code></pre>
 </div>
 </div>
+</div>
+<div id="_tabs_3_autodetected_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_autodetected_spring_boot">
+<div class="paragraph">
+<p>Expose the resolver as a bean of type <code>TenantResolver</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantResolver tenantResolver() {
+    return new MetadataBasedTenantResolver("tenant");
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
 <div class="paragraph">
 <p>To resolve the tenant from something other than metadata, register your own <code>TenantResolver</code>.
 It receives the message and the collection of known tenants, and returns the resolved <code>TenantDescriptor</code>, or throws a <code>TenantNotResolvedException</code> when it cannot:</p>
 </div>
+<div id="_tabs_4" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_4_declarative_configuration_api" class="tab">
+<p>Declarative - Configuration API</p>
+</li>
+<li id="_tabs_4_autodetected_spring_boot" class="tab">
+<p>Autodetected - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_4_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_4_declarative_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCustomTenantResolver(MessagingConfigurer configurer) {
@@ -1098,6 +1186,36 @@ It receives the message and the collection of known tenants, and returns the res
 <td>Application-specific logic deriving the tenant identifier from the message.</td>
 </tr>
 </table>
+</div>
+</div>
+<div id="_tabs_4_autodetected_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_4_autodetected_spring_boot">
+<div class="paragraph">
+<p>Expose your <code>TenantResolver</code> as a bean:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantResolver tenantResolver() {
+    return (message, tenants) -&gt; {
+        String tenantId = extractTenantId(message);            <i class="conum" data-value="1"></i><b>(1)</b>
+        if (tenantId == null) {
+            throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+        }
+        return TenantDescriptor.tenantWithId(tenantId);
+    };
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Application-specific logic deriving the tenant identifier from the message.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>

@@ -1003,6 +1003,19 @@ The resource itself stays passive: you describe how it is built for a tenant, an
 <div class="paragraph">
 <p>Implement a <code>TenantComponentFactory</code> describing how the component is built for a tenant, and register the provider obtained through <code>TenantComponentProvider.withFactory</code>.</p>
 </div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_declarative_configuration_api" class="tab">
+<p>Declarative - Configuration API</p>
+</li>
+<li id="_tabs_1_autodetected_spring_boot" class="tab">
+<p>Autodetected - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_declarative_configuration_api">
 <div class="paragraph">
 <p>Register the provider as a component on your <code>MessagingConfigurer</code>, passed in from the place it is created:</p>
 </div>
@@ -1032,6 +1045,37 @@ The resource itself stays passive: you describe how it is built for a tenant, an
 <td>The component type, used to match the provider against handler parameters. The lambda is the <code>TenantComponentFactory</code> building the tenant&#8217;s instance.</td>
 </tr>
 </table>
+</div>
+</div>
+<div id="_tabs_1_autodetected_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_autodetected_spring_boot">
+<div class="paragraph">
+<p>Expose the provider as a bean of type <code>TenantComponentProvider</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantComponentProvider&lt;CourseStatsRepository&gt; courseStatsRepositoryProvider() { <i class="conum" data-value="1"></i><b>(1)</b>
+    return TenantComponentProvider.withFactory(
+            CourseStatsRepository.class,                                                 <i class="conum" data-value="2"></i><b>(2)</b>
+            tenant -&gt; new InMemoryCourseStatsRepository(tenant.tenantId())
+    );
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The bean type is <code>TenantComponentProvider</code>, which is how it is discovered during parameter resolution.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The component type, used to match the provider against handler parameters. The lambda is the <code>TenantComponentFactory</code> building the tenant&#8217;s instance.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
 </div>
 <div class="paragraph">
 <p>Message handlers can then declare the component type as a parameter.</p>
@@ -1077,6 +1121,19 @@ When no tenant can be resolved for the message, injecting the parameter fails wi
 Each provider is matched to a handler parameter by its component type.
 Register a single provider per component type: registering two providers for the same type, or a parameter type that matches several providers, results in an <code>AxonConfigurationException</code>.</p>
 </div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_declarative_configuration_api" class="tab">
+<p>Declarative - Configuration API</p>
+</li>
+<li id="_tabs_2_autodetected_spring_boot" class="tab">
+<p>Autodetected - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_declarative_configuration_api">
 <div class="paragraph">
 <p>Register each provider under its own name:</p>
 </div>
@@ -1105,6 +1162,43 @@ Register a single provider per component type: registering two providers for the
 <td>A second provider, for a per-tenant reporting <code>DataSource</code>, registered under a different name.</td>
 </tr>
 </table>
+</div>
+</div>
+<div id="_tabs_2_autodetected_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_autodetected_spring_boot">
+<div class="paragraph">
+<p>Declare one bean per component type. The bean name distinguishes them:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantComponentProvider&lt;CourseStatsRepository&gt; courseStatsRepository() {  <i class="conum" data-value="1"></i><b>(1)</b>
+    return TenantComponentProvider.withFactory(
+            CourseStatsRepository.class,
+            tenant -&gt; new InMemoryCourseStatsRepository(tenant.tenantId()));
+}
+
+@Bean
+public TenantComponentProvider&lt;DataSource&gt; reportingDataSource() {              <i class="conum" data-value="2"></i><b>(2)</b>
+    return TenantComponentProvider.withFactory(
+            DataSource.class,
+            tenant -&gt; buildDataSource(tenant));
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>A provider for the <code>CourseStatsRepository</code> read model.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>A second provider, for a per-tenant reporting <code>DataSource</code>.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
