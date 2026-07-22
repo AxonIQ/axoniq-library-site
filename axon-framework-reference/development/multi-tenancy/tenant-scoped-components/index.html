@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tenant-Scoped Components</title>
     <link rel="prev" href="../tenant-management/">
-    <link rel="next" href="../../tuning/">
+    <link rel="next" href="../tenant-command-handling/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -844,6 +844,9 @@
   <li class="nav-item is-current-page" data-depth="2">
     <a class="nav-link" href="./">Tenant-scoped components</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tenant-command-handling/">Tenant-aware command processing</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -1039,13 +1042,13 @@ The resource itself stays passive: you describe how it is built for a tenant, an
 <h2 id="_injecting_the_tenants_instance_into_a_handler"><a class="anchor" href="#_injecting_the_tenants_instance_into_a_handler"></a>Injecting the tenant&#8217;s instance into a handler</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Declare a parameter of the component type on a message handling method.
+<p>Declare an <code>@TenantScoped</code>-annotated parameter of the component type on a message handling method.
 During handling, the parameter is resolved to the instance belonging to the tenant of the message being handled.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
-public void on(CourseCreated event, CourseStatsRepository repository) { <i class="conum" data-value="1"></i><b>(1)</b>
+public void on(CourseCreated event, @TenantScoped CourseStatsRepository repository) { <i class="conum" data-value="1"></i><b>(1)</b>
     repository.save(new CourseStatistics(event.courseId()));
 }</code></pre>
 </div>
@@ -1054,7 +1057,8 @@ public void on(CourseCreated event, CourseStatsRepository repository) { <i class
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>repository</code> is the <code>CourseStatsRepository</code> instance of the current tenant.</td>
+<td><code>repository</code> is the <code>CourseStatsRepository</code> instance of the current tenant.
+The <code>@TenantScoped</code> annotation marks it as tenant scoped.</td>
 </tr>
 </table>
 </div>
@@ -1136,7 +1140,7 @@ Override it to release other resources or to add custom shutdown logic.</p>
 </div>
         <nav class="pagination">
   <span class="prev"><a href="../tenant-management/">Tenant management</a></span>
-  <span class="next"><a href="../../tuning/">Tuning</a></span>
+  <span class="next"><a href="../tenant-command-handling/">Tenant-aware command processing</a></span>
 </nav>
     </article>
   </div>
