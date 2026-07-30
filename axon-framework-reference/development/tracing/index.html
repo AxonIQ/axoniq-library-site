@@ -984,470 +984,171 @@
                 <h1 class="page">Distributed Tracing</h1>
             <div id="preamble">
 <div class="sectionbody">
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-<div class="title">Distributed Tracing not available in Axon Framework 5.0</div>
 <div class="paragraph">
-<p>The Distributed Tracing feature is not yet available in Axon Framework 5.0.
-It will be reintroduced in Axon Framework soon.
-The documentation below describes the Distributed Tracing concepts for reference and future use.</p>
-</div>
-</td>
-</tr>
-</table>
+<p>Distributed Tracing tracks a message&#8217;s path through an application and across service boundaries.
+Axon Framework provides tracing decorators for commands, events, queries, repositories, state managers, event storage, snapshots, distributed connectors, and annotated handler methods.</p>
 </div>
 <div class="paragraph">
-<p>Distributed Tracing enables you to track the path of a message through your system to see how the system behaves and performs.
-Axon Framework provides additional tracing functionality to track what takes time in your microservice, such as how long it took to load the aggregate, how long the actual command invocation took, or how long it took to publish events.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_span_factories"><a class="anchor" href="#_span_factories"></a>Span factories</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>To provide additional insights in traces, many Axon Framework components use a <code>SpanFactory</code>.
-This factory is responsible for the creation of multiple instances of a <code>Span</code> with a specific purpose.</p>
+<p>Tracing decorators wrap framework components by composition.
+<code>SpanFactory</code> is the public abstraction for span creation.
+Registering a <code>SpanFactory</code>, or the Micrometer <code>Tracer</code> and <code>Propagator</code> used to create one, enables the decorators discovered through <code>ConfigurationEnhancer</code> services.</p>
 </div>
 <div class="paragraph">
-<p>You can use a <code>SpanFactory</code> provided the framework that matches your tracing standard.
-Or, if your tracing standard of choice is not supported, you can create one yourself by implementing the <code>SpanFactory</code> and <code>Span</code> interfaces.
-The following standards are currently supported:</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Tracing standard</th>
-<th class="tableblock halign-left valign-top">Supported</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">OpenTelemetry</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://opentelemetry.io/docs/concepts/what-is-opentelemetry/">OpenTelemetry</a> is the successor of OpenTracing, with auto-instrumentation being its most prominent feature.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">OpenTracing</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Limited</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://opentracing.io/">OpenTracing</a> is supported <a href="../../../tracing-extension-reference/4.11/" class="xref page">by an extension with limited functionality</a>. Usage of OpenTelemetry is recommended instead.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">SLF4j</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">If you have no monitoring system in place but want to trace through logging, the framework provides a <code>LoggingSpanFactory</code>.</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>You configure a <code>SpanFactory</code> in the following ways:</p>
-</div>
-<div class="sect3">
-<h4 id="_axon_configuration_api"><a class="anchor" href="#_axon_configuration_api"></a>Axon Configuration API</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
-    // omitting other configuration methods...
-    public void configure(Configurer configurer) {
-        configurer.configureSpanFactory(configuration -&gt; new MyCustomSpanFactory());
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration"><a class="anchor" href="#_spring_boot_auto_configuration"></a>Spring Boot auto configuration</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public SpanFactory spanFactory() {
-        // Any bean implementing the SpanFactory will be picked up automatically and override the defaults
-        return new MyCustomSpanFactory();
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Note that this is not necessary for all providers, since some may provide Spring Boot auto-configuration out of the box.
-To configure the provider of your choice, please refer to the specific subsection on this page.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_terminology"><a class="anchor" href="#_terminology"></a>Terminology</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>A <strong>trace</strong> is a collection of one or more <strong>spans</strong> that together form a complete journey through your software.
-Creating a span that is not part of a trace will automatically create one with that span being the root span of the trace.</p>
-</div>
-<div class="paragraph">
-<p>Tools such as <a href="https://www.elastic.co/observability/application-performance-monitoring">ElasticSearch APM</a> can render tracing information, as visible in the following image:</p>
+<p>A <strong>trace</strong> is a collection of related <strong>spans</strong>.
+Each span records one timed operation and its relationship to other operations.
+The following capture shows an HTTP request that dispatches a command through Axon Server and continues through command handling, event publication, event processing, a subscription-query update, and a follow-up command:</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="_images/tracing.png" alt="Trace as shown in ElasticSearch APM when dispatching and handling a command.">
+<img src="_images/jaeger-command-trace.png" alt="A command dispatched through Axon Server rendered in Jaeger" width="including event processors and a follow-up command in the same trace">
 </div>
 </div>
 <div class="paragraph">
-<p>What we observe here is that a command is dispatched, distributed by Axon Server and handled.
-As a result of the command an <code>AccountRegisteredEvent</code> is published and a deadline is scheduled as well.
-In this image, the <code>AutomaticAccountCommandDispatcher.dispatch</code> span is the root trace, with each span being part of a call hierarchy within that trace.</p>
+<p>The capture uses <code>axon.tracing.event-processor.distributed-in-same-trace=true</code>.
+The default streaming topology uses a separate batch trace linked to the publication trace.</p>
 </div>
-<div class="sect2">
-<h3 id="_combining_factories"><a class="anchor" href="#_combining_factories"></a>Combining factories</h3>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
 <div class="paragraph">
-<p>Sometimes you want the functionality of multiple <code>SpanFactory</code> implementations, while Axon&#8217;s configuration only allows one.
-For this purpose, the framework contains the <code>MultiSpanFactory</code> that you can configure with multiple factories to which it delegates its calls.</p>
+<p>Sagas, process managers and deadlines are not available in Axon Framework 5.</p>
 </div>
-<div class="paragraph">
-<p>For example, you can configure both the <code>LoggingSpanFactory</code> and the <code>OpenTelemetrySpanFactory</code> in the following fashion:</p>
-</div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_2"><a class="anchor" href="#_axon_configuration_api_2"></a>Axon Configuration API</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
-    // omitting other configuration methods...
-    public void configure(Configurer configurer) {
-        configurer.configureSpanFactory(configuration -&gt; new MultiSpanFactory(
-                Arrays.asList(
-                        LoggingSpanFactory.INSTANCE,
-                        OpenTelemetrySpanFactory.builder().build()
-                )
-        ));
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_2"><a class="anchor" href="#_spring_boot_auto_configuration_2"></a>Spring Boot auto configuration</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public SpanFactory spanFactory() {
-        return new MultiSpanFactory(
-                Arrays.asList(
-                        LoggingSpanFactory.INSTANCE,
-                        OpenTelemetrySpanFactory
-                                .builder()
-                                .build()
-                )
-        );
-    }
-}</code></pre>
-</div>
-</div>
-<hr>
-<div class="paragraph">
-<p>By configuring the <code>MultiSpanFactory</code> a single, delegating span is created whenever the framework requests it.
-This span contains the multiple span, one of each configured factory.
-The deleting span makes sure all spans are called, acting as a single one.</p>
-</div>
-</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_features"><a class="anchor" href="#_features"></a>Features</h2>
+<h2 id="_modules"><a class="anchor" href="#_modules"></a>Modules</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Module</th>
+<th class="tableblock halign-left valign-top">Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-messaging</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The tracing API, built-in message attribute providers, logging implementation, and decorators for <code>CommandBus</code>, <code>EventSink</code>, event handling, <code>QueryBus</code>, and annotated handlers.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-modelling</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decorators for <code>Repository</code> and <code>StateManager</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon-eventsourcing</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decorators for <code>EventStorageEngine</code> and <code>SnapshotStore</code>, plus event-tag attributes.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-distributed-messaging</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decorators for distributed <code>CommandBusConnector</code> and <code>QueryBusConnector</code> transport legs.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-tracing-micrometer</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Micrometer Tracing implementation of <code>SpanFactory</code>, backed by an application-provided <code>Tracer</code> and <code>Propagator</code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The following functionality in Axon Framework is traced in addition to the tracing capabilities already provided by the standard of your choice:</p>
+<p>The declarative configuration API and Spring Boot properties configure the same tracing components.
+The Spring properties use <code>axon.tracing.*</code> because the distributed connector and thread-local bridge settings extend the existing shared tracing namespace.</p>
 </div>
-<div class="ulist">
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
 <ul>
-<li>
-<p><a href="#_commands">Dispatching and handling of commands</a></p>
+<li id="_tabs_1_configuration_api" class="tab">
+<p>Configuration API</p>
 </li>
-<li>
-<p><a href="#_events">Publishing of events</a></p>
-</li>
-<li>
-<p><a href="#_event_processors">Handling of events by event processors</a></p>
-</li>
-<li>
-<p><a href="#_queries">Dispatching and handling of queries</a></p>
-</li>
-<li>
-<p><a href="#_sagas">Creation and handling of Sagas</a></p>
-</li>
-<li>
-<p><a href="#_deadlines">Scheduling and invocation of deadlines</a></p>
-</li>
-<li>
-<p><a href="#_snapshotting">Creation of snapshots</a></p>
-</li>
-<li>
-<p><a href="#_message_handler_invocations">Tracing of each message handler invocation (Spring Boot only)</a></p>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
 </li>
 </ul>
 </div>
+<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
 <div class="paragraph">
-<p>Tracing all of this functionality provides you with the best possible insight into the performance of your application.</p>
-</div>
-<div class="sect2">
-<h3 id="_span_types"><a class="anchor" href="#_span_types"></a>Span types</h3>
-<div class="paragraph">
-<p>The configured <code>SpanFactory</code> is responsible for creating spans when the framework requests it.
-The framework specifies the type of span, the name, and a message that triggered the span (if any, it&#8217;s not required).
-The framework can request the span types defined in the following table:</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Span Type</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Root trace</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Create a new trace entirely, having no parent.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Dispatch span</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A span which is dispatching a message.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handler span</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A span which is handling a message. Will set the span that dispatched the message as the parent.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Internal span</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A span which specified something internal. It&#8217;s not an entry or exit point.</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>A trace generally consists of multiple spans with different types, depending on the functionality.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_span_nesting"><a class="anchor" href="#_span_nesting"></a>Span nesting</h3>
-<div class="paragraph">
-<p>Starting a span will make it a child span of the currently active one.
-If there&#8217;s currently no span active, the new span will become the root span of a new trace.</p>
-</div>
-<div class="paragraph">
-<p>During invocations which are normally synchronous, Axon Framework will create normal spans which become a child of the currently active one.
-For example, publishing an event from a command is synchronous, and therefore the publishing span becomes a child of the command handling span.</p>
-</div>
-<div class="paragraph">
-<p>When it comes to asynchronous invocations, the framework forces a new root trace to be created.
-For example, a streaming event processor that processes an event will not be a child of the command handling span.
-Instead, it will become its own root trace.
-This is a measure to prevent traces from becoming too time-spread, making them unreadable.</p>
-</div>
-<div class="paragraph">
-<p>Some standards, like OpenTelemetry, support linking.
-By linking one span to another, they become correlated despite being part of a different trace.
-Tooling that supports this creates links for the user to click, allowing for easy navigation between related traces.
-This is incredibly useful to see causation within your system.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_span_attribute_providers"><a class="anchor" href="#_span_attribute_providers"></a>Span attribute providers</h3>
-<div class="paragraph">
-<p>Most tracing implementations can add additional attributes to spans.
-This is useful when debugging your application or finding a specific span you are looking for.
-The framework provides the <code>SpanAttributesProvider</code>, which can be registered to the <code>SpanFactory</code> either via its builder (if supported) or by calling the <code>SpanFactory.registerSpanAttributeProvider(provider)</code> method.</p>
-</div>
-<div class="paragraph">
-<p>The following <code>SpanAttributesProvider</code> implementations are included in Axon Framework:</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Class</th>
-<th class="tableblock halign-left valign-top">label</th>
-<th class="tableblock halign-left valign-top">description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AggregateIdentifierSpanAttributesProvider</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon_aggregate_identifier</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The aggregate identifier of the message, only present in case of a <code>DomainEventMessage</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageIdSpanAttributesProvider</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon_message_id</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The identifier of the message</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageNameSpanAttributesProvider</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon_message_name</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The name of the message for Commands and Queries</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageTypeSpanAttributesProvider</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon_message_type</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The class of the message, such as <code>DomainEventMessage</code> or <code>GenericQueryMessage</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PayloadTypeSpanAttributesProvider</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon_payload_type</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The class of the payload in the message</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MetadataSpanAttributesProvider</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon_metadata_{key}</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">All metadata of the message is also added to the span with its corresponding key</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>In addition to the ones provided by the framework, you can also create a custom <code>SpanAttributesProvider</code>.
-and add it to the <code>SpanFactory</code>.
-Use this if you want to add custom information on spans as a label.</p>
+<p>Register a Micrometer <code>Tracer</code> and <code>Propagator</code> as framework components:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CustomSpanAttributesProvider implements SpanAttributesProvider {
-
-    @Nonnull
-    @Override
-    public Map&lt;String, String&gt; provideForMessage(@Nonnull Message&lt;?&gt; message) {
-        // Provide your labels based on the message here
-        return Collections.emptyMap();
-    }
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public MessagingConfigurer registerTracing(MessagingConfigurer configurer,
+                                            Tracer tracer,
+                                            Propagator propagator) {
+    return configurer.componentRegistry(registry -&gt; registry
+            .registerComponent(Tracer.class, configuration -&gt; tracer)
+            .registerComponent(Propagator.class, configuration -&gt; propagator));
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>You can register this custom <code>SpanAttributesProvider</code> in one of the following ways.</p>
-</div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_3"><a class="anchor" href="#_axon_configuration_api_3"></a>Axon Configuration API</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
-    // omitting other configuration methods...
-    public void configure(Configuration configuration) {
-        configuration.spanFactory().registerSpanAttributeProvider(new CustomSpanAttributesProvider());
-    }
-}</code></pre>
+<p>The service-loaded Micrometer enhancer creates the <code>MicrometerSpanFactory</code>.
+The component enhancers then decorate the components present in the application.</p>
 </div>
 </div>
-</div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_bean_creation"><a class="anchor" href="#_spring_boot_auto_configuration_bean_creation"></a>Spring Boot auto configuration - bean creation</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public SpanAttributesProvider customSpanAttributesProvider() {
-        // Auto-configuration picks beans of type SpanAttributesProvider up automatically.
-        return new CustomSpanAttributesProvider();
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_bean_injection"><a class="anchor" href="#_spring_boot_auto_configuration_bean_injection"></a>Spring Boot auto configuration - bean injection</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Autowired
-    public void configureSpanFactory(SpanFactory spanFactory) {
-        spanFactory.registerSpanAttributeProvider(new CustomSpanAttributesProvider());
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_opentelemetry"><a class="anchor" href="#_opentelemetry"></a>OpenTelemetry</h2>
-<div class="sectionbody">
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
 <div class="paragraph">
-<p>Axon Framework provides <a href="https://opentelemetry.io/docs/concepts/what-is-opentelemetry/">OpenTelemetry support</a> out of the box.
-The OpenTelemetry standard improves upon the OpenTracing and OpenCensus standards by providing more auto-instrumentation without the need for the user to configure many things.</p>
+<p>Add the Micrometer binding, Actuator, the OpenTelemetry bridge, and an OTLP exporter:</p>
 </div>
-<div class="paragraph">
-<p>OpenTelemetry works by adding a Java agent to the execution of the application.
-Based on the configuration, the agent will collect logs, metrics, and tracing automatically before sending it to a collector that can provide insights.
-ElasticSearch APM, Jaeger, and many other tools are available for collecting and visualizing the information.
-The configuration of these tools is beyond the scope of this guide.
-You can find more information <a href="https://opentelemetry.io/docs/instrumentation/java/getting-started/">in the "Getting Started" section of the OpenTelemetry documentation.</a></p>
-</div>
-<div class="paragraph">
-<p>OpenTelemetry <a href="https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md">"supports a lot of libraries,
-frameworks and application servers out of the box."</a>
-For example, when a Spring REST endpoint is called it will automatically start a trace.
-With the <code>axon-tracing-opentelemetry</code> module, this trace will be propagated to all subsequent Axon Framework messages.
-For example, if the REST call produces a command which is sent over Axon Server, handling the command will be included in the same trace as the original REST call.</p>
-</div>
-<div class="sect2">
-<h3 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h3>
-<div class="paragraph">
-<p>To get OpenTelemetry support enabled you will need to add the following dependency to your application&#8217;s dependencies:</p>
-</div>
-<div class="sect4">
-<h5 id="_maven"><a class="anchor" href="#_maven"></a>Maven</h5>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
-    &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
-    &lt;artifactId&gt;axon-tracing-opentelemetry&lt;/artifactId&gt;
-	&lt;version&gt;${axon-framework.version}&lt;/version&gt;
+    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+    &lt;artifactId&gt;axoniq-tracing-micrometer&lt;/artifactId&gt;
+    &lt;version&gt;${axoniq-framework.version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+    &lt;artifactId&gt;micrometer-tracing-bridge-otel&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.opentelemetry&lt;/groupId&gt;
+    &lt;artifactId&gt;opentelemetry-exporter-otlp&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
 </div>
 </div>
-</div>
-<div class="sect4">
-<h5 id="_gradle"><a class="anchor" href="#_gradle"></a>Gradle</h5>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-gradle hljs" data-lang="gradle">implementation group: 'org.axonframework', name: 'axon-tracing-opentelemetry', version: axonFrameworkVersion</code></pre>
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Depending on your application, more configuration might be needed.</p>
+<p>Spring Boot provides the Micrometer <code>Tracer</code> and <code>Propagator</code> beans.
+The Axoniq Framework binding uses them to create the active <code>MicrometerSpanFactory</code>.</p>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_3"><a class="anchor" href="#_spring_boot_auto_configuration_3"></a>Spring Boot auto configuration</h4>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tracing_settings"><a class="anchor" href="#_tracing_settings"></a>Tracing settings</h3>
 <div class="paragraph">
-<p>When using the Spring Boot auto-configuration of Axon Framework, most things will be autoconfigured regardless of the implementation.</p>
-</div>
-<div class="paragraph">
-<p>You might want to configure certain settings that are available.
-The following table contains all configurable settings, their defaults, and what they change:</p>
+<p>Spring Boot exposes the following settings under <code>axon.tracing.*</code>.
+Declarative applications register the corresponding <code>MessagingTracingSettings</code>, <code>ModellingTracingSettings</code>, <code>EventSourcingTracingSettings</code>, and <code>DistributedTracingSettings</code> components.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -1457,122 +1158,259 @@ The following table contains all configurable settings, their defaults, and what
 </colgroup>
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">setting</th>
+<th class="tableblock halign-left valign-top">Property</th>
 <th class="tableblock halign-left valign-top">Default</th>
+<th class="tableblock halign-left valign-top">Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls the complete tracing autoconfiguration.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.command-bus.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls <code>CommandBus</code> tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.event-sink.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls <code>EventSink</code> tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.event-store.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls <code>EventStorageEngine</code> tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.event-processor.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls event-handling component tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.event-processor.batch-trace-enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls the streaming batch span.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.event-processor.distributed-in-same-trace</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>false</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Selects whether eligible event-processing spans continue the publisher trace.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.event-processor.distributed-in-same-trace-time-limit</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PT2M</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Limits which events are eligible for the same-trace topology.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.event-sourcing-handlers-enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>false</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls per-method spans for <code>@EventSourcingHandler</code> methods.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.query-bus.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls <code>QueryBus</code> tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.repository.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls <code>Repository</code> tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.state-manager.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls <code>StateManager</code> tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.snapshot-store.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls <code>SnapshotStore</code> tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.command-bus-connector.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls distributed command connector tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.query-bus-connector.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls distributed query connector tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.thread-local-context-propagation.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls the worker-thread bridge without disabling span creation or message metadata propagation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.attribute-providers.*</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Controls the <code>message-id</code>, <code>message-type</code>, <code>metadata</code>, <code>aggregate-identifier</code>, and <code>event-tags</code> providers.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_multiple_tracing_destinations"><a class="anchor" href="#_multiple_tracing_destinations"></a>Multiple tracing destinations</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework uses one active <code>SpanFactory</code>.
+Exporter fan-out belongs to the OpenTelemetry SDK configuration.</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
+<div class="paragraph">
+<p>Compose exporters before building the SDK:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private SpanExporter compositeExporter(String primaryEndpoint, String secondaryEndpoint) {
+    SpanExporter primary = OtlpGrpcSpanExporter.builder()
+                                               .setEndpoint(primaryEndpoint)
+                                               .build();
+    SpanExporter secondary = OtlpGrpcSpanExporter.builder()
+                                                 .setEndpoint(secondaryEndpoint)
+                                                 .build();
+    return SpanExporter.composite(primary, secondary);
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
+<div class="paragraph">
+<p>Expose another <code>SpanExporter</code> bean.
+Spring Boot composes the exporter beans into its OpenTelemetry SDK:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+SpanExporter secondarySpanExporter() {
+    return OtlpGrpcSpanExporter.builder()
+                               .setEndpoint("http://secondary-collector:4317")
+                               .build();
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_span_attribute_providers"><a class="anchor" href="#_span_attribute_providers"></a>Span attribute providers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>SpanAttributesProvider</code> contributes searchable attributes to message-carrying spans.
+The built-in providers are:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Provider</th>
+<th class="tableblock halign-left valign-top">Default key</th>
 <th class="tableblock halign-left valign-top">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.showEventSourcingHandlers</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>false</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to show event sourcing handlers as a trace. This can be noisy and is disabled by default.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageIdSpanAttributesProvider</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq.message.id</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Message identifier.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.attributeProviders.aggregateIdentifier</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to add the aggregate identifier as a label when handling a message</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MessageTypeSpanAttributesProvider</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq.message.type</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Qualified message type and version.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.attributeProviders.messageId</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to add the message identifier as a label when handling a message</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MetadataSpanAttributesProvider</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq.metadata.{key}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Message metadata entries.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.attributeProviders.messageName</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to add the message name as a label when handling a message</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AggregateIdentifierSpanAttributesProvider</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq.aggregate.identifier</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Aggregate identifier when available.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.attributeProviders.messageType</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to add the message type as a label when handling a message</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.attributeProviders.payloadType</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to add the payload type as a label when handling a message</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.attributeProviders.metadata</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to add the metadata properties as labels when handling a message</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>EventTagsSpanAttributesProvider</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq.event_tag.{key}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event tags resolved by the configured <code>TagResolver</code>.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="sect3">
-<h4 id="_manual_configuration"><a class="anchor" href="#_manual_configuration"></a>Manual configuration</h4>
 <div class="paragraph">
-<p>The OpenTelemetry support can also be configured using the <code>Configurer</code> of Axon Framework to configure the <code>OpenTelemetrySpanFactory</code>.</p>
+<p>Event tags are resolved when the payload representation needed by the configured <code>TagResolver</code> is available.
+If no tag can be resolved, no event-tag attributes are added.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
-    // omitting other configuration methods...
-    public void configure(Configurer configurer) {
-        configurer.defaultConfiguration()
-                  .configureSpanFactory(c -&gt; OpenTelemetrySpanFactory.builder().build());
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public final class TenantSpanAttributesProvider implements SpanAttributesProvider {
+
+    @Override
+    public Map&lt;String, String&gt; provideForMessage(Message message, @Nullable ProcessingContext context) {
+        String tenant = message.metadata().get("tenant");
+        return tenant == null ? Map.of() : Map.of("company.tenant", tenant);
     }
 }</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Note that when not using Spring boot, tracing each message handler invocation is not supported due to a limitation.</p>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_3_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_opentracing"><a class="anchor" href="#_opentracing"></a>OpenTracing</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The OpenTracing standard is deprecated.
-If necessary, you can still use <a href="../../../tracing-extension-reference/4.11/" class="xref page">the OpenTracing extension of Axon Framework</a>.</p>
-</div>
-<div class="paragraph">
-<p>Note that the functionality of this extension is rather limited compared to the OpenTelemetry integration.
-Because of this, it&#8217;s recommended to switch to OpenTelemetry if possible.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_logging"><a class="anchor" href="#_logging"></a>Logging</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Sometimes you don&#8217;t have an APM system available, for instance, during local development.
-It might still be useful to see the traces that would be started and finished to obtain insights.
-For this purpose, the framework provides a <code>LoggingSpanFactory</code>.</p>
-</div>
-<div class="paragraph">
-<p>You can configure the <code>LoggingSpanFactory</code> in the following ways:</p>
-</div>
-<div class="sect3">
-<h4 id="_axon_configuration_api_4"><a class="anchor" href="#_axon_configuration_api_4"></a>Axon Configuration API</h4>
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
-    // omitting other configuration methods...
-    public void configure(Configurer configurer) {
-        configurer.configureSpanFactory(c -&gt; LoggingSpanFactory.INSTANCE);
-    }
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public MessagingConfigurer registerProvider(MessagingConfigurer configurer) {
+    return configurer.componentRegistry(registry -&gt; SpanAttributesProviderRegistry.register(
+            registry,
+            configuration -&gt; new TenantSpanAttributesProvider()
+    ));
 }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_spring_boot_auto_configuration_4"><a class="anchor" href="#_spring_boot_auto_configuration_4"></a>Spring Boot auto configuration</h4>
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
-public class AxonConfig {
-    // omitting other configuration methods...
-    @Bean
-    public SpanFactory spanFactory() {
-        return LoggingSpanFactory.INSTANCE;
-    }
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+SpanAttributesProvider tenantSpanAttributesProvider() {
+    return new TenantSpanAttributesProvider();
 }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Every <code>SpanAttributesProvider</code> bean is contributed to the provider registry.</p>
+</div>
 </div>
 </div>
 </div>
@@ -1582,546 +1420,321 @@ public class AxonConfig {
 <h2 id="_traced_components"><a class="anchor" href="#_traced_components"></a>Traced components</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Axon Framework provides a large range of components that are traced by the configured <code>SpanFactory</code>.
-The spans created by each component are available for reference in this section, with additional information about how they should be interpreted.</p>
-</div>
-<div class="paragraph">
-<p>It&#8217;s important to note that the availability of these spans is highly dependent on the application configuration.
-For instance, some components are only used when using Axon Server, or you might have created your own <code>CommandBus</code>
-implementation which does not call the <code>SpanFactory</code> API.</p>
+<p>Span names use <code>&lt;Component&gt;.&lt;operation&gt; &lt;messageName&gt;</code>.
+Dispatch spans use <code>PRODUCER</code>, handler spans use <code>CONSUMER</code>, and local operations use <code>INTERNAL</code>.</p>
 </div>
 <div class="sect2">
 <h3 id="_commands"><a class="anchor" href="#_commands"></a>Commands</h3>
-<div class="paragraph">
-<p>The <code>CommandBus</code> is instrumented to create spans for both dispatching and handling commands.
-The tracing differs based on whether you are using Axon Server.
-The following tabs show the possible traces.</p>
-</div>
-<div class="sect3">
-<h4 id="_axon_server"><a class="anchor" href="#_axon_server"></a>Axon Server</h4>
-<div class="paragraph">
-<p>When using the <code>AxonServerCommandBus</code>, there will be two handling and dispatch traces since it uses a second <code>CommandBus</code> to invoke the command locally after receiving it from Axon Server.
-In addition, you can see the gRPC-call to Axon Server and the time it took to handle the call.</p>
-</div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
 </colgroup>
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
+<th class="tableblock halign-left valign-top">Span name</th>
+<th class="tableblock halign-left valign-top">Kind</th>
 <th class="tableblock halign-left valign-top">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AxonServerCommandBus.dispatch(${commandName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The bus is dispatching the command to Axon Server.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CommandBus.dispatch &lt;commandName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PRODUCER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Command dispatch.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AxonServerCommandBus.handle(${commandName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The bus has received a command and is handling it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CommandBus.handle &lt;commandName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CONSUMER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Command handling.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${CommandBusClass}.dispatch(${commandName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The localSegment invocation, dispatching the command locally.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${CommandBusClass}.handle(${commandName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The localSegment is handling the command.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${RepositoryClass}.load ${identifier}</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The aggregate is being loaded by the repository. During this time Axon Framework will obtain a lock, fetch snapshots and events from the event store to hydrate the aggregate.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LockingRepository.obtainLock</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The repository is obtaining a lock for the aggregate. This taking some time indicates that the command was queued due to another command being handled for the same aggregate.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>&lt;HandlerClass&gt;.&lt;method&gt;(&lt;PayloadClass&gt;)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annotated <code>@CommandHandler</code> invocation.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="sect3">
-<h4 id="_without_axon_server"><a class="anchor" href="#_without_axon_server"></a>Without Axon Server</h4>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${CommandBusClass}.dispatch(${commandName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The bus is dispatching the command locally.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${CommandBusClass}.handle(${commandName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The bus is invoking the handler locally.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${RepositoryClass}.load ${identifier}</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The aggregate is being loaded by the repository. During this time Axon Framework will obtain a lock, fetch snapshots and events from the event store to hydrate the aggregate.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LockingRepository.obtainLock</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The repository is obtaining a lock for the aggregate. This taking some time indicates that the command was queued due to another command being handled for the same aggregate.</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>During handling of commands, other functionality might be invoked such as scheduling deadlines or publishing events.
-Please refer to the specific sections of this functionality for more information.</p>
-</div>
-</div>
 </div>
 <div class="sect2">
 <h3 id="_events"><a class="anchor" href="#_events"></a>Events</h3>
-<div class="paragraph">
-<p>When publishing events, spans are created to indicate the event being published.
-Each event that is being published has its own specific publishing span.
-Any streaming event processor or saga handling the event in the future will be linked to the publishing spans, allowing easy click-through.</p>
-</div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
 </colgroup>
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
+<th class="tableblock halign-left valign-top">Span name</th>
+<th class="tableblock halign-left valign-top">Kind</th>
 <th class="tableblock halign-left valign-top">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${EventBusClass}.publish(${EventClass})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">For each event, a short span is created to indicate that an event was published.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>EventSink.publish &lt;eventName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PRODUCER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event publication and trace-context propagation.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${EventBusClass}.commit</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Indicates events being committed to the event store.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>EventProcessor.process &lt;eventName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CONSUMER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event processing. Carries <code>axoniq.event_processor.name</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>StreamingEventProcessor.batch</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One streaming batch. Carries <code>axoniq.event_processor.name</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>&lt;HandlerClass&gt;.&lt;method&gt;(&lt;EventClass&gt;)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annotated <code>@EventHandler</code> invocation.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect3">
+<h4 id="_streaming_consumer_trace_topology"><a class="anchor" href="#_streaming_consumer_trace_topology"></a>Streaming consumer trace topology</h4>
+<div class="paragraph">
+<p>The streaming settings select relationships between the publisher, batch, and process spans.
+They do not describe scheduling, threads, processing location, or the context in which handling runs.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Streaming settings</th>
+<th class="tableblock halign-left valign-top"><code>EventProcessor.process</code> parent</th>
+<th class="tableblock halign-left valign-top">Publisher relationship</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>batch-trace-enabled=true</code>, <code>distributed-in-same-trace=false</code> (default)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>StreamingEventProcessor.batch</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Span link</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>batch-trace-enabled=false</code>, <code>distributed-in-same-trace=false</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No parent</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Span link</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>distributed-in-same-trace=true</code>, event within the time limit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Publisher span</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Parent</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>distributed-in-same-trace=true</code>, event outside the time limit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No parent</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Span link</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Same-trace mode omits the batch span.
+An event without propagated trace metadata has no publisher relationship, while its process span is still created.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_queries"><a class="anchor" href="#_queries"></a>Queries</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Span name</th>
+<th class="tableblock halign-left valign-top">Kind</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus.query &lt;queryName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PRODUCER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Direct-query dispatch.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus.respond &lt;queryName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Finite direct-query response stream.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus.subscriptionQuery &lt;queryName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PRODUCER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Subscription setup. Carries <code>messaging.message.conversation_id</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus.initialResponse &lt;queryName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Finite initial response. Carries <code>messaging.message.conversation_id</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus.handle &lt;queryName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CONSUMER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Query handling.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus.emitUpdate</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Subscription-query update emission.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus.completeSubscriptions</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Matching subscription completion.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBus.completeSubscriptionsExceptionally</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Exceptional matching subscription completion.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>&lt;HandlerClass&gt;.&lt;method&gt;(&lt;QueryClass&gt;)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Annotated <code>@QueryHandler</code> invocation.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>All spans belonging to one distributed subscription carry the subscription query identifier as <code>messaging.message.conversation_id</code>.
+This includes subscription setup, the initial response, and distributed update transport spans.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_domain_modelling_and_event_sourcing"><a class="anchor" href="#_domain_modelling_and_event_sourcing"></a>Domain modelling and event sourcing</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Span name</th>
+<th class="tableblock halign-left valign-top">Kind</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Repository.load &lt;EntityType&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Entity load.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Repository.loadOrCreate &lt;EntityType&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Entity load or creation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Repository.persist &lt;EntityType&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Entity persistence.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Repository.attach &lt;EntityType&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Lifecycle attachment.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>StateManager.loadManagedEntity &lt;EntityType&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Managed-entity resolution.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>EventStorageEngine.appendTransaction</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Storage append transaction.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SnapshotStore.store &lt;name&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Snapshot persistence.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SnapshotStore.load &lt;name&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>INTERNAL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Snapshot loading.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_event_processors"><a class="anchor" href="#_event_processors"></a>Event processors</h3>
-<div class="paragraph">
-<p>Event processor invocations are traced as well.
-Since Streaming Event Processors are asynchronous, a new root trace is created for each event.
-Subscribing event processors, on the other hand, will become part of the current trace because they are invoked synchronously.</p>
-</div>
-<div class="sect3">
-<h4 id="_streaming_event_processors"><a class="anchor" href="#_streaming_event_processors"></a>Streaming event processors</h4>
+<h3 id="_distributed_connectors"><a class="anchor" href="#_distributed_connectors"></a>Distributed connectors</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
 </colgroup>
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
+<th class="tableblock halign-left valign-top">Span name</th>
+<th class="tableblock halign-left valign-top">Kind</th>
 <th class="tableblock halign-left valign-top">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${ProcessorType}[${processorName}](${EventClass})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Root trace of handling the event, includes all interceptor invocations.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CommandBusConnector.dispatch &lt;commandName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PRODUCER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Command transport send leg.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${ProcessorType}[${processorName}].process(${EventClass})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Inner span of handling the event, after all interceptors have been invoked.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect3">
-<h4 id="_subscribing_event_processors"><a class="anchor" href="#_subscribing_event_processors"></a>Subscribing event processors</h4>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${ProcessorType}[${processorName}].process(${EventClass})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The event is being handled by the subscribing event processor.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_deadlines"><a class="anchor" href="#_deadlines"></a>Deadlines</h3>
-<div class="paragraph">
-<p>Any action related to deadlines is traced in order to gain insight into what happened during specific calls.
-Mutations on deadlines generally happen from another root trace, such as a command or saga.
-The handling span of a deadline will be linked to the scheduling span for easy navigation.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${DeadlineManagerClass}.schedule(${deadlineName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A deadline was scheduled.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CommandBusConnector.handle &lt;commandName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CONSUMER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Command transport receive leg.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${DeadlineManagerClass}.cancelSchedule(${deadlineName}, ${scheduleId})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A deadline was cancelled based on name and <code>scheduleId</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBusConnector.query &lt;queryName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PRODUCER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Direct-query transport leg.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${DeadlineManagerClass}.cancelAll(${deadlineName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">All deadlines with a specific name were cancelled.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBusConnector.subscriptionQuery &lt;queryName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PRODUCER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Subscription setup transport leg.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${DeadlineManagerClass}.cancelAllWithinScope(${deadlineName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">All deadlines within a specific scope with a specific name were cancelled.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBusConnector.handle &lt;queryName&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CONSUMER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Query transport receive leg.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>DeadlineJob.execute(${deadlineName},${DeadlinePayloadClass})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Root trace of a deadline firing, containing the name and payload class.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_snapshotting"><a class="anchor" href="#_snapshotting"></a>Snapshotting</h3>
-<div class="paragraph">
-<p>Snapshotting is done in a separate root trace, due to the fact that it&#8217;s an asynchronous action and has no user impact.
-However, it can still be useful to measure the performance of snapshotting and see when it is triggered.
-The root trace of the <code>Snapshotter</code> invocation will be linked to the command handling span after which the snapshot was scheduled to be created.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${SnapshotterClass}.createSnapshot($aggregateClass)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A snapshot creation task is being submitted. Depending on performance, the executor might take a while to pick it up.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>${SnapshotterClass}.createSnapshot($aggregateClass, $aggregateIdentifier)</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>Snapshotter</code> is now creating the snapshot.</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>The root trace does not contain the aggregate identifier so the APM tool groups any <code>Snapshotter</code> calls of the same aggregate type together.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_sagas"><a class="anchor" href="#_sagas"></a>Sagas</h3>
-<div class="paragraph">
-<p>Sagas are a special type of event processor that can invoke multiple saga&#8217;s for a single event.
-Because of this the <code>AbstractSagaManager</code> has been instructed with additional tracing information.
-These spans are descendants of an event processor span that invokes the manager.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SagaManager[${SagaTypeName}].invokeSaga ${sagaIdentifier}</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A matching saga has been found and is being invoked.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SagaManager[${SagaTypeName}].startNewSaga</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The manager is constructing a new saga.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_queries"><a class="anchor" href="#_queries"></a>Queries</h3>
-<div class="paragraph">
-<p>Queries support tracing in all of their forms.
-In order to be clear about how they work, this section is split based upon the query&#8217;s type.
-For all types, the created spans will differ based on whether Axon Server is used or not.
-The spans that are only available with Axon Server are marked as such.</p>
-</div>
-<div class="sect3">
-<h4 id="_direct_queries"><a class="anchor" href="#_direct_queries"></a>Direct queries</h4>
-<div class="paragraph">
-<p>Direct queries fetch a single result (either a single item or a single list) and receive no updates.
-Traces will differ based on whether Axon Server is used or not.
-The following tabs show the possible traces.</p>
-</div>
-<div class="sect4">
-<h5 id="_axon_server_2"><a class="anchor" href="#_axon_server_2"></a>Axon Server</h5>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AxonServerQueryBus.query(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The requesting service is dispatching the query.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryProcessingTask(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The handling service is handling the query request in a task.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SimpleQueryBus.query(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The handling service is handling the query.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AxonServerQueryBus.ResponseProcessingTask(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The requesting service is processing the response.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_without_axon_server_2"><a class="anchor" href="#_without_axon_server_2"></a>Without Axon Server</h5>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SimpleQueryBus.query(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>QueryBus</code> is handling the query locally.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryBusConnector.queryUpdate &lt;updateType&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PRODUCER</code> / <code>CONSUMER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Update send and delivery legs. The consumer links to the originating subscription.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_streaming_queries"><a class="anchor" href="#_streaming_queries"></a>Streaming queries</h4>
+</div>
+<div class="sect1">
+<h2 id="_context_propagation"><a class="anchor" href="#_context_propagation"></a>Context propagation</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>Streaming queries look similar to the traces of a Direct query.
-They do not contain a <code>ResponseProcessingTask</code> span since their results are directly published to the invoker of the query.
-Traces will differ based on whether Axon Server is used or not.
-The following tabs show the possible traces.</p>
-</div>
-<div class="sect4">
-<h5 id="_axon_server_3"><a class="anchor" href="#_axon_server_3"></a>Axon Server</h5>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AxonServerQueryBus.streamingQuery(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The requesting service is dispatching the query.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryProcessingTask(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The handling service is handling the query request in a task.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SimpleQueryBus.streamingQuery(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The handling service is handling the streaming query.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_without_axon_server_3"><a class="anchor" href="#_without_axon_server_3"></a>Without Axon Server</h5>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SimpleQueryBus.streamingQuery(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>QueryBus</code> is handling the query locally.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_scatter_gather_queries"><a class="anchor" href="#_scatter_gather_queries"></a>Scatter-gather queries</h4>
-<div class="paragraph">
-<p>Scatter-Gather queries are like a direct query but can fetch results from multiple services at the same time.
-Part of the trace can thus be duplicated multiple times, since multiple services are invoked.
-Traces will differ based on whether Axon Server is used or not.
-The following tabs show the possible traces.</p>
-</div>
-<div class="sect4">
-<h5 id="_axon_server_4"><a class="anchor" href="#_axon_server_4"></a>Axon Server</h5>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AxonServerQueryBus.scatterGather(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The requesting service is dispatching the query.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>QueryProcessingTask(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The handling service is handling the query request in a task.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SimpleQueryBus.scatterGather(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Each handling service is handling the query. Each handler within the same service has its own index.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect4">
-<h5 id="_without_axon_server_4"><a class="anchor" href="#_without_axon_server_4"></a>Without Axon Server</h5>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SimpleQueryBus.scatterGather(${queryName})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>QueryBus</code> is handling the query locally. Each handler within the same service has its own index.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_subscription_queries"><a class="anchor" href="#_subscription_queries"></a>Subscription queries</h4>
-<div class="paragraph">
-<p>Subscription queries are traces in a different way than others.
-Subscription queries have an initial result, which is traces like a direct query.
-However, new results can later be published at any time after while the caller is still subscribed to it.</p>
+<p>Axon Framework carries trace context through <code>ProcessingContext</code> and message metadata.
+The Micrometer binding also makes the active span visible to instrumented libraries and logging during a scoped operation.</p>
 </div>
 <div class="paragraph">
-<p>In order to prevent malformed traces, since most APM tools have a maximum span time before flushing them, publication of new results is not part of the original trace.
-However, invocations of the <code>SimpleQueryUpdateEmitter</code> will be linked to the span of the queries that are listening to it, so the original call can easily be found.</p>
+<p>Parent selection uses the processing context first where applicable, then propagated message metadata, and finally the current tracer context.
+The current tracer context is the lowest-priority context installed by external instrumentation.
+Missing or invalid propagation metadata does not prevent message handling.</p>
 </div>
 <div class="paragraph">
-<p>The <code>QueryUpdateEmitter</code> traces will look like the following table:</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Trace name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SimpleQueryUpdateEmitter.emit(${PayloadClass})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A new update is emitted.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SimpleQueryUpdateEmitter.emit ${queryName} (${PayloadClass})</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A new update is emitted for a specific consumer.</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>In addition to this, the spans of the <a href="#_direct_queries">direct queries section</a> apply as well.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_message_handler_invocations"><a class="anchor" href="#_message_handler_invocations"></a>Message handler invocations</h3>
-<div class="paragraph">
-<p>The <code>TracingHandlerEnhancerDefinition</code> automatically creates a span for each message handler invocation within your application.
-This is true for commands, events, queries, and even custom message handlers.
-Spans will be created with the following format:
-<code>ContainingClassName.methodName(ArgumentClass1, Argumentclass2, etc)</code>.
-Examples of this are:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>RoomAvailabilityHandler.on(RoomAddedEvent)</p>
-</li>
-<li>
-<p>Account(RegisterAccountCommand,DeadlineManager)</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>The <code>TracingHandlerEnhancerDefinition</code> functionality is autoconfigured for Spring Boot, with event sourcing handlers turned off by default.
-This is because loading an aggregate might invoke many of these handlers, hitting the maximum number of spans for your APM tool.
-Please refer to the <a href="#_spring_boot_auto_configuration">Spring Boot configuration</a> section if you want to enable this.</p>
-</div>
+<p>For Reactor and OpenTelemetry SDK configuration, see <a href="opentelemetry/" class="xref page">OpenTelemetry</a>.</p>
 </div>
 </div>
 </div>
