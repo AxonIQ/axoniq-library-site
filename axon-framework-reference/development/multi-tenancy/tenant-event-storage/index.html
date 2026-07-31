@@ -856,6 +856,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../tenant-query-handling/">Tenant-aware query processing</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../event-processing/">Event processing</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -997,6 +1000,11 @@ Each tenant keeps its events in its own Axon Server context, so no tenant can re
 No changes to how an event-sourced entity is loaded or how you append events are required.</p>
 </div>
 <div class="paragraph">
+<p>With multi-tenancy enabled, the module registers the tenant-routing <code>EventStorageEngine</code> itself, so an application cannot register an <code>EventStorageEngine</code> of its own.
+A single engine would serve every tenant from one place, giving up the per-tenant isolation this module exists for, so such a registration fails the configuration at startup.
+Register a <code>TenantEventStorageEngineFactory</code> instead to control how each tenant&#8217;s engine is built.</p>
+</div>
+<div class="paragraph">
 <p>When an entity is used in the context of a message handler, the tenant information is already available in the <code>ProcessingContext</code>. Source and append operations are automatically routed to the event store of the related tenant.
 Publishing events without a context in contrast requires resolution of the tenant as described in the <a href="../tenant-management/#tenant-resolution" class="xref page">tenant resolution</a> section.</p>
 </div>
@@ -1026,6 +1034,10 @@ All events in a single append must belong to the same tenant.</p>
 A snapshot is stored in, and loaded from, the snapshot store of the same tenant as the entity it belongs to.
 This happens automatically whenever snapshotting is configured, with no tenant-specific setup.</p>
 </div>
+<div class="paragraph">
+<p>As with the event storage engine, an application cannot register a <code>SnapshotStore</code> of its own.
+Register a <code>TenantSnapshotStoreFactory</code> instead to control how each tenant&#8217;s snapshot store is built.</p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1034,7 +1046,7 @@ This happens automatically whenever snapshotting is configured, with no tenant-s
 <div class="paragraph">
 <p>Sourcing and appending act on a single tenant, resolved from the message being handled.
 Reading events across tenants, for example to build read models, is provided by the multi-tenant pooled-streaming support rather than by a single-tenant sourcing call.
-See <a href="../#event-processing" class="xref page">event processing</a> for details.</p>
+See <a href="../event-processing/" class="xref page">tenant-aware event processing</a> for details.</p>
 </div>
 </div>
 </div>
