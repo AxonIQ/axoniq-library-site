@@ -1150,6 +1150,53 @@ Useful when the command targets multiple entities (see <a href="#_injecting_mult
 </div>
 </div>
 <div class="sect1">
+<h2 id="_handling_a_missing_entity"><a class="anchor" href="#_handling_a_missing_entity"></a>Handling a missing entity</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default, an <code>@InjectEntity</code> parameter requires the entity to exist.
+If no entity can be found for the resolved identifier, Axon throws an <code>EntityNotFoundException</code>, failing the command instead of invoking the handler.</p>
+</div>
+<div class="paragraph">
+<p>Annotate the parameter with <strong>any</strong> annotation matching <code>@Nullable</code> to opt into create-or-update semantics instead.
+A <code>@Nullable @InjectEntity</code> parameter resolves to <code>null</code> when the entity does not exist yet, allowing the handler to decide whether to create it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public void handle(IssueCard command, @InjectEntity @Nullable GiftCard card, EventAppender appender) {
+    if (card == null) {
+        appender.append(new CardIssued(command.cardId(), command.amount()));
+    } else {
+        throw new IllegalStateException("GiftCard for id [" + command.cardId() + "] already exists");
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Declaring the parameter as <code>Optional&lt;GiftCard&gt;</code> achieves the same outcome without needing a <code>@Nullable</code> annotation:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public void handle(IssueCard command, @InjectEntity Optional&lt;GiftCard&gt; card, EventAppender appender) {
+    if (card.isEmpty()) {
+        appender.append(new CardIssued(command.cardId(), command.amount()));
+    } else {
+        throw new IllegalStateException("GiftCard for id [" + command.cardId() + "] already exists");
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The same works for a <code>ManagedEntity</code> parameter which can be injected with the <code>@InjectEntity</code> annotation. Either mark it <code>@Nullable</code> to allow receiving it as a <code>null</code>, or declare it as <code>Optional&lt;ManagedEntity&lt;ID, GiftCard&gt;&gt;</code> instead.</p>
+</div>
+<div class="paragraph">
+<p>This existence check applies regardless of how the entity&#8217;s <code>@EntityCreator</code> constructs it.
+Even a no-arg or identifier-based creator, which does not need a preceding event to produce an instance, only does so once that instance actually exists; before that, both a no-arg-created and an identifier-created entity behave the same as one that requires an event to construct.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_injecting_multiple_entities"><a class="anchor" href="#_injecting_multiple_entities"></a>Injecting multiple entities</h2>
 <div class="sectionbody">
 <div class="paragraph">
