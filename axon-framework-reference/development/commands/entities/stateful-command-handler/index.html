@@ -1191,6 +1191,42 @@ public void handle(IssueCard command, @InjectEntity Optional&lt;GiftCard&gt; car
 <p>The same works for a <code>ManagedEntity</code> parameter which can be injected with the <code>@InjectEntity</code> annotation. Either mark it <code>@Nullable</code> to allow receiving it as a <code>null</code>, or declare it as <code>Optional&lt;ManagedEntity&lt;ID, GiftCard&gt;&gt;</code> instead.</p>
 </div>
 <div class="paragraph">
+<p>In Kotlin, the nullable type carries this information on its own, so no annotation is required:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">@CommandHandler
+fun handle(command: IssueCard, @InjectEntity card: GiftCard?, appender: EventAppender) {
+    if (card == null) {
+        appender.append(CardIssued(command.cardId, command.amount))
+    } else {
+        throw IllegalStateException("GiftCard for id [${command.cardId}] already exists")
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A non-null <code>GiftCard</code> keeps the default behavior of failing with an <code>EntityNotFoundException</code>.
+This requires the <code>axon-kotlin</code> extension on the classpath, which teaches Axon to read Kotlin&#8217;s declared nullability.
+Without it, a <code>GiftCard?</code> parameter is indistinguishable from a non-null one, so the command fails with an <code>EntityNotFoundException</code> instead of the handler receiving <code>null</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The Kotlin type wins over a <code>@Nullable</code> annotation when the two disagree.
+A parameter declared as a non-null <code>GiftCard</code> fails even when annotated <code>@Nullable</code>, because Kotlin already rejects <code>null</code> for it at the call boundary.
+Write <code>GiftCard?</code> to accept a missing entity.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
 <p>This existence check applies regardless of how the entity&#8217;s <code>@EntityCreator</code> constructs it.
 Even a no-arg or identifier-based creator, which does not need a preceding event to produce an instance, only does so once that instance actually exists; before that, both a no-arg-created and an identifier-created entity behave the same as one that requires an event to construct.</p>
 </div>
