@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tenant-Aware Query Processing</title>
     <link rel="prev" href="../tenant-event-processing/">
-    <link rel="next" href="../../tuning/">
+    <link rel="next" href="../demo/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -859,6 +859,9 @@
   <li class="nav-item is-current-page" data-depth="2">
     <a class="nav-link" href="./">Tenant-aware query processing</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../demo/">Example</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -992,7 +995,7 @@
 </div>
 </div>
 <div class="sect1">
-<h2 id="_query_dispatching"><a class="anchor" href="#_query_dispatching"></a>Query dispatching</h2>
+<h2 id="query-dispatching"><a class="anchor" href="#query-dispatching"></a>Query dispatching</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>With multi-tenancy enabled, query dispatching is automatically tenant-aware. No changes to how you use the <code>QueryGateway</code> or <code>QueryBus</code> are required. This applies to direct queries as well as subscription queries.</p>
@@ -1024,7 +1027,7 @@ If the resolved tenant is not currently known, for example because its context w
 </div>
 </div>
 <div class="sect1">
-<h2 id="_query_handling"><a class="anchor" href="#_query_handling"></a>Query handling</h2>
+<h2 id="query-handling"><a class="anchor" href="#query-handling"></a>Query handling</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Query handling methods are registered the same way as in a single-tenant application. No change to how you declare or register a query handler is required.</p>
@@ -1036,7 +1039,7 @@ This is what allows a tenant-scoped component, such as a per-tenant external ser
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@QueryHandler
-public CourseStatistics on(FindCourseStatistics query, @TenantScoped CourseStatsRepository repository) { <i class="conum" data-value="1"></i><b>(1)</b>
+public CourseStatistics on(FindCourseStatistics query, @TenantScoped CourseStatisticsRepository repository) { <i class="conum" data-value="1"></i><b>(1)</b>
     return repository.findById(query.courseId());
 }</code></pre>
 </div>
@@ -1045,12 +1048,24 @@ public CourseStatistics on(FindCourseStatistics query, @TenantScoped CourseStats
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>repository</code> is the <code>CourseStatsRepository</code> instance specific for the current tenant. The <code>@TenantScoped</code> annotation marks it as tenant scoped, transparently resolved by a tenant aware parameter resolver.</td>
+<td><code>repository</code> is the <code>CourseStatisticsRepository</code> instance specific for the current tenant. The <code>@TenantScoped</code> annotation marks it as tenant scoped, transparently resolved by a tenant aware parameter resolver.</td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
 <p>See <a href="../tenant-scoped-components/" class="xref page">Tenant-scoped components</a> for more details on how to register such components and inject them into a handler.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+To see this running, the <a href="../demo/" class="xref page">university demo</a> answers queries through <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-core/src/main/java/org/axonframework/examples/demo/multitenancy/university/read/statistics/TenantStatisticsQueryHandler.java"><code>TenantStatisticsQueryHandler</code></a>, and its <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-core/src/main/java/org/axonframework/examples/demo/multitenancy/shared/messaging/StatisticsSubscription.java"><code>StatisticsSubscription</code></a> shows subscription queries staying within one tenant.
+</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -1071,7 +1086,7 @@ Injecting a tenant-scoped component parameter then fails with a <code>TenantNotR
 </div>
         <nav class="pagination">
   <span class="prev"><a href="../tenant-event-processing/">Tenant-aware event processing</a></span>
-  <span class="next"><a href="../../tuning/">Tuning</a></span>
+  <span class="next"><a href="../demo/">Example</a></span>
 </nav>
     </article>
   </div>

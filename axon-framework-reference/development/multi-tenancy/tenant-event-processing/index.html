@@ -859,6 +859,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../tenant-query-handling/">Tenant-aware query processing</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../demo/">Example</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -1002,7 +1005,7 @@ Multi-tenancy makes the streaming event processor tenant-aware: one event proces
 </div>
 </div>
 <div class="sect1">
-<h2 id="_handling_events_per_tenant"><a class="anchor" href="#_handling_events_per_tenant"></a>Handling events per tenant</h2>
+<h2 id="handling-events-per-tenant"><a class="anchor" href="#handling-events-per-tenant"></a>Handling events per tenant</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Events in a multi-tenancy application are handled through regular <a href="../../events/event-handlers/" class="xref page">event handlers</a>.
@@ -1028,6 +1031,18 @@ public void on(StudentEnrolled event, @TenantScoped EnrollmentRepository reposit
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
 <td>Resolved from the tenant carried on the processing context, so the enrollment lands in that tenant&#8217;s own projection.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+To see this running, the <a href="../demo/" class="xref page">university demo</a> projects every tenant&#8217;s events through <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-core/src/main/java/org/axonframework/examples/demo/multitenancy/university/read/statistics/CourseStatisticsProjection.java"><code>CourseStatisticsProjection</code></a>, on one processor that names no tenant.
+</td>
 </tr>
 </table>
 </div>
@@ -1064,7 +1079,7 @@ A tenant that is added starts from the beginning of its store. A tenant that is 
 Renaming a tenant&#8217;s context is seen as removing one tenant and adding another, so its events replay from the beginning under the new name.
 This happens automatically and requires no configuration.</p>
 </div>
-<div class="admonitionblock warning">
+<div id="idempotent-handlers" class="admonitionblock warning">
 <table>
 <tr>
 <td class="icon">
@@ -1094,17 +1109,31 @@ The timeout defaults to 30 seconds.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_the_restart_timeout"><a class="anchor" href="#_configuring_the_restart_timeout"></a>Configuring the restart timeout</h3>
+<h3 id="configuring-restart-timeout"><a class="anchor" href="#configuring-restart-timeout"></a>Configuring the restart timeout</h3>
 <div class="paragraph">
 <p>A deployment whose processors are slow to stop and start can raise the safety-net timeout by registering a <code>MultiTenantStreamingProcessorRestartConfiguration</code> with a longer value:</p>
 </div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_declarative_configuration_api" class="tab">
+<p>Declarative - Configuration API</p>
+</li>
+<li id="_tabs_1_autodetected_spring_boot" class="tab">
+<p>Autodetected - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_declarative_configuration_api">
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void raiseRestartTimeout(MessagingConfigurer configurer) {
     configurer.componentRegistry(registry -&gt;
         registry.registerComponent(
                 MultiTenantStreamingProcessorRestartConfiguration.class,
-                config -&gt; MultiTenantStreamingProcessorRestartConfiguration.DEFAULT.restartTimeout(Duration.ofMinutes(2)) <i class="conum" data-value="1"></i><b>(1)</b>
+                config -&gt; MultiTenantStreamingProcessorRestartConfiguration.DEFAULT
+                        .restartTimeout(Duration.ofMinutes(2))                          <i class="conum" data-value="1"></i><b>(1)</b>
         )
     );
 }</code></pre>
@@ -1115,6 +1144,43 @@ The timeout defaults to 30 seconds.</p>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
 <td>The bound applied to each processor&#8217;s shutdown-and-start during a restart, raised here from the 30-second default.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_1_autodetected_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_autodetected_spring_boot">
+<div class="paragraph">
+<p>Expose the configuration as a bean. The default is only registered when the application registers none, so this bean replaces it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public MultiTenantStreamingProcessorRestartConfiguration processorRestartConfiguration() {
+    return MultiTenantStreamingProcessorRestartConfiguration.DEFAULT
+            .restartTimeout(Duration.ofMinutes(2));                                 <i class="conum" data-value="1"></i><b>(1)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The bound applied to each processor&#8217;s shutdown-and-start during a restart, raised here from the 30-second default.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Both variants of the <a href="../demo/" class="xref page">university demo</a> register this at its default, from the <code>UniversityConfiguration</code> of its <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-declarative/src/main/java/org/axonframework/examples/demo/multitenancy/UniversityConfiguration.java">declarative</a> and <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-springboot/src/main/java/org/axonframework/examples/demo/multitenancy/UniversityConfiguration.java">Spring Boot</a> variants, so the knob is visible without changing what the demo does.
+</td>
 </tr>
 </table>
 </div>

@@ -859,6 +859,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../tenant-query-handling/">Tenant-aware query processing</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../demo/">Example</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -987,7 +990,7 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>A multi-tenant application usually has its own tenant-scoped resources: a read-model repository, a SQL datasource, or any service that must not mix data between tenants.
+<p>A multi-tenant application usually has its own tenant-scoped resources: a read-model store, a SQL datasource, or any service that must not mix data between tenants.
 A tenant-scoped component lets you register such a resource once and have the correct tenant&#8217;s instance injected into your message handling methods, so a handler never has to look up the tenant itself.
 The resource itself stays passive: you describe how it is built for a tenant, and the framework holds one instance per tenant and injects the matching one into the handler.</p>
 </div>
@@ -1010,7 +1013,7 @@ The resource itself stays passive: you describe how it is built for a tenant, an
 </div>
 </div>
 <div class="sect1">
-<h2 id="_registering_a_tenant_scoped_component"><a class="anchor" href="#_registering_a_tenant_scoped_component"></a>Registering a tenant-scoped component</h2>
+<h2 id="registering-a-provider"><a class="anchor" href="#registering-a-provider"></a>Registering a tenant-scoped component</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Implement a <code>TenantComponentFactory</code> describing how the component is built for a tenant, and register the provider obtained through <code>TenantComponentProvider.withFactory</code>.</p>
@@ -1038,8 +1041,8 @@ The resource itself stays passive: you describe how it is built for a tenant, an
         registry.registerComponent(
                 TenantComponentProvider.class,                                     <i class="conum" data-value="1"></i><b>(1)</b>
                 config -&gt; TenantComponentProvider.withFactory(
-                        CourseStatsRepository.class,                               <i class="conum" data-value="2"></i><b>(2)</b>
-                        tenant -&gt; new InMemoryCourseStatsRepository(tenant.tenantId())
+                        CourseStatisticsStore.class,                               <i class="conum" data-value="2"></i><b>(2)</b>
+                        tenant -&gt; new InMemoryCourseStatisticsStore(tenant.tenantId())
                 )
         )
     );
@@ -1066,10 +1069,10 @@ The resource itself stays passive: you describe how it is built for a tenant, an
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
-public TenantComponentProvider&lt;CourseStatsRepository&gt; courseStatsRepositoryProvider() { <i class="conum" data-value="1"></i><b>(1)</b>
+public TenantComponentProvider&lt;CourseStatisticsStore&gt; courseStatisticsStoreProvider() { <i class="conum" data-value="1"></i><b>(1)</b>
     return TenantComponentProvider.withFactory(
-            CourseStatsRepository.class,                                                 <i class="conum" data-value="2"></i><b>(2)</b>
-            tenant -&gt; new InMemoryCourseStatsRepository(tenant.tenantId())
+            CourseStatisticsStore.class,                                                 <i class="conum" data-value="2"></i><b>(2)</b>
+            tenant -&gt; new InMemoryCourseStatisticsStore(tenant.tenantId())
     );
 }</code></pre>
 </div>
@@ -1092,10 +1095,22 @@ public TenantComponentProvider&lt;CourseStatsRepository&gt; courseStatsRepositor
 <div class="paragraph">
 <p>Message handlers can then declare the component type as a parameter.</p>
 </div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The <a href="../demo/" class="xref page">university demo</a> builds its providers in <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-core/src/main/java/org/axonframework/examples/demo/multitenancy/shared/tenant/TenantComponents.java"><code>TenantComponents</code></a> and registers them from the <code>UniversityConfiguration</code> of its <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-declarative/src/main/java/org/axonframework/examples/demo/multitenancy/UniversityConfiguration.java">declarative</a> and <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-springboot/src/main/java/org/axonframework/examples/demo/multitenancy/UniversityConfiguration.java">Spring Boot</a> variants.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_injecting_the_tenants_instance_into_a_handler"><a class="anchor" href="#_injecting_the_tenants_instance_into_a_handler"></a>Injecting the tenant&#8217;s instance into a handler</h2>
+<h2 id="injecting-into-a-handler"><a class="anchor" href="#injecting-into-a-handler"></a>Injecting the tenant&#8217;s instance into a handler</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Declare an <code>@TenantScoped</code>-annotated parameter of the component type on a message handling method.
@@ -1104,8 +1119,8 @@ During handling, the parameter is resolved to the instance belonging to the tena
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
-public void on(CourseCreated event, @TenantScoped CourseStatsRepository repository) { <i class="conum" data-value="1"></i><b>(1)</b>
-    repository.save(new CourseStatistics(event.courseId()));
+public void on(CourseCreated event, @TenantScoped CourseStatisticsStore store) { <i class="conum" data-value="1"></i><b>(1)</b>
+    store.save(new CourseStatistics(event.courseId()));
 }</code></pre>
 </div>
 </div>
@@ -1113,7 +1128,7 @@ public void on(CourseCreated event, @TenantScoped CourseStatsRepository reposito
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>repository</code> is the <code>CourseStatsRepository</code> instance of the current tenant.
+<td><code>store</code> is the <code>CourseStatisticsStore</code> instance of the current tenant.
 The <code>@TenantScoped</code> annotation marks it as tenant scoped.</td>
 </tr>
 </table>
@@ -1123,10 +1138,22 @@ The <code>@TenantScoped</code> annotation marks it as tenant scoped.</td>
 See <a href="../tenant-management/#tenant-resolution" class="xref page">Tenant resolution</a> for how the tenant of a message is resolved and how to customize that resolution.
 When no tenant can be resolved for the message, injecting the parameter fails with a <code>TenantNotResolvedException</code>, so a tenant-scoped resource is never created for an unresolved tenant.</p>
 </div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The demo injects tenant-scoped components into all three handler kinds: <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-core/src/main/java/org/axonframework/examples/demo/multitenancy/university/write/enrollstudent/EnrollStudentCommandHandler.java">a command handler</a>, <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-core/src/main/java/org/axonframework/examples/demo/multitenancy/university/read/statistics/CourseStatisticsProjection.java">an event handler</a> and <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-core/src/main/java/org/axonframework/examples/demo/multitenancy/university/read/statistics/TenantStatisticsQueryHandler.java">a query handler</a>.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_registering_multiple_component_types"><a class="anchor" href="#_registering_multiple_component_types"></a>Registering multiple component types</h2>
+<h2 id="registering-multiple-types"><a class="anchor" href="#registering-multiple-types"></a>Registering multiple component types</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>An application can register several tenant-scoped components, one provider per type.
@@ -1152,10 +1179,10 @@ Register a single provider per component type: registering two providers for the
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.componentRegistry(registry -&gt; registry
-    .registerComponent(TenantComponentProvider.class, "courseStatsRepository", <i class="conum" data-value="1"></i><b>(1)</b>
+    .registerComponent(TenantComponentProvider.class, "courseStatisticsStore", <i class="conum" data-value="1"></i><b>(1)</b>
             config -&gt; TenantComponentProvider.withFactory(
-                    CourseStatsRepository.class,
-                    tenant -&gt; new InMemoryCourseStatsRepository(tenant.tenantId())))
+                    CourseStatisticsStore.class,
+                    tenant -&gt; new InMemoryCourseStatisticsStore(tenant.tenantId())))
     .registerComponent(TenantComponentProvider.class, "reportingDataSource",   <i class="conum" data-value="2"></i><b>(2)</b>
             config -&gt; TenantComponentProvider.withFactory(
                     DataSource.class,
@@ -1167,7 +1194,7 @@ Register a single provider per component type: registering two providers for the
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>A provider for the <code>CourseStatsRepository</code> read model.</td>
+<td>A provider for the <code>CourseStatisticsStore</code> read model.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
@@ -1183,10 +1210,10 @@ Register a single provider per component type: registering two providers for the
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
-public TenantComponentProvider&lt;CourseStatsRepository&gt; courseStatsRepository() {  <i class="conum" data-value="1"></i><b>(1)</b>
+public TenantComponentProvider&lt;CourseStatisticsStore&gt; courseStatisticsStore() {  <i class="conum" data-value="1"></i><b>(1)</b>
     return TenantComponentProvider.withFactory(
-            CourseStatsRepository.class,
-            tenant -&gt; new InMemoryCourseStatsRepository(tenant.tenantId()));
+            CourseStatisticsStore.class,
+            tenant -&gt; new InMemoryCourseStatisticsStore(tenant.tenantId()));
 }
 
 @Bean
@@ -1201,7 +1228,7 @@ public TenantComponentProvider&lt;DataSource&gt; reportingDataSource() {        
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>A provider for the <code>CourseStatsRepository</code> read model.</td>
+<td>A provider for the <code>CourseStatisticsStore</code> read model.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
@@ -1215,7 +1242,7 @@ public TenantComponentProvider&lt;DataSource&gt; reportingDataSource() {        
 </div>
 </div>
 <div class="sect1">
-<h2 id="_lifecycle_and_cleanup"><a class="anchor" href="#_lifecycle_and_cleanup"></a>Lifecycle and cleanup</h2>
+<h2 id="lifecycle-and-cleanup"><a class="anchor" href="#lifecycle-and-cleanup"></a>Lifecycle and cleanup</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Providers follow the tenant lifecycle automatically.
@@ -1227,17 +1254,17 @@ Override it to release other resources or to add custom shutdown logic.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">TenantComponentFactory&lt;CourseStatsRepository&gt; factory = new TenantComponentFactory&lt;&gt;() {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">TenantComponentFactory&lt;CourseStatisticsStore&gt; factory = new TenantComponentFactory&lt;&gt;() {
 
     @Override
-    public CourseStatsRepository create(TenantDescriptor tenant) {
-        return new JdbcCourseStatsRepository(dataSourceFor(tenant));
+    public CourseStatisticsStore create(TenantDescriptor tenant) {
+        return new JdbcCourseStatisticsStore(dataSourceFor(tenant));
     }
 
     @Override
-    public void destroy(TenantDescriptor tenant, CourseStatsRepository repository) {
-        repository.flush();
-        repository.close();
+    public void destroy(TenantDescriptor tenant, CourseStatisticsStore store) {
+        store.flush();
+        store.close();
     }
 };</code></pre>
 </div>

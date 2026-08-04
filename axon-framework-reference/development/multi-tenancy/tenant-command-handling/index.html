@@ -859,6 +859,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../tenant-query-handling/">Tenant-aware query processing</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../demo/">Example</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
@@ -1021,7 +1024,7 @@ If the resolved tenant is not currently known, for example because its context w
 </div>
 </div>
 <div class="sect1">
-<h2 id="_command_handling"><a class="anchor" href="#_command_handling"></a>Command handling</h2>
+<h2 id="command-handling"><a class="anchor" href="#command-handling"></a>Command handling</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Command handling methods are registered the same way as in a single-tenant application. No change to how you declare or register a command handler is required.</p>
@@ -1033,10 +1036,11 @@ This is what allows a tenant-scoped component, such as a per-tenant external ser
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
-public void on(NotifyCourseSubscription command, @TenantScoped NotificationService notificationService, EventAppender appender) { <i class="conum" data-value="1"></i><b>(1)</b>
+public void on(NotifyCourseSubscription command,
+                @TenantScoped NotificationService notificationService,
+                EventAppender appender) { <i class="conum" data-value="1"></i><b>(1)</b>
     notificationService.notifyStudentCourseCreation(command.studentId(), command.courseId());
-    appender.append(new CourseSubscriptionNotified(command.courseId(),
-                command.studentId()));
+    appender.append(new CourseSubscriptionNotified(command.courseId(), command.studentId()));
 }</code></pre>
 </div>
 </div>
@@ -1050,6 +1054,18 @@ public void on(NotifyCourseSubscription command, @TenantScoped NotificationServi
 </div>
 <div class="paragraph">
 <p>See <a href="../tenant-scoped-components/" class="xref page">Tenant-scoped components</a> for more details on how to register such components and inject them into a handler.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+To see this running, the <a href="../demo/" class="xref page">university demo</a> enrolls a student through <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-core/src/main/java/org/axonframework/examples/demo/multitenancy/university/write/enrollstudent/EnrollStudentCommandHandler.java"><code>EnrollStudentCommandHandler</code></a>, which sources the course from, and appends to, the command&#8217;s own tenant.
+</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock note">
 <table>
