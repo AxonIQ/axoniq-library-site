@@ -1197,12 +1197,20 @@ It receives the message and the collection of known tenants, and returns the res
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCustomTenantResolver(MessagingConfigurer configurer) {
-    TenantResolver resolver = (message, tenants) -&gt; {
-        String tenantId = extractTenantId(message);            <i class="conum" data-value="1"></i><b>(1)</b>
-        if (tenantId == null) {
-            throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+    TenantResolver resolver = new TenantResolver() {
+        @Override
+        public TenantDescriptor resolveTenant(Message message, Collection&lt;TenantDescriptor&gt; tenants) {
+            String tenantId = message.metadata().get("x-tenant");            <i class="conum" data-value="1"></i><b>(1)</b>
+            if (tenantId == null) {
+                throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+            }
+            return TenantDescriptor.tenantWithId(tenantId);
         }
-        return TenantDescriptor.tenantWithId(tenantId);
+
+        @Override
+        public Message attachTenant(Message message, TenantDescriptor tenant) {
+            return message.andMetadata(Map.of("x-tenant", tenant.tenantId()));     <i class="conum" data-value="2"></i><b>(2)</b>
+        }
     };
     configurer.componentRegistry(registry -&gt; registry.registerComponent(TenantResolver.class,
                                                                         config -&gt; resolver));
@@ -1215,6 +1223,10 @@ It receives the message and the collection of known tenants, and returns the res
 <td><i class="conum" data-value="1"></i><b>1</b></td>
 <td>Application-specific logic deriving the tenant identifier from the message.</td>
 </tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The inverse: writes the tenant back under the same header, so it survives being dispatched elsewhere. See <a href="#tenant-propagation">Propagating the tenant across a dispatch hop</a>.</td>
+</tr>
 </table>
 </div>
 </div>
@@ -1226,12 +1238,20 @@ It receives the message and the collection of known tenants, and returns the res
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
 public TenantResolver tenantResolver() {
-    return (message, tenants) -&gt; {
-        String tenantId = extractTenantId(message);            <i class="conum" data-value="1"></i><b>(1)</b>
-        if (tenantId == null) {
-            throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+    return new TenantResolver() {
+        @Override
+        public TenantDescriptor resolveTenant(Message message, Collection&lt;TenantDescriptor&gt; tenants) {
+            String tenantId = message.metadata().get("x-tenant");            <i class="conum" data-value="1"></i><b>(1)</b>
+            if (tenantId == null) {
+                throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+            }
+            return TenantDescriptor.tenantWithId(tenantId);
         }
-        return TenantDescriptor.tenantWithId(tenantId);
+
+        @Override
+        public Message attachTenant(Message message, TenantDescriptor tenant) {
+            return message.andMetadata(Map.of("x-tenant", tenant.tenantId()));     <i class="conum" data-value="2"></i><b>(2)</b>
+        }
     };
 }</code></pre>
 </div>
@@ -1242,10 +1262,27 @@ public TenantResolver tenantResolver() {
 <td><i class="conum" data-value="1"></i><b>1</b></td>
 <td>Application-specific logic deriving the tenant identifier from the message.</td>
 </tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The inverse: writes the tenant back under the same header, so it survives being dispatched elsewhere. See <a href="#tenant-propagation">Propagating the tenant across a dispatch hop</a>.</td>
+</tr>
 </table>
 </div>
 </div>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="tenant-propagation"><a class="anchor" href="#tenant-propagation"></a>Propagating the tenant across a dispatch hop</h3>
+<div class="paragraph">
+<p>A command or query dispatched from inside a handler generally does not name its own tenant: the tenant is only known through the message being handled.
+<code>TenantResolver</code> attaches that tenant onto the outgoing message through <code>attachTenant</code>, the inverse of resolving it, so it survives a distributed round trip and is available again once the dispatched message reaches its handler.</p>
+</div>
+<div class="paragraph">
+<p>The default <code>MetadataBasedTenantResolver</code> does this out of the box: it writes the tenant identifier under the same metadata key it reads it from, so a command or query dispatched from within another tenant-owned handler, without naming a tenant of its own, stays attributed to that tenant with no further configuration.</p>
+</div>
+<div class="paragraph">
+<p>A custom <code>TenantResolver</code> must implement both <code>resolveTenant</code> and <code>attachTenant</code> itself, to allow commands and queries to propagate their tenant information when dispatched from inside another handler. The custom resolver above already does this, writing the tenant back under the same header it reads it from.</p>
 </div>
 </div>
 </div>

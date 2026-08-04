@@ -1445,15 +1445,23 @@ public TargetTenantResolver&lt;Message&lt;?&gt;&gt; customTargetTenantResolver()
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCustomTenantResolver(MessagingConfigurer configurer) {
-    TenantResolver resolver = (message, tenants) -&gt; {
-        String tenantId = extractTenantId(message);                          <i class="conum" data-value="1"></i><b>(1)</b>
-        if (tenantId == null) {
-            throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+    TenantResolver resolver = new TenantResolver() {
+        @Override
+        public TenantDescriptor resolveTenant(Message message, Collection&lt;TenantDescriptor&gt; tenants) {
+            String tenantId = message.metadata().get("x-tenant");            <i class="conum" data-value="1"></i><b>(1)</b>
+            if (tenantId == null) {
+                throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+            }
+            return TenantDescriptor.tenantWithId(tenantId);
         }
-        return TenantDescriptor.tenantWithId(tenantId);
+
+        @Override
+        public Message attachTenant(Message message, TenantDescriptor tenant) {
+            return message.andMetadata(Map.of("x-tenant", tenant.tenantId()));     <i class="conum" data-value="2"></i><b>(2)</b>
+        }
     };
     configurer.componentRegistry(registry -&gt; registry.registerComponent(TenantResolver.class,
-                                                                       config -&gt; resolver));
+                                                                        config -&gt; resolver));
 }</code></pre>
 </div>
 </div>
@@ -1471,12 +1479,20 @@ public TargetTenantResolver&lt;Message&lt;?&gt;&gt; customTargetTenantResolver()
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
 public TenantResolver tenantResolver() {
-    return (message, tenants) -&gt; {
-        String tenantId = extractTenantId(message);                          <i class="conum" data-value="1"></i><b>(1)</b>
-        if (tenantId == null) {
-            throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+    return new TenantResolver() {
+        @Override
+        public TenantDescriptor resolveTenant(Message message, Collection&lt;TenantDescriptor&gt; tenants) {
+            String tenantId = message.metadata().get("x-tenant");            <i class="conum" data-value="1"></i><b>(1)</b>
+            if (tenantId == null) {
+                throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+            }
+            return TenantDescriptor.tenantWithId(tenantId);
         }
-        return TenantDescriptor.tenantWithId(tenantId);
+
+        @Override
+        public Message attachTenant(Message message, TenantDescriptor tenant) {
+            return message.andMetadata(Map.of("x-tenant", tenant.tenantId()));     <i class="conum" data-value="2"></i><b>(2)</b>
+        }
     };
 }</code></pre>
 </div>
