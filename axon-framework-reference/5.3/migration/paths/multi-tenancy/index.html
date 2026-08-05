@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Multi-Tenancy Migration</title>
+    <link rel="prev" href="../upcasters/">
+    <link rel="next" href="../../../advanced-migration/paths/5.0-to-5.1/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../../_'</script>
+
+
+<link rel="icon" href="../../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article axoniq-feature">
+    <div class="header_container">
+      <div class="banner">
+    <a href="https://platform.axoniq.io/resource-center/long-term-support">Long-Term Support on Axon Framework 4 is now live for existing customers. Visit the resource center for instructions on setting it up. <span class="banner_button">Access it here</span></a>
+</div>
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../../5.2/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../../axon-server-reference/v2026.0/">Axon Server</a>
+                <a class="navbar-item" href="../../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../../">Axon Framework Reference</a></li>
+    <li><a href="../../">Migration Guide</a></li>
+    <li><a href="../">Migration Paths</a></li>
+    <li><a href="./"><span class="advanced-framework">Multi-Tenancy Migration</span></a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Multi-Tenancy%20Migration" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Multi-Tenancy%20Migration%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BMulti-Tenancy%20Migration%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.3%2Fmigration%2Fpaths%2Fmulti-tenancy%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.3</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../../development/migration/paths/multi-tenancy/">development</a>
+    <a class="version item is-current" href="./">5.3</a>
+    <a class="version item is-missing" href="../../../../5.2/">5.2</a>
+    <a class="version item is-missing" href="../../../../5.1/">5.1</a>
+    <a class="version item is-missing" href="../../../../5.0/">5.0</a>
+    <a class="version item is-missing" href="../../../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.3">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../distributed-tracing/"><span class="advanced-framework">Distributed Tracing</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="3">
+    <a class="nav-link" href="./"><span class="advanced-framework">Multi-Tenancy Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../advanced-migration/paths/5.2.0-to-5.2.1/">Axoniq Framework 5.2.0 to 5.2.1 Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../data-protection-migration/migration-path/"><span class="advanced-framework">Data Protection Module Migration</span></a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../events/event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../message-transformation/"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../message-transformation/defining-transformations/">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../message-transformation/configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../message-transformation/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../multi-tenancy/"><span class="advanced-framework">Multi-Tenancy</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../multi-tenancy/tenant-management/">Tenant management</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../multi-tenancy/tenant-scoped-components/">Tenant-scoped components</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../multi-tenancy/tenant-command-handling/">Tenant-aware command processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../multi-tenancy/tenant-event-storage/">Tenant-aware event storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../multi-tenancy/tenant-event-processing/">Tenant-aware event processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../multi-tenancy/tenant-query-handling/">Tenant-aware query processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../multi-tenancy/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc axoniq-feature">
+                <h1 class="page">Multi-Tenancy Migration</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Serving several tenants from one Axon Framework 4 application meant reaching for the separate <code>extension-multitenancy</code>.
+Axoniq Framework now ships that capability itself, as the <code>axoniq-multi-tenancy</code> module described in <a href="../../../multi-tenancy/" class="xref page">Multi-Tenancy</a>.
+You still add it as a dependency, but you no longer wire anything up afterwards, because multi-tenancy switches itself on the moment the module is on the classpath.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework maps each of your tenants onto exactly one Axon Server context, and that mapping is what keeps one tenant&#8217;s messages and events apart from another&#8217;s.
+It works as it did in Axon Framework 4, and a command or query still names its tenant in the <code>tenantId</code> metadata key, so your tenant identifiers stay valid and so does the habit of tagging a message once as it enters the system.
+One default does shift, which <a href="#step-tenant-discovery">Step 2: Replace <code>axon.axonserver.contexts</code> with a predicate</a> covers.</p>
+</div>
+<div class="paragraph">
+<p>What genuinely changes is that you use the regular components again.
+The extension gave every tenant its own copy of the infrastructure, so each one had a <code>CommandBus</code>, a <code>QueryBus</code>, an <code>EventStore</code>, and an event processor for every processing group.
+Axon Framework 5 uses the ordinary <code>CommandBus</code>, <code>QueryBus</code>, and <code>EventStore</code>, and separates tenants further down at the Axon Server connection, which is how <a href="../../../multi-tenancy/tenant-command-handling/" class="xref page">command</a> and <a href="../../../multi-tenancy/tenant-query-handling/" class="xref page">query</a> dispatching stay tenant-aware without a bus per tenant.</p>
+</div>
+<div class="paragraph">
+<p>The <a href="../../../multi-tenancy/demo/" class="xref page">university demo</a> is a small multi-tenant Axon Framework 5 application, written once against the Configuration API and once with Spring Boot.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="before-you-start"><a class="anchor" href="#before-you-start"></a>Before you start</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The extension gave every tenant its own copy of the infrastructure.
+Axon Framework 5 shares one set of components and separates tenants at the Axon Server connection instead, which is cheaper to run but changes five things you may be relying on today.
+None of them is a setting you can flip after the fact, so read them before you start editing.</p>
+</div>
+<div class="sect2">
+<h3 id="choose-a-stream"><a class="anchor" href="#choose-a-stream"></a>Decide how your projections read events</h3>
+<div class="paragraph">
+<p>Take this decision first, because the token and reset behaviour below follows from it.
+<a href="../../../multi-tenancy/tenant-event-processing/" class="xref page">Tenant-aware event processing</a> offers two options.</p>
+</div>
+<div class="paragraph">
+<p>A persistent stream becomes one stream per tenant, with Axon Server tracking each tenant&#8217;s position in that tenant&#8217;s own context.
+A pooled streaming processor instead merges every tenant&#8217;s store into a single stream and tracks all their positions in one token.</p>
+</div>
+<div class="paragraph">
+<p>If you are arriving from <code>tenantDataSourceResolver</code>, meaning a database per tenant, persistent streams are the recommended option.
+In Spring Boot the per-tenant streams are wired for you from the persistent-stream configuration.
+On the Configuration API you register a <code>MultiTenantPersistentStreamEventSourceFactory</code> yourself, since no enhancer contributes it.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_what_changes_at_runtime"><a class="anchor" href="#_what_changes_at_runtime"></a>What changes at runtime</h3>
+<div class="paragraph">
+<p><strong>Your existing event processor tokens need replacing.</strong>
+Under pooled streaming a token holds one position per tenant, which is a different type from what the extension stored, so plan the switch as a replay rather than as a resume.
+Persistent streams keep no token store at all, so there is no position to carry into them either and they start with a full replay.</p>
+</div>
+<div class="paragraph">
+<p><strong><a href="#resetting-a-projection">Resetting a projection</a> covers every tenant at once.</strong>
+Under pooled streaming one processor serves all of them, so a reset replays them together rather than one at a time.
+With persistent streams each tenant has its own server-side position, so a reset replays that tenant only.</p>
+</div>
+<div class="paragraph">
+<p><strong>Sequencing no longer stops at the tenant boundary.</strong>
+Two tenants that happen to use the same identifier, the same course id for instance, land in the same sequence and start waiting on each other.
+There is no built-in per-tenant sequencing policy, so write one when sequencing has to stay inside a tenant.
+The tenant is available where you need it, since the processor hands your policy a <code>ProcessingContext</code> carrying the tenant the event was streamed from.
+Read it with <code>TenantDescriptor.fromContext</code> and fold the tenant identifier into the sequence identifier you return.</p>
+</div>
+<div class="paragraph">
+<p><strong>Tenant-aware dead-letter queues are not supported yet.</strong>
+Nothing yet replaces the extension&#8217;s <code>MultiTenantDeadLetterProcessor#forTenant</code>, so a dead letter is not routed per tenant for the time being.</p>
+</div>
+<div class="paragraph">
+<p><strong>Event scheduling and deadlines have no equivalent.</strong>
+The extension&#8217;s <code>MultiTenantEventScheduler</code> has nothing to be made tenant-aware, since Axon Framework 5 carries neither an event scheduler nor a deadline manager, as <a href="../#what-is-not-yet-there" class="xref page">what is not yet there</a> covers.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="step-dependency"><a class="anchor" href="#step-dependency"></a>Step 1: Swap the dependency</h2>
+<div class="sectionbody">
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_1_axon_framework_5" class="tab">
+<p>Axon Framework 5</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.axonframework.extensions.multitenancy&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-multitenancy-spring-boot-starter&lt;/artifactId&gt;
+    &lt;version&gt;${axon.multitenancy.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_1_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+    &lt;artifactId&gt;axoniq-multi-tenancy&lt;/artifactId&gt;
+    &lt;version&gt;${axoniq.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The extension published three artifacts, though you only ever declared the starter yourself.
+That one pulled in <code>axon-multitenancy-spring-boot-autoconfigure</code>, which in turn pulled in the <code>axon-multitenancy</code> core.
+The single module shown here takes the place of all three, and your imports move from <code>org.axonframework.extensions.multitenancy</code> to <code>io.axoniq.framework.messaging.multitenancy</code>.
+The extension also only ever worked with Spring, while this module does not require it.</p>
+</div>
+<div class="paragraph">
+<p>Since there is nothing left to switch on, the only thing worth configuring at this step is the way back out.
+You will want it if the module reaches an application transitively that in fact runs single-tenant.</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_2_axon_framework_5_configuration_api" class="tab">
+<p>Axon Framework 5 - Configuration API</p>
+</li>
+<li id="_tabs_2_axon_framework_5_spring_boot" class="tab">
+<p>Axon Framework 5 - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_4">
+<div class="paragraph">
+<p>The extension only ran under Spring, so a property was the whole story:</p>
+</div>
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.multi-tenancy.enabled=false</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_axon_framework_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_5_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void disableMultiTenancy(MessagingConfigurer configurer) {
+    configurer.componentRegistry(MultiTenancyUtils::disable);
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_axon_framework_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_5_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.multitenancy.enabled=false</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Multi-tenancy cannot do anything without Axon Server, and the two configuration styles react differently when it is missing.</p>
+</div>
+<div class="paragraph">
+<p><strong>Spring Boot handles it for you.</strong>
+Setting <code>axon.axonserver.enabled=false</code> quietly leaves multi-tenancy inactive and the application runs single-tenant.
+If you happen to set <code>axon.multitenancy.enabled=true</code> at the same time, a warning on startup points out that the two settings contradict each other.</p>
+</div>
+<div class="paragraph">
+<p><strong>The Configuration API leaves the decision with you.</strong>
+An application that carries the module but has no <code>AxonServerConnectionManager</code> fails at startup with an <code>AxonConfigurationException</code>, which names both ways forward.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="step-tenant-discovery"><a class="anchor" href="#step-tenant-discovery"></a>Step 2: Replace <code>axon.axonserver.contexts</code> with a predicate</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The extension gave you two ways to decide which contexts counted, and they ruled each other out.
+Either you listed them in <code>axon.axonserver.contexts</code>, or you registered a <code>TenantConnectPredicate</code> to catch contexts created later.
+Setting the property turned the runtime discovery off entirely.</p>
+</div>
+<div class="paragraph">
+<p>The predicate is now the single mechanism, and it handles both cases.
+The Axon Framework 4 extension already filtered the contexts it discovered at startup through it, so what changed is that the property no longer bypasses it.
+<a href="../../../multi-tenancy/tenant-management/#filtering-contexts" class="xref page">Filtering which contexts are tenants</a> goes through it properly.</p>
+</div>
+<div class="sect2">
+<h3 id="static-tenants"><a class="anchor" href="#static-tenants"></a>Tenants you know up front</h3>
+<div class="paragraph">
+<p>There is no property for this any more.
+Write a predicate over the set you used to list.</p>
+</div>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_3_axon_framework_5_configuration_api" class="tab">
+<p>Axon Framework 5 - Configuration API</p>
+</li>
+<li id="_tabs_3_axon_framework_5_spring_boot" class="tab">
+<p>Axon Framework 5 - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_3_axon_framework_4">
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.axonserver.contexts=tenant-a,tenant-b,tenant-c</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_3_axon_framework_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_axon_framework_5_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerFixedTenantSet(MessagingConfigurer configurer) {
+    Set&lt;String&gt; tenantContexts = Set.of("tenant-a", "tenant-b", "tenant-c");
+    configurer.componentRegistry(registry -&gt; registry.registerComponent(
+            TenantConnectPredicate.class,
+            config -&gt; tenant -&gt; tenantContexts.contains(tenant.tenantId())));
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_3_axon_framework_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_axon_framework_5_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantConnectPredicate tenantConnectPredicate() {
+    Set&lt;String&gt; tenantContexts = Set.of("tenant-a", "tenant-b", "tenant-c");
+    return tenant -&gt; tenantContexts.contains(tenant.tenantId());
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="dynamic-tenants"><a class="anchor" href="#dynamic-tenants"></a>Tenants created while the application runs</h3>
+<div class="paragraph">
+<p>This is the case the extension already handled with a predicate.
+The predicate keeps its name, gains a package, and is now also applied to the contexts present at startup, so you no longer have to choose between the two.</p>
+</div>
+<div id="_tabs_4" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_4_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_4_axon_framework_5_configuration_api" class="tab">
+<p>Axon Framework 5 - Configuration API</p>
+</li>
+<li id="_tabs_4_axon_framework_5_spring_boot" class="tab">
+<p>Axon Framework 5 - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_4_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_4_axon_framework_4">
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantConnectPredicate tenantFilterPredicate() {
+    return context -&gt; context.tenantId().startsWith("tenant-");
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_4_axon_framework_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_4_axon_framework_5_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerTenantFilter(MessagingConfigurer configurer) {
+    configurer.componentRegistry(registry -&gt; registry.registerComponent(
+            TenantConnectPredicate.class,
+            config -&gt; tenant -&gt; tenant.tenantId().startsWith("tenant-")));
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_4_axon_framework_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_4_axon_framework_5_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantConnectPredicate tenantConnectPredicate() {
+    return tenant -&gt; tenant.tenantId().startsWith("tenant-");
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Register no predicate at all and every context except <code>_admin</code> becomes a tenant, where the extension treated <code>_admin</code> as a tenant too.
+An application that configured neither mechanism will therefore come up with one tenant fewer than it used to have.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="step-tenant-resolution"><a class="anchor" href="#step-tenant-resolution"></a>Step 3: Rename <code>TargetTenantResolver</code> to <code>TenantResolver</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Resolution works the way <a href="../../../multi-tenancy/tenant-management/#tenant-resolution" class="xref page">tenant resolution</a> describes, and because the metadata key stayed the same, an application that tagged its messages with <code>TenantConfiguration.TENANT_CORRELATION_KEY</code> only has to follow the constant to its new home on <code>TenantDescriptor.TENANT_ID_KEY</code>.</p>
+</div>
+<div class="sect2">
+<h3 id="tagging-a-message"><a class="anchor" href="#tagging-a-message"></a>Tagging the message on the way in</h3>
+<div class="paragraph">
+<p>The method behind the tagging changed in two ways.
+<code>andMetaData</code> lost its capital <code>D</code> and became <code>andMetadata</code>, and its map is now typed <code>Map&lt;String, String&gt;</code> where Axon Framework 4 took <code>Map&lt;String, ?&gt;</code>.
+Both surface as compile errors.
+An application that passed values other than strings has to convert them first.</p>
+</div>
+<div class="paragraph">
+<p>Building the message yourself is only one option.
+<code>CommandGateway#send</code> and <code>QueryGateway#query</code> both take the payload and a <code>Metadata</code> separately, so tagging a command needs no <code>Message</code> at all: <code>commandGateway.send(command, Metadata.with(TenantDescriptor.TENANT_ID_KEY, "tenant-a"), context)</code>.</p>
+</div>
+<div id="_tabs_5" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_5_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_5_axon_framework_5" class="tab">
+<p>Axon Framework 5</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_5_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_5_axon_framework_4">
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Message&lt;?&gt; tagged = message.andMetaData(Collections.singletonMap(TENANT_CORRELATION_KEY, "tenant-a"));</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_5_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_5_axon_framework_5">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public Message tagWithTenant(Message message, String tenantId) {
+    return message.andMetadata(Map.of(TenantDescriptor.TENANT_ID_KEY, tenantId));
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="different-metadata-key"><a class="anchor" href="#different-metadata-key"></a>Reading the tenant from a different metadata key</h3>
+<div class="paragraph">
+<p>You replace the resolver in both versions. What differs is how much you have to write.
+The extension&#8217;s default resolver was hard-wired to <code>tenantId</code>, so reading another key meant switching the metadata helper off and writing a resolver of your own, as the next section shows.
+In Axon Framework 5 you register a <code>MetadataBasedTenantResolver</code> constructed with the key you want, so the built-in implementation does the work.</p>
+</div>
+<div id="_tabs_6" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_6_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_6_axon_framework_5_configuration_api" class="tab">
+<p>Axon Framework 5 - Configuration API</p>
+</li>
+<li id="_tabs_6_axon_framework_5_spring_boot" class="tab">
+<p>Axon Framework 5 - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_6_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_6_axon_framework_4">
+<div class="paragraph">
+<p>No equivalent.
+Reading another key meant replacing the resolver entirely.</p>
+</div>
+</div>
+<div id="_tabs_6_axon_framework_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_6_axon_framework_5_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerTenantResolverForKey(MessagingConfigurer configurer) {
+    configurer.componentRegistry(registry -&gt; registry.registerComponent(
+            TenantResolver.class,
+            config -&gt; new MetadataBasedTenantResolver("tenant")));
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_6_axon_framework_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_6_axon_framework_5_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantResolver tenantResolver() {
+    return new MetadataBasedTenantResolver("tenant");
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="custom-tenant-resolver"><a class="anchor" href="#custom-tenant-resolver"></a>Resolving the tenant from something other than metadata</h3>
+<div class="paragraph">
+<p>When the tenant has to come from the payload, a header, or anywhere else, you write the resolver.
+The property that used to be part of this is gone, because registering a <code>TenantResolver</code> of your own already replaces the built-in one.</p>
+</div>
+<div id="_tabs_7" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_7_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_7_axon_framework_5_configuration_api" class="tab">
+<p>Axon Framework 5 - Configuration API</p>
+</li>
+<li id="_tabs_7_axon_framework_5_spring_boot" class="tab">
+<p>Axon Framework 5 - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_7_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_7_axon_framework_4">
+<div class="paragraph">
+<p>It took a property and a bean together:</p>
+</div>
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.multi-tenancy.use-metadata-helper=false</code></pre>
+</div>
+</div>
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TargetTenantResolver&lt;Message&lt;?&gt;&gt; customTargetTenantResolver() {
+    return (message, tenants) -&gt; TenantDescriptor.tenantWithId(resolveTenantId(message));
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_7_axon_framework_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_7_axon_framework_5_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCustomTenantResolver(MessagingConfigurer configurer) {
+    TenantResolver resolver = new TenantResolver() {
+        @Override
+        public TenantDescriptor resolveTenant(Message message, Collection&lt;TenantDescriptor&gt; tenants) {
+            String tenantId = message.metadata().get("x-tenant");            <i class="conum" data-value="1"></i><b>(1)</b>
+            if (tenantId == null) {
+                throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+            }
+            return TenantDescriptor.tenantWithId(tenantId);
+        }
+
+        @Override
+        public Message attachTenant(Message message, TenantDescriptor tenant) {
+            return message.andMetadata(Map.of("x-tenant", tenant.tenantId()));     <i class="conum" data-value="2"></i><b>(2)</b>
+        }
+    };
+    configurer.componentRegistry(registry -&gt; registry.registerComponent(TenantResolver.class,
+                                                                        config -&gt; resolver));
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Application-specific logic deriving the tenant identifier from the message.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_7_axon_framework_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_7_axon_framework_5_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantResolver tenantResolver() {
+    return new TenantResolver() {
+        @Override
+        public TenantDescriptor resolveTenant(Message message, Collection&lt;TenantDescriptor&gt; tenants) {
+            String tenantId = message.metadata().get("x-tenant");            <i class="conum" data-value="1"></i><b>(1)</b>
+            if (tenantId == null) {
+                throw new TenantNotResolvedException("Could not resolve a tenant for the message");
+            }
+            return TenantDescriptor.tenantWithId(tenantId);
+        }
+
+        @Override
+        public Message attachTenant(Message message, TenantDescriptor tenant) {
+            return message.andMetadata(Map.of("x-tenant", tenant.tenantId()));     <i class="conum" data-value="2"></i><b>(2)</b>
+        }
+    };
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Application-specific logic deriving the tenant identifier from the message.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Two defaults shifted underneath all of this.</p>
+</div>
+<div class="paragraph">
+<p>The first is what happens to a message that arrives with no tenant in its metadata.
+The extension&#8217;s default resolver fell back to a tenant called <code>unknownTenant</code>, so such a message was handled against that context and you may never have noticed.
+Axon Framework 5 throws a <code>TenantNotResolvedException</code> instead, which is the replacement for <code>NoSuchTenantException</code>, so dispatching such a message fails rather than reaching a stand-in tenant.
+The same applies when a resolver names a tenant the application does not currently know about, where the extension would have routed to it regardless.
+On the handling side the message proceeds with a logged warning and no tenant, and the failure surfaces once a tenant-scoped parameter has to be resolved.</p>
+</div>
+<div class="paragraph">
+<p>The second is that the tenant no longer travels in the metadata of the messages your handlers produce.
+The extension registered a <code>TenantCorrelationProvider</code> that copied <code>tenantId</code> onto each of them.
+Axon Framework 5 puts the resolved <code>TenantDescriptor</code> on the <code>ProcessingContext</code> instead, so tagging at the edge is still all you have to do, but a message further down the chain no longer carries the key itself.
+Should anything outside message handling read it, log correlation or a filter for example, register a <a href="../../../messaging-concepts/message-correlation/" class="xref page"><code>CorrelationDataProvider</code></a> for it yourself.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="step-segment-factories"><a class="anchor" href="#step-segment-factories"></a>Step 4: Delete the tenant segment factories</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Now that one bus serves every tenant, most of the extension&#8217;s per-tenant factories have nothing left to build.
+The two exceptions are the event store and the snapshot store, which really do keep separate state for each tenant, and which are built the way <a href="../../../multi-tenancy/tenant-event-storage/" class="xref page">tenant-aware event storage</a> explains.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Axon Framework 4</th>
+<th class="tableblock halign-left valign-top">Axon Framework 5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantEventSegmentFactory</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantEventStorageEngineFactory</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantStreamableMessageSourceProvider</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantEventStorageEngineFactory</code>, since reads and writes now share one engine per tenant</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(none)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantSnapshotStoreFactory</code>, new</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantCommandSegmentFactory</code>, <code>TenantQuerySegmentFactory</code>, <code>TenantQueryUpdateEmitterSegmentFactory</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete. One bus routes per tenant, and emitted updates are scoped to the handled message&#8217;s tenant.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantEventProcessorSegmentFactory</code>, <code>TenantEventProcessorControlSegmentFactory</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete. There is one processor rather than one per tenant.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantEventProcessorPredicate</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delete. Processors are no longer duplicated per tenant, so there is nothing to exclude one from. A processor that must not read the tenant stores, because it consumes an external context, is given its own <code>StreamableEventSource</code> through <code>PooledStreamingEventProcessorConfiguration#eventSource</code> instead. It is still restarted when the set of tenants changes.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantEventSchedulerSegmentFactory</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No equivalent, see <a href="#before-you-start">Before you start</a>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>While multi-tenancy is active you cannot register an <code>EventStorageEngine</code> or a <code>SnapshotStore</code> of your own.
+One engine would end up serving every tenant from the same place, which throws away the isolation the module exists to provide, so the registration fails at startup rather than quietly doing the wrong thing.
+Reach for a <code>TenantEventStorageEngineFactory</code> or a <code>TenantSnapshotStoreFactory</code> instead.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="step-tenant-scoped-components"><a class="anchor" href="#step-tenant-scoped-components"></a>Step 5: Replace <code>tenantDataSourceResolver</code> with tenant-scoped components</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The extension handed you a per-tenant <code>DataSource</code>.
+You returned <code>DataSourceProperties</code> for each tenant, the extension pointed JPA at them, and a handler that needed to know which tenant it was serving asked <code>TenantWrappedTransactionManager.getCurrentTenant()</code>.
+It worked for SQL databases and offered nothing for anything else.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 turns that around.
+Rather than describing a datasource and letting the framework route persistence through it, you describe how any per-tenant resource is created, and the framework hands your handler the instance belonging to the tenant of the message it is handling.
+These are <a href="../../../multi-tenancy/tenant-scoped-components/" class="xref page">tenant-scoped components</a>.
+A <code>DataSource</code> counts as one, and so does a read-model store, an HTTP client, or a cache.</p>
+</div>
+<div id="_tabs_8" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_8_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_8_axon_framework_5_configuration_api" class="tab">
+<p>Axon Framework 5 - Configuration API</p>
+</li>
+<li id="_tabs_8_axon_framework_5_spring_boot" class="tab">
+<p>Axon Framework 5 - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_8_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_8_axon_framework_4">
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public Function&lt;TenantDescriptor, DataSourceProperties&gt; tenantDataSourceResolver() {
+    return tenant -&gt; {
+        DataSourceProperties properties = new DataSourceProperties();
+        properties.setUrl("jdbc:postgresql://localhost:5432/" + tenant.tenantId());
+        properties.setDriverClassName("org.postgresql.Driver");
+        properties.setUsername("postgres");
+        properties.setPassword("postgres");
+        return properties;
+    };
+}</code></pre>
+</div>
+</div>
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(CourseCreated event) {
+    TenantDescriptor tenant = TenantWrappedTransactionManager.getCurrentTenant();
+    // persist through the JPA repository routed at this tenant's datasource
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_8_axon_framework_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_8_axon_framework_5_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerTenantScopedRepository(MessagingConfigurer configurer) {
+    configurer.componentRegistry(registry -&gt; registry.registerComponent(
+            TenantComponentProvider.class,                                   <i class="conum" data-value="1"></i><b>(1)</b>
+            config -&gt; TenantComponentProvider.withFactory(
+                    CourseStatisticsStore.class,                             <i class="conum" data-value="2"></i><b>(2)</b>
+                    tenant -&gt; new JdbcCourseStatisticsStore(dataSourceFor(tenant)))));
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Register the provider under the <code>TenantComponentProvider</code> type so it is discovered during parameter resolution.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The component type, matched against handler parameters. The lambda builds the tenant&#8217;s instance.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_8_axon_framework_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_8_axon_framework_5_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantComponentProvider&lt;CourseStatisticsStore&gt; courseStatisticsStoreProvider() { <i class="conum" data-value="1"></i><b>(1)</b>
+    return TenantComponentProvider.withFactory(
+            CourseStatisticsStore.class,                                               <i class="conum" data-value="2"></i><b>(2)</b>
+            tenant -&gt; new JdbcCourseStatisticsStore(dataSourceFor(tenant)));
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The bean type is <code>TenantComponentProvider</code>, which is how it is discovered during parameter resolution.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The component type, matched against handler parameters. The lambda builds the tenant&#8217;s instance.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>A provider is matched to a handler parameter by its component type, so register one provider per type.
+Two providers for the same type fail the configuration, and two registered under the same name replace one another, so give each its own name.</p>
+</div>
+<div class="paragraph">
+<p>The handler then declares that type as a <code>@TenantScoped</code> parameter and receives its tenant&#8217;s instance:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(CourseCreated event, @TenantScoped CourseStatisticsStore store) { <i class="conum" data-value="1"></i><b>(1)</b>
+    store.save(new CourseStatistics(event.courseId()));
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>@TenantScoped</code> marks the parameter as tenant-scoped, so it resolves to this tenant&#8217;s <code>CourseStatisticsStore</code>.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>When it is the tenant itself you are after rather than a resource, <code>TenantWrappedTransactionManager.getCurrentTenant()</code> turns into this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(CourseCreated event, ProcessingContext context) {
+    TenantDescriptor tenant = TenantDescriptor.fromContext(context).orElseThrow();
+    auditLog.record(tenant.tenantId(), event.courseId());
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A few things worth knowing while you port this over:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Nothing is tied to SQL any more, so a document store or a remote service no longer needs a multi-tenancy implementation of its own.</p>
+</li>
+<li>
+<p>Instances are created lazily the first time a tenant needs them, kept for later messages, and thrown away when the tenant disappears. <code>TenantComponentFactory#destroy</code> closes anything that is <code>AutoCloseable</code>, and you can override it when a flush or some other shutdown step is required.</p>
+</li>
+<li>
+<p>Creating the schema is still your job. Just as in Axon Framework 4, a datasource that appears for a tenant at runtime is not migrated by Liquibase or Flyway on your behalf.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Handlers that inject a <code>QueryUpdateEmitter</code> need no attention at all, because an update emitted while handling a message only ever reaches subscription queries belonging to that same tenant.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="step-event-processors"><a class="anchor" href="#step-event-processors"></a>Step 6: Collapse the per-tenant pooled streaming processors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A processing group called <code>course-statistics</code> with three tenants used to give you three processors, <code>course-statistics@tenant-a</code>, <code>@tenant-b</code>, and <code>@tenant-c</code>, each with a token and segments of its own.
+You now get one processor named <code>course-statistics</code>, reading every tenant&#8217;s store as a single stream ordered by event timestamp and keeping one position per tenant inside one token, which <a href="../../../multi-tenancy/tenant-event-processing/" class="xref page">tenant-aware event processing</a> covers in detail.
+Every event still knows which tenant it came from, so a handler writing through a tenant-scoped store reaches the right read model without doing anything special.
+That no longer comes from the metadata.
+A streamed event is labelled with the tenant whose store it was read out of, so nothing has to be stamped into the stored event for this to work.
+Any <code>tenantId</code> entry the extension&#8217;s <code>TenantCorrelationProvider</code> left in your existing events is simply ignored, and it does no harm.</p>
+</div>
+<div class="paragraph">
+<p>Three operational details follow from that merged stream.
+A persistent stream avoids all three, since every tenant keeps its own stream and its own server-side position.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Processor names lose their <code>@{tenant-name}</code> suffix, so any configuration, metrics, or dashboards keyed on the old names need updating.</p>
+</li>
+<li>
+<p>Adding or removing a tenant re-opens the merged stream, which briefly pauses processing for everyone. Renaming a context looks like a removal followed by an addition, so that tenant replays from the beginning under its new name.</p>
+</li>
+<li>
+<p>One tenant whose store cannot be read holds up all of them until it recovers or is removed, because the read spans every tenant at once.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">Re-check that your event handlers are idempotent</div>
+<div class="paragraph">
+<p>Events arrive at least once on any streaming event processor, but duplicates become more likely on a merged stream.
+A tenant change re-opens it, and the processor cannot always tell that an event belonging to another tenant was already handled, so a duplicate may well follow a perfectly ordinary tenant change rather than a failure.</p>
+</div>
+<div class="paragraph">
+<p>Build projections from the identifiers in the event rather than by counting.
+Repeating <code>enrolledStudents.add(studentId)</code> is harmless, while repeating <code>enrollments = enrollments + 1</code> is not.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="resetting-a-projection"><a class="anchor" href="#resetting-a-projection"></a>Resetting a projection</h3>
+<div class="paragraph">
+<p>Because the extension gave each tenant its own processor, you reset a single tenant simply by naming it.
+Asking for the group by its plain name got you a <code>MultiTenantEventProcessor</code>, which acted as a proxy across all of that group&#8217;s per-tenant processors.
+There is only one processor per group now, and no per-tenant handle to ask for, so a reset replays every tenant together.</p>
+</div>
+<div id="_tabs_9" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_9_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_9_axon_framework_5" class="tab">
+<p>Axon Framework 5</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_9_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_9_axon_framework_4">
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">TrackingEventProcessor processor =
+        configuration.eventProcessingConfiguration()
+                     .eventProcessor("course-statistics@tenant-a", TrackingEventProcessor.class) <i class="conum" data-value="1"></i><b>(1)</b>
+                     .get();
+processor.resetTokens();</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>One tenant, named through the <code>{processor-name}@{tenant-name}</code> convention.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_9_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_9_axon_framework_5">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public CompletableFuture&lt;Void&gt; reset(String processingGroup) {
+    StreamingEventProcessor processor =
+            Optional.ofNullable(configuration.getComponents(StreamingEventProcessor.class)
+                                             .get(processingGroup))                  <i class="conum" data-value="1"></i><b>(1)</b>
+                    .orElseThrow(() -&gt; new IllegalArgumentException(
+                            "No streaming event processor named [" + processingGroup + "]"));
+    return processor.shutdown()
+                    .thenCompose(result -&gt; processor.resetTokens())                  <i class="conum" data-value="2"></i><b>(2)</b>
+                    .thenCompose(result -&gt; processor.start());
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The plain processing group name. There is no per-tenant variant to ask for.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Resets the position of every tenant the token holds.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>A subscribing event processor on the in-process event bus is a different story, since it is not wired to the per-tenant stores at all.
+It keeps no position, which means it cannot replay or catch up on anything it missed, though it will still write a per-tenant projection through a tenant-scoped resource for events published while it is running.
+Where a projection has to survive a restart, use a streaming processor, or a subscribing processor fed by a persistent stream, which does keep a durable position per tenant on Axon Server.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="property-reference"><a class="anchor" href="#property-reference"></a>Property reference</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every property the extension read, to check off against your <code>application.properties</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Axon Framework 4</th>
+<th class="tableblock halign-left valign-top">Axon Framework 5</th>
+<th class="tableblock halign-left valign-top">Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.multi-tenancy.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.multitenancy.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The hyphen is dropped. Still defaults to enabled, so only an application that set it explicitly needs a change.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.contexts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(unused)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unused by multi-tenancy. Replaced by a <code>TenantConnectPredicate</code>, see <a href="#step-tenant-discovery">Step 2: Replace <code>axon.axonserver.contexts</code> with a predicate</a>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.multi-tenancy.use-metadata-helper</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(removed)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replaced by registering a <code>TenantResolver</code>, see <a href="#step-tenant-resolution">Step 3: Rename <code>TargetTenantResolver</code> to <code>TenantResolver</code></a>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.heartbeat.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.heartbeat.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same name, different default. The extension switched the Axon Server heartbeat off unless you set this to <code>true</code>. Axon Framework 5 leaves it enabled, so a connection that stops answering heartbeats is now abandoned.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unchanged, and still the switch that decides whether multi-tenancy applies at all, see <a href="#step-dependency">Step 1: Swap the dependency</a>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="class-reference"><a class="anchor" href="#class-reference"></a>Class reference</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A list of the types the extension exposed, to work through alongside your existing configuration.
+Types missing from it, such as <code>TenantDescriptor</code>, <code>TenantProvider</code>, and <code>TenantConnectPredicate</code>, kept their name and only moved package.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Axon Framework 4</th>
+<th class="tableblock halign-left valign-top">Axon Framework 5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TargetTenantResolver</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantResolver</code>, no longer generic</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantConfiguration.TENANT_CORRELATION_KEY</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantDescriptor.TENANT_ID_KEY</code>, same <code>tenantId</code> value</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NoSuchTenantException</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantNotResolvedException</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantEventStore</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantEventStorageEngine</code>, registered by the module</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantDataSourceManager</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantComponentProvider</code> with a <code>DataSource</code> component type</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantWrappedTransactionManager</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Removed. Read the tenant with <code>TenantDescriptor.fromContext(context)</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantCorrelationProvider</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Removed. The tenant travels on the <code>ProcessingContext</code> rather than in the metadata of caused messages.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantCommandBus</code>, <code>MultiTenantQueryBus</code>, <code>MultiTenantQueryUpdateEmitter</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Removed. One bus routes per tenant.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantEventProcessor</code>, <code>MultiTenantEventProcessingModule</code>, <code>MultiTenantEventProcessorControlService</code>, <code>MultiTenantSubscribableMessageSource</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Removed. One processor consumes a merged multi-tenant stream.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantPersistentStreamMessageSource</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantPersistentStreamEventSource</code>, built for you in Spring Boot and registered through <code>MultiTenantPersistentStreamEventSourceFactory</code> on the Configuration API.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantPersistentStreamMessageSourceFactory</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replaced by supplying a <code>PersistentStreamEventSourceFactory</code> bean of your own.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantDispatchInterceptorSupport</code>, <code>MultiTenantHandlerInterceptorSupport</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Removed. These fanned one registration out across the per-tenant components, which a single shared bus no longer needs.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantDeadLetterQueue</code>, <code>MultiTenantDeadLetterQueueFactory</code>, <code>MultiTenantDeadLetterProcessor</code>, <code>MultiTenantEventScheduler</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No equivalent, see <a href="#before-you-start">Before you start</a>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../upcasters/"><span class="advanced-framework">Upcaster Migration</span></a></span>
+  <span class="next"><a href="../../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../../_/js/site.js" data-ui-root-path="../../../../../_"></script>
+<script async src="../../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../../.." data-snippet-length="100" data-stylesheet="../../../../../_/css/search.css"></script>
+<script async src="../../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
