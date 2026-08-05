@@ -1194,6 +1194,39 @@ class InventoryAutomation {
 <div class="paragraph">
 <p>The details map allows you to pass structured information about the exception that the receiver can use to make decisions about retry logic, error presentation, or recovery strategies. Note that any <code>Object</code> is supported as the details. Other reasonable options are failure objects and status enumerations, specific to the domain.</p>
 </div>
+<div class="paragraph">
+<p>On the receiving end, retrieve the details through <code>getDetails(Class)</code> or, for a generic type such as <code>Map&lt;String, String&gt;</code>, <code>getDetails(TypeReference)</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.TypeReference;
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+
+import java.util.Map;
+import java.util.Optional;
+
+class OrderClient {
+
+    void placeOrder(CommandGateway commandGateway, PlaceOrderCommand command) {
+        try {
+            commandGateway.send(command).wait(Void.class);
+        } catch (CommandExecutionException e) {
+            Optional&lt;Map&lt;String, String&gt;&gt; details = e.getDetails(new TypeReference&lt;Map&lt;String, String&gt;&gt;() {
+            });
+            details.ifPresent(errorDetails -&gt; {
+                String errorCode = errorDetails.get("errorCode");
+                boolean retryable = Boolean.parseBoolean(errorDetails.get("retryable"));
+                // Decide on retry behavior or user feedback based on errorCode and retryable.
+            });
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Both operations return an <code>Optional</code>, converting the details into the requested type on demand when the sender and receiver do not share the same details class or version (for example, across an Axon Server boundary). Pass an explicit <code>Converter</code> to either operation to override the one attached to the exception, if any. This replaces the older, untyped <code>getDetails()</code>, which is deprecated in its favor.</p>
+</div>
 <div class="admonitionblock tip">
 <table>
 <tr>
