@@ -3,9 +3,9 @@
   <head>
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Tenant-Aware Event Processing</title>
-    <link rel="prev" href="../tenant-data-protection/">
-    <link rel="next" href="../tenant-query-handling/">
+    <title>Multi-Tenancy with Data Protection</title>
+    <link rel="prev" href="../tenant-event-storage/">
+    <link rel="next" href="../tenant-event-processing/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -352,15 +352,15 @@
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
     <li><a href="../"><span class="advanced-framework">Multi-Tenancy</span></a></li>
-    <li><a href="./">Tenant-aware event processing</a></li>
+    <li><a href="./">Data protection</a></li>
   </ul>
 </nav>
 <div class="page-actions">
   <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
   <div class="actions-menu toolbar_dropdown_menu card">
 
-    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Tenant-Aware%20Event%20Processing" target="discuss_search">View Discussions</a>
-    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Tenant-Aware%20Event%20Processing%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BTenant-Aware%20Event%20Processing%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fmulti-tenancy%2Ftenant-event-processing%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Multi-Tenancy%20with%20Data%20Protection" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Multi-Tenancy%20with%20Data%20Protection%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BMulti-Tenancy%20with%20Data%20Protection%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fmulti-tenancy%2Ftenant-data-protection%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
   </div>
 </div>
 
@@ -369,7 +369,7 @@
   <button class="version-menu-toggle" title="Show other versions of page">development</button>
   <div class="version-menu toolbar_dropdown_menu card">
     <a class="version item is-current" href="./">development</a>
-    <a class="version item" href="../../../5.3/multi-tenancy/tenant-event-processing/">5.3</a>
+    <a class="version item is-missing" href="../../../5.3/">5.3</a>
     <a class="version item is-missing" href="../../../5.2/">5.2</a>
     <a class="version item is-missing" href="../../../5.1/">5.1</a>
     <a class="version item is-missing" href="../../../5.0/">5.0</a>
@@ -857,11 +857,11 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../tenant-event-storage/">Tenant-aware event storage</a>
   </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../tenant-data-protection/">Data protection</a>
-  </li>
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="./">Tenant-aware event processing</a>
+    <a class="nav-link" href="./">Data protection</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../tenant-event-processing/">Tenant-aware event processing</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../tenant-query-handling/">Tenant-aware query processing</a>
@@ -993,132 +993,77 @@
   <div class="toc-menu"></div>
 </aside>
           <article class="doc axoniq-feature">
-                <h1 class="page">Tenant-Aware Event Processing</h1>
+                <h1 class="page">Multi-Tenancy with Data Protection</h1>
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Axon Framework has two kinds of event processors. A streaming event processor pulls events from a stream and tracks its position in a token. A subscribing event processor reacts to events on the event bus as they are published.
-Multi-tenancy makes the streaming event processor tenant-aware: one event processor consumes the events of every tenant, keeping each tenant&#8217;s projection separated, with no extra configuration.</p>
+<p>Axoniq Data Protection encrypts selected fields while a message is converted to or from bytes.
+In a multi-tenant application, provide a separate converter for every tenant so the converter uses that tenant&#8217;s crypto engine and key store.
+This keeps key management separate even when two tenants use the same data-subject identifier.</p>
 </div>
 <div class="paragraph">
-<p>There are two ways to stream a tenant&#8217;s events, and the event handler you write is the same for both.
-<a href="#_pooled_streaming">Pooled streaming</a> merges every tenant&#8217;s event store into a single stream and tracks a position per tenant in one token.
-<a href="#_persistent_streams">Persistent streams</a> gives each tenant its own stream on Axon Server, which tracks that tenant&#8217;s position server-side.
-<a href="#_choosing_between_them">Choosing between them</a> sets the two side by side.</p>
-</div>
-<div class="paragraph">
-<p>A subscribing event processor is not wired to the per-tenant stores at all. <a href="#_subscribing_event_processors">Subscribing event processors</a> explains how it behaves in a multi-tenant application.</p>
+<p>The converter is selected when Axon Framework creates infrastructure for a known tenant.
+It is then used for command and query payloads, event storage, snapshots, and persistent-stream events.
+The tenant is not added to event metadata and does not need to be held in application state.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="handling-events-per-tenant"><a class="anchor" href="#handling-events-per-tenant"></a>Handling events per tenant</h2>
+<h2 id="_marking_protected_fields"><a class="anchor" href="#_marking_protected_fields"></a>Marking protected fields</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Events in a multi-tenancy application are handled through regular <a href="../../events/event-handlers/" class="xref page">event handlers</a>.
-During handling, the tenant of the event is available on the processing context, so the handler writes to the projection of the tenant the event belongs to.</p>
-</div>
-<div class="paragraph">
-<p>The tenant is determined by the event store connection or the stream the event was delivered from, so no tenant information has to be present in the stored event&#8217;s payload or metadata.
-See <a href="../tenant-management/#tenant-resolution" class="xref page">tenant resolution</a> for how the tenant of a message is determined.</p>
-</div>
-<div class="paragraph">
-<p>Write an ordinary event handler and take the tenant&#8217;s own instance of whatever it writes to as a <a href="../tenant-scoped-components/" class="xref page">tenant-scoped component</a>:</p>
+<p>Mark the data-subject identifier and the fields to protect in the event payload.
+The data-subject identifier selects the encryption key; <code>@PersonalData</code> marks a field for encryption.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
-public void on(StudentEnrolled event, @TenantScoped EnrollmentRepository repository) { <i class="conum" data-value="1"></i><b>(1)</b>
-    repository.save(new Enrollment(event.studentId(), event.courseId()));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">/*
+ * Copyright (c) 2010-2026. AxonIQ B.V.
+ *
+ * Licensed under the AXONIQ TERMS OF SERVICE,
+ * Version 29 April 2026 (the "License");
+ *
+ * The software is available for evaluation use without registration.
+ * Continued use beyond the evaluation period requires registration
+ * and a commercial license. See the License for the specific language
+ * governing permissions and limitations under the License.
+ * You may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at:
+ *  https://www.axoniq.io/legal/terms-of-service
+ *
+ * For licensing information and to register, visit:
+ *  https://www.axoniq.io/pricing
+ */
+
+package multitenancy.dataprotection;
+
+import io.axoniq.framework.dataprotection.api.DataSubjectId;
+import io.axoniq.framework.dataprotection.api.PersonalData;
+import org.axonframework.messaging.eventhandling.annotation.Event;
+
+@Event(namespace = "example", name = "CustomerDataRecorded", version = "1.0.0")
+public record CustomerDataRecorded(
+        @DataSubjectId String customerId,
+        @PersonalData String email
+) {
+
 }</code></pre>
 </div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Resolved from the tenant carried on the processing context, so the enrollment lands in that tenant&#8217;s own projection.</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-To see this running, the <a href="../demo/" class="xref page">university demo</a> projects every tenant&#8217;s events through <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-core/src/main/java/org/axonframework/examples/demo/multitenancy/university/read/statistics/CourseStatisticsProjection.java"><code>CourseStatisticsProjection</code></a>, on one processor that names no tenant.
-</td>
-</tr>
-</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_pooled_streaming"><a class="anchor" href="#_pooled_streaming"></a>Pooled streaming</h2>
+<h2 id="_providing_a_converter_per_tenant"><a class="anchor" href="#_providing_a_converter_per_tenant"></a>Providing a converter per tenant</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A pooled streaming event processor consumes every tenant from one merged stream, tracking their positions in a single token store.
-This is what a multi-tenant application gets by default.</p>
-</div>
-<div class="sect2">
-<h3 id="_one_merged_stream_one_token"><a class="anchor" href="#_one_merged_stream_one_token"></a>One merged stream, one token</h3>
-<div class="paragraph">
-<p>Each tenant keeps its events in its own event store, as described in <a href="../tenant-event-storage/" class="xref page">tenant-aware event storage</a>.
-When a processor streams events, the per-tenant streams are merged into a single stream, ordered by event timestamp.
-Every event on that stream carries the tenant it originates from, and that tenant is available on the processing context while the event is handled.</p>
+<p>Register one tenant-scoped component provider for <code>Converter</code>.
+Its factory is called for a tenant when that tenant first needs a converter.
+Create a <code>FieldEncryptingConverter</code> with the crypto engine for that tenant and a normal delegate converter.</p>
 </div>
 <div class="paragraph">
-<p>The processor tracks one position per tenant in a single token.
-A tenant that has no position yet, because it was added after the token was written, streams from the beginning of its store.</p>
-</div>
-<div class="paragraph">
-<p>Because the stream is shared across tenants, a tenant whose store cannot be read pauses processing for every tenant: the processor retries the whole stream until that tenant can be read again.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_tenant_changes_restart_the_processors"><a class="anchor" href="#_tenant_changes_restart_the_processors"></a>Tenant changes restart the processors</h3>
-<div class="paragraph">
-<p>Adding or removing a tenant re-opens the merged stream so the current set of tenants takes effect.
-Because a running stream cannot change its set of tenants, the running streaming event processors are restarted, which briefly pauses processing for all tenants.
-A tenant that is added starts from the beginning of its store. A tenant that is removed is no longer read.
-Renaming a tenant&#8217;s context is seen as removing one tenant and adding another, so its events replay from the beginning under the new name.
-This happens automatically and requires no configuration.</p>
-</div>
-<div id="idempotent-handlers" class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-<div class="title">Event handlers must be idempotent</div>
-<div class="paragraph">
-<p>Events are delivered at least once, as they are for any streaming event processor, so an event handler must be written so that handling the same event twice has the same effect as handling it once.</p>
-</div>
-<div class="paragraph">
-<p>On a multi-tenant stream a duplicate is more likely than on a single-tenant one.
-Adding or removing a tenant re-opens the stream, and the processor cannot always tell that an event of another tenant was already handled, so a duplicate may follow an ordinary tenant change, not only a failure.</p>
-</div>
-<div class="paragraph">
-<p>In practice this means deriving a projection from the identifiers in the event rather than counting.
-Recording an enrollment as <code>enrolledStudents.add(studentId)</code> is safe to repeat, while <code>enrollments = enrollments + 1</code> is not.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>Each restart is bounded by a safety-net timeout, so a processor that never finishes stopping or starting cannot block later restarts.
-When a processor does not finish within that timeout, its restart is abandoned with a logged warning while the other processors still restart, and that processor picks up the current set of tenants on the next tenant change.
-The timeout defaults to 30 seconds.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="configuring-restart-timeout"><a class="anchor" href="#configuring-restart-timeout"></a>Configuring the restart timeout</h3>
-<div class="paragraph">
-<p>A deployment whose processors are slow to stop and start can raise the safety-net timeout by registering a <code>MultiTenantStreamingProcessorRestartConfiguration</code> with a longer value:</p>
+<p>The crypto-engine factory is application-specific.
+It must select a key store or key namespace that is isolated for the supplied <code>TenantDescriptor</code>; a shared engine that maps equal data-subject identifiers to the same key does not provide tenant isolation.</p>
 </div>
 <div id="_tabs_1" class="openblock tabs is-loading">
 <div class="content">
@@ -1127,21 +1072,64 @@ The timeout defaults to 30 seconds.</p>
 <li id="_tabs_1_declarative_configuration_api" class="tab">
 <p>Declarative - Configuration API</p>
 </li>
-<li id="_tabs_1_autodetected_spring_boot" class="tab">
-<p>Autodetected - Spring Boot</p>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
 </li>
 </ul>
 </div>
 <div id="_tabs_1_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_declarative_configuration_api">
+<div class="paragraph">
+<p>Register the provider on the application&#8217;s <code>MessagingConfigurer</code>:</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void raiseRestartTimeout(MessagingConfigurer configurer) {
-    configurer.componentRegistry(registry -&gt;
-        registry.registerComponent(
-                MultiTenantStreamingProcessorRestartConfiguration.class,
-                config -&gt; MultiTenantStreamingProcessorRestartConfiguration.DEFAULT
-                        .restartTimeout(Duration.ofMinutes(2))                          <i class="conum" data-value="1"></i><b>(1)</b>
-        )
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerTenantConverters(MessagingConfigurer configurer) {
+    configurer.componentRegistry(registry -&gt; registry.registerComponent(
+            TenantComponentProvider.class,                                      <i class="conum" data-value="1"></i><b>(1)</b>
+            configuration -&gt; TenantComponentProvider.withFactory(
+                    Converter.class,                                            <i class="conum" data-value="2"></i><b>(2)</b>
+                    tenant -&gt; new FieldEncryptingConverter(
+                            cryptoEngines.createFor(tenant),                    <i class="conum" data-value="3"></i><b>(3)</b>
+                            new JacksonConverter()
+                    )
+            )
+    ));
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Register the <code>TenantComponentProvider</code> so multi-tenancy can discover it.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The provider supplies <code>Converter</code> instances.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Build the crypto engine for the tenant that the provider is creating a converter for.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div class="paragraph">
+<p>Expose the provider as a Spring bean:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantComponentProvider&lt;Converter&gt; tenantDataProtectionConverters(
+        DeclarativeDataProtectionConfiguration.TenantCryptoEngineFactory cryptoEngines
+) {
+    return TenantComponentProvider.withFactory(
+            Converter.class,                                                    <i class="conum" data-value="1"></i><b>(1)</b>
+            tenant -&gt; new FieldEncryptingConverter(
+                    cryptoEngines.createFor(tenant),                            <i class="conum" data-value="2"></i><b>(2)</b>
+                    new JacksonConverter()
+            )
     );
 }</code></pre>
 </div>
@@ -1150,187 +1138,39 @@ The timeout defaults to 30 seconds.</p>
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The bound applied to each processor&#8217;s shutdown-and-start during a restart, raised here from the 30-second default.</td>
+<td>The provider supplies one converter per tenant.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Build the crypto engine for that tenant before constructing its encrypting converter.</td>
 </tr>
 </table>
 </div>
 </div>
-<div id="_tabs_1_autodetected_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_autodetected_spring_boot">
+</div>
+</div>
 <div class="paragraph">
-<p>Expose the configuration as a bean. The default is only registered when the application registers none, so this bean replaces it:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
-public MultiTenantStreamingProcessorRestartConfiguration processorRestartConfiguration() {
-    return MultiTenantStreamingProcessorRestartConfiguration.DEFAULT
-            .restartTimeout(Duration.ofMinutes(2));                                 <i class="conum" data-value="1"></i><b>(1)</b>
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The bound applied to each processor&#8217;s shutdown-and-start during a restart, raised here from the 30-second default.</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-Both variants of the <a href="../demo/" class="xref page">university demo</a> register this at its default, from the <code>UniversityConfiguration</code> of its <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-declarative/src/main/java/org/axonframework/examples/demo/multitenancy/UniversityConfiguration.java">declarative</a> and <a href="https://github.com/AxonIQ/AxonFramework/blob/main/examples/university-multi-tenancy-examples/university-multi-tenancy-springboot/src/main/java/org/axonframework/examples/demo/multitenancy/UniversityConfiguration.java">Spring Boot</a> variants, so the knob is visible without changing what the demo does.
-</td>
-</tr>
-</table>
-</div>
+<p>The provider creates and caches each converter lazily, and releases it when its tenant is removed.
+See <a href="../tenant-scoped-components/#lifecycle-and-cleanup" class="xref page">tenant-scoped component lifecycle</a> for the lifecycle details.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_persistent_streams"><a class="anchor" href="#_persistent_streams"></a>Persistent streams</h2>
+<h2 id="_what_remains_global"><a class="anchor" href="#_what_remains_global"></a>What remains global</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A <a href="../../connector/persistent-streams/" class="xref page">persistent stream</a> lets Axon Server track an event processor&#8217;s position, instead of the application keeping a token store.
-With multi-tenancy enabled, a configured persistent stream is consumed from every tenant&#8217;s Axon Server context, and every event reaches its handlers labelled with the tenant it belongs to.</p>
+<p>Registering a tenant-scoped <code>Converter</code> does not replace the application&#8217;s normal global converter.
+The global converter remains in use for work that has no tenant, while the tenant-scoped converter is used wherever multi-tenancy has already resolved the tenant.
+If no tenant-scoped converter is registered, multi-tenancy uses the normal global converter for every tenant.</p>
 </div>
 <div class="paragraph">
-<p>This is the simplest way to give each tenant its own projection database: Axon Server tracks each tenant&#8217;s position in that tenant&#8217;s own context, so no per-tenant token store is needed on the client at all.</p>
-</div>
-<div class="sect2">
-<h3 id="_one_stream_per_tenant"><a class="anchor" href="#_one_stream_per_tenant"></a>One stream per tenant</h3>
-<div class="paragraph">
-<p>Each tenant is an Axon Server context, and a persistent stream lives in one context.
-A configured stream therefore becomes one stream per tenant, all carrying the name you configured, each consumed independently and all feeding the same event processor.</p>
-</div>
-<div class="paragraph">
-<p>Every event arrives with the tenant of the stream it came from available on the processing context, so a handler writes to the projection of the tenant the event belongs to.
-That tenant is determined by which tenant&#8217;s stream delivered the event, not by the event&#8217;s metadata, so no tenant information has to be present in the stored event.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_configuring_a_stream"><a class="anchor" href="#_configuring_a_stream"></a>Configuring a stream</h3>
-<div class="paragraph">
-<p>Nothing changes about how a persistent stream is configured.
-Configure it as described in <a href="../../connector/persistent-streams/" class="xref page">persistent streams</a>, and multi-tenancy applies it to every tenant:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">axon.axonserver.persistent-streams.my-stream.initial-segment-count=4
-axon.axonserver.persistent-streams.my-stream.thread-count=2
-axon.axonserver.persistent-streams.my-stream.batch-size=10
-
-axon.eventhandling.processors.MyProjection.mode=subscribing
-axon.eventhandling.processors.MyProjection.source=my-stream</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_thread_usage"><a class="anchor" href="#_thread_usage"></a>Thread usage</h3>
-<div class="paragraph">
-<p>Each tenant&#8217;s stream runs on its own thread pool, so <code>thread-count</code> means "threads for this tenant&#8217;s stream".
-One tenant&#8217;s stream retrying against an unreachable context therefore cannot occupy the threads the other tenants need.</p>
-</div>
-<div class="paragraph">
-<p>Total thread usage grows with the number of tenants: a <code>thread-count</code> of 2 across ten tenants uses twenty threads for that stream.
-Size <code>thread-count</code> per tenant, not for all tenants together.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_tenant_changes_affect_only_that_tenant"><a class="anchor" href="#_tenant_changes_affect_only_that_tenant"></a>Tenant changes affect only that tenant</h3>
-<div class="paragraph">
-<p>Tenants are independent, so a tenant change affects only that tenant.
-A tenant added at runtime gets one more stream, joined to the running processor without pausing the other tenants.
-A tenant that is removed has its stream closed and its threads released, leaving the rest untouched.
-This happens automatically and requires no configuration.</p>
-</div>
-<div class="paragraph">
-<p>Because each tenant has its own stream and its own server-side position, resetting one tenant&#8217;s stream replays that tenant only.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_choosing_between_them"><a class="anchor" href="#_choosing_between_them"></a>Choosing between them</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Both give every tenant its own projection. They differ in what is shared.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top"></th>
-<th class="tableblock halign-left valign-top"><a href="#_persistent_streams">Persistent streams</a></th>
-<th class="tableblock halign-left valign-top"><a href="#_pooled_streaming">Pooled streaming</a></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Position tracking</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Server, per tenant. No token store.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">One token store, holding a position per tenant.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Streams</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">One per tenant, consumed independently.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">One merged stream over all tenants.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Adding or removing a tenant</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Affects that tenant only.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Restarts the processors, briefly pausing all tenants.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Replays</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Per tenant.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">One replay is every tenant&#8217;s replay.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Ordering</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Per tenant.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Across tenants, by event timestamp.</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>Prefer persistent streams when tenants should not affect each other, which is the usual expectation for a database-per-tenant deployment.
-Prefer pooled streaming when the projection is shared across tenants, or when the deployment cannot use Axon Server&#8217;s persistent streams.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_subscribing_event_processors"><a class="anchor" href="#_subscribing_event_processors"></a>Subscribing event processors</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>A streaming event processor reads the per-tenant stores.
-It consumes every tenant, tracks a position per tenant, and resumes each tenant from its own last position after a restart.</p>
-</div>
-<div class="paragraph">
-<p>A subscribing event processor does not read those stores.
-It reacts to the shared, in-process event bus, which keeps no token, so it holds no per-tenant position, cannot replay or catch up, and only sees events published in this application instance while it runs.</p>
-</div>
-<div class="paragraph">
-<p>It can still build a per-tenant projection.
-An event committed within a tenant&#8217;s context carries that tenant on the processing context the handler runs in, so a handler that writes through a <a href="../tenant-scoped-components/" class="xref page">tenant-scoped</a> repository still reaches the right tenant&#8217;s read model.
-What it gives up is the durability and replay above, so use a streaming event processor when a projection has to survive restarts or catch up on events published while it was down.</p>
+<p>For data-protection configuration beyond tenant scoping, including crypto-engine selection and key deletion, see the Axoniq Data Protection reference documentation.</p>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../tenant-data-protection/">Data protection</a></span>
-  <span class="next"><a href="../tenant-query-handling/">Tenant-aware query processing</a></span>
+  <span class="prev"><a href="../tenant-event-storage/">Tenant-aware event storage</a></span>
+  <span class="next"><a href="../tenant-event-processing/">Tenant-aware event processing</a></span>
 </nav>
     </article>
   </div>
