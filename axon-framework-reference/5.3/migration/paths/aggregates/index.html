@@ -4,7 +4,7 @@
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Aggregate Migration</title>
-    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.2/migration/paths/aggregates/">
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.3/migration/paths/aggregates/">
     <link rel="prev" href="../messages/">
     <link rel="next" href="configuration-migration/">
     <meta name="generator" content="Antora 3.1.10">
@@ -326,7 +326,7 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="../../../../../home/reference/">Reference</a>
           <div class="navbar-dropdown card">
-                <a class="navbar-item" href="../../../../5.2/">Axon Framework</a>
+                <a class="navbar-item" href="../../../">Axon Framework</a>
                 <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
                 <a class="navbar-item" href="../../../../../axon-server-reference/v2026.0/">Axon Server</a>
                 <a class="navbar-item" href="../../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
@@ -700,6 +700,9 @@
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../multi-tenancy/tenant-event-storage/">Tenant-aware event storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../../multi-tenancy/tenant-data-protection/">Data protection</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../../../multi-tenancy/tenant-event-processing/">Tenant-aware event processing</a>
@@ -1237,7 +1240,7 @@ public static void handle(IssueGiftCard cmd, EventAppender eventAppender) {
 <li>
 <p><strong><code>CreationPolicy.CREATE_IF_MISSING</code></strong></p>
 <div class="paragraph">
-<p>If you need "only create if missing" logic, you can implement it within the static handler by checking for the existence of an optional state parameter.</p>
+<p>If you need "only create if missing" logic, you can implement it within the static handler by checking for the existence of an optional state parameter. The renewed support is documented in more detail <a href="../../../commands/entities/stateful-command-handler/#missing_injected_entity" class="xref page">here</a>. For convenience-sake, here&#8217;s an immediate sample showing the injection of a nullable <code>GiftCard</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1249,6 +1252,37 @@ public static void handle(IssueGiftCard cmd,
         throw new IllegalStateException("GiftCard already exists");
     }
     eventAppender.append(new GiftCardIssued(cmd.cardId(), cmd.amount()));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Alternatively, if you want to keep the create-if-missing logic on an <strong>instance</strong> command handler, closer to how <code>@CreationPolicy(CREATE_IF_MISSING)</code> worked in Axon Framework 4, annotate a no-argument or identifier-based <code>@EntityCreator</code> with <code>@ForcedEntityCreator</code>. Axon then always constructs the entity, even when it does not yet exist, so the instance handler receives a non-null entity and can decide for itself whether to append the event that establishes its existence.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventSourcedEntity
+public class GiftCard {
+
+    private String cardId;
+    private boolean issued;
+
+    @ForcedEntityCreator
+    public GiftCard(@InjectEntityId String cardId) {
+        this.cardId = cardId;
+    }
+
+    @CommandHandler
+    public void handle(IssueGiftCard cmd, EventAppender eventAppender) {
+        if (issued) {
+            throw new IllegalStateException("GiftCard already issued");
+        }
+        eventAppender.append(new GiftCardIssued(cardId, cmd.amount()));
+    }
+
+    @EventSourcingHandler
+    public void on(GiftCardIssued event) {
+        this.issued = true;
+    }
 }</code></pre>
 </div>
 </div>

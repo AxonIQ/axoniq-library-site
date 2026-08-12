@@ -323,7 +323,7 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="../../home/reference/">Reference</a>
           <div class="navbar-dropdown card">
-                <a class="navbar-item" href="../../axon-framework-reference/5.2/">Axon Framework</a>
+                <a class="navbar-item" href="../../axon-framework-reference/5.3/">Axon Framework</a>
                 <a class="navbar-item" href="../../axon-framework-extensions/">Axon Framework Extensions</a>
                 <a class="navbar-item" href="../../axon-server-reference/v2026.0/">Axon Server</a>
                 <a class="navbar-item" href="../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
@@ -420,6 +420,9 @@ This allows your team to deploy a single instance or a 3-node cluster Axon Serve
 <p>An overview of required and recommended fields</p>
 </li>
 <li>
+<p>How to deploy a cluster across multiple regions</p>
+</li>
+<li>
 <p>How to secure your Axon Server installation</p>
 </li>
 <li>
@@ -514,11 +517,252 @@ If you plan to store your sensitive data in Google Secret Manager, you must <a h
 <div class="paragraph">
 <p>If not selected these values will be stored in the VM Metadata : these values can be read by anyone who has access to the Google Dashboard, even users with lower permissions (such as <code>editor</code> role).</p>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Google Secret Manager is mandatory when running multi-region deployments. See <a href="#multi-region-deployments">Multi-region cluster deployments</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><strong>Cluster ID</strong></p>
+</div>
+<div class="paragraph">
+<p>A unique identifier for your Axon Server cluster, used to name secrets and cloud resources shared across deployments.</p>
+</div>
+<div class="paragraph">
+<p>For a standard single-deployment installation, any meaningful name will do (for example, <code>axonserver-prod</code>). For multi-region deployments, all deployments that belong to the same cluster must share the same Cluster ID-this is how separate deployments discover and share each other&#8217;s credentials.</p>
+</div>
+<div class="paragraph">
+<p><strong>Axoniq Platform Axon Server Token</strong></p>
+</div>
+<div class="paragraph">
+<p><em>This is a non-mandatory option.</em></p>
+</div>
+<div class="paragraph">
+<p>Allows you to delegate license provisioning and initial cluster configuration to <a href="https://www.axoniq.io/products/axoniq-platform" class="external" target="_blank" rel="noopener">Axoniq Platform</a>. When set, Axon Server will retrieve its license and bootstrap configuration from the platform rather than using local settings.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you use this option, your license must be purchased through Axoniq Platform.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><strong>Join Existing Cluster</strong></p>
+</div>
+<div class="paragraph">
+<p><em>This is a non-mandatory option.</em></p>
+</div>
+<div class="paragraph">
+<p>When enabled, the nodes in this deployment will join an existing cluster instead of bootstrapping a new one. Use this when adding nodes to a cluster that is already running-for example, when scaling out or when deploying across multiple regions.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+When this option is selected, no new secrets or tokens are created. The credentials established by the original deployment are reused.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p><strong>Autocluster First Node Hostname</strong></p>
+</div>
+<div class="paragraph">
+<p><em>This is a non-mandatory option.</em></p>
+</div>
+<div class="paragraph">
+<p>The internal hostname of the first node in the existing cluster (for example, <code>axonserver-0.mydomain.net</code>). When set, new nodes use this address to locate and join the running cluster.</p>
+</div>
+<div class="paragraph">
+<p>This field is required when deploying across multiple regions. See <a href="#multi-region-deployments">Multi-region cluster deployments</a> for the full procedure.</p>
+</div>
+<div class="paragraph">
+<p><strong>Instance Count</strong></p>
+</div>
+<div class="paragraph">
+<p>The number of Axon Server nodes to deploy in this group. Accepted values are 1 to 3. For a production-grade cluster with high availability, 3 nodes is recommended. A single node is suitable for development or testing purposes.</p>
+</div>
+<div class="paragraph">
+<p><strong>Disk configuration</strong></p>
+</div>
+<div class="paragraph">
+<p>Each node is provisioned with two dedicated data disks in addition to the boot disk:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Disk for replication logs and configuration</strong>-stores Axon Server&#8217;s internal replication data and configuration files. The default size is 10 GB; adjust based on your expected cluster activity.</p>
+</li>
+<li>
+<p><strong>Disk for event store</strong>-stores your application&#8217;s events and is typically the largest disk. The default size is 100 GB; adjust based on your expected event volume and retention requirements.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Both disks persist independently of the VM instance, so data survives restarts.</p>
+</div>
+<div class="paragraph">
+<p><strong>Firewall rules</strong></p>
+</div>
+<div class="paragraph">
+<p>The deployment creates firewall rules for the following ports. Each rule can be enabled or disabled independently, and access can be restricted to specific source IP ranges using CIDR notation.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Port</th>
+<th class="tableblock halign-left valign-top">Protocol</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">22</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TCP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SSH access to the VMs. Recommended to restrict to known IP ranges in production.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TCP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Communication with Axoniq Platform. Required when using the <em>Axoniq Platform Axon Server Token</em> option.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7001</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TCP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gRPC connections from Axon Framework applications.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8024</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TCP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP connections and the Axon Server Admin UI.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8124</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TCP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Internal cluster communication. <strong>Mandatory</strong>-must remain enabled for nodes to replicate data.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8224</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TCP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Internal cluster communication. <strong>Mandatory</strong>-must remain enabled for nodes to replicate data.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="multi-region-deployments"><a class="anchor" href="#multi-region-deployments"></a>Multi-region cluster deployments</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Server Enterprise supports distributing cluster nodes across multiple regions or availability zones. This is useful when you need to improve resilience, reduce latency, or meet data-locality requirements.</p>
+</div>
+<div class="paragraph">
+<p>In this model, each group of nodes that shares the same availability zone is managed as a separate Marketplace deployment. The deployments are linked together by a shared Cluster ID, which causes them to share secrets and cluster membership.</p>
+</div>
+<div class="sect2">
+<h3 id="_requirements"><a class="anchor" href="#_requirements"></a>Requirements</h3>
+<div class="paragraph">
+<p><strong>Google Secret Manager must be enabled on all deployments.</strong><br>
+This is the mechanism that allows separate deployments to share credentials securely. Make sure the <em>Use Google Secret Manager</em> option is selected on every deployment before proceeding.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_steps"><a class="anchor" href="#_steps"></a>Steps</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Deploy your first group of nodes.</strong><br>
+Fill in all required fields as normal and choose a meaningful, unique Cluster ID (for example, <code>axonserver-prod</code>). Complete this deployment and wait for all nodes to be up and healthy before continuing.</p>
+</li>
+<li>
+<p><strong>Retrieve the internal hostname of the first node.</strong><br>
+Once the first deployment is running, open the Axon Server UI on any of its nodes and note the internal hostname of node <code>0</code> (for example, <code>axonserver-0.mydomain.net</code>).<br>
+You can reach the UI by opening a tunnel with the following command:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">gcloud compute start-iap-tunnel YOUR_INSTANCE_NAME-0 --project=YOUR_PROJECT_ID --zone=YOUR_ZONE 8024 --local-host-port=localhost:8024</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then open <a href="http://localhost:8024" class="bare">http://localhost:8024</a> in your browser. The default username is <code>admin</code>; see the <a href="#ui-credentials">UI credentials note</a> in the maintenance section for how to retrieve the password.</p>
+</div>
+</li>
+<li>
+<p><strong>Deploy each additional group of nodes.</strong><br>
+For every subsequent deployment-one per additional region or availability zone-configure the following fields:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Cluster ID</strong>-must be identical to the one used in the first deployment.</p>
+</li>
+<li>
+<p><strong>Use Google Secret Manager</strong>-must be enabled.</p>
+</li>
+<li>
+<p><strong>Join Existing Cluster</strong>-enable this so the new nodes attach to the existing cluster rather than forming a new one.</p>
+</li>
+<li>
+<p><strong>Autocluster First Node Hostname</strong>-set this to the internal hostname retrieved in step 2.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Repeat step 3 for each additional region you need to cover.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_basic_maintenance_of_your_cluster"><a class="anchor" href="#_basic_maintenance_of_your_cluster"></a>Basic maintenance of your cluster</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_after_installation"><a class="anchor" href="#_after_installation"></a>After installation</h3>
+<div class="paragraph">
+<p>At the end of a successful deployment, the Marketplace shows the following output values:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Admin URL</strong>-the URL to reach the Axon Server Admin UI.</p>
+</li>
+<li>
+<p><strong>Username</strong>-the default admin username (<code>admin</code>).</p>
+</li>
+<li>
+<p><strong>Password</strong>-the randomly generated admin password.</p>
+</li>
+<li>
+<p><strong>Internal Token</strong>-the internal cluster token used for inter-node authentication.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Make a note of these values before leaving the page. If you missed them, both the admin password and the internal token are also stored as secrets in <a href="https://console.cloud.google.com/security/secret-manager" class="external" target="_blank" rel="noopener">Google Secret Manager</a> (if that option was enabled), named after your Cluster ID-for example, <code>axonserver-prod-admin-password</code> and <code>axonserver-prod-internal-token</code>.</p>
+</div>
 <div class="paragraph">
 <p>After the installing Axon Server Enterprise three new VMs will be available in your project.</p>
 </div>
@@ -544,6 +788,10 @@ If you plan to store your sensitive data in Google Secret Manager, you must <a h
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-console hljs" data-lang="console">gcloud compute start-iap-tunnel YOUR_INSTANCE_NAME-0 --project=YOUR_PROJECT_ID --zone=YOUR_ZONE 8024 --local-host-port=localhost:8024</code></pre>
+</div>
+</div>
+<div id="ui-credentials" class="paragraph">
+<p>The default username is <code>admin</code>. The password is displayed at the end of the Marketplace installation process. If you missed it, you can also retrieve it from the <a href="https://console.cloud.google.com/security/secret-manager" class="external" target="_blank" rel="noopener">Google Secret Manager</a>-look for the secret named after your Cluster ID (for example, <code>axonserver-prod-admin-password</code>).</p>
 </div>
 </div>
 <div class="sect2">

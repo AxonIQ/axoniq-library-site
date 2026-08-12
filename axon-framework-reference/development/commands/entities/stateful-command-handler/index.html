@@ -4,7 +4,7 @@
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Stateful Command Handlers</title>
-    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.2/commands/entities/stateful-command-handler/">
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.3/commands/entities/stateful-command-handler/">
     <link rel="prev" href="../entity-creator/">
     <link rel="next" href="../entity-hierarchies/">
     <meta name="generator" content="Antora 3.1.10">
@@ -326,7 +326,7 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="../../../../../home/reference/">Reference</a>
           <div class="navbar-dropdown card">
-                <a class="navbar-item" href="../../../../5.2/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../5.3/">Axon Framework</a>
                 <a class="navbar-item" href="../../../../../axon-framework-extensions/">Axon Framework Extensions</a>
                 <a class="navbar-item" href="../../../../../axon-server-reference/v2026.0/">Axon Server</a>
                 <a class="navbar-item" href="../../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
@@ -1110,7 +1110,7 @@ public class CourseCommandHandler {
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
 <td><code>@InjectEntity</code> tells Axon to load the <code>Course</code> entity before invoking this handler.
-By default, the entity ID is read from the <code>@TargetEntityId</code>-annotated field on the command payload; see <a href="#_resolving_the_entity_identifier">Resolving the entity identifier</a> for the other options.</td>
+By default, the entity ID is read from the <code>@TargetEntityId</code>-annotated field on the command payload; see <a href="#resolve_entity_id">Resolving the entity identifier</a> for the other options.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
@@ -1137,7 +1137,7 @@ public record RenameCourse(@TargetEntityId String courseId, String name) {}</cod
 </div>
 </div>
 <div class="sect1">
-<h2 id="_resolving_the_entity_identifier"><a class="anchor" href="#_resolving_the_entity_identifier"></a>Resolving the entity identifier</h2>
+<h2 id="resolve_entity_id"><a class="anchor" href="#resolve_entity_id"></a>Resolving the entity identifier</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><code>@InjectEntity</code> needs an identifier to look up the entity.
@@ -1147,7 +1147,7 @@ The annotation offers two attributes for controlling how that identifier is reso
 <ul>
 <li>
 <p><strong><code>idProperty</code></strong>: name a field on the command payload directly: <code>@InjectEntity(idProperty = "courseId")</code>.
-Useful when the command targets multiple entities (see <a href="#_injecting_multiple_entities">Injecting multiple entities</a>) or when the relevant field is not marked with <code>@TargetEntityId</code>.</p>
+Useful when the command targets multiple entities (see <a href="#inject_multiple_entities">Injecting multiple entities</a>) or when the relevant field is not marked with <code>@TargetEntityId</code>.</p>
 </li>
 <li>
 <p><strong><code>idResolver</code></strong>: supply a class implementing <code>EntityIdResolver</code> for custom extraction logic, useful when the identifier is computed from multiple fields or requires lookup logic.</p>
@@ -1160,20 +1160,28 @@ Useful when the command targets multiple entities (see <a href="#_injecting_mult
 </div>
 </div>
 <div class="sect1">
-<h2 id="_handling_a_missing_entity"><a class="anchor" href="#_handling_a_missing_entity"></a>Handling a missing entity</h2>
+<h2 id="missing_injected_entity"><a class="anchor" href="#missing_injected_entity"></a>Handling a missing entity</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>By default, an <code>@InjectEntity</code> parameter requires the entity to exist.
 If no entity can be found for the resolved identifier, Axon throws an <code>EntityNotFoundException</code>, failing the command instead of invoking the handler.</p>
 </div>
 <div class="paragraph">
-<p>Annotate the parameter with <strong>any</strong> annotation matching <code>@Nullable</code> to opt into create-or-update semantics instead.
+<p>Note that this existence check applies regardless of how the entity&#8217;s <code>@EntityCreator</code> (applicable to event-sourced entities <strong>only</strong>, as detailed further <a href="../entity-creator/" class="xref page">here</a>) constructs it.
+Even a no-arg or identifier-based creator, which do not need a preceding event to produce an instance, only create said entity if that instance actually exists.
+The same holds for <code>ManagedEntity.entity()</code>, for which the behavior is further explained <a href="#inject_managed_entity">here</a>.</p>
+</div>
+<div class="paragraph">
+<p>Annotate the parameter with <strong>any</strong> annotation matching <code>@Nullable</code> to opt out having the <code>EntityNotFoundException</code> thrown whenever the entity does not exist.
+In doing so, you can effectively opt <strong>into</strong> create-or-update semantics instead.
 A <code>@Nullable @InjectEntity</code> parameter resolves to <code>null</code> when the entity does not exist yet, allowing the handler to decide whether to create it:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
-public void handle(IssueCard command, @InjectEntity @Nullable GiftCard card, EventAppender appender) {
+public void handle(IssueCard command,
+                   @InjectEntity @Nullable GiftCard card,
+                   EventAppender appender) {
     if (card == null) {
         appender.append(new CardIssued(command.cardId(), command.amount()));
     } else {
@@ -1188,7 +1196,9 @@ public void handle(IssueCard command, @InjectEntity @Nullable GiftCard card, Eve
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
-public void handle(IssueCard command, @InjectEntity Optional&lt;GiftCard&gt; card, EventAppender appender) {
+public void handle(IssueCard command,
+                   @InjectEntity Optional&lt;GiftCard&gt; card,
+                   EventAppender appender) {
     if (card.isEmpty()) {
         appender.append(new CardIssued(command.cardId(), command.amount()));
     } else {
@@ -1198,15 +1208,14 @@ public void handle(IssueCard command, @InjectEntity Optional&lt;GiftCard&gt; car
 </div>
 </div>
 <div class="paragraph">
-<p>The same works for a <code>ManagedEntity</code> parameter which can be injected with the <code>@InjectEntity</code> annotation. Either mark it <code>@Nullable</code> to allow receiving it as a <code>null</code>, or declare it as <code>Optional&lt;ManagedEntity&lt;ID, GiftCard&gt;&gt;</code> instead.</p>
-</div>
-<div class="paragraph">
 <p>In Kotlin, the nullable type carries this information on its own, so no annotation is required:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">@CommandHandler
-fun handle(command: IssueCard, @InjectEntity card: GiftCard?, appender: EventAppender) {
+fun handle(command: IssueCard,
+           @InjectEntity card: GiftCard?,
+           appender: EventAppender) {
     if (card == null) {
         appender.append(CardIssued(command.cardId, command.amount))
     } else {
@@ -1236,14 +1245,60 @@ Write <code>GiftCard?</code> to accept a missing entity.</p>
 </tr>
 </table>
 </div>
+<div class="sect2">
+<h3 id="inject_managed_entity"><a class="anchor" href="#inject_managed_entity"></a>Working with a ManagedEntity instead</h3>
 <div class="paragraph">
-<p>This existence check applies regardless of how the entity&#8217;s <code>@EntityCreator</code> constructs it.
-Even a no-arg or identifier-based creator, which does not need a preceding event to produce an instance, only does so once that instance actually exists; before that, both a no-arg-created and an identifier-created entity behave the same as one that requires an event to construct.</p>
+<p>Everything above concerns the entity type itself.
+Declare the parameter as <code>ManagedEntity&lt;ID, GiftCard&gt;</code> instead, and none of it applies: Axon always gives you the wrapper exactly as resolved, whether or not it carries a <code>@Nullable</code> annotation.
+Only <code>ManagedEntity.entity()</code> can be <code>null</code>.The wrapper itself never is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public void handle(IssueCard command,
+                   @InjectEntity ManagedEntity&lt;String, GiftCard&gt; card,
+                   EventAppender appender) {
+    if (card.entity() == null) {
+        appender.append(new CardIssued(command.cardId(), command.amount()));
+    } else {
+        throw new IllegalStateException("GiftCard for id [" + command.cardId() + "] already exists");
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Because the wrapper itself is never replaced, it keeps working after the handler appends an event.
+An event-sourced entity stays subscribed to live updates, so appending an event evolves that same <code>ManagedEntity</code> in place.
+That lets a handler make a second decision, later in the same method, based on state an event earlier in that method just established:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+public void handle(IssueCardWithInitialRedemption command,
+                   @InjectEntity ManagedEntity&lt;String, GiftCard&gt; card,
+                   EventAppender appender) {
+    if (card.entity() != null) {
+        throw new IllegalStateException("GiftCard for id [" + command.cardId() + "] already exists");
+    }
+    appender.append(new CardIssued(command.cardId(), command.amount()));
+
+    // card.entity() now reflects the CardIssued event appended above.
+    GiftCard issued = card.entity();
+    if (issued.amount() - command.initialRedemption() &lt; 0) {
+        throw new IllegalStateException("Insufficient funds");
+    }
+    appender.append(new CardRedeemed(command.cardId(), command.initialRedemption()));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>Optional&lt;ManagedEntity&lt;ID, GiftCard&gt;&gt;</code> is not a valid parameter type: since the wrapper is never <code>null</code>, wrapping it in an <code>Optional</code> would never be empty, so Axon rejects such a parameter when configuring the handler.</p>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_injecting_multiple_entities"><a class="anchor" href="#_injecting_multiple_entities"></a>Injecting multiple entities</h2>
+<h2 id="inject_multiple_entities"><a class="anchor" href="#inject_multiple_entities"></a>Injecting multiple entities</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>A single handler method can receive more than one entity.
