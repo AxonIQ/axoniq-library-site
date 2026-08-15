@@ -1,0 +1,225 @@
+*Requirements:*
+Before we can install Axon Server, we need to make sure that your system has the required dependencies to manage the AxonServer package repository.
+The `Debian` instructions below apply to Debian and Debian-based distributions, such as Ubuntu, since Ubuntu uses the same APT package manager.
+
+[tabs]
+====
+Debian::
++
+--
+[source,bash]
+----
+sudo apt install ca-certificates lsb-release curl
+----
+--
+
+RHEL 9 / RHEL 10::
++
+--
+[source,bash]
+----
+sudo dnf install -y dnf-utils
+----
+--
+
+RHEL 8::
++
+--
+[source,bash]
+----
+sudo yum install -y yum-utils
+----
+--
+====
+
+*Signing key:*
+All artifacts are signed with a private key, that the package manager will verify upon installation.
+It does this for you, so you can be sure the software you install is trusted.
+
+[tabs]
+====
+Debian::
++
+--
+The following command imports our public key for this verification.
+
+[source,bash]
+----
+sudo curl https://pkg.axoniq.io/axoniq.pub -o /etc/apt/trusted.gpg.d/axoniq.asc
+----
+--
+
+RHEL 9 / RHEL 10::
++
+--
+The signing key is referenced automatically from the repository configuration file added in the next step, so no separate step is required here.
+--
+
+RHEL 8::
++
+--
+The signing key is referenced automatically from the repository configuration file added in the next step, so no separate step is required here.
+--
+====
+
+*Repository:*
+Next, we have to add the repository that houses our artifacts.
+The repository provides two release channels for Axon Server and the Axon Server CLI:
+
+* `main`: the latest Axon Server and Axon Server CLI releases.
+* `LTS`: the latest Long-Term Support (LTS) stable releases.
+
+You can pick either channel, and switch between them later on.
+
+[tabs]
+======
+Debian::
++
+Choose the channel you want to use.
++
+[tabs]
+====
+main::
++
+--
+[source,bash]
+----
+echo "deb [arch=all signed-by=/etc/apt/trusted.gpg.d/axoniq.asc] https://pkg.axoniq.io/apt $(. /etc/os-release && echo "$VERSION_CODENAME") main" | sudo tee /etc/apt/sources.list.d/axoniq.list > /dev/null
+----
+--
+
+LTS::
++
+--
+[source,bash]
+----
+echo "deb [arch=all signed-by=/etc/apt/trusted.gpg.d/axoniq.asc] https://pkg.axoniq.io/apt $(. /etc/os-release && echo "$VERSION_CODENAME") LTS" | sudo tee /etc/apt/sources.list.d/axoniq.list > /dev/null
+----
+--
+====
++
+You can switch channels at any time by editing `/etc/apt/sources.list.d/axoniq.list`, replacing `main` with `LTS` (or vice versa), and running `sudo apt-get update`.
+
+RHEL 9 / RHEL 10::
++
+--
+[source,bash]
+----
+sudo yum-config-manager --add-repo https://pkg.axoniq.io/rhel/axonserver.repo
+----
+
+This repository file defines both channels as separate repositories, `axonserver` (`main`) and `axonserver-lts` (`LTS`), with the `LTS` channel enabled by default.
+To switch channels, enable one repository and disable the other:
+
+.Use the `main` channel
+[source,bash]
+----
+sudo dnf config-manager --set-enabled axonserver
+sudo dnf config-manager --set-disabled axonserver-lts
+----
+
+.Use the `LTS` channel (default)
+[source,bash]
+----
+sudo dnf config-manager --set-enabled axonserver-lts
+sudo dnf config-manager --set-disabled axonserver
+----
+--
+
+RHEL 8::
++
+--
+[source,bash]
+----
+sudo yum-config-manager --add-repo https://pkg.axoniq.io/rhel/axonserver.repo
+----
+
+This repository file defines both channels as separate repositories, `axonserver` (`main`) and `axonserver-lts` (`LTS`), with the `LTS` channel enabled by default.
+To switch channels, enable one repository and disable the other:
+
+.Use the `main` channel
+[source,bash]
+----
+sudo yum-config-manager --enable axonserver
+sudo yum-config-manager --disable axonserver-lts
+----
+
+.Use the `LTS` channel (default)
+[source,bash]
+----
+sudo yum-config-manager --enable axonserver-lts
+sudo yum-config-manager --disable axonserver
+----
+--
+======
+
+.Repository file content (RHEL)
+[%collapsible]
+======
+The repository configuration file (`axonserver.repo`) added above contains:
+
+[source,ini]
+----
+[axonserver]
+name=Axonserver for RHEL/CentOS $releasever
+baseurl=https://pkg.axoniq.io/rhel/$releasever
+enabled=0
+gpgcheck=1
+gpgkey=https://pkg.axoniq.io/axoniq.pub
+
+[axonserver-lts]
+name=Axonserver LTS for RHEL/CentOS $releasever
+baseurl=https://pkg.axoniq.io/rhel/$releasever/LTS
+enabled=1
+gpgcheck=1
+gpgkey=https://pkg.axoniq.io/axoniq.pub
+----
+======
+
+*Install:*
+We are ready for the installation!
+
+[tabs]
+====
+Debian::
++
+--
+[source,bash]
+----
+sudo apt-get update
+sudo apt-get install axonserver
+----
+--
+
+RHEL 9 / RHEL 10::
++
+--
+[source,bash]
+----
+sudo dnf -y install axonserver
+----
+
+To also install the Axon Server CLI:
+
+[source,bash]
+----
+sudo dnf -y install axonserver-cli
+----
+--
+
+RHEL 8::
++
+--
+[source,bash]
+----
+sudo yum -y install axonserver
+----
+
+To also install the Axon Server CLI:
+
+[source,bash]
+----
+sudo yum -y install axonserver-cli
+----
+--
+====
