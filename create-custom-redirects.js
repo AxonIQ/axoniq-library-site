@@ -146,7 +146,7 @@ const latestDefinitions = [
     },
     {
         baseFolder: "axon-server-reference",
-        latestVersion: "v2025.2"
+        latestVersion: "v2026.1"
     },
     {
         baseFolder: "amqp-extension-reference",
