@@ -1160,6 +1160,116 @@ Any transactional work performed by the handler earlier in the same batch (such 
 </div>
 </div>
 <div class="sect1">
+<h2 id="_capacity_and_overflow"><a class="anchor" href="#_capacity_and_overflow"></a>Capacity and overflow</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A dead-letter queue is bounded. Two limits define its capacity:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>maxSequences</code> (defaults to 1024) caps the number of <strong>distinct sequences</strong> the queue holds.
+This limit applies to the queue as a whole, across every segment of the processor.</p>
+</li>
+<li>
+<p><code>maxSequenceSize</code> (defaults to 1024) caps the number of dead letters within a <strong>single</strong> sequence.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>When a limit is reached, the queue rejects the letter with a <code>DeadLetterQueueOverflowException</code>.
+The event can then neither be handled nor be parked, so the exception reaches the processor&#8217;s <a href="../events/event-processors/#error-handling" class="xref page">error handler</a> like any other event handling failure.
+With the default <code>PropagatingErrorHandler</code>, the streaming processor <a href="../events/event-processors/streaming/#error_mode" class="xref page">aborts the segment</a> that the event belongs to and retries it with an incremental back-off.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">An overflowing queue stalls a whole segment, not just the failing sequence</div>
+<div class="paragraph">
+<p>While the queue has room, a failing sequence is parked and the processor moves on.
+Unrelated sequences in the same segment keep progressing, which is the isolation the dead-letter queue exists to provide.
+Once the queue overflows, that isolation disappears.</p>
+</div>
+<div class="paragraph">
+<p>A segment is not a single sequence: it is a bucket holding many unrelated sequences that share one tracking token and are processed as one ordered stream.
+An event the segment cannot get past holds back that token, and with it <strong>every</strong> sequence assigned to the same segment.</p>
+</div>
+<div class="paragraph">
+<p>Segments fail independently, so other segments keep processing.
+The result is partial degradation rather than a full stop: the sequences that stall are those that happen to hash into the affected segment.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_what_triggers_overflow"><a class="anchor" href="#_what_triggers_overflow"></a>What triggers overflow</h3>
+<div class="paragraph">
+<p>The two limits are checked at different moments, which makes the failure easier to predict:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An event whose sequence is <strong>not yet</strong> dead-lettered is checked against <code>maxSequences</code>.
+It is rejected only when the queue already holds the maximum number of sequences.</p>
+</li>
+<li>
+<p>An event whose sequence <strong>is already</strong> dead-lettered is checked against <code>maxSequenceSize</code>.
+It is rejected only when that particular sequence is full.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Two consequences follow.
+First, once the queue sits at <code>maxSequences</code>, follow-up events for sequences that are already parked continue to enqueue normally, until such a sequence reaches <code>maxSequenceSize</code>.
+It is the <strong>first new failing sequence</strong> that trips the overflow.
+Second, because <code>maxSequences</code> counts across all segments, failures piling up in one segment consume capacity that every other segment shares.
+A segment that is healthy in itself can therefore stall on the first failure it meets, purely because other segments exhausted the queue.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_limiting_the_impact"><a class="anchor" href="#_limiting_the_impact"></a>Limiting the impact</h3>
+<div class="paragraph">
+<p>The <a href="#_enqueue_policy">enqueue policy</a> is consulted <em>before</em> a letter is enqueued, while overflow is raised <em>during</em> the enqueue.
+A policy can therefore not react to an overflow. It can only keep the queue from reaching it.
+Overflow is something to prevent, not something to handle.</p>
+</div>
+<div class="paragraph">
+<p>Three levers are available, and they are most effective combined:</p>
+</div>
+<div class="paragraph">
+<p><strong>Size the queue for the failure volume you intend to absorb.</strong>
+The defaults of 1024 suit a queue that parks the occasional poison message, not one that absorbs a broad outage.
+If a single downstream failure can dead-letter thousands of distinct entities, raise <code>maxSequences</code> accordingly through a <a href="#_using_a_custom_factory">custom factory</a>.
+Weigh this against the cost of retrying that many sequences once the underlying problem is fixed.</p>
+</div>
+<div class="paragraph">
+<p><strong>Keep the queue from filling up.</strong>
+An enqueue policy bounds growth from both ends: <code>Decisions.doNotEnqueue()</code> keeps failures that can never succeed out of the queue, and <code>Decisions.evict()</code> removes letters that have exhausted their retries.
+Without eviction, letters that keep failing occupy capacity indefinitely.
+The <a href="#_enqueue_policy">enqueue policy</a> section shows both.</p>
+</div>
+<div class="paragraph">
+<p>Deciding to skip an event is a deliberate trade-off: you accept a gap in the affected sequence, to be closed by a <a href="../events/event-processors/streaming/#replaying-events" class="xref page">replay</a> or manual remediation, in exchange for keeping the segment moving for everything else.
+For event handling components where a stall is more costly than a gap, this is usually the right default.</p>
+</div>
+<div class="paragraph">
+<p><strong>Watch how full the queue is.</strong>
+<code>SequencedDeadLetterQueue#amountOfSequences</code> reports the current number of sequences, and <code>size</code> the total number of letters.
+Alert on these well before they reach the configured limits, so that a rising queue is a warning rather than the first symptom of a stalled segment.
+<a href="../../../axoniq-platform-reference/features/dlq/" class="xref page">Axoniq Platform</a> surfaces the same information without custom instrumentation.</p>
+</div>
+<div class="paragraph">
+<p>For the other conditions that stall a segment, and how to bound their impact, see <a href="../events/event-processors/streaming/#stalled_segments" class="xref page">Common causes of a stalled segment</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -1239,9 +1349,8 @@ To selectively enable or disable the DLQ for individual components, use the Conf
 </div>
 <div class="paragraph">
 <p>You can set the maximum number of saved sequences (defaults to 1024) and the maximum number of dead letters in a sequence (also defaults to 1024).
-If either of these thresholds is exceeded, the queue will throw a <code>DeadLetterQueueOverflowException</code>.
-This exception means the processor will stop processing new events altogether.
-Thus, the processor moves back to the behavior described at the start of the <a href="../events/event-processors/#error-handling" class="xref page">Error Handling</a> section.</p>
+Both are set on the queue itself, through a <a href="#_using_a_custom_factory">custom factory</a>. There are no properties for them.
+Read <a href="#_capacity_and_overflow">Capacity and overflow</a> before changing these values, as exceeding either limit stalls a segment of the processor.</p>
 </div>
 <div class="sect2">
 <h3 id="_using_a_custom_factory"><a class="anchor" href="#_using_a_custom_factory"></a>Using a custom factory</h3>
@@ -1426,7 +1535,8 @@ axon.eventhandling.processors.my-processor.dlq.cache.size=4096</code></pre>
 <td class="content">
 <div class="paragraph">
 <p>This feature is available through the Configuration API only.
-In Spring Boot, configure each processor individually using <code>axon.eventhandling.processors.&lt;name&gt;.dlq.enabled=true</code> and the related cache and overflow properties.</p>
+In Spring Boot, configure each processor individually using <code>axon.eventhandling.processors.&lt;name&gt;.dlq.enabled=true</code> and the related cache properties.
+To set the capacity limits, supply a custom <code>SequencedDeadLetterQueueFactory</code> bean as shown in <a href="#_using_a_custom_factory">Using a custom factory</a>.</p>
 </div>
 </td>
 </tr>
@@ -1764,7 +1874,8 @@ You can also modify the stored exception, for example, to truncate a cause that 
 </div>
 <div class="paragraph">
 <p>You can customize the policy to exclude some events when handling fails.
-As a consequence, these events will be skipped.</p>
+As a consequence, these events will be skipped.
+Next to controlling what gets parked, the policy is the main tool for keeping the queue within its <a href="#_capacity_and_overflow">capacity</a>.</p>
 </div>
 <div class="paragraph">
 <p>Axon Framework evaluates the policy at two points: when initial event handling fails, and again when <a href="#_processing_sequences">dead-letter processing</a> fails.
