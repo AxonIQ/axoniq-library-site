@@ -1485,6 +1485,95 @@ The back-off mechanism applies within the local JVM instance only.</p>
 <div class="paragraph">
 <p>In a distributed environment with multiple PSEP instances, other instances will ignore the back-off and may immediately claim and process the failed segment, providing faster recovery from transient errors.</p>
 </div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="title">What an aborted segment costs</div>
+<div class="paragraph">
+<p>A segment is not a single sequence.
+It is a bucket holding many unrelated sequences that share one tracking token and are processed as one ordered stream.</p>
+</div>
+<div class="paragraph">
+<p>When a segment aborts, its token does not advance.
+On retry, the segment resumes from the last committed position and meets the same event again.
+Until that event can be processed, <strong>every</strong> sequence assigned to that segment waits behind it, however unrelated it is to the failure.</p>
+</div>
+<div class="paragraph">
+<p>Segments fail independently, so the remaining segments keep processing.
+The visible effect is therefore partial degradation rather than a full stop: the sequences that stall are the ones that happen to hash into the affected segment, while the rest continue as normal.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="stalled_segments"><a class="anchor" href="#stalled_segments"></a>Common causes of a stalled segment</h3>
+<div class="paragraph">
+<p>Any condition that prevents a segment from committing its batch produces the same symptom: that segment stops advancing while others continue.
+The most common causes are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>An event handler that keeps failing.</strong> The default <code>PropagatingErrorHandler</code> rethrows, so the segment retries the same event indefinitely.
+This is the intended behaviour when silently skipping the event would corrupt a read model, but it stalls the segment for as long as the cause persists.</p>
+</li>
+<li>
+<p><strong>A transaction-breaking database exception.</strong> Handler work and the token update share one transaction.
+An exception that invalidates that transaction, such as a value exceeding a column&#8217;s size, rolls back the batch including the token update, so the segment retries from the same position.</p>
+</li>
+<li>
+<p><strong>An unreachable token store.</strong> A segment needs to extend its claim to keep processing.
+If the token store is unavailable or its connection pool is exhausted, the segment cannot commit progress and releases its claim.</p>
+</li>
+<li>
+<p><strong>A handler that is slow rather than failing.</strong> Events within a segment are processed in order, so one slow handler delays every sequence behind it.
+Nothing is in error, but the lag is indistinguishable from a stall when viewed from the outside.</p>
+</li>
+<li>
+<p><strong>Claim contention between nodes.</strong> When processing regularly takes longer than the claim timeout, other nodes <a href="#token_stealing">steal</a> the claim mid-batch, and segments can spend more time changing hands than processing.</p>
+</li>
+<li>
+<p><strong>An overflowing dead-letter queue.</strong> Once the queue reaches its capacity, a failing event can no longer be parked, and the failure propagates to the processor as though no queue were configured.
+See <a href="../../../dead-letter-queue/#_capacity_and_overflow" class="xref page">Capacity and overflow</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_limiting_the_impact"><a class="anchor" href="#_limiting_the_impact"></a>Limiting the impact</h3>
+<div class="paragraph">
+<p>The blast radius of a stall is a design choice, not a fixed property of the processor:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Choose the segment count deliberately.</strong> A stalled segment holds back roughly <code>1/segmentCount</code> of your sequences.
+Raising the <a href="#parallel_processing">segment count</a> shrinks the share of data affected by any single stall, at the cost of more tokens to claim and maintain.</p>
+</li>
+<li>
+<p><strong>Separate failure domains across processors.</strong> Event handling components assigned to the same processor stall together, because they share segments and tokens.
+Placing a component that depends on a fragile downstream system in its own processor keeps its failures away from the rest.</p>
+</li>
+<li>
+<p><strong>Make handlers idempotent.</strong> Retries after an aborted batch replay events the handler may already have seen.
+Idempotent handlers make those retries harmless, and are a precondition for most other recovery options.</p>
+</li>
+<li>
+<p><strong>Monitor progress per segment, not per processor.</strong> An aggregate lag figure hides a single stalled segment among healthy ones for a long time.
+Alerting on the slowest segment surfaces the condition while it still affects a small share of the data.</p>
+</li>
+<li>
+<p><strong>Park failing events instead of retrying them.</strong> A <a href="../../../dead-letter-queue/" class="xref page">dead-letter queue</a> moves a failing sequence aside so the segment keeps processing everything else.
+Note that this holds only while the queue has capacity.</p>
+</li>
+</ul>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
