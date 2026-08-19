@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Configurers, Components, and Decorators</title>
+    <link rel="prev" href="../">
+    <link rel="next" href="../registries/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      <div class="banner">
+    <a href="https://platform.axoniq.io/resource-center/long-term-support">Long-Term Support on Axon Framework 4 is now live for existing customers. Visit the resource center for instructions on setting it up. <span class="banner_button">Access it here</span></a>
+</div>
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../../5.3/">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/v2026.1/">Axon Server</a>
+                <a class="navbar-item" href="../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Configuration API</a></li>
+    <li><a href="./">Application configurers</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonIQ/AxonFramework/edit/main/docs/reference-guide/modules/configuration/pages/configurer.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Configurers%2C%20Components%2C%20and%20Decorators" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Configurers%2C%20Components%2C%20and%20Decorators%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BConfigurers%2C%20Components%2C%20and%20Decorators%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2Fdevelopment%2Fconfiguration%2Fconfigurer%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">development</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item is-current" href="./">development</a>
+    <a class="version item is-missing" href="../../../5.3/">5.3</a>
+    <a class="version item is-missing" href="../../../5.2/">5.2</a>
+    <a class="version item is-missing" href="../../../5.1/">5.1</a>
+    <a class="version item is-missing" href="../../../5.0/">5.0</a>
+    <a class="version item is-missing" href="../../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="development">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/distributed-tracing/"><span class="advanced-framework">Distributed Tracing</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/multi-tenancy/"><span class="advanced-framework">Multi-Tenancy Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.2.0-to-5.2.1/">Axoniq Framework 5.2.0 to 5.2.1 Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-migration/migration-path/"><span class="advanced-framework">Data Protection Module Migration</span></a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../message-transformation/"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/defining-transformations/">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/"><span class="advanced-framework">Workflows</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Steps</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/execute-steps/">Execute Steps</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/waiting-for-events/">Waiting for Events</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/understanding-steps/">Understanding Steps</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#step-primitives">Step Primitives</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#workflow-step-result">WorkflowStepResult</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#timeouts">Timeouts</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#payload-reducers">Payload Reducers</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#error-handling">Error Handling</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#cancelling-a-step">Cancelling a Step</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#execution-semantics">Execution Semantics</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#retries">Retries</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#event-name-customization">Event Name Customization</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/understanding-steps/#kotlin-dsl-equivalents">Kotlin DSL</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/">Workflow Lifecycle</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/#_the_workflow_context">Workflow Context</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/#fail-vs-cancel">fail() vs cancel()</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/#_unhandled_exceptions">Unhandled Exceptions</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/workflow-lifecycle/#_lifecycle_listeners">Lifecycle Listeners</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/step-orchestration/">Step Orchestration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_non_blocking_execution">Non-blocking Execution</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_anymatch_first_match_wins">anyMatch</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_allmatch_all_must_succeed">allMatch</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/step-orchestration/#_nonematch_no_failures_allowed">noneMatch</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_inspecting_sub_results">Inspecting Sub-results</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/step-orchestration/#_parallel_workflows">Parallel Workflows</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/common-patterns/">Common Patterns</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_fan_out_fan_in">Fan-out / Fan-in</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_saga_compensating_transactions">Saga</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_scatter_gather">Scatter-gather</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_human_in_the_loop">Human-in-the-loop</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_circuit_breaker">Circuit Breaker</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_scheduled_delayed_steps">Scheduled Steps</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/common-patterns/#_sub_workflows">Sub-workflows</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../workflows/payload-and-state/">Payload &amp; State</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../workflows/configuration/">Configuration</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#_the_workflowmodule_builder">WorkflowModule Builder</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#_start_conditions">Start Conditions</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#_workflow_id_provider">Workflow ID Provider</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#_customization_options">Customization Options</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#metadata-and-correlation-data">Metadata &amp; Correlation Data</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows/configuration/#custom-workflow-context">Custom Workflow Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../workflows/testing-workflows/">Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../multi-tenancy/"><span class="advanced-framework">Multi-Tenancy</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-management/">Tenant management</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-scoped-components/">Tenant-scoped components</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-command-handling/">Tenant-aware command processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-event-storage/">Tenant-aware event storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-data-protection/">Data protection</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-event-processing/">Tenant-aware event processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-query-handling/">Tenant-aware query processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Configuration API</a>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Application configurers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../registries/">Component registry and lifecycle registry</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration-enhancer/">Configuration enhancers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../module/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../component-factory/">Component factories</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../spring/">Spring Boot integration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Workflow Engine</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../workflows-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Configurers, Components, and Decorators</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page is entirely about configuring an application, before it starts.
+It explains the three core building blocks you interact with while doing so:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="#configurers"><code>ApplicationConfigurer</code></a> - the entry point you use to describe your application</p>
+</li>
+<li>
+<p><a href="#components"><code>Component</code></a> - how individual infrastructure pieces are registered</p>
+</li>
+<li>
+<p><a href="#decorators"><code>ComponentDecorator</code></a> - how registered components can be wrapped with additional behavior</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Retrieving components once configured</div>
+<div class="paragraph">
+<p>Once your application is built (and started), you no longer interact with the <code>ApplicationConfigurer</code> implementation.
+Instead, you retrieve the components you registered through the resulting <a href="../configuration/" class="xref page"><code>Configuration</code></a>.
+Head to that page if you&#8217;re looking for <code>getComponent</code>, <code>getComponents</code>, or similar retrieval methods.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="configurers"><a class="anchor" href="#configurers"></a>Configurers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework applications start with a configurer.
+There are multiple implementations of the configurer, specific per core module of the framework.
+As such, there is a <a href="#messaging-configurer"><code>MessagingConfigurer</code></a>, <a href="#modelling-configurer"><code>ModellingConfigurer</code></a>, and <a href="#eventsourcing-configurer"><code>EventSourcingConfigurer</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>Each of these builds on the base interface called <code>ApplicationConfigurer</code>, which exposes the following operations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>componentRegistry(Consumer&lt;ComponentRegistry&gt;)</code> - Provides access to the <a href="../registries/#component-registry" class="xref page"><code>ComponentRegistry</code></a>, which is the registry containing all <a href="#components">Components</a>, <a href="#decorators">Decorators</a>, <a href="../module/" class="xref page">Modules</a>, <a href="../configuration-enhancer/" class="xref page">Enhancers</a>, and <a href="../component-factory/" class="xref page">Factories</a>.</p>
+</li>
+<li>
+<p><code>lifecycleRegistry(Consumer&lt;LifecycleRegistry&gt;)</code> - Provides access to the <a href="../registries/#lifecycle-registry" class="xref page"><code>LifecycleRegistry</code></a>, the registry that ensures <a href="#components">Components</a> are started and stopped at the intended point in time.</p>
+</li>
+<li>
+<p><code>build()</code> - Builds the read-only <a href="../configuration/" class="xref page">Configuration</a> based on everything that&#8217;s configured, without starting it.</p>
+</li>
+<li>
+<p><code>start()</code> - Builds <strong>and</strong> starts read-only <a href="../configuration/" class="xref page">Configuration</a> based on everything that&#8217;s configured.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Although the <code>componentRegistry(Consumer&lt;ComponentRegistry&gt;)</code> will provide you all the access you require to register what you need, we recommend picking an appropriate implementation of the <code>ApplicationConfigurer</code>.
+These not only provide dedicated registration methods for ease of use, they also provide sane defaults for Axon&#8217;s infrastructure components.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Which configurer do I pick?</div>
+<div class="paragraph">
+<p>Pick your starting point based on what your application needs:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>MessagingConfigurer</code> - messaging only (<code>CommandBus</code>, <code>EventSink</code>, <code>QueryBus</code>), no modeling or event sourcing.</p>
+</li>
+<li>
+<p><code>ModellingConfigurer</code> - adds stateful entities without event sourcing.</p>
+</li>
+<li>
+<p><code>EventSourcingConfigurer</code> - adds event sourcing; the most common starting point for Axon Framework applications.</p>
+</li>
+<li>
+<p>Or none of the above, if you are using Spring.
+Axon&#8217;s <a href="../spring/" class="xref page">Spring</a> integration selects the right set of components for you, through the <code>SpringAxonApplication</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Each configurer wraps the one below it, so lower-layer registration methods remain accessible (see <a href="#accessing-lower-level-configurers">Accessing lower-level configurers</a>).</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="messaging-configurer"><a class="anchor" href="#messaging-configurer"></a><code>MessagingConfigurer</code></h3>
+<div class="paragraph">
+<p><code>MessagingConfigurer</code> is the lowest-level concrete configurer, providing all the basic message support.
+As such, it arguably does the most compared to the other configurers.
+Some of the infra it sets are the <code>CommandBus</code>, <code>EventSink</code>, and <code>QueryBus</code>.</p>
+</div>
+<div class="paragraph">
+<p>It also provides convenience methods to register command, event, and query-specific components:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.queryhandling.SimpleQueryBus;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        MessagingConfigurer.create()
+                           .registerCommandBus(config -&gt; new SimpleCommandBus(
+                                   config.getComponent(UnitOfWorkFactory.class)
+                           ))
+                           .registerEventSink(config -&gt; new SimpleEventBus())
+                           .registerQueryBus(config -&gt; new SimpleQueryBus(
+                                   config.getComponent(UnitOfWorkFactory.class)
+                           ));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="modelling-configurer"><a class="anchor" href="#modelling-configurer"></a><code>ModellingConfigurer</code></h3>
+<div class="paragraph">
+<p><code>ModellingConfigurer</code> wraps a <code>MessagingConfigurer</code> and adds support for entities that represent a model of your application.
+As such, it forms the entry point to provide distinct <a href="../module/" class="xref page">Modules</a> for said entities to maintain modularization of your application.</p>
+</div>
+<div class="paragraph">
+<p>Next to several convenience methods, the most noteworthy unique operation is the <code>registerEntity(EntityModule)</code> method.
+The expected <code>EntityModule</code> can either be state-based (<code>StateBasedEntityModule</code>) or event-sourced (<code>EventSourcedEntityModule</code>).
+The latter requires the <a href="#eventsourcing-configurer"><code>EventSourcingConfigurer</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s look at an example usage of the <code>StateBasedEntityModule</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.modelling.configuration.ModellingConfigurer;
+import org.axonframework.modelling.configuration.StateBasedEntityModule;
+
+import java.util.concurrent.CompletableFuture;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        StateBasedEntityModule&lt;MyId, MyEntity&gt; myEntityModule =
+                StateBasedEntityModule.declarative(MyId.class, MyEntity.class)
+                  /* Lambda to load */.loader(c -&gt; (id, context) -&gt; CompletableFuture.completedFuture(new MyEntity()))
+                /* Lambda to persist*/.persister(c -&gt; (id, entity, context) -&gt; CompletableFuture.completedFuture(null))
+                                      .messagingModel((config, builder) -&gt; builder
+                                              .instanceCommandHandler(
+                                                      new QualifiedName("update-my-entity"),
+                                                      (command, entity, context) -&gt; MessageStream.empty().cast()
+                                              )
+                                              .build())
+                                      .build();
+        ModellingConfigurer.create()
+                           .registerEntity(myEntityModule);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="eventsourcing-configurer"><a class="anchor" href="#eventsourcing-configurer"></a><code>EventSourcingConfigurer</code></h3>
+<div class="paragraph">
+<p>The <code>EventSourcingConfigurer</code> further builds on the entity-support given by the <code>ModellingConfigurer</code>, adding defaults for event sourcing infrastructure, as well as convenience registration methods like:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>registerEventStorageEngine(ComponentBuilder&lt;EventStorageEngine&gt;)</code></p>
+</li>
+<li>
+<p><code>registerEventStore(ComponentBuilder&lt;EventStore&gt;)</code></p>
+</li>
+<li>
+<p><code>registerTagResolver(ComponentBuilder&lt;TagResolver&gt;)</code></p>
+</li>
+<li>
+<p><code>registerEntity(EntityModule)</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s look at an example that registers an <code>EventSourcedEntityModule</code> instead of a <code>StateBasedEntityModule</code> as shown earlier:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.modelling.configuration.EntityMetamodelConfigurationBuilder;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        EntityMetamodelConfigurationBuilder&lt;MyEntity&gt; metamodelBuilder =
+                (configuration, builder) -&gt; builder.creationalCommandHandler(
+                                                           new QualifiedName("creational-command"),
+                                                           (command, context) -&gt; MessageStream.empty().cast()
+                                                   )
+                                                   // Additional handlers omitted
+                                                   .build();
+        EventSourcedEntityModule&lt;MyId, MyEntity&gt; myEntityModule =
+                EventSourcedEntityModule.declarative(MyId.class, MyEntity.class)
+                                        .messagingModel(metamodelBuilder)
+                                        .entityFactory(c -&gt; EventSourcedEntityFactory.fromNoArgument(MyEntity::new))
+                                        .criteriaResolver(c -&gt; (id, context) -&gt;
+                                                EventCriteria.havingTags("myId", "value"))
+                                        .build();
+        EventSourcingConfigurer.create()
+                               .registerEntity(myEntityModule);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="accessing-lower-level-configurers"><a class="anchor" href="#accessing-lower-level-configurers"></a>Accessing lower-level configurers</h3>
+<div class="paragraph">
+<p>Because each configurer wraps the one below it, some operations are only available at a specific layer.
+To access these layers, every wrapping <code>ApplicationConfigurer</code> provides accessor methods.
+Let&#8217;s look at an example of the <code>EventSourcingConfigurer</code> accessing the modeling and messaging layer:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
+import org.axonframework.messaging.commandhandling.RoutingStrategy;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        EventSourcingConfigurer.create()
+         /* top level: */      .registerEventStorageEngine(
+                                       c -&gt; new InMemoryEventStorageEngine()
+                               )
+         /* modelling level: */.modelling(mc -&gt; mc.registerEntity(
+                                       EventSourcedEntityModule.autodetected(
+                                               MyId.class, MyEntity.class
+                                       )
+                               ))
+         /* messaging level: */.messaging(mc -&gt; mc.registerCommandBus(
+                                       config -&gt; new SimpleCommandBus(config.getComponent(UnitOfWorkFactory.class))
+                               ))
+         /* lowest level: */   .componentRegistry(cr -&gt; cr.registerComponent(
+                                       CommandGateway.class,
+                                       config -&gt; new DefaultCommandGateway(
+                                               config.getComponent(CommandBus.class),
+                                               config.getComponent(MessageTypeResolver.class),
+                                               config.getComponent(CommandPriorityCalculator.class),
+                                               config.getComponent(RoutingStrategy.class)
+                                       )
+                               ));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>componentRegistry(Consumer&lt;ComponentRegistry&gt;)</code> and <code>lifecycleRegistry(Consumer&lt;LifecycleRegistry&gt;)</code> operations are available on every configurer layer and always target the same underlying registries.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="components"><a class="anchor" href="#components"></a>Registering components</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every piece of Axon infrastructure registered through the configuration API is tracked as a <code>Component</code>.
+A <code>Component</code> holds a type identifier, an optional name, and a lazy supplier that produces the actual instance on first access.</p>
+</div>
+<div class="paragraph">
+<p>Components are registered through the <code>ComponentRegistry</code> using a <code>ComponentBuilder</code>, which is a functional interface that receives the <code>Configuration</code> and returns the instance.
+The "main" component of a given type, the one you get back when you do not specify a name, is registered with just that type:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
+import org.axonframework.messaging.commandhandling.RoutingStrategy;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+class RegisterComponentExample {
+
+    void register() {
+        MessagingConfigurer.create()
+                           .componentRegistry(registry -&gt; registry.registerComponent(
+                                   CommandGateway.class,
+                                   config -&gt; new DefaultCommandGateway(
+                                           config.getComponent(CommandBus.class),
+                                           config.getComponent(MessageTypeResolver.class),
+                                           config.getComponent(CommandPriorityCalculator.class),
+                                           config.getComponent(RoutingStrategy.class)
+                                   )
+                           ));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>Configuration</code> passed to the <code>ComponentBuilder</code> allows retrieving other components to use during construction.
+In doing so, the <code>ComponentBuilder</code> supports lazy initialization.
+The builder is only called the first time the component is requested, and the resulting instance is cached for subsequent requests.</p>
+</div>
+<div class="paragraph">
+<p>When several components of the same type need to coexist, for example multiple <code>EventStorageEngine</code> instances, register each under a distinct <strong>name</strong> instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+
+class NamedComponentsExample {
+
+    void register(ComponentRegistry registry) {
+        registry.registerComponent(
+                EventStorageEngine.class,
+                "primary-context",
+                config -&gt; new InMemoryEventStorageEngine()
+        );
+        registry.registerComponent(
+                EventStorageEngine.class,
+                "archive-context",
+                config -&gt; new InMemoryEventStorageEngine()
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To retrieve components registered with a name, use the <code>getComponent</code> operation that expects you to provide the name.
+Thus to retrieve the component registered in the sample above, invoke <code>configuration.getComponent(EventStorageEngine.class, "primary-context")</code>.</p>
+</div>
+<div class="paragraph">
+<p>Both <code>registerComponent(Class&lt;C&gt;, ComponentBuilder&lt;C&gt;)</code> and <code>registerComponent(Class&lt;C&gt;, String, ComponentBuilder&lt;C&gt;)</code>
+are convenience shortcuts around the richer <code>ComponentDefinition</code> API.
+A <code>ComponentDefinition</code> is built through
+<code>ComponentDefinition.ofType(Class&lt;C&gt;)</code>, or <code>ComponentDefinition.ofTypeAndName(Class&lt;C&gt;, String)</code> for a named component, and completed with <code>.withBuilder(ComponentBuilder&lt;C&gt;)</code>, or <code>.withInstance&#169;</code> when the instance already exists rather than needing to be built lazily.
+Reach for <code>ComponentDefinition</code> directly whenever you need more than a plain builder, for example to attach startup or shutdown behavior (see <a href="#component-lifecycle">Component lifecycle</a>
+below), or to register a component under a generic type through its <code>TypeReference</code>-based <code>ofType</code>/<code>ofTypeAndName</code>
+overloads.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.ComponentRegistry;
+
+class ComponentDefinitionExample {
+
+    void register(ComponentRegistry registry) {
+        registry.registerComponent(
+                ComponentDefinition.ofType(ConnectionPool.class)
+                                   .withBuilder(config -&gt; new ConnectionPool())
+        );
+
+        registry.registerComponent(
+                ComponentDefinition.ofTypeAndName(ConnectionPool.class, "archive-pool")
+                                   .withInstance(new ConnectionPool())
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When running with the Spring Boot Starter, a component does not have to go through <code>registerComponent</code> at all: simply declare a <code>@Bean</code> of the matching type, and Axon picks it up automatically.
+See <a href="../spring/#spring-and-axon-impl-details" class="xref page">Implementation details</a> for how this works.</p>
+</div>
+<div class="sect2">
+<h3 id="component-lifecycle"><a class="anchor" href="#component-lifecycle"></a>Component lifecycle</h3>
+<div class="paragraph">
+<p>When a component requires startup or shutdown logic, use <code>ComponentDefinition</code> to attach lifecycle handlers directly to the registration.
+This ensures components are started and stopped in the correct phase without requiring eager initialization:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.lifecycle.Phase;
+
+class ComponentLifecycleExample {
+
+    void register(ComponentRegistry registry) {
+        registry.registerComponent(
+                ComponentDefinition.ofType(ConnectionPool.class)
+                                   .withBuilder(config -&gt; new ConnectionPool())
+                                   .onStart(Phase.INSTRUCTION_COMPONENTS, ConnectionPool::start)
+                                   .onShutdown(Phase.INSTRUCTION_COMPONENTS, ConnectionPool::shutdown)
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>Phase</code> constant determines the relative order in which startup and shutdown are invoked across all components.
+Lower phase values start first; shutdown proceeds in reverse order.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_conditional_and_default_registration"><a class="anchor" href="#_conditional_and_default_registration"></a>Conditional and default registration</h3>
+<div class="paragraph">
+<p>The <code>registerIfNotPresent(Class&lt;C&gt;, ComponentBuilder&lt;C&gt;)</code> method registers a component only when no component of that type has been registered yet.
+Axon uses this internally to provide defaults of all important components without overriding what users might configure themselves.
+Thus, the following sample will set a <code>CommandBus</code> <strong>if</strong> no <code>CommandBus</code> has already been set:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+
+class ConditionalDefaultRegistrationExample {
+
+    void register(ComponentRegistry registry) {
+        registry.registerIfNotPresent(
+                CommandBus.class,
+                config -&gt; new SimpleCommandBus(config.getComponent(UnitOfWorkFactory.class))
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A typical use case for <code>registerIfNotPresent</code> semantics is in a <code>ConfigurationEnhancer</code>, as explained in more detail <a href="../configuration-enhancer/" class="xref page">here</a>.
+It&#8217;s <code>ConfigurationEnhancer</code> implementations that set all the defaults in Axon Framework, by means of <code>registerIfNotPresent</code>.
+Hence, if you have components that should conditionally be added to your configuration, an enhancer with <code>registerIfNotPresent</code> is the way to go.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="decorators"><a class="anchor" href="#decorators"></a>Decorating components</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A <code>ComponentDecorator</code> wraps an existing component with additional behavior, without requiring knowledge of its concrete type.
+This is the mechanism Axon uses internally to add <a href="../../messaging-concepts/message-intercepting/" class="xref page">intercepting</a> and <a href="../../monitoring/tracing/" class="xref page">tracing</a> to its infrastructure components, for example.</p>
+</div>
+<div class="paragraph">
+<p>A decorator is registered with <code>ComponentRegistry#registerDecorator(Class&lt;C&gt;, int order, ComponentDecorator&lt;C, D&gt;)</code>.
+The decorator receives the current <code>Configuration</code>, the component name, and the delegate instance, and is invoked on the given <a href="#decorator-order">order</a>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.tracing.SpanFactory;
+
+class DecoratorExample {
+
+    void register() {
+        MessagingConfigurer.create()
+                           .componentRegistry(registry -&gt; registry.registerDecorator(
+                                   CommandBus.class,
+                                   10,
+                                   (config, name, delegate) -&gt; new TracingCommandBusDecorator(
+                                           delegate, config.getComponent(SpanFactory.class)
+                                   )
+                           ));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To decorate only a component registered under a specific name instead of every component of that type, use
+<code>registerDecorator(Class&lt;C&gt;, String name, int order, ComponentDecorator&lt;C, D&gt;)</code> instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.tracing.SpanFactory;
+
+class NamedDecoratorExample {
+
+    void register(ComponentRegistry registry) {
+        registry.registerDecorator(
+                CommandBus.class, "primary-context", 0,
+                (config, name, delegate) -&gt; new TracingCommandBusDecorator(
+                        delegate, config.getComponent(SpanFactory.class)
+                )
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Both overloads are convenience shortcuts around the richer <code>DecoratorDefinition</code> API.
+A <code>DecoratorDefinition</code> is built through <code>DecoratorDefinition.forType(Class&lt;C&gt;)</code>, or <code>DecoratorDefinition.forTypeAndName(Class&lt;C&gt;, String)</code> to target a specific named component, and completed with <code>.with(ComponentDecorator&lt;C, D&gt;)</code>.
+Reach for <code>DecoratorDefinition</code> directly whenever you need more than a plain decorator function, for example to set an explicit <a href="#decorator-order">order</a> or to attach startup or shutdown behavior (see <a href="#decorator-lifecycle">Decorator lifecycle</a> below):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.tracing.SpanFactory;
+
+class DecoratorDefinitionExample {
+
+    void register(ComponentRegistry registry) {
+        registry.registerDecorator(
+                DecoratorDefinition.forType(CommandBus.class)
+                                   .with((config, name, delegate) -&gt; new TracingCommandBusDecorator(
+                                           delegate, config.getComponent(SpanFactory.class)
+                                   ))
+                                   .order(10)
+        );
+
+        registry.registerDecorator(
+                DecoratorDefinition.forTypeAndName(CommandBus.class, "primary-context")
+                                   .with((config, name, delegate) -&gt; new TracingCommandBusDecorator(
+                                           delegate, config.getComponent(SpanFactory.class)
+                                   ))
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When running with the Spring Boot Starter, a decorator does not have to go through <code>registerDecorator</code> at all either: declare the <code>DecoratorDefinition</code> as a Spring bean, and Axon picks it up automatically.
+See <a href="../spring/#customizing-axon-config-with-spring" class="xref page">Customizing Axon&#8217;s configuration through Spring</a> for an example.</p>
+</div>
+<div class="sect2">
+<h3 id="decorator-order"><a class="anchor" href="#decorator-order"></a>Ordering decorators</h3>
+<div class="paragraph">
+<p>The <code>order</code> parameter controls the sequence in which decorators are applied when several of them target the same component type (or type-and-name combination).
+Decorators with a lower <code>order</code> value are applied first, making them the innermost wrapper, closer to the original component.
+Decorators with a higher <code>order</code> value are applied next, wrapping the result of the lower-order decorators and ending up closer to any caller.
+A decorator that depends on the behavior of another decorator must therefore have a strictly higher <code>order</code> value than the one it depends on.</p>
+</div>
+<div class="paragraph">
+<p>Consider decorating a <code>CommandBus</code> with both a metering and a tracing decorator:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.tracing.SpanFactory;
+
+class OrderedDecoratorsExample {
+
+    void register() {
+        MessagingConfigurer.create()
+                           .componentRegistry(registry -&gt; registry
+                                   .registerDecorator(
+                                           CommandBus.class,
+                                           0,
+                                           (config, name, delegate) -&gt; new MeteringCommandBusDecorator(delegate)
+                                   )
+                                   .registerDecorator(
+                                           CommandBus.class,
+                                           10,
+                                           (config, name, delegate) -&gt; new TracingCommandBusDecorator(
+                                                   delegate, config.getComponent(SpanFactory.class)
+                                           )
+                                   ));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Because <code>MeteringCommandBusDecorator</code> has the lower order (<code>0</code>), it is applied directly to the raw <code>CommandBus</code>, making it the innermost wrapper. <code>TracingCommandBusDecorator</code>, with the higher order (<code>10</code>), wraps the metering decorator next, making it the outermost wrapper.
+As a result, a dispatched command flows through
+<code>TracingCommandBusDecorator</code> &#8594; <code>MeteringCommandBusDecorator</code> &#8594; the original <code>CommandBus</code>.
+This ensures every dispatch, including the time spent inside the metering decorator, is captured within the span created by the tracing decorator.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework&#8217;s own decorators, such as the ones adding <a href="../../messaging-concepts/message-intercepting/" class="xref page">intercepting</a>
+or <a href="../../monitoring/tracing/" class="xref page">tracing</a>, each use a fixed <code>order</code> value defined as a constant either on the decorating class itself or on the <code>ConfigurationEnhancer</code> that registers it.
+To place your own decorator before or after one of these, look up that constant in the framework source and choose an <code>order</code> value lower or higher than it, depending on where your decorator needs to sit.
+These constants are typically exposed as <code>public static final int</code>
+fields, so where available, reference them directly instead of hardcoding the numeric value.
+Since Axon Framework may adjust these constants between releases as new decorators are introduced, treat the surrounding source as the source of truth rather than relying on a value you noted down previously.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="decorator-lifecycle"><a class="anchor" href="#decorator-lifecycle"></a>Decorator lifecycle</h3>
+<div class="paragraph">
+<p>A decorator function only wraps the delegate.
+It does not automatically join the application&#8217;s startup and shutdown sequence the way a registered <code>Component</code> does.
+This matters whenever the wrapper you introduce owns resources of its own, for example a background thread that periodically flushes metrics, an open connection to an external system, or a cache that needs to be cleared.
+Without an explicit lifecycle hook, such resources are never released when the application shuts down, since the framework has no way of knowing about them.</p>
+</div>
+<div class="paragraph">
+<p>Similar to component registration, use <code>DecoratorDefinition</code> (instead of the <code>registerDecorator(Class&lt;C&gt;, int,
+ComponentDecorator&lt;C, D&gt;)</code> shortcut) when the decorator itself requires startup or shutdown logic, attaching
+<code>.onStart(int, &#8230;&#8203;)</code> and/or <code>.onShutdown(int, &#8230;&#8203;)</code> handlers directly to the registration.
+As with regular component lifecycle handlers, the phase passed to these handlers determines exactly when the decorator&#8217;s own logic runs relative to all other components and decorators being started or stopped.
+The following example decorates a
+<code>CommandBus</code> with a metering decorator that starts a scheduled metrics-flushing task on construction, and relies on
+<code>onShutdown</code> to stop that task cleanly when the application shuts down:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.messaging.commandhandling.CommandBus;
+
+class DecoratorLifecycleExample {
+
+    void register(ComponentRegistry registry) {
+        registry.registerDecorator(
+                DecoratorDefinition.forType(CommandBus.class)
+                                   .with((config, name, delegate) -&gt; new MeteringCommandBusDecorator(delegate))
+                                   .order(5)
+                                   .onShutdown(Phase.INBOUND_COMMAND_CONNECTOR, MeteringCommandBusDecorator::shutdown)
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Where do components and decorators actually live?</div>
+<div class="paragraph">
+<p>Every operation described on this page, registering components, decorating them, or accessing a lower-level configurer, ultimately acts on one of two registries: the <code>ComponentRegistry</code> and the <code>LifecycleRegistry</code>.
+Head to <a href="../registries/" class="xref page">Component registry and lifecycle registry</a> for their role and a complete overview of their operations.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="component-identification"><a class="anchor" href="#component-identification"></a>Identifying components: class, name, or type-reference</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every <code>Component</code> and <code>ComponentDecorator</code> is matched against an identifier made up of a declared type and an optional name.
+Depending on what you are registering, you reach for that identifier through a <code>Class</code>, a <code>Class</code> plus a <code>String</code> name, or, for a component with a generic declared type, a <code>TypeReference</code>.</p>
+</div>
+<div class="paragraph">
+<p>By <strong>class</strong> is the default: <code>ComponentDefinition.ofType(MyService.class)</code> or the <code>registerComponent(Class&lt;C&gt;, ComponentBuilder&lt;C&gt;)</code> shortcut identify a component purely by its raw type.
+This is sufficient whenever only a single instance of that type is expected in the <a href="../registries/#component-registry" class="xref page"><code>ComponentRegistry</code></a>, which covers most infrastructure components such as the <code>CommandBus</code> or <code>QueryBus</code>.</p>
+</div>
+<div class="paragraph">
+<p>By <strong>name</strong> adds a <code>String</code> alongside the class, through <code>ComponentDefinition.ofTypeAndName(MyService.class, "myName")</code> or <code>registerComponent(Class&lt;C&gt;, String, ComponentBuilder&lt;C&gt;)</code>.
+Use this the moment several components of the same declared type need to coexist, as shown earlier for <a href="#components">multiple <code>EventStorageEngine</code> instances</a>.
+The same class-plus-name pattern applies to <a href="#decorators">decorators</a>, through <code>DecoratorDefinition.forTypeAndName(Class&lt;C&gt;, String)</code>, to target a single named component rather than every component of that type.</p>
+</div>
+<div class="paragraph">
+<p>By <strong><code>TypeReference</code></strong> replaces the <code>Class</code> argument whenever the declared type itself is generic, for example <code>Repository&lt;MyId, MyEntity&gt;</code>.
+A plain <code>Class&lt;Repository&gt;</code> object cannot carry the <code>&lt;MyId, MyEntity&gt;</code> type arguments, since generic type information is erased at runtime.
+<code>TypeReference</code> works around this erasure by capturing the full generic type through an anonymous subclass, so the <code>ComponentRegistry</code> and <code>Configuration</code> can distinguish a <code>Repository&lt;OrderId, Order&gt;</code> from a <code>Repository&lt;InvoiceId, Invoice&gt;</code> even though both erase to the same <code>Repository</code> class.
+<code>ComponentDefinition.ofType(TypeReference&lt;C&gt;)</code> and <code>ofTypeAndName(TypeReference&lt;C&gt;, String)</code> register a component this way, mirroring their <code>Class</code>-based counterparts; <code>Configuration#getComponent(TypeReference&lt;C&gt;)</code> and its overloads (covered in more detail under <a href="../configuration/#retrieving-components" class="xref page">retrieving components</a>) retrieve it again with the same type safety.
+Decorators do not have a <code>TypeReference</code>-based overload: <code>DecoratorDefinition</code> always matches on the raw, erased <code>Class</code>, so a decorator registered for <code>Repository.class</code> applies to every <code>Repository</code>, regardless of its type arguments.</p>
+</div>
+<div class="paragraph">
+<p>The following example registers an <code>EntityCache&lt;MyId, MyEntity&gt;</code> component under its full generic type, and retrieves it again the same way:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.TypeReference;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
+
+class TypeReferenceComponentExample {
+
+    void register(ComponentRegistry registry) {
+        registry.registerComponent(
+                ComponentDefinition.ofType(new TypeReference&lt;EntityCache&lt;MyId, MyEntity&gt;&gt;() {})
+                                   .withBuilder(config -&gt; id -&gt; null)
+        );
+    }
+
+    void retrieve(Configuration configuration) {
+        EntityCache&lt;MyId, MyEntity&gt; cache =
+                configuration.getComponent(new TypeReference&lt;EntityCache&lt;MyId, MyEntity&gt;&gt;() {});
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../">Configuration API</a></span>
+  <span class="next"><a href="../registries/">Component registry and lifecycle registry</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
