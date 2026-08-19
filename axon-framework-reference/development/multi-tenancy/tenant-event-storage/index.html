@@ -1065,6 +1065,92 @@ All events in a single append must belong to the same tenant.</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_aggregate_based_axon_server_storage"><a class="anchor" href="#_aggregate_based_axon_server_storage"></a>Aggregate-based Axon Server storage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The default tenant event-storage factory uses Axon Server&#8217;s tag-based storage and requires contexts with Dynamic Consistency Boundary (DCB) support.
+For legacy Axon Server contexts without DCB support, replace that factory with <code>AggregateBasedAxonServerTenantEventStorageEngineFactory</code>.
+It creates and caches one aggregate-based event storage engine per tenant context; the tenant-routing <code>EventStorageEngine</code> remains unchanged.</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_declarative_configuration_api" class="tab">
+<p>Declarative - Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_declarative_configuration_api">
+<div class="paragraph">
+<p>Register the aggregate-based factory while configuring event sourcing:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void configure(EventSourcingConfigurer configurer) {
+    configurer.componentRegistry(registry -&gt; registry.registerComponent(
+            TenantEventStorageEngineFactory.class, <i class="conum" data-value="1"></i><b>(1)</b>
+            config -&gt; new AggregateBasedAxonServerTenantEventStorageEngineFactory( <i class="conum" data-value="2"></i><b>(2)</b>
+                    config.getComponent(AxonServerConnectionManager.class),
+                    config.getComponent(EventConverter.class),
+                    config.getOptionalComponent(EventTypeResolver.class).orElse(EventTypeResolver.DEFAULT),
+                    config.getOptionalComponent(new TypeReference&lt;TenantComponentProvider&lt;Converter&gt;&gt;() {
+                    }).orElse(null))
+    ));
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Replace the default factory that builds each tenant&#8217;s event storage engine.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Construct an aggregate-based engine for each tenant&#8217;s Axon Server context.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div class="paragraph">
+<p>Expose the factory as a Spring bean:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public TenantEventStorageEngineFactory tenantEventStorageEngineFactory(Configuration configuration) {
+    return new AggregateBasedAxonServerTenantEventStorageEngineFactory( <i class="conum" data-value="1"></i><b>(1)</b>
+            configuration.getComponent(AxonServerConnectionManager.class),
+            configuration.getComponent(EventConverter.class),
+            configuration.getOptionalComponent(EventTypeResolver.class).orElse(EventTypeResolver.DEFAULT),
+            configuration.getOptionalComponent(new TypeReference&lt;TenantComponentProvider&lt;Converter&gt;&gt;() {
+            }).orElse(null)
+    );
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The factory selects the aggregate-based event storage engine for every tenant context.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Use this option only for non-DCB contexts. Applications using DCB contexts need no configuration and should retain the default tag-based factory.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="snapshots"><a class="anchor" href="#snapshots"></a>Snapshots</h2>
 <div class="sectionbody">
 <div class="paragraph">
