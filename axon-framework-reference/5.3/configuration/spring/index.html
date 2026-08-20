@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Spring Boot Integration</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.3/configuration/spring/">
+    <link rel="prev" href="../component-factory/">
+    <link rel="next" href="../../spring-boot-integration/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      <div class="banner">
+    <a href="https://platform.axoniq.io/resource-center/long-term-support">Long-Term Support on Axon Framework 4 is now live for existing customers. Visit the resource center for instructions on setting it up. <span class="banner_button">Access it here</span></a>
+</div>
+      
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5QD58ZB"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.axoniq.io">
+        <img src="../../../../_/img/docs-logo.png" class="header_logo"/>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-center">
+        <a class="navbar-item" href="../../../../home/basics/">Basics</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/guides/">Guides</a>
+          <div class="navbar-dropdown card">
+            <a class="navbar-item" href="../../../../home/guides/axon-framework">Axon Framework</a>
+            <a class="navbar-item" href="../../../../home/guides/axon-server">Axon Server</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="../../../../home/reference/">Reference</a>
+          <div class="navbar-dropdown card">
+                <a class="navbar-item" href="../../">Axon Framework</a>
+                <a class="navbar-item" href="../../../../axon-framework-extensions/">Axon Framework Extensions</a>
+                <a class="navbar-item" href="../../../../axon-server-reference/v2026.1/">Axon Server</a>
+                <a class="navbar-item" href="../../../../axon-server-proxy-reference/1.0/">Axon Server Proxy</a>
+                <a class="navbar-item" href="../../../../insights-server-reference/v1.0/">Axoniq Insights</a>
+                <a class="navbar-item" href="../../../../axoniq-platform-reference/">Axoniq Platform</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+          <div class="navbar-item search hide-for-print">
+            <div id="search-field" class="field">
+              <input id="search-input" type="text" placeholder="Search AxonIQ Docs">
+            </div>
+          </div>
+        <a class="navbar-item navbar-button" href="https://platform.axoniq.io" target="_blank">Axoniq Platform</a>
+      </div>
+    </div>
+  </nav>
+</header>
+      <div class="toolbar card" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../../../home/" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Configuration API</a></li>
+    <li><a href="./">Spring Boot integration</a></li>
+  </ul>
+</nav>
+<div class="page-actions">
+  <button class="actions-menu-toggle" title="Show actions related to this page">Actions</button>
+  <div class="actions-menu toolbar_dropdown_menu card">
+      <a class="action item" href="https://github.com/AxonIQ/AxonFramework/edit/axon-5.3.x/docs/reference-guide/modules/configuration/pages/spring.adoc">Edit this Page</a>
+    
+    <a class="action item" href="https://discuss.axoniq.io/search?q&#x3D;Spring%20Boot%20Integration" target="discuss_search">View Discussions</a>
+    <a class="action item" href="https://discuss.axoniq.io/new-topic?category&#x3D;library&amp;title&#x3D;%22Spring%20Boot%20Integration%22%20Discussion&amp;body&#x3D;%3C!--%20Replace%20this%20comment%20with%20your%20comment%2Fsuggestion%2Fquestion%2F...%20--%3E%0A%0A%0A%3C!--%0AKeep%20the%20section%20below!%0ALinking%20back%20to%20the%20documentation%20URL%20not%20only%20helps%20people%20go%20to%20the%20page%0Abut%20also%20helps%20find%20relevant%20discussions%20from%20the%20documentation%20page%20via%20the%20%22View%20Discussion%22%20menu.%0A--%3E%0A%5Bdetails%3D%22Related%20library%20page%22%5D%0A%5BSpring%20Boot%20Integration%5D(https%3A%2F%2Fdocs.axoniq.io%2Faxon-framework-reference%2F5.3%2Fconfiguration%2Fspring%2F)%0A%5B%2Fdetails%5D%0A" target="discuss_add">Start new discussion</a>
+  </div>
+</div>
+
+
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">5.3</button>
+  <div class="version-menu toolbar_dropdown_menu card">
+    <a class="version item" href="../../../development/configuration/spring/">development</a>
+    <a class="version item is-current" href="./">5.3</a>
+    <a class="version item is-missing" href="../../../5.2/">5.2</a>
+    <a class="version item is-missing" href="../../../5.1/">5.1</a>
+    <a class="version item is-missing" href="../../../5.0/">5.0</a>
+    <a class="version item is-missing" href="../../../4.13/">4.13</a>
+    <a class="version item is-missing" href="../../../4.12/">4.12</a>
+    <a class="version item is-missing" href="../../../4.11/">4.11</a>
+    <a class="version item is-missing" href="../../../4.10/">4.10</a>
+    <a class="version item is-missing" href="../../../0/">older releases</a>
+  </div>
+</div>
+</div>
+    </div>
+    <div class="content_container">
+      <div class="body">
+<div class="nav-container" data-component="axon-framework-reference" data-version="5.3">
+    <aside class="nav card">
+      <div class="panels">
+        <div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../../">Axon Framework</a></h3>
+
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/">Migration Guide</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/why-upgrade/">Why Upgrade?</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/prerequisites/">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/solved-architecture-choices/">Resolved Problems</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../migration/understanding-architecture-principles/">Understanding Choices</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/">Migration Paths</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/messages/">Messages</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../migration/paths/aggregates/">Aggregates</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/configuration-migration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/event-tagging/">Event tagging</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a>
+  </li>
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/projectors-event-processors/">Projectors and Event Processors</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/event-store/">Event Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/snapshotting/"><span class="advanced-framework">Snapshotting</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/test-fixtures/">Test Fixtures</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/serializers/">Serializer Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/dlq/"><span class="advanced-framework">Dead-Letter Queue Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/interceptors/">Interceptor Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/configuration/">Configuration Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/sequencing-policies/">Sequencing Policy Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/token-store/">Token Store</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/distributed-tracing/"><span class="advanced-framework">Distributed Tracing</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/upcasters/"><span class="advanced-framework">Upcaster Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../migration/paths/multi-tenancy/"><span class="advanced-framework">Multi-Tenancy Migration</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-migration/paths/5.2.0-to-5.2.1/">Axoniq Framework 5.2.0 to 5.2.1 Migration</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-migration/migration-path/"><span class="advanced-framework">Data Protection Module Migration</span></a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../messaging-concepts/">Messaging Concepts</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/anatomy-message/">Anatomy of a Message</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-intercepting/">Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/message-correlation/">Message Correlation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/component-message-intercepting/">Component Message Intercepting</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/exception-handling/">Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../messaging-concepts/processing-context/">Processing Context</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/">Commands</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/command-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/">Entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../commands/entities/event-sourced-entity/">Event-sourced entities</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="4">
+    <a class="nav-link" href="../../commands/entities/entity-creator/">Entity creator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/stateful-command-handler/">Stateful command handlers</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-hierarchies/">Entity hierarchies</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../commands/entities/entity-polymorphism/">Polymorphic entities</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../commands/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/">Events</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-publishing/">Publishing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/event-processors/">Event Processors</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/subscribing/">Subscribing Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-processors/streaming/">Streaming Event Processor</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../connector/persistent-streams/"><span class="advanced-framework">Persistent Streams</span></a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../events/infrastructure/">Infrastructure</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../events/event-store-internals/">Event Store Internals</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../events/event-versioning/">Versioning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../message-transformation/"><span class="advanced-framework">Event Transformation</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/defining-transformations/">Defining transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/configuring-transformations/">Configuring transformations</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../message-transformation/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../queries/">Queries</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-handlers/">Handling</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/query-dispatchers/">Dispatching</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/infrastructure/">Infrastructure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../queries/configuration/">Configuration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../testing/">Testing</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/basic-testing/">Basic Testing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/matchers-and-field-filters/">Matchers and Field Filters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../testing/advanced-testing/">Advanced Testing</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../conversion/">Conversion</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../data-protection/"><span class="advanced-framework">Data Protection</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/installation/">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/annotations/">Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/crypto-engines/">Crypto engines</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/java-records/">Java records</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../data-protection/advanced/">Advanced</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../multi-tenancy/"><span class="advanced-framework">Multi-Tenancy</span></a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-management/">Tenant management</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-scoped-components/">Tenant-scoped components</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-command-handling/">Tenant-aware command processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-event-storage/">Tenant-aware event storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-data-protection/">Data protection</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-event-processing/">Tenant-aware event processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/tenant-query-handling/">Tenant-aware query processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../multi-tenancy/demo/">Example</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../tuning/">Tuning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/command-processing/">Command Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../snapshotting/"><span class="advanced-framework">Snapshots</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../caching/"><span class="advanced-framework">Caching</span></a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/event-processing/">Event Processing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tuning/rdbms-tuning/">Relational Databases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../monitoring/">Monitoring</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../tracing/">Tracing</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/metrics/">Metrics</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/health/">Health Indicators</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/processors/">Event Processor Monitoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../../monitoring/message-tracking/">Message Tracking</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../">Configuration API</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configurer/">Application configurers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../registries/">Component registry and lifecycle registry</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration-enhancer/">Configuration enhancers</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../module/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../configuration/">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../component-factory/">Component factories</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="./">Spring Boot integration</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../spring-boot-integration/">Spring Boot Integration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../framework-comparison/">Framework Comparison</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../modules/">Modules</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="../../release-notes/">Release Notes</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Axon Framework</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Framework</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../advanced-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text"><span class="advanced-framework">Axoniq Data Protection</span></span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/major-releases/">Major Releases</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="../../data-protection-release-notes/minor-releases/">Minor Releases</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../known-issues-and-workarounds/">Known Issues and Workarounds</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+      </div>
+    </aside>
+</div>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Spring Boot Integration</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Axon Framework Spring Boot extension maps Axon&#8217;s configuration API onto the Spring Application Context.
+It provides auto-configuration so that, in most cases, adding the starter dependency is all that is needed to get a fully configured Axon application.
+This page explains how the Spring integration builds on the same concepts described in the rest of this chapter.</p>
+</div>
+<div class="paragraph">
+<p>For setup instructions, Spring Boot version support, and event processor-specific configuration, see
+<a href="../../spring-boot-integration/" class="xref page">Spring Boot integration</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_spring_uses_the_configuration_api"><a class="anchor" href="#_how_spring_uses_the_configuration_api"></a>How Spring uses the configuration API</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Spring integration does not bypass the configuration API: it implements it.
+In practice, this means the Spring <code>ApplicationContext</code> and Axon&#8217;s <code>Configuration</code> share the same set of components: any infrastructure component Axon provides (the <code>CommandBus</code>, <code>EventStore</code>, <code>QueryBus</code>, and so on) is automatically made available as a Spring bean, injectable like any other bean.</p>
+</div>
+<div class="paragraph">
+<p>The reverse also holds.
+If you declare your own <code>@Bean</code> of a matching infrastructure type, Axon picks it up and uses it instead of its own default, no further wiring required:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public CommandBus commandBus(UnitOfWorkFactory unitOfWorkFactory) {
+        return new SimpleCommandBus(unitOfWorkFactory);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You rarely need to register message handlers or entities yourself either.
+Methods annotated with <code>@CommandHandler</code>, <code>@EventHandler</code>, or <code>@QueryHandler</code> on any Spring bean, and classes annotated with <code>@EventSourced</code>, are discovered automatically and registered as <code>Modules</code>, out of the box.
+See <a href="#handling-component-detection">Component detection</a> and <a href="../module/" class="xref page">Modules</a> for the details.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="customizing-axon-config-with-spring"><a class="anchor" href="#customizing-axon-config-with-spring"></a>Customizing Axon&#8217;s configuration through Spring</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The auto-configuration only registers components that have not been defined explicitly.
+To replace a default component, define a <code>@Bean</code> of the matching type in any <code>@Configuration</code> class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.SimpleQueryBus;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ReplaceQueryBusExample {
+
+    @Bean
+    public QueryBus queryBus(UnitOfWorkFactory unitOfWorkFactory) {
+        return new SimpleQueryBus(unitOfWorkFactory);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Spring&#8217;s standard bean override mechanism means the default <code>QueryBus</code> provided by Axon Framework is never created.
+Thus, your bean becomes the one Axon uses instead.</p>
+</div>
+<div class="paragraph">
+<p>To decorate a component, declare a <code>DecoratorDefinition</code> as a Spring bean.
+The <code>SpringComponentRegistry</code> discovers all <code>DecoratorDefinition</code> beans in the Application Context automatically and registers them, so no manual <code>componentRegistry</code> access is needed:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.tracing.SpanFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class TracingConfig {
+
+    @Bean
+    public DecoratorDefinition&lt;CommandBus, TracingCommandBusDecorator&gt; tracingCommandBusDecorator() {
+        return DecoratorDefinition.forType(CommandBus.class)
+                                  .with((config, name, delegate) -&gt; new TracingCommandBusDecorator(
+                                          delegate, config.getComponent(SpanFactory.class)
+                                  ))
+                                  .order(10);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For more expanded configuration integration, we recommend registering a <code>ConfigurationEnhancer</code> as a Spring bean instead.
+The Spring integration discovers all <code>ConfigurationEnhancer</code> beans in the Application Context automatically and applies them during configuration.
+The example below expands on the tracing-decoration example, but now through a <code>ConfigurationEnhancer</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.tracing.SpanFactory;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TracingEnhancer implements ConfigurationEnhancer {
+
+    @Override
+    public void enhance(ComponentRegistry registry) {
+        if (registry.hasComponent(CommandBus.class)) {
+            registry.registerDecorator(
+                    CommandBus.class,
+                    10,
+                    (config, name, delegate) -&gt; new TracingCommandBusDecorator(
+                            delegate, config.getComponent(SpanFactory.class)
+                    )
+            );
+        }
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="handling-component-detection"><a class="anchor" href="#handling-component-detection"></a>Message handler and entity detection</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Spring Boot Starter automatically detects Axon components in the Application Context:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Methods annotated with <code>@CommandHandler</code>, <code>@EventHandler</code>, or <code>@QueryHandler</code> on any Spring bean are registered as message handlers with the appropriate bus.</p>
+</li>
+<li>
+<p>Classes annotated with <code>@EventSourced</code> are registered as event-sourced entities.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>A single <code>@Component</code> can combine all three handler types; Axon discovers each annotated method independently:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * We have combined a command, event, and query handler in one class as an example only. Typically, these handlers are
+ * separated.
+ */
+@Component
+public class GiftCardHandler {
+
+    private final Map&lt;String, Integer&gt; balances = new ConcurrentHashMap&lt;&gt;();
+
+    @CommandHandler
+    public void handle(RedeemGiftCardCommand command, EventAppender eventAppender) {
+        eventAppender.append(new GiftCardRedeemedEvent(command.cardId(), command.amount()));
+    }
+
+    @EventHandler
+    public void on(GiftCardRedeemedEvent event) {
+        balances.merge(event.cardId(), -event.amount(), Integer::sum);
+    }
+
+    @QueryHandler
+    public GiftCardBalance handle(FetchGiftCardBalanceQuery query) {
+        return new GiftCardBalance(query.cardId(), balances.getOrDefault(query.cardId(), 0));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Handler discovery happens through <code>MessageHandlerConfigurer</code> and <code>MessageHandlerLookup</code>, which scan the bean factory for beans implementing <code>CommandHandlingComponent</code>, <code>EventHandlingComponent</code>, or <code>QueryHandlingComponent</code>, as well as beans with annotated handler methods.
+Discovered handlers are wrapped into a <code>CommandHandlingModule</code> and <code>QueryHandlingModule</code>, and discovered <code>@EventSourced</code> entities into an <code>EventSourcedEntityModule</code>, each registered on the <code>ComponentRegistry</code> the same way a manually built <a href="../module/" class="xref page">Module</a> would be.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="axon-properties"><a class="anchor" href="#axon-properties"></a>Axon properties</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Besides beans, decorators, and enhancers, several parts of the auto-configuration can be tuned directly through <code>application.properties</code> or <code>application.yml</code>, without writing any code:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enables or disables the Axon Server connector integration. Defaults to <code>true</code> when the connector is on the classpath.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.eventhandling.processors.&lt;name&gt;.*</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Configures an individual event processor: mode, initial segment count, batch size, thread count, and more. See <a href="#event-processor-configuration">Event processor configuration</a> below for the full reference.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.eventhandling.tokenstore.claim-timeout</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How long a streaming event processor waits before forcing a claim on a token segment that has not been updated.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.eventstorage.jpa.*</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tuning for the JPA-based event storage engine: batch size, gap cleaning threshold, gap timeout, and polling interval.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.converter.general</code> / <code>axon.converter.messages</code> / <code>axon.converter.events</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Selects the <code>Converter</code> implementation used for general data (such as snapshots), message payloads, and event payloads respectively.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.timeout.*</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enables and tunes timeouts for transactions and message handlers (commands, events, queries, and deadlines).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.tracing.*</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enables and tunes OpenTelemetry-based tracing for Axon&#8217;s infrastructure components. See <a href="../../monitoring/tracing/" class="xref page">Tracing</a> for the full property reference.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.update-check.disabled</code> / <code>axon.update-check.url</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Disables Axon&#8217;s startup update-check ping, or points it at a different URL.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="event-processor-configuration"><a class="anchor" href="#event-processor-configuration"></a>Event processor configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Boot provides two approaches to configure event processors: properties-based configuration, covered as part of getting started in <a href="../../spring-boot-integration/#event-processor-configuration" class="xref page">Event processor configuration</a>, and programmatic, type-safe configuration through <code>EventProcessorDefinition</code> beans, covered below.</p>
+</div>
+<div class="paragraph">
+<p>Reach for properties-based configuration when the configuration is simple and doesn&#8217;t require custom logic, settings vary per environment, or you&#8217;re still prototyping.
+A simple property-based setup looks as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors.my-processor.mode=pooled-streaming
+axon.eventhandling.processors.my-processor.initial-segment-count=4</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Reach for <code>EventProcessorDefinition</code> beans instead when you need fine-grained control over handler assignment, the configuration requires conditional logic, type safety and IDE support matter, or you want to share configuration between environments programmatically.
+Here is what such a bean looks like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public EventProcessorDefinition orderProcessor() {
+        return EventProcessorDefinition.pooledStreaming("order-processor")
+                .assigningHandlers(descriptor -&gt;
+                    descriptor.beanName().startsWith("order"))
+                .customized(config -&gt; config
+                    .initialSegmentCount(4)
+                    .batchSize(100));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>EventProcessorDefinition</code> API provides:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Type-safe configuration</strong> - Compile-time checking of configuration options</p>
+</li>
+<li>
+<p><strong>Fluent API</strong> - Chain configuration methods for readability</p>
+</li>
+<li>
+<p><strong>Handler selection</strong> - Define which event handlers belong to each processor using predicates</p>
+</li>
+<li>
+<p><strong>Full configuration access</strong> - All processor settings available programmatically</p>
+</li>
+<li>
+<p><strong>IDE support</strong> - Better autocompletion and refactoring support</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_handler_selection"><a class="anchor" href="#_handler_selection"></a>Handler selection</h3>
+<div class="paragraph">
+<p>The <code>assigningHandlers()</code> method provides access to an <code>EventHandlerDescriptor</code> with the following properties:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>beanName()</code> - The Spring bean name</p>
+</li>
+<li>
+<p><code>beanType()</code> - The event handler class (use for package-based selection)</p>
+</li>
+<li>
+<p><code>beanDefinition()</code> - The Spring bean definition</p>
+</li>
+<li>
+<p><code>component()</code> - The component builder</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This allows flexible handler assignment based on naming conventions, package structure, or custom criteria:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+class HandlerSelectionExamples {
+
+    @Bean
+    public EventProcessorDefinition byBeanNamePrefix() {
+        // By bean name prefix
+        return EventProcessorDefinition.pooledStreaming("order-processor")
+                .assigningHandlers(d -&gt; d.beanName().startsWith("order"))
+                .notCustomized();
+    }
+
+    @Bean
+    public EventProcessorDefinition byPackage() {
+        // By package
+        return EventProcessorDefinition.pooledStreaming("orders-package-processor")
+                .assigningHandlers(d -&gt; d.beanType().getPackageName().startsWith("com.example.orders"))
+                .notCustomized();
+    }
+
+    @Bean
+    public EventProcessorDefinition byBeanNamePattern() {
+        // By bean name pattern
+        return EventProcessorDefinition.pooledStreaming("handler-processor")
+                .assigningHandlers(d -&gt; d.beanName().contains("Handler"))
+                .notCustomized();
+    }
+}</code></pre>
+</div>
+</div>
+<div id="namespace-based-handler-selection" class="paragraph">
+<p>For easy matching of Event Handling Components to Event Processors purely based on the Event Processor name, you can use the <code>@Namespace</code> annotation in combination with the <code>EventHandlerSelector.matchesNamespaceOnType()</code>.</p>
+</div>
+<div class="paragraph">
+<p>The <code>@Namespace</code> annotation can be placed on the Event Handling Component, where the value of the annotation determines the Event Processor name it belongs to.
+Handlers will be automatically matched when defining an <code>EventProcessorDefinition</code> using the <code>EventHandlerSelector.matchesNamespaceOnType()</code> with the same name as defined in the <code>@Namespace</code>.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s take a look at a concrete example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.extension.spring.config.EventHandlerSelector;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+
+@Bean
+public EventProcessorDefinition ordersProcessor() {
+    return EventProcessorDefinition.pooledStreaming("orders")
+            .assigningHandlers(EventHandlerSelector.matchesNamespaceOnType("orders"))
+            .notCustomized();
+}
+
+@Namespace("orders")
+public class OrderEventHandler {
+    // omitted event handlers for brevity
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With <code>@Namespace</code> on the <code>OrderEventHandler</code>, the <code>OrderEventHandler</code> signals it <strong>belongs</strong> to the Event Processor named <code>orders</code>.
+Note that the <code>@Namespace</code> annotation can be placed on a class (as shown above), on an enclosing class, on a <code>package-info.java</code> file, or on a <code>module-info.java</code> file.
+The <code>@Namespace</code> annotation is searched for in the order defined above.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>On the type</p>
+</li>
+<li>
+<p>On the enclosing class</p>
+</li>
+<li>
+<p>On the <code>package-info.java</code> file</p>
+</li>
+<li>
+<p>On the <code>module-info.java</code> file</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>This allows you to use <code>@Namespace</code> to describe multiple event handlers belonging to a package, as shown below:</p>
+</div>
+<div class="listingblock pseudocode">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Namespace("orders")
+package com.example.orders;
+
+import org.axonframework.messaging.core.annotation.Namespace;</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="title">Convenience <code>EventProcessorDefinition</code> methods</div>
+<div class="paragraph">
+<p>For the common case of matching handlers by namespace, <code>EventProcessorDefinition</code> provides convenience methods that combine processor creation with <code>@Namespace</code>-based handler selection:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Equivalent to pooledStreaming("orders").assigningHandlers(matchesNamespaceOnType("orders"))
+EventProcessorDefinition.pooledStreamingMatching("orders")
+        .notCustomized();
+
+// Equivalent to subscribing("orders").assigningHandlers(matchesNamespaceOnType("orders"))
+EventProcessorDefinition.subscribingMatching("orders")
+        .notCustomized();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These methods use the processor name as the namespace to match, making it easy to organize processors by namespace or bounded context.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_configuration_options"><a class="anchor" href="#_configuration_options"></a>Configuration options</h4>
+<div class="paragraph">
+<p>Use <code>customized()</code> to customize processor settings, or <code>notCustomized()</code> when you only need handler assignment:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// With custom configuration
+EventProcessorDefinition.pooledStreaming("custom-processor")
+    .assigningHandlers(descriptor -&gt; descriptor.beanName().startsWith("custom"))
+    .customized(config -&gt; config
+        .initialSegmentCount(16)
+        .batchSize(100)
+        .tokenClaimInterval(5000));
+
+// With default settings (only handler assignment)
+EventProcessorDefinition.pooledStreaming("default-processor")
+    .assigningHandlers(descriptor -&gt; descriptor.beanName().startsWith("default"))
+    .notCustomized();</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_configuration_precedence"><a class="anchor" href="#_configuration_precedence"></a>Configuration precedence</h4>
+<div class="paragraph">
+<p>When using multiple configuration approaches:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>EventProcessorDefinition</code> beans take precedence over properties-based configuration</p>
+</li>
+<li>
+<p>If a handler matches multiple <code>EventProcessorDefinition</code> selectors, an <code>AxonConfigurationException</code> is thrown at startup</p>
+</li>
+<li>
+<p>Handlers not matched by any <code>EventProcessorDefinition</code> are assigned based on their package name (default behavior)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>To avoid conflicts, ensure each handler is matched by at most one <code>EventProcessorDefinition</code> using mutually exclusive selectors.</p>
+</div>
+<div class="paragraph">
+<p>For comprehensive event processor configuration examples and detailed information, see <a href="../../events/event-processors/streaming/" class="xref page">Event Processors</a>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="spring-and-axon-impl-details"><a class="anchor" href="#spring-and-axon-impl-details"></a>Implementation details</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The classes below are what make the behavior above possible.
+You will not typically interact with them directly, but they are useful to know when diagnosing configuration issues:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>SpringAxonApplication</code></dt>
+<dd>
+<p>A Spring <code>@Component</code> that implements <code>ApplicationConfigurer</code>.
+It holds a <code>SpringComponentRegistry</code> and a <code>SpringLifecycleRegistry</code> and delegates to them when <code>componentRegistry(&#8230;&#8203;)</code> or <code>lifecycleRegistry(&#8230;&#8203;)</code> are called.
+It is the Spring equivalent of <code>DefaultAxonApplication</code> used in plain Java setup.</p>
+</dd>
+<dt class="hdlist1"><code>SpringComponentRegistry</code></dt>
+<dd>
+<p>A Spring <code>BeanPostProcessor</code> and <code>BeanFactoryPostProcessor</code> that implements <a href="../registries/#component-registry" class="xref page"><code>ComponentRegistry</code></a>.
+It connects Axon&#8217;s component model to the Spring bean lifecycle.
+Registrations made through <code>registerComponent</code>, <code>registerDecorator</code>, and <code>registerEnhancer</code> are all stored here and applied when Spring initializes beans.</p>
+</dd>
+<dt class="hdlist1"><code>SpringLifecycleRegistry</code></dt>
+<dd>
+<p>A <a href="../registries/#lifecycle-registry" class="xref page"><code>LifecycleRegistry</code></a> backed by Spring&#8217;s <code>SmartLifecycle</code> mechanism.
+<code>onStart</code> handlers are invoked during Spring&#8217;s context startup phase; <code>onShutdown</code> handlers are invoked during Spring&#8217;s context close phase.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Because <code>SpringAxonApplication</code> implements <code>ApplicationConfigurer</code>, you can use the same <code>MessagingConfigurer</code>, <code>ModellingConfigurer</code>, or <code>EventSourcingConfigurer</code> wrapping pattern in a Spring context.
+The <code>SpringAxonApplication</code> bean is the root configurer that gets wrapped.</p>
+</div>
+<div class="paragraph">
+<p>The <code>SpringComponentRegistry</code> makes the behavior described above possible in two ways.
+As a <code>BeanPostProcessor</code>, it checks, right after Spring creates a bean, whether any registered decorator or enhancer targets that bean&#8217;s type; if so, the decorator is applied and the wrapped instance is used in place of the original, so the standard Axon decorator mechanism works seamlessly for Spring-managed beans.
+As a <code>BeanFactoryPostProcessor</code>, it allows the resulting <code>Configuration</code> to look up any bean from the Spring <code>ApplicationContext</code>, not just those explicitly registered with the <code>ComponentRegistry</code>.
+This is what makes the <code>CommandBus</code> bean shown above available to Axon: it is treated as the registered <code>CommandBus</code> component, and any decorator registered through the <code>ComponentRegistry</code> (or through a <code>ConfigurationEnhancer</code>) is applied on top of it.</p>
+</div>
+<div class="sect2">
+<h3 id="_lifecycle_integration"><a class="anchor" href="#_lifecycle_integration"></a>Lifecycle integration</h3>
+<div class="paragraph">
+<p>Spring&#8217;s <code>SmartLifecycle</code> drives Axon startup and shutdown when using the Spring Boot Starter.
+The <code>SpringLifecycleStartHandler</code> and <code>SpringLifecycleShutdownHandler</code> integrate Axon&#8217;s lifecycle phases with Spring&#8217;s context lifecycle:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>On context startup: Axon&#8217;s lifecycle phases run in ascending phase order.</p>
+</li>
+<li>
+<p>On context shutdown: Axon&#8217;s lifecycle phases run in descending phase order (reverse startup order).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This means calling <code>AxonConfiguration#start()</code> is not required and has no effect in a Spring application.
+The lifecycle is managed entirely by the Spring context.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_modules_in_spring"><a class="anchor" href="#_modules_in_spring"></a>Modules in Spring</h3>
+<div class="paragraph">
+<p><a href="../module/" class="xref page"><code>Module</code></a> implementations registered via <code>componentRegistry</code> work identically in Spring: the <code>SpringComponentRegistry</code> treats module registrations the same as in plain Java, preserving the same one-way visibility between a module and its parent.</p>
+</div>
+<div class="paragraph">
+<p>Axon&#8217;s built-in modules (for example, the event processor modules registered through <code>EventProcessorDefinition</code>) use this mechanism to keep event processor infrastructure isolated from the application&#8217;s root configuration.</p>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../component-factory/">Component factories</a></span>
+  <span class="next"><a href="../../spring-boot-integration/">Spring Boot Integration</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 AxonIQ BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/search-ui.js" id="search-ui-script" data-site-root-path="../../../.." data-snippet-length="100" data-stylesheet="../../../../_/css/search.css"></script>
+<script async src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
