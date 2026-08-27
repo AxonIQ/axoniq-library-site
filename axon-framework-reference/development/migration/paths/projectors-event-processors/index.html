@@ -1251,6 +1251,116 @@ axon:
 </div>
 </div>
 <div class="sect1">
+<h2 id="initial-token-replay-status"><a class="anchor" href="#initial-token-replay-status"></a>Initial token no longer marks the first pass as a replay</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A streaming processor that starts without a stored token builds an <a href="../../../events/event-processors/streaming/#initial_token" class="xref page">initial token</a>.
+Both versions default to starting at the beginning of the event stream, so a fresh processor handles the entire history in both.
+What changed is the <code>ReplayStatus</code> under which that history is handled.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 4 wrapped the initial token in a <code>ReplayToken</code> that concluded at the head of the stream, marking the whole catch-up as a replay:</p>
+</div>
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4, PooledStreamingEventProcessor.Builder default
+initialToken = messageSource -&gt; ReplayToken.createReplayToken(messageSource.createHeadToken());</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 concludes that replay at the first position of the stream instead, which means it is already concluded by the first event handled:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF5, PooledStreamingEventProcessorConfiguration default
+initialToken = eventSource -&gt; eventSource.firstToken(null)
+                                         .thenApply(ReplayToken::createReplayToken);</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"></th>
+<th class="tableblock halign-left valign-top">Axon Framework 4</th>
+<th class="tableblock halign-left valign-top">Axon Framework 5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Start position of a fresh processor</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Beginning of the stream</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Beginning of the stream</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ReplayStatus</code> while catching up</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>REPLAY</code> until the head at initialization</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>REGULAR</code> for every event</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handlers that opt out of replays</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Skip the initial catch-up</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handle the initial catch-up</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replay-concluded notification</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Published when the head at initialization is reached</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not published, as there is no replay to conclude</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>This is the expected behavior for a brand-new processor, not an oversight.
+A processor starting for the first time has no previously built state to correct, so its first pass over the stream is a first pass, not a repetition of one.
+Replay semantics exist to signal "you are seeing these events again", which does not apply here.</p>
+</div>
+<div class="sect2">
+<h3 id="_restoring_the_axon_framework_4_behavior"><a class="anchor" href="#_restoring_the_axon_framework_4_behavior"></a>Restoring the Axon Framework 4 behavior</h3>
+<div class="paragraph">
+<p>Configure the initial token explicitly if your handlers rely on <code>ReplayStatus.REPLAY</code> to suppress side effects while a fresh deployment catches up on an existing event store.
+Passing the latest position as the token to conclude at reproduces the Axon Framework 4 default:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+
+public class ReplayingInitialTokenExample {
+
+    public void configure(MessagingConfigurer configurer) {
+        configurer.eventProcessing(
+                eventProcessing -&gt; eventProcessing.pooledStreaming(
+                        pooledStreaming -&gt; pooledStreaming.processor(
+                                "my-processor",
+                                module -&gt; module.eventHandlingComponents(
+                                                         components -&gt; components.autodetected(
+                                                                 "my-projector",
+                                                                 cfg -&gt; new MyProjector()
+                                                         )
+                                                 )
+                                                 .customized((cfg, processorConfig) -&gt; processorConfig.initialToken(
+                                                         eventSource -&gt; eventSource.latestToken(null)
+                                                                                   .thenApply(ReplayToken::createReplayToken)
+                                                 ))
+                        )
+                )
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the position to conclude at is resolved once, when the processor initializes its tokens, and is stored inside the token itself.
+Events appended after that moment are handled as regular, live events.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_queryupdateemitter_as_a_parameter"><a class="anchor" href="#_queryupdateemitter_as_a_parameter"></a><code>QueryUpdateEmitter</code> as a parameter</h2>
 <div class="sectionbody">
 <div class="paragraph">

@@ -1693,6 +1693,12 @@ Thus, the processor will begin at the start and handle every event present in th
 This start position is configurable, as is described <a href="#token_configuration">here</a>.</p>
 </div>
 <div class="paragraph">
+<p>These events are handled as regular events, not as a replay.
+A processor starting for the first time has no previously built state to correct, so its first pass over the stream is a first pass rather than a repetition of one.
+Handlers therefore observe <code>ReplayStatus.REGULAR</code> throughout, handlers that opt out of replaying still handle this initial stream, and no replay-concluded notification is published.
+If you do want this initial catch-up flagged as a replay, for example because your handlers suppress side effects while replaying, configure the initial token to conclude its replay at the latest position instead, as shown in the <a href="../../../migration/paths/projectors-event-processors/#initial-token-replay-status" class="xref page">migration guide</a>.</p>
+</div>
+<div class="paragraph">
 <p>Conceptually, there are a couple of scenarios when a processor builds an initial token on application startup.
 The obvious one is already shared, namely when a processor starts for the first time.
 There are, however, also other situations when a token is built that might be unexpected, like:</p>
