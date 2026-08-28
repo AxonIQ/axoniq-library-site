@@ -9,7 +9,6 @@
 //   { ..., urlContains: ['/commands/', ...] }  — keep only entries under those paths
 //   { ..., excludeUrlContains: ['/reference'] } — drop entries under those paths
 // New pages appear automatically once they are in their repo's nav.adoc.
-// See NAV-PLAN.md.
 
 module.exports = {
   sections: [
