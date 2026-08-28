@@ -2,7 +2,7 @@ var figlet = require('figlet');
 
 module.exports.register = () => {
 
-    figlet('AxonIQ Documentation', {font: 'Soft'}, function(err, data) {
+    figlet('Axoniq Documentation', {font: 'Soft'}, function(err, data) {
         if (err) {
             console.log('Something went wrong while printing the banner...');
             console.dir(err);
