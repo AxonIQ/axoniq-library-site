@@ -1671,6 +1671,271 @@ Reactor dispatch interceptors enable access to Reactor context at the gateway bo
 </div>
 </div>
 <div class="sect1">
+<h2 id="graceful-shutdown"><a class="anchor" href="#graceful-shutdown"></a>Graceful shutdown</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Subscription queries and streaming queries started on the local node keep their streams open until they are explicitly closed.
+This means that during application shutdown, any active query streams will hold open the connections consuming them. For example, server-sent event (SSE) connections in a web application.
+This prevents the web server from completing a graceful shutdown, because it waits for open connections to drain.</p>
+</div>
+<div class="paragraph">
+<p>The <code>QueryShutdownManager</code> addresses this by letting callers explicitly register query streams for termination at shutdown.
+It is a standalone component with no changes required to existing bus or gateway infrastructure.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Only query streams initiated on the local node need to be tracked.
+Subscription queries received from a remote node via Axon Server (where this node is the handler supplying updates) are managed by the Axon Server connector and do not require tracking.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_shutdown_policy"><a class="anchor" href="#_shutdown_policy"></a>Shutdown policy</h3>
+<div class="paragraph">
+<p>Two shutdown policies are available:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Close immediately:</strong> all active streams are terminated as soon as shutdown begins.
+Use this for long-lived streams such as SSE endpoints.</p>
+</li>
+<li>
+<p><strong>Wait with grace period:</strong> the manager waits up to the configured duration for streams to complete
+naturally, then force-closes any that remain.
+Streaming queries are finite by nature, so a short grace period is usually appropriate.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To configure a policy, call the relevant method on <code>QueryGatewayConfigurer</code> (for gateway-level tracking) or create a <code>QueryShutdownManager</code> directly (for call-site tracking):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Close immediately
+QueryShutdownManager.closeImmediately();
+
+// Wait with grace period
+QueryShutdownManager.withGracePeriod(Duration.ofSeconds(30));</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When using a standalone manager for call-site tracking, register it with Axon&#8217;s lifecycle:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">QueryShutdownManager manager = QueryShutdownManager.closeImmediately();
+MessagingConfigurer.create()
+    .lifecycleRegistry(manager::registerShutdown);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This ensures <code>manager.shutdown()</code> is called at the correct phase during application shutdown.
+To apply shutdown tracking automatically at the gateway level, see the next section.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_gateway_level_tracking"><a class="anchor" href="#_gateway_level_tracking"></a>Gateway-level tracking</h3>
+<div class="paragraph">
+<p>For applications that route queries through the <code>QueryGateway</code>, configure shutdown tracking directly on a named gateway.
+Every query dispatched through that gateway is then tracked automatically, with no changes needed at individual call sites.</p>
+</div>
+<div class="paragraph">
+<p>Each call to <code>queryGateway(name, configurer)</code> registers a new, independently configured <code>QueryGateway</code> component under the given name.
+Retrieve it from the configuration by that name:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Consumer&lt;QueryGatewayConfigurer&gt; configurer =
+        c -&gt; c.cancellingSubscriptionQueryOnShutdown() <i class="conum" data-value="1"></i><b>(1)</b>
+              .cancellingStreamingQueryOnShutdown(Duration.ofSeconds(5)); <i class="conum" data-value="2"></i><b>(2)</b>
+
+AxonConfiguration config = MessagingConfigurer.create()
+                                              .registerQueryGateway("sse", configurer)
+                                              .build();
+
+QueryGateway sseGateway = config.getComponent(QueryGateway.class, "sse"); <i class="conum" data-value="3"></i><b>(3)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>All subscription queries dispatched through this gateway are automatically tracked and closed immediately on shutdown.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>All streaming queries dispatched through this gateway are tracked with a 5-second grace period, allowing in-progress result sets to drain.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Retrieve the gateway by its registered name.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>When no shutdown tracking is needed, use <code>withDefaults()</code> to register a plain gateway without decorators:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">MessagingConfigurer.create()
+                   .registerQueryGateway("reporting", QueryGatewayConfigurer::withDefaults);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Multiple gateways with different policies can be registered in the same configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">MessagingConfigurer.create()
+                   .registerQueryGateway(
+                           "sse",
+                           configurer -&gt; configurer.cancellingSubscriptionQueryOnShutdown()
+                   )
+                   .registerQueryGateway(
+                           "internal",
+                           configurer -&gt; configurer.cancellingSubscriptionQueryOnShutdown(
+                                   Duration.ofSeconds(30)
+                           )
+                   );</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To share a single manager between several gateways, or to combine gateway-level tracking with the call-site tracking described below, pass a <code>QueryShutdownManager</code> instance instead of a policy:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">QueryShutdownManager manager = QueryShutdownManager.withGracePeriod(Duration.ofSeconds(10));
+
+MessagingConfigurer.create()
+                   .registerQueryGateway(
+                           "sse",
+                           configurer -&gt; configurer.cancellingSubscriptionQueryOnShutdown(manager)
+                   )
+                   .registerQueryGateway(
+                           "internal",
+                           configurer -&gt; configurer.cancellingSubscriptionQueryOnShutdown(manager)
+                   );</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="registering-query-streams-for-shutdown"><a class="anchor" href="#registering-query-streams-for-shutdown"></a>Registering query streams for shutdown</h3>
+<div class="paragraph">
+<p>When the gateway-level option is not used, the manager provides two <code>track()</code> methods, one for each entry point:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">QueryShutdownManager shutdownManager;
+
+// Via QueryGateway (returns Publisher&lt;T&gt;):
+public Publisher&lt;MyDto&gt; stream() {
+    return shutdownManager.track( <i class="conum" data-value="1"></i><b>(1)</b>
+        queryGateway.subscriptionQuery(new MyQuery(), MyDto.class)
+    );
+}
+
+// Via QueryBus directly (returns MessageStream&lt;T&gt;):
+public MessageStream&lt;QueryResponseMessage&gt; streamViaBus(QueryMessage queryMessage) {
+    return shutdownManager.track(
+        queryBus.subscriptionQuery(queryMessage, null, 100) <i class="conum" data-value="2"></i><b>(2)</b>
+    );
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Wrap the result of <code>subscriptionQuery</code> with <code>track()</code>, which returns a <code>Publisher&lt;T&gt;</code> that participates in the manager&#8217;s shutdown.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>For direct <code>QueryBus</code> users, wrap the <code>MessageStream</code> with <code>track()</code> and use the returned wrapper.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In both cases, the caller must use the returned wrapper instead of the original.
+When a tracked stream completes naturally (stream sealed, subscriber cancels), it deregisters itself automatically.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_boot"><a class="anchor" href="#_spring_boot"></a>Spring Boot</h3>
+<div class="paragraph">
+<p>When using Spring Boot with Axon, declare a <code>QueryShutdownManager</code> bean to enable shutdown lifecycle management.
+Axon automatically calls <code>shutdown()</code> at the web server graceful-shutdown phase, so active query streams
+are cancelled at the same moment the web server stops accepting new connections:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public QueryShutdownManager queryShutdownManager() {
+    return QueryShutdownManager.closeImmediately();
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For gateway-level tracking, declare a named <code>QueryGateway</code> bean directly.
+Axon&#8217;s Spring integration bridges all <code>QueryGateway</code> beans into Axon&#8217;s component registry by their bean name,
+so the named gateway is available everywhere Axon resolves components:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public QueryGateway sseGateway(QueryBus queryBus,
+                               MessageTypeResolver resolver,
+                               QueryPriorityCalculator calculator,
+                               MessageConverter converter,
+                               QueryShutdownManager shutdownManager) { <i class="conum" data-value="1"></i><b>(1)</b>
+    DefaultQueryGateway base = new DefaultQueryGateway(queryBus, resolver, calculator, converter);
+    return ShutdownTrackingQueryGateway.build(base, shutdownManager, shutdownManager); <i class="conum" data-value="2"></i><b>(2)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Inject the <code>QueryShutdownManager</code> bean declared above.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Pass the same manager for both subscription and streaming tracking, or pass separate managers if different policies are needed.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Multiple <code>QueryShutdownManager</code> beans can coexist; each is registered with the lifecycle independently.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_manual_lifecycle_integration"><a class="anchor" href="#_manual_lifecycle_integration"></a>Manual lifecycle integration</h3>
+<div class="paragraph">
+<p>For programmatic (non-Spring) configuration, register the manager with the <code>MessagingConfigurer</code> lifecycle:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">QueryShutdownManager manager = QueryShutdownManager.withGracePeriod(Duration.ofSeconds(5));
+configurer.lifecycleRegistry(manager::registerShutdown);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When neither <code>MessagingConfigurer</code> nor Spring Boot is available, call <code>shutdown()</code> directly from whatever lifecycle mechanism the application provides.
+The method returns a <code>CompletableFuture&lt;Void&gt;</code> that completes once all tracked streams are closed.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
