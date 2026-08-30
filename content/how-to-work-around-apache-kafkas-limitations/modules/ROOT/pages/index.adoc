@@ -1,0 +1,90 @@
+= How to work around Apache Kafka’s limitations
+
+pass:[<!-- vale Google.EmDash = NO -->]
+pass:[<!-- vale proselint.But = NO -->]
+
+:author: Gerard Klijs
+:docdate: 2024-26-03
+
+To gain new insights, consider changing your perspective.
+For instance, think about how your API might look using GraphQL instead of REST, or compare a microservices setup that uses Apache Kafka for messaging to one that uses Axon Server to store AND route messages.
+
+In this blog, I discuss five workarounds for non-functional requirements that I identified from my experience working with Kafka before adopting AxonIQ technologies. These workarounds highlight the differences between Kafka and Axon-based architectures, and even though they may not work for every situation, exploring alternative solutions is valuable. The workarounds focus on sharing information between microservices, preventing concurrent modifications, maintaining event quality, scaling dynamically, and handling complexity.
+
+Before diving into these workarounds, it's crucial to note a critical difference between Kafka and Axon architectures. In Kafka, all messages carry the same weight, typically being events. However, Axon distinguishes between commands, queries, and events, and Axon Server and Axon Framework support these message types. This distinction plays a vital role when dealing with non-functional requirements.
+
+== Sharing information with other microservices
+
+image::Sharing-20information-20with-20other-20microservices.png[Sharing information with other microservices]
+
+Microservices often require information from other microservices. A common approach is to make a REST call to the other service. However, this method introduces challenges, such as determining the address of the additional service and how to serialize the response. It also makes the query dependent on the other service's availability.
+
+To conduct integration testing, we can use mocked responses, but it's crucial to ensure that these mocks accurately represent the actual response. REST limits us to a request-response pattern, although it is possible to use server-send events for streaming capabilities.  
+
+With Apache Kafka, there are several alternative options available. As link:https://www.youtube.com/watch?si=AA4K_WWNcPJMjp3H&v=G9LjwV8yDZU&feature=youtu.be[explained in this video], we can build a local projection to asynchronously consume events from the other service. This approach provides an effective solution, even with eventual consistency. We can store only the necessary information.
+
+However, we must identify the types of events and their sources. In the aforementioned video, we spent a great deal of time doing just that -- and found the events contained MUCH more information than we needed. To handle this, we used protobuf to ensure backward compatibility and minimize coupling between services. Creating integration tests for this scenario can be tedious, as we would need to mock the entire event, which may include numerous mandatory properties that we do not need.
+
+But we did have to find out what kind of events the other service was sending and where. The events also contained much more information than we needed. We used protobuf to ensure the payload was always backward-compatible, limiting the coupling between the services. Having an integration test for this can be tedious as we would need to mock the whole event, which might have a lot of mandatory properties we would not need.
+
+With Axon Server in place, we can use query messages to get information from other services. Typically, this makes the other service responsible for maintaining an accurate projection of the other service. The API can be designed to make it easy for other services and only return the necessary information. Since Axon Server handles the message routing, we don’t need to know how to reach the other service.
+
+To quickly initiate queries to another service, we can treat the API as a separate dependency. Although there is still a runtime dependency, we can have a dedicated service to ensure the projection remains up to date and handle the queries, reducing the likelihood of failure. Creating integration tests is straightforward as we can return the information defined in the API.
+
+== Prevent concurrent modifications
+
+image::Prevent-20concurrent-20modifications.png[Prevent concurrent modifications]
+
+When scaling up microservices, it's typical to have multiple instances of the same application for increased resilience and handling higher loads. However, this setup can introduce a problem when multiple instances simultaneously modify the same entity.
+
+To address this issue, there are several ways to achieve concurrency control, commonly implemented in the persistence layer, such as the database. One approach is to have the first instance that persists the change be considered the winner, while the other instance handles an error or conflict. Another method is to ensure that triggers initiating changes for the same entity land on the same instance.
+
+In scenarios where both Kafka and a database are used, the database can serve as the consistency layer. By default, Kafka partitions records into topics based on the key. If the key represents the entity identifier, all records for the same entity will be in the same partition. This ensures that each instance only modifies specific entities when Kafka triggers updates.
+
+However, it's important to be cautious to avoid incorrect assumptions and potential errors from concurrent modifications, which may go unnoticed until it's too late. Reliance solely on the key, especially when the number of partitions increases, can lead to an inaccurate projection. Changes to the key or incorrect assumptions about key usage can also cause problems. It is risky to rely solely on correct partitioning without using a database.
+
+With Axon Server's event sourcing approach, consistency is inherently maintained. When applying events based on commands for the same entity, the first-applied events take precedence. Each event for an aggregate is assigned a sequence number, and it is added to the event store only if the sequence number is greater than the previous event for that aggregate. Axon Server will throw an exception if the sequence number is the same or lower. These situations are rare, as command messages are typically routed based on the aggregate they belong to. Axon Framework's built-in functionality ensures correct sequence numbers, enabling effortless prevention of concurrent modifications in Axon applications.
+
+By leveraging the capabilities of Axon Server and its event sourcing approach, developers can effectively manage concurrency control and prevent conflicts when multiple instances modify the same entity.
+
+== Ensuring the quality of events
+
+image::Ensuring-20the-20quality-20of-20events.png[Ensuring the quality of events]
+
+In event-driven architecture, event quality is crucial. Events should have a stable format for easy updates and be self-explanatory, containing all relevant information. Consistency is also key.
+
+Multiple approaches exist for producing events for Kafka topics. One commonly used method is leveraging change data capture (CDC) with platforms like Debezium. Debezium facilitates the conversion of table or collection updates into events while ensuring consistency with the database state. However, there is a downside - certain information, such as the reason for entity changes, may be lost. Adopting the outbox pattern can make events more meaningful. Instead of directly listening to the table, the application reads from an outbox message table within the same database.
+
+This approach maintains consistency by including both writes in the same transaction. However, there is a risk of errors in the transactional configuration or forgetting to add messages to the outbox when modifying the main table. Additionally, the diff in the database may lack contextual information, such as the specific method or authorization details.
+
+When directly publishing to Kafka, several considerations arise. Even with just one application producing events and another consuming them, both need to understand the event format. JSON messages are easy to send but can be challenging to work with as reading them often requires deciphering their contents. Introducing a schema registry can enhance this situation, but it introduces its own set of challenges. Another approach is using protobuf definitions to ensure backward compatibility.
+
+In Axon applications, most events stem from command messages. It is also possible to publish messages that don't belong to an aggregate. When they do, the command model is immediately updated through event sourcing, ensuring consistency with the command model. Events can be made highly meaningful and may optionally include information about the source of the command message, making it easy to trace changes.
+
+Using clear and descriptive event names is effortless as their intent is evident. Meaningful event names enhance interpretability in other services. For example, instead of using a generic "BalanceChanged" event, an event like "CashWithdrawn" conveys the action more explicitly, eliminating the need to delve into the details.
+
+In Axon, the default serializer is currently set to XStream, which has compatibility issues with newer Java versions. However, switching to Jackson is straightforward. Since all events are based on Plain Old Java Objects (POJOs), creating a module with shared messages for other services is simple. This module can be easily utilized in those services. As events play a central role, considering the proper events early in the development cycle becomes imperative.
+
+== The ability to scale dynamically
+
+Moving to a microservice architecture enables dynamic scaling. This means you can easily increase the number of instances to handle high loads and scale down when the load decreases.
+
+When using Kafka, the level of parallelization is determined by the number of partitions in the topic you're consuming data from. If you need more instances than partitions, you can create a copy of the topic with more partitions. However, adding partitions to an existing topic can cause issues with data distribution. By default, the number of partitions is usually set to a sufficient number, but this approach can result in unnecessary overhead. There is a proposal to make Kafka link:https://medium.com/@andrew_schofield/queues-for-kafka-29afa8aeed86[more dynamic by offering queues.]
+
+In contrast, the Axon Framework handles parallelization differently. It allows you to split a stream of events into segments based on your application's needs, typically using the aggregate identifier as the default. The number of segments can be dynamically adjusted as required. Additionally, segments can be merged to reduce overhead during periods of lower load. This approach provides greater flexibility and ease in scaling dynamically.
+
+== Handling complexity
+
+image::Handling-20complexity.png[Handling complexity]
+
+Dividing a monolith into microservices helps simplify complex software by separating responsibilities and subdomains. However, even after splitting, each microservice can still have its own complexities.
+
+At my previous workplace, teams used state machines with Kafka to further reduce complexity. State machines were implemented by adding states to entities and defining actions based on the state. Since Kafka primarily offers events, handling command messages required individual solutions. Additionally, the quality of events added complexity, as determining the changes often required comparing them to the previous state. Other companies might have found different approaches to handle complexity, as Apache Kafka does not directly combat it.
+
+In contrast, handling complexity is easier with command messages. Each command message is targeted at a specific aggregate. Based on the aggregate's state, we can determine the command's validity and the events that need to be applied. A stateful event processor can help manage complexity in complex processes, such as communicating with external services. For example, when an external service calls a webhook, we convert it into an event. The event processor then reads the event and, depending on the state, may execute a command. Breaking things down in this way feels more intuitive than using state machines. +
+
+== Conclusion
+
+I hope this might give you a different perspective on how to do microservices. With each of the five approaches, the Axon solution is not strictly superior to the Kafka solution. Often, they are also influencing each other. It might also be viable to have a combination. For example, services in complex subdomains can be built using Axon Framework, and events can be shared via Kafka with other microservices. With the link:https://github.com/AxonFramework/extension-kafka[Kafka extension] for Axon Framework, this is a good option. If both subdomains use Axon, commands and queries can be sent from one service to another in a mixed architecture.
+
+Gerard Klijs
