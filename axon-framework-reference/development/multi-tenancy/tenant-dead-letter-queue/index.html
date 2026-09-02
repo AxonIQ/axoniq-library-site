@@ -4,9 +4,9 @@
     <script>(function(){try{var t=localStorage.getItem('axoniq-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Payload and State</title>
-    <link rel="prev" href="../common-patterns/">
-    <link rel="next" href="../configuration/">
+    <title>Tenant-Aware Dead-Letter Queues</title>
+    <link rel="prev" href="../tenant-event-processing/">
+    <link rel="next" href="../tenant-query-handling/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -291,7 +291,7 @@
 
 <link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
   </head>
-  <body class="article">
+  <body class="article axoniq-feature">
     <div class="header_container">
       <div class="banner">
     <a href="https://platform.axoniq.io/resource-center/long-term-support">Long-Term Support on Axon Framework 4 is now live for existing customers. Visit the resource center for instructions on setting it up. <span class="banner_button">Access it here</span></a>
@@ -307,8 +307,8 @@
     <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
-    <li><a href="../"><span class="advanced-framework">Workflows</span></a></li>
-    <li><a href="./">Payload &amp; State</a></li>
+    <li><a href="../"><span class="advanced-framework">Multi-Tenancy</span></a></li>
+    <li><a href="./">Tenant-aware dead-letter queues</a></li>
   </ul>
 </nav>
   </div>
@@ -428,189 +428,106 @@
         <aside class="toc sidebar" data-title="Page content" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
-          <article class="doc">
-                <h1 class="page">Payload and State</h1>
-            <div id="preamble">
-<div class="sectionbody">
+          <article class="doc axoniq-feature">
+                <h1 class="page">Tenant-Aware Dead-Letter Queues</h1>
+            <div class="paragraph">
+<p>The dead-letter queue is tenant-aware when multi-tenancy is enabled. The framework provides one routing queue and registry; each operation resolves the tenant from its <code>ProcessingContext</code> and delegates to that tenant&#8217;s concrete queue.</p>
+</div>
 <div class="paragraph">
-<p>Every workflow instance carries a <em>payload</em>—a <code>Map&lt;String, Object&gt;</code> that persists durably across all steps.
-The triggering event&#8217;s fields become the initial payload, and you can read, modify, and pass it to steps throughout the workflow.</p>
+<p>Enable the dead-letter queue for the processor as described in <a href="../../dead-letter-queue/" class="xref page">Dead-Letter Queue</a>. Then provide a <code>TenantAwareSequencedDeadLetterQueueFactory</code> that creates the concrete JPA, JDBC, or in-memory queue for a tenant. The factory should obtain tenant-specific persistence resources from your application&#8217;s <a href="../tenant-scoped-components/" class="xref page">tenant-scoped components</a>.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_reading_payload"><a class="anchor" href="#_reading_payload"></a>Reading payload</h2>
-<div class="sectionbody">
 <div class="paragraph">
-<p>When the <code>OrderPlaced</code> event triggers our workflow, its fields (<code>orderId</code>, <code>customerId</code>, <code>email</code>, <code>amount</code>) automatically become the initial payload:</p>
+<p>The ordinary <code>SequencedDeadLetterQueueFactory</code> is not replaced by your application code. Multi-tenancy installs the routing adapter automatically via enhancer and uses the tenant-aware factory you configure.</p>
 </div>
+<div class="paragraph">
+<p>In Spring Boot, register the <code>TenantAwareSequencedDeadLetterQueueFactory</code> as a bean and enable the processor&#8217;s DLQ property. The bean is the only additional multi-tenancy DLQ integration point; your factory implementation still needs access to the tenant-specific datasource or entity manager it uses.</p>
+</div>
+<div class="paragraph">
+<p>The following examples configure a JDBC queue. They assume that the application already registers a tenant-scoped <code>DataSource</code> provider as described in <a href="../tenant-scoped-components/" class="xref page">Tenant-scoped components</a>.</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_declarative_configuration" class="tab">
+<p>Declarative configuration</p>
+</li>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_declarative_configuration--panel" class="tabpanel" aria-labelledby="_tabs_1_declarative_configuration">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var payload = ctx.workflowPayload(); <i class="conum" data-value="1"></i><b>(1)</b>
-var orderId = payload.get("orderId");
-var email = payload.get("email");</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Returns the current workflow payload as a <code>Map&lt;String, Object&gt;</code>.
-This always reflects the latest state, including any modifications made by previous steps.</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_setting_payload"><a class="anchor" href="#_setting_payload"></a>Setting payload</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>After receiving the payment confirmation, we want to store the transaction details so later steps can access them:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = ctx.awaitEvent("awaitPayment",
-        PaymentConfirmed.class,
-        associate(payloadProperty("orderId"),
-                  equalsTo(ctx.workflowPayload().get("orderId"))),
-        Duration.ofMinutes(15));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    public void configure(MessagingConfigurer configurer) {
+        configurer.componentRegistry(registry -&gt; registry.registerComponent(
+                TenantAwareSequencedDeadLetterQueueFactory.class,
+                configuration -&gt; (tenant, processorName, queueConfiguration) -&gt; createQueue(
+                        tenant, processorName, queueConfiguration
+                ))
+        );
+    }
 
-ctx.setPayload("storePaymentDetails", confirmation); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Merges the <code>PaymentConfirmed</code> fields (<code>orderId</code>, <code>transactionId</code>) into the workflow payload.
-After this call, <code>ctx.workflowPayload()</code> contains both the original <code>OrderPlaced</code> fields <em>and</em> the <code>transactionId</code> from the confirmation.</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>Every <code>setPayload</code> call is a named step.
-The engine records it as an event, so the payload state survives crashes and replays.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_passing_payload_to_steps"><a class="anchor" href="#_passing_payload_to_steps"></a>Passing payload to steps</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>You can pass the workflow payload as input to any step:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitExecute("shipOrder",
-                 ctx.workflowPayload(), <i class="conum" data-value="1"></i><b>(1)</b>
-                 ShippingService::shipOrder,
-                 Duration.ofMinutes(5),
-                 defaults());</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The shipping service receives the full payload—including the <code>transactionId</code> we stored in the previous step.</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_the_payload_helper"><a class="anchor" href="#_the_payload_helper"></a>The <code>Payload</code> helper</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The <code>Payload</code> class wraps the raw map with convenient accessor methods:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static io.axoniq.workflow.dsl.api.Payload.payload;
+    private JdbcSequencedDeadLetterQueue&lt;EventMessage&gt; createQueue(
+            TenantDescriptor tenant,
+            String processorName,
+            Configuration configuration
+    ) {
+        TenantComponentProvider&lt;DataSource&gt; dataSourceProvider =
+                TenantComponentProviderUtil.find(configuration, DataSource.class)
+                                           .orElseThrow();
+        JdbcTransactionalExecutorProvider executor =
+                new JdbcTransactionalExecutorProvider(dataSourceProvider.componentFor(tenant));
 
-var email = payload(ctx.workflowPayload()).get("email"); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td><code>payload(&#8230;&#8203;)</code> wraps a <code>Map&lt;String, Object&gt;</code> and provides type-safe <code>get</code> methods.
-You can also use <code>payload(ctx, object)</code> to convert any object into a payload map.</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_payload_reducers"><a class="anchor" href="#_payload_reducers"></a>Payload reducers</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Under the hood, each step has two <em>payload reducers</em> that control how data flows in and out:</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Reducer</th>
-<th class="tableblock halign-left valign-top">Behavior</th>
-<th class="tableblock halign-left valign-top">Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GLOBAL_ONLY</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Step receives the workflow payload, ignoring local input</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Default for <code>awaitEvent</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LOCAL_ONLY</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Step receives only its own local input, ignoring workflow payload</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Default parameter reducer for <code>execute</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>COMBINE_GLOBAL_AND_LOCAL</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Merges both—local values overwrite duplicates</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Used by <code>setPayload</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>For most workflows, the defaults work well.
-You&#8217;ll only need custom reducers for advanced payload merging scenarios.
-See <a href="../understanding-steps/#payload-reducers" class="xref page">Payload Reducers</a> for details.</p>
-</div>
-</td>
-</tr>
-</table>
+        return JdbcSequencedDeadLetterQueue.&lt;EventMessage&gt;builder()
+                                           .processingGroup(processorName)
+                                           .transactionalExecutorProvider(ignored -&gt; executor.getTransactionalExecutor(
+                                                   null
+                                           ))
+                                           .eventConverter(configuration.getComponent(EventConverter.class))
+                                           .genericConverter(configuration.getComponent(GeneralConverter.class))
+                                           .build();
+    }</code></pre>
 </div>
 </div>
 </div>
-<div class="sect1">
-<h2 id="_durability"><a class="anchor" href="#_durability"></a>Durability</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Every payload modification is recorded as an event.
-If the application crashes and replays, the engine restores the payload to the exact state it was in before the crash.
-You never need to manage state persistence manually.</p>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    @Bean
+    public TenantAwareSequencedDeadLetterQueueFactory tenantAwareDeadLetterQueueFactory() {
+        return (tenant, processorName, queueConfiguration) -&gt; createQueue(tenant, processorName, queueConfiguration);
+    }
+
+    private JdbcSequencedDeadLetterQueue&lt;EventMessage&gt; createQueue(
+            TenantDescriptor tenant,
+            String processorName,
+            Configuration configuration
+    ) {
+        TenantComponentProvider&lt;DataSource&gt; dataSourceProvider =
+                TenantComponentProviderUtil.find(configuration, DataSource.class)
+                                           .orElseThrow();
+        JdbcTransactionalExecutorProvider executor =
+                new JdbcTransactionalExecutorProvider(dataSourceProvider.componentFor(tenant));
+
+        return JdbcSequencedDeadLetterQueue.&lt;EventMessage&gt;builder()
+                                           .processingGroup(processorName)
+                                           .transactionalExecutorProvider(ignored -&gt; executor.getTransactionalExecutor(
+                                                   null
+                                           ))
+                                           .eventConverter(configuration.getComponent(EventConverter.class))
+                                           .genericConverter(configuration.getComponent(GeneralConverter.class))
+                                           .build();
+    }</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../common-patterns/">Common Patterns</a></span>
-  <span class="next"><a href="../configuration/">Configuration</a></span>
+  <span class="prev"><a href="../tenant-event-processing/">Tenant-aware event processing</a></span>
+  <span class="next"><a href="../tenant-query-handling/">Tenant-aware query processing</a></span>
 </nav>
     </article>
   </div>
