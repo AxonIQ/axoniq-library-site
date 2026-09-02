@@ -506,7 +506,7 @@ It connects to Axon Server to send and receive queries in a distributed way, all
 <p><strong>Query prioritization</strong>: Support for query priority to ensure critical queries are processed first</p>
 </li>
 <li>
-<p><strong>Local handler shortcut</strong>: When enabled (default), queries for which a local handler is registered are executed locally without going through the connector, improving performance by avoiding network overhead</p>
+<p><strong>Local handler shortcut</strong>: Direct (point-to-point) queries for which a local handler is registered can be executed locally without going through the connector, avoiding network overhead. A <code>LocalQueryDispatchPredicate</code> decides, per query, whether to take this shortcut. Subscription queries are never shortcut</p>
 </li>
 </ul>
 </div>
@@ -543,13 +543,55 @@ It connects to Axon Server to send and receive queries in a distributed way, all
 <li>
 <p><strong>Custom executor service</strong>: Provide a custom <code>ExecutorService</code> for query processing</p>
 </li>
-<li>
-<p><strong>Local query handler preference</strong>: Enable or disable the local handler shortcut (default: enabled)</p>
-</li>
 </ul>
 </div>
+<div class="sect4">
+<h5 id="_local_handler_shortcut"><a class="anchor" href="#_local_handler_shortcut"></a>Local handler shortcut</h5>
 <div class="paragraph">
-<p>The local handler shortcut, when enabled, allows the distributed query bus to use local query handlers directly when available, bypassing remote dispatch. This improves performance by avoiding network overhead when a handler is available locally. Only when no local handler is available will the query be dispatched remotely through the connector.</p>
+<p>The local handler shortcut applies to direct (point-to-point) queries only. A <code>LocalQueryDispatchPredicate</code> lets a node prefer its own query handler for selected direct queries instead of routing them through the connector. The predicate is consulted for every outgoing direct query and receives the <code>QueryMessage</code> and the (nullable) <code>ProcessingContext</code>, so the decision can be based on the query&#8217;s payload, type, metadata, or a flag placed on the context by the dispatcher.</p>
+</div>
+<div class="paragraph">
+<p>The shortcut only takes effect when the local segment actually subscribed a handler for the query. When it did not, the query is routed through the connector as usual, regardless of the predicate. This ensures a locally preferred query that this node cannot handle is still routed to a segment that can.</p>
+</div>
+<div class="paragraph">
+<p>Short-cut queries are handled on the same bounded, priority-ordered worker pool as queries arriving from remote segments, because the shortcut reuses the same local-handling path. A burst of locally preferred queries is therefore subject to the same back-pressure and cannot flood the local segment beyond what it would already accept from remote traffic.</p>
+</div>
+<div class="paragraph">
+<p>Subscription queries are never shortcut. They are always routed through the connector, because their update registrations must be coordinated across all nodes. The <code>LocalQueryDispatchPredicate</code> is not consulted for subscription queries.</p>
+</div>
+<div class="paragraph">
+<p>To enable the shortcut, register a <code>LocalQueryDispatchPredicate</code> component:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.queryhandling.distributed.LocalQueryDispatchPredicate;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonConfig {
+    public void configureLocalQueryShortcut(MessagingConfigurer configurer) {
+        configurer.componentRegistry(registry -&gt; registry.registerComponent(
+                LocalQueryDispatchPredicate.class,
+                config -&gt; (query, context) -&gt; true   // always prefer the local handler when subscribed
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">The <code>preferLocalQueryHandler</code> setting</div>
+<div class="paragraph">
+<p><code>DistributedQueryBusConfiguration.preferLocalQueryHandler(boolean)</code> is deprecated in favor of the <code>LocalQueryDispatchPredicate</code>. It continues to work: with no predicate registered, <code>preferLocalQueryHandler(true)</code> (the default) behaves as a predicate that always prefers the local handler, and <code>preferLocalQueryHandler(false)</code> installs no shortcut. When a <code>LocalQueryDispatchPredicate</code> is registered, it is authoritative and this setting is ignored.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect4">
 <h5 id="_configuration_examples"><a class="anchor" href="#_configuration_examples"></a>Configuration examples</h5>
@@ -571,31 +613,31 @@ It connects to Axon Server to send and receive queries in a distributed way, all
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import io.axoniq.framework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
+import io.axoniq.framework.messaging.queryhandling.distributed.LocalQueryDispatchPredicate;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
 public class AxonConfig {
     public void configureQueryBus(MessagingConfigurer configurer) {
         // Customize the configuration
         DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT
-                .queryThreads(20)                        // Set number of query processing threads
-                .queryQueueCapacity(2000)                // Set queue capacity
-                .preferLocalQueryHandler(true);         // Enable local handler shortcut (default)
+                .queryThreads(20)          // Set number of query processing threads
+                .queryQueueCapacity(2000); // Set queue capacity
 
         // Register the custom configuration
-        configurer.componentRegistry(cr -&gt; cr.registerComponent(DistributedQueryBusConfiguration.class, c -&gt; config));
+        configurer.componentRegistry(
+                cr -&gt; cr.registerComponent(DistributedQueryBusConfiguration.class, c -&gt; config)
+                        .registerComponent(
+                                LocalQueryDispatchPredicate.class,
+                                c -&gt; (query, context) -&gt; true
+                        )
+        );
     }
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>To disable the local handler shortcut:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT
-        .preferLocalQueryHandler(false);  // Force all queries through connector</code></pre>
-</div>
+<p>To control the local handler shortcut, register a <code>LocalQueryDispatchPredicate</code> as shown above rather than using the deprecated <code>preferLocalQueryHandler</code> setting.</p>
 </div>
 </div>
 <div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
@@ -612,18 +654,23 @@ axon.axonserver.query-threads=20
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.springframework.context.annotation.Bean;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
+import io.axoniq.framework.messaging.queryhandling.distributed.LocalQueryDispatchPredicate;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import io.axoniq.framework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
 
 @Configuration
 public class AxonConfig {
 
     @Bean
     public DistributedQueryBusConfiguration queryBusConfiguration() {
-        return DistributedQueryBusConfiguration.DEFAULT
-                .queryThreads(20)
-                .preferLocalQueryHandler(true);
+        return DistributedQueryBusConfiguration.DEFAULT.queryThreads(20);
+    }
+
+    @Bean
+    public LocalQueryDispatchPredicate localQueryDispatchPredicate() {
+        // Prefer the local handler for every query that this node can handle.
+        return (query, context) -&gt; true;
     }
 }</code></pre>
 </div>
