@@ -616,10 +616,10 @@ public class Transaction {
 </div>
 <div class="paragraph">
 <p>In Axon Framework 5, this attribute does not exist.
-The default behaviour is equivalent to <code>ForwardAll</code>: every event is offered to every child&#8217;s <code>@EventSourcingHandler</code>.</p>
+Delivery is controlled by the <code>eventTargetMatcher</code> on <code>@EntityMember</code>, which defaults to <code>RoutingKeyEventTargetMatcherDefinition</code>: a single child declared without a <code>routingKey</code> receives every event (equivalent to <code>ForwardAll</code>), while a <code>routingKey</code> (required for a collection) delivers an event only to the child whose routing key matches a field on the event (equivalent to <code>ForwardMatchingInstances</code>).</p>
 </div>
 <div class="paragraph">
-<p>To replicate <code>ForwardMatchingInstances</code>, configure <code>eventTargetMatcher</code> on <code>@EntityMember</code>:</p>
+<p>To set this matcher explicitly, configure <code>eventTargetMatcher</code> on <code>@EntityMember</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -641,6 +641,34 @@ private List&lt;Transaction&gt; transactions = new ArrayList&lt;&gt;();</code></
 <div class="paragraph">
 <p>There is no direct replacement for <code>ForwardNone</code>.
 If you need to suppress event forwarding entirely, do not declare <code>@EventSourcingHandler</code> methods on the child entity. Axon will offer events but nothing will handle them.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">Child <code>@EventSourcingHandler</code> not called after migration?</div>
+<div class="paragraph">
+<p>An event only evolves a child if it passes two checks:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>It is sourced into the parent: the parent loads only events tagged with its <code>tagKey</code>, so every event, parent-level and child-level, must carry that tag. The OpenRewrite migration adds these <code>@EventTag</code> annotations for you, leaving a <code>// TODO(axon4to5)</code> comment where it cannot determine the field with certainty.</p>
+</li>
+<li>
+<p>It is routed to the child: with a <code>routingKey</code>, the event must carry a field named like the <code>routingKey</code> holding the child&#8217;s value; for a single child, dropping the <code>routingKey</code> forwards every event.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Because these are resolved separately, a child&#8217;s <code>@CommandHandler</code> can run while its <code>@EventSourcingHandler</code> is skipped.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
