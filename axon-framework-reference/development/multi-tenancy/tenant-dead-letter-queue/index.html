@@ -430,12 +430,19 @@
 </aside>
           <article class="doc axoniq-feature">
                 <h1 class="page">Tenant-Aware Dead-Letter Queues</h1>
-            <div class="paragraph">
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
 <p>The dead-letter queue is tenant-aware when multi-tenancy is enabled. The framework provides one routing queue and registry; each operation resolves the tenant from its <code>ProcessingContext</code> and delegates to that tenant&#8217;s concrete queue.</p>
 </div>
 <div class="paragraph">
 <p>Enable the dead-letter queue for the processor as described in <a href="../../dead-letter-queue/" class="xref page">Dead-Letter Queue</a>. Then provide a <code>TenantAwareSequencedDeadLetterQueueFactory</code> that creates the concrete JPA, JDBC, or in-memory queue for a tenant. The factory should obtain tenant-specific persistence resources from your application&#8217;s <a href="../tenant-scoped-components/" class="xref page">tenant-scoped components</a>.</p>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_providing_tenant_specific_queues"><a class="anchor" href="#_providing_tenant_specific_queues"></a>Providing tenant-specific queues</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>The ordinary <code>SequencedDeadLetterQueueFactory</code> is not replaced by your application code. Multi-tenancy installs the routing adapter automatically via enhancer and uses the tenant-aware factory you configure.</p>
 </div>
@@ -522,6 +529,53 @@
     }</code></pre>
 </div>
 </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="replaying-tenant-dead-letters"><a class="anchor" href="#replaying-tenant-dead-letters"></a>Replaying a tenant&#8217;s dead letters</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When replaying dead letters, create a unit of work by retrieving the <code>UnitOfWorkFactory</code> from the configuration and provide the tenant explicitly in its <code>ProcessingContext</code> as a resource.
+The routing queue resolves its tenant before it reads a dead letter, so it cannot derive the tenant from the dead letter&#8217;s captured context.</p>
+</div>
+<div class="paragraph">
+<p>Set <code>TenantDescriptor.RESOURCE_KEY</code> on the unit of work&#8217;s context and call the context-aware overload of <code>processAny</code> or <code>process</code>.
+For example, the following application service replays the oldest sequence for a tenant:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.deadletter.SequencedDeadLetterProcessor;
+import io.axoniq.framework.messaging.multitenancy.api.TenantDescriptor;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.EventMessage;
+
+import java.util.concurrent.CompletableFuture;
+
+public class TenantDeadLetterReplay {
+
+    private final SequencedDeadLetterProcessor&lt;EventMessage&gt; processor;
+    private final UnitOfWorkFactory uowFactory;
+
+    public TenantDeadLetterReplay(SequencedDeadLetterProcessor&lt;EventMessage&gt; processor,
+                                  UnitOfWorkFactory uowFactory) {
+        this.processor = processor;
+        this.uowFactory = uowFactory;
+    }
+
+    public CompletableFuture&lt;Boolean&gt; processAnyLetterFor(String tenantId) {
+        return uowFactory.create().executeWithResult(context -&gt; {
+            context.putResource(TenantDescriptor.RESOURCE_KEY, TenantDescriptor.tenantWithId(tenantId));
+            return processor.processAny(context);
+        });
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ensure the tenant resource is set for every replay request, including requests initiated by an administrative API or scheduled job.</p>
 </div>
 </div>
 </div>
