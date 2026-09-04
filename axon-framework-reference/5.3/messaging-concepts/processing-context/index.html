@@ -611,7 +611,28 @@ Each phase serves a specific purpose in the processing lifecycle.</p>
 <li>
 <p><strong>Failure handling</strong>: If any action fails, subsequent phases are skipped and error handlers execute.</p>
 </li>
+<li>
+<p><strong>Registering from within a phase</strong>: An action may register further actions, but only for a phase with a higher order than the one it is running in. Registering for the phase currently running, or for one already passed, is rejected with an <code>IllegalStateException</code>.</p>
+</li>
 </ul>
+</div>
+<div class="paragraph">
+<p>That last rule matters more often than it looks, because a handler is not always invoked in the phase it would expect. Events published with a <code>ProcessingContext</code> are delivered during that context&#8217;s prepare-commit phase, and a subscribing event processor hands them to its handlers there. Such a handler runs <strong>inside</strong> prepare-commit and so cannot register for it.</p>
+</div>
+<div class="paragraph">
+<p>The way to attach work to the caller&#8217;s lifecycle from that position is a custom phase in the gap above the one you are in. <code>Phase</code> is an interface over an arbitrary order, and the default phases leave 10000 between them, so there is always room:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static final ProcessingLifecycle.Phase AFTER_PREPARE_COMMIT =
+        () -&gt; ProcessingLifecycle.DefaultPhases.PREPARE_COMMIT.order() + 5_000;
+
+// From a handler invoked during PREPARE_COMMIT:
+context.runOn(AFTER_PREPARE_COMMIT, ctx -&gt; { /* still inside the caller's transaction */ });</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The action runs once every prepare-commit action is done and before the context commits. Two framework components use exactly this: an <code>axon-legacy</code> saga is written in such a phase, and the event store hands its appended events to the storage engine in another one, ordered last so that anything appending from an earlier custom phase is still included.</p>
 </div>
 </div>
 <div class="sect2">
