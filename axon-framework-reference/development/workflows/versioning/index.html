@@ -4,10 +4,9 @@
     <script>(function(){try{var t=localStorage.getItem('axoniq-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Message Intercepting</title>
-    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.3/messaging-concepts/message-intercepting/">
-    <link rel="prev" href="../anatomy-message/">
-    <link rel="next" href="../supported-parameters-annotated-handlers/">
+    <title>Workflow Versioning</title>
+    <link rel="prev" href="../testing-workflows/">
+    <link rel="next" href="../../testing/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -308,8 +307,8 @@
     <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
-    <li><a href="../">Messaging Concepts</a></li>
-    <li><a href="./">Message Intercepting</a></li>
+    <li><a href="../"><span class="advanced-framework">Workflows</span></a></li>
+    <li><a href="./">Versioning</a></li>
   </ul>
 </nav>
   </div>
@@ -430,686 +429,922 @@
   <div class="toc-menu"></div>
 </aside>
           <article class="doc">
-                <h1 class="page">Message Intercepting</h1>
+                <h1 class="page">Workflow Versioning</h1>
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>There are two different types of interceptors: dispatch interceptors and handler interceptors.</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p><strong>Dispatch interceptors</strong> - Interceptors that are invoked before a message is dispatched.
-At that point, it may not even be known that a handler exists for that message.
-They can modify the message (add metadata) or block dispatching entirely.</p>
-</li>
-<li>
-<p><strong>Handler interceptors</strong> - Interceptors that are invoked just before the message handler is invoked.
-They can perform actions before and after handling, and are aware of the active <a href="../processing-context/" class="xref page">processing context</a>.</p>
-</li>
-</ol>
+<p>In-flight workflows replay from event history when their declaring code changes. The engine already
+tolerates additive changes—new steps, re-ordering, removing a step—because step lookup is
+name-based. What it cannot detect on its own is a <strong>semantic</strong> change: a step whose body now talks to a
+different service, or a branching change in workflow logic.</p>
 </div>
 <div class="paragraph">
-<p>Let&#8217;s look at each interceptor in a bit more detail.</p>
-</div>
-<div class="paragraph">
-<p>Message dispatch interceptors are invoked when a message is <strong>dispatched/published</strong> on a bus.
-They can alter the message by adding metadata or block it by not proceeding with the chain.
-These interceptors are always invoked on the thread that dispatches the message.</p>
-</div>
-<div id="dispatch-interceptor" class="paragraph">
-<p>The <code>MessageDispatchInterceptor</code> interface defines a single method:</p>
-</div>
-<div class="listingblock api-excerpt">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface MessageDispatchInterceptor&lt;M extends Message&gt; {
-
-    MessageStream&lt;?&gt; interceptOnDispatch(
-            M message,
-            @Nullable ProcessingContext context,
-            MessageDispatchInterceptorChain&lt;M&gt; interceptorChain
-    );
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>In turn, message handler interceptors can take action both before and after message <strong>handling</strong>.
-Interceptors can even block message processing altogether, for example for security reasons.</p>
-</div>
-<div id="handler-interceptor" class="paragraph">
-<p>The <code>MessageHandlerInterceptor</code> interface also defines a single method:</p>
-</div>
-<div class="listingblock api-excerpt">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface MessageHandlerInterceptor&lt;M extends Message&gt; {
-
-    MessageStream&lt;?&gt; interceptOnHandle(
-            M message,
-            ProcessingContext context,
-            MessageHandlerInterceptorChain&lt;M&gt; interceptorChain
-    );
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Unlike dispatch interceptors, handler interceptors are invoked in the context of the message handler with an active <code>ProcessingContext</code>.
-This allows them to:</p>
+<p>Two complementary mechanisms address this:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Register lifecycle callbacks (see <a href="../processing-context/" class="xref page"><code>ProcessingContext</code></a>).</p>
+<p><strong>Definition-level versions</strong> (<code>@Workflow(workflowVersion = "&#8230;&#8203;")</code> or the programmatic
+<code>WorkflowCustomization.workflowVersion(&#8230;&#8203;)</code> setter) for whole-body rewrites. Register a new
+definition with a bumped semver string and the runtime starts new instances on the highest
+registered version while replaying in-flight instances on the version they were started under
+(read from the started event&#8217;s <code>MessageType.version()</code>).</p>
 </li>
 <li>
-<p>Attach correlation data that will propagate to messages created during handling.</p>
-</li>
-<li>
-<p>Manage transactions around handling.</p>
-</li>
-<li>
-<p>Access processing phase information.</p>
+<p><strong><code>ctx.migrateVersion(changeId, newVersion)</code> primitive</strong> for additive changes within a single definition.
+Bumps the workflow&#8217;s running version mid-flight; in-flight executions that have already passed the
+call&#8217;s position stay on the legacy branch via the downstream-steps guard.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Note that both interceptor types are much a like. Both intercept a message, both receive an interceptor specific chain, both have a <code>ProcessingContext</code> parameter, and both return a <code>MessageStream</code> that allows them to work seamlessly with Axon&#8217;s async-native architecture.
-The differences lie in the used interceptor chain implementation, which is unique per type of interceptor, and the nullability of <code>ProcessingContext</code> when dispatching.</p>
-</div>
-<div class="paragraph">
-<p>As a <code>ProcessingContext</code> is only active when handling a message, a dispatch interceptor will only have a non-null context when dispatching happens from within a message handler. Subsequently, a handler interceptor will always have an active processing context since it wraps message handling, for which a <code>ProcessingContext</code> is a hard requirement.</p>
+<p>Pick the mechanism by change shape: small additive change → <code>ctx.migrateVersion</code>; whole-body rewrite →
+copy-paste the class and bump <code>@Workflow(workflowVersion=&#8230;&#8203;)</code>. Both are documented below.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="generic-message-interceptors"><a class="anchor" href="#generic-message-interceptors"></a>Generic message interceptors</h2>
+<h2 id="_definition_level_versions"><a class="anchor" href="#_definition_level_versions"></a>Definition-level versions</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>The sections below describe dispatch and handler interceptors for the specific types of message Axon Framework supports. However, you can register a generic <code>Message</code> interceptor with Axon, which will automatically be attached to all message-specific dispatching or handling components:</p>
-</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerMessageHandlerInterceptor(MessagingConfigurer configurer) {
-    configurer.registerMessageHandlerInterceptor(
-            // The LoggingInterceptor is provided by Axon out of the box.
-            config -&gt; new LoggingInterceptor&lt;&gt;()
-    );
-}</code></pre>
-</div>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-<div class="title">Component-level interceptors</div>
-<div class="paragraph">
-<p>Besides registering interceptors on buses and processors, you can apply interceptors to a specific handling component.
-This lets you scope cross-cutting logic to a single component class using annotated methods or declarative module configuration.
-See <a href="../component-message-intercepting/" class="xref page">Component message intercepting</a> for details.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="command-interceptors"><a class="anchor" href="#command-interceptors"></a>Command interceptors</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>One of the advantages of using a command bus is the ability to undertake action based on all incoming commands.
-Examples are logging or authentication, which you might want to do regardless of the type of command.</p>
-</div>
-<div class="sect2">
-<h3 id="_command_dispatch_interceptors"><a class="anchor" href="#_command_dispatch_interceptors"></a>Command dispatch interceptors</h3>
-<div class="paragraph">
-<p>Command dispatch interceptors are invoked when a command is dispatched on a command bus.
-They can alter the command message by adding metadata or block the command by not proceeding with the chain.
-These interceptors are always invoked on the thread that dispatches the command.</p>
-</div>
-<div class="paragraph">
-<p>Let&#8217;s create a dispatch interceptor that logs each command:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CommandLoggingDispatchInterceptor
-        implements MessageDispatchInterceptor&lt;CommandMessage&gt; {
-
-    private static final Logger logger =
-            LoggerFactory.getLogger(CommandLoggingDispatchInterceptor.class);
-
-    @Override
-    public MessageStream&lt;?&gt; interceptOnDispatch(
-            CommandMessage command,
-            ProcessingContext context,
-            MessageDispatchInterceptorChain&lt;CommandMessage&gt; chain
-    ) {
-
-        logger.info("Dispatching command: {}", command.type());
-
-        // Proceed with the chain
-        return chain.proceed(command, context);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>You can also modify the message before dispatching:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MetadataEnrichingInterceptor
-        implements MessageDispatchInterceptor&lt;CommandMessage&gt; {
-
-    @Override
-    public MessageStream&lt;?&gt; interceptOnDispatch(
-            CommandMessage command,
-            ProcessingContext context,
-            MessageDispatchInterceptorChain&lt;CommandMessage&gt; chain
-    ) {
-        // Add metadata
-        CommandMessage enrichedCommand = command.andMetadata(
-            Metadata.with("timestamp", String.valueOf(System.currentTimeMillis()))
-        );
-
-        return chain.proceed(enrichedCommand, context);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Register the interceptor with a <code>CommandBus</code>:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCommandDispatchInterceptor(MessagingConfigurer configurer) {
-    configurer.registerCommandDispatchInterceptor(
-            config -&gt; new CommandLoggingDispatchInterceptor()
-    );
-}</code></pre>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_structural_validation"><a class="anchor" href="#_structural_validation"></a>Structural validation</h4>
-<div class="paragraph">
-<p>There is no point in processing a command if it does not contain all required information in the correct format.
-A command that lacks information should be blocked as early as possible, preferably even before a transaction has been started.
-Therefore, an interceptor should check all incoming commands for the availability of such information.
-This is called <em>structural</em> validation.</p>
-</div>
-<div class="paragraph">
-<p>Axon Framework has support for the JSR 303 Bean Validation specification.
-This allows you to annotate the fields on commands with annotations like <code>@NotEmpty</code> and <code>@Pattern</code>.
-You need to include a JSR 303 implementation (such as Hibernate-Validator) on your classpath.
-Then, configure a <code>BeanValidationInterceptor</code> on your command bus, and it will automatically find and configure your validator implementation.</p>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-<div class="title">Interceptor Ordering</div>
-<div class="paragraph">
-<p>You want to spend as few resources on an invalid command as possible.
-Therefore, this interceptor is generally placed at the front of the interceptor chain.
-In some cases, a <code>LoggingInterceptor</code> (provided by Axon) or <code>AuditingInterceptor</code> (custom) might need to be placed first, with the validating interceptor immediately following it.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>The <code>BeanValidationInterceptor</code> also implements <code>MessageHandlerInterceptor</code>, allowing you to configure it as a handler interceptor as well.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="command-handler-interceptors"><a class="anchor" href="#command-handler-interceptors"></a>Command handler interceptors</h3>
-<div class="paragraph">
-<p>Command handler interceptors can take action both before <strong>and</strong> after command processing.
-Interceptors can even block command processing altogether, for example for security reasons.</p>
-</div>
-<div class="paragraph">
-<p>Let&#8217;s create a handler interceptor that performs authorization:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AuthorizationInterceptor
-        implements MessageHandlerInterceptor&lt;CommandMessage&gt; {
-
-    @Override
-    public MessageStream&lt;?&gt; interceptOnHandle(
-            CommandMessage command,
-            ProcessingContext context,
-            MessageHandlerInterceptorChain&lt;CommandMessage&gt; chain
-    ) {
-
-        String userId = command.metadata().get("userId");
-
-        if (userId == null) {
-            throw new SecurityException("No user ID in metadata");
-        }
-
-        if (!"authorized-user".equals(userId)) {
-            throw new SecurityException("User not authorized");
-        }
-
-        // User is authorized, proceed
-        return chain.proceed(command, context);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>You can also perform actions after handling by using the <code>ProcessingContext</code>:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class LoggingInterceptor
-        implements MessageHandlerInterceptor&lt;CommandMessage&gt; {
-
-    private static final Logger logger =
-            LoggerFactory.getLogger(LoggingInterceptor.class);
-
-    @Override
-    public MessageStream&lt;?&gt; interceptOnHandle(
-            CommandMessage command,
-            ProcessingContext context,
-            MessageHandlerInterceptorChain&lt;CommandMessage&gt; chain
-    ) {
-        logger.info("Before handling: {}", command.type());
-
-        // Register action to run after successful handling
-        context.whenComplete(ctx -&gt; {
-            logger.info("Successfully handled: {}", command.type());
-        });
-
-        // Register error handler
-        context.onError((ctx, phase, error) -&gt; {
-            logger.error("Error handling {}: {}", command.type(), error.getMessage());
-        });
-
-        return chain.proceed(command, context);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Register the interceptor with a <code>CommandBus</code>:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerCommandHandlerInterceptor(MessagingConfigurer configurer) {
-    configurer.registerCommandHandlerInterceptor(
-            config -&gt; new AuthorizationInterceptor()
-    );
-}</code></pre>
-</div>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-<div class="title">Built-in command sequencing</div>
-<div class="paragraph">
-<p>Axon Framework provides built-in command sequencing through the <code>CommandSequencingInterceptor</code>, which is automatically configured by default. This interceptor prevents optimistic locking failures by ensuring commands targeting the same entities execute sequentially.</p>
-</div>
-<div class="paragraph">
-<p>See <a href="../../tuning/command-processing/#command-sequencing" class="xref page">Command sequencing</a> for details.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_event_interceptors"><a class="anchor" href="#_event_interceptors"></a>Event interceptors</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Similar to command messages, event messages can also be intercepted prior to publishing and handling.</p>
-</div>
-<div class="sect2">
-<h3 id="_event_dispatch_interceptors"><a class="anchor" href="#_event_dispatch_interceptors"></a>Event dispatch interceptors</h3>
-<div class="paragraph">
-<p>Any event dispatch interceptors registered to an event bus will be invoked when an event is published.
-They have the ability to alter the event message by adding metadata or provide logging capabilities.
-These interceptors are always invoked on the thread that published the event.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class EventLoggingDispatchInterceptor
-        implements MessageDispatchInterceptor&lt;EventMessage&gt; {
-
-    private static final Logger logger =
-            LoggerFactory.getLogger(EventLoggingDispatchInterceptor.class);
-
-    @Override
-    public MessageStream&lt;?&gt; interceptOnDispatch(
-            EventMessage event,
-            ProcessingContext context,
-            MessageDispatchInterceptorChain&lt;EventMessage&gt; chain
-    ) {
-
-        logger.info("Publishing event: {}", event.type());
-        return chain.proceed(event, context);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Below we have an example on how to register an <code>EventMessage</code>-specific <code>MessageDispatchInterceptor</code> with Axon:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerEventDispatchInterceptor(MessagingConfigurer configurer) {
-    configurer.registerEventDispatchInterceptor(
-            config -&gt; new EventLoggingDispatchInterceptor()
-    );
-}</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="event-handler-interceptors"><a class="anchor" href="#event-handler-interceptors"></a>Event handler interceptors</h3>
-<div class="paragraph">
-<p>Event handler interceptors can take action both before and after event handling.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class EventSecurityInterceptor
-        implements MessageHandlerInterceptor&lt;EventMessage&gt; {
-
-    @Override
-    public MessageStream&lt;?&gt; interceptOnHandle(
-            EventMessage event,
-            ProcessingContext context,
-            MessageHandlerInterceptorChain&lt;EventMessage&gt; chain
-    ) {
-        String userId = event.metadata().get("userId");
-        if (userId == null || !"authorized-user".equals(userId)) {
-            throw new SecurityException("Unauthorized event");
-        }
-
-        return chain.proceed(event, context);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>To register the <code>EventSecurityInterceptor</code> as a <code>EventMessage</code>-specific <code>MessageHandlerInterceptor</code>, you can utilize the <code>MessagingConfigurer</code> as follows:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerEventHandlerInterceptor(MessagingConfigurer configurer) {
-    configurer.registerEventHandlerInterceptor(
-            config -&gt; new EventSecurityInterceptor()
-    );
-}</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_query_interceptors"><a class="anchor" href="#_query_interceptors"></a>Query interceptors</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>One of the advantages of using a query bus is the ability to undertake action based on all incoming queries.
-Examples are logging or authentication, which you might want to do regardless of the type of query.</p>
-</div>
-<div class="sect2">
-<h3 id="_query_dispatch_interceptors"><a class="anchor" href="#_query_dispatch_interceptors"></a>Query dispatch interceptors</h3>
-<div class="paragraph">
-<p>Query dispatch interceptors are invoked when a query is dispatched on a query bus.
-They have the ability to alter the message by adding metadata or block the handler execution.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class QueryLoggingDispatchInterceptor
-        implements MessageDispatchInterceptor&lt;QueryMessage&gt; {
-
-    private static final Logger logger =
-            LoggerFactory.getLogger(QueryLoggingDispatchInterceptor.class);
-
-    @Override
-    public MessageStream&lt;?&gt; interceptOnDispatch(
-            QueryMessage query,
-            ProcessingContext context,
-            MessageDispatchInterceptorChain&lt;QueryMessage&gt; chain
-    ) {
-
-        logger.info("Dispatching query: {}", query.type());
-        return chain.proceed(query, context);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Below we have an example on how to register an <code>QueryMessage</code>-specific <code>MessageDispatchInterceptor</code> with Axon:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerQueryDispatchInterceptor(MessagingConfigurer configurer) {
-    configurer.registerQueryDispatchInterceptor(
-            config -&gt; new QueryLoggingDispatchInterceptor()
-    );
-}</code></pre>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_structural_validation_2"><a class="anchor" href="#_structural_validation_2"></a>Structural validation</h4>
-<div class="paragraph">
-<p>There is no point in processing a query if it does not contain all required information in the correct format.
-A query that lacks information should be blocked as early as possible.
-Therefore, an interceptor should check all incoming queries for the availability of such information.</p>
-</div>
-<div class="paragraph">
-<p>Axon Framework has support for JSR 303 Bean Validation.
-This allows you to annotate the fields on queries with annotations like <code>@NotEmpty</code> and <code>@Pattern</code>.
-Configure a <code>BeanValidationInterceptor</code> on your query bus, and it will automatically find and configure your validator implementation.</p>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-<div class="title">Interceptor Ordering</div>
-<div class="paragraph">
-<p>You want to spend as few resources on invalid queries as possible.
-Therefore, this interceptor is generally placed at the front of the interceptor chain.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>The <code>BeanValidationInterceptor</code> also implements <code>MessageHandlerInterceptor</code>, allowing you to configure it as a handler interceptor as well.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_query_handler_interceptors"><a class="anchor" href="#_query_handler_interceptors"></a>Query handler interceptors</h3>
-<div class="paragraph">
-<p>Query handler interceptors can take action both before and after query processing.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class QuerySecurityInterceptor
-        implements MessageHandlerInterceptor&lt;QueryMessage&gt; {
-
-    @Override
-    public MessageStream&lt;?&gt; interceptOnHandle(
-            QueryMessage query,
-            ProcessingContext context,
-            MessageHandlerInterceptorChain&lt;QueryMessage&gt; chain
-    ) {
-        String userId = query.metadata().get("userId");
-        if (userId == null || !"authorized-user".equals(userId)) {
-            throw new SecurityException("Unauthorized query");
-        }
-
-        return chain.proceed(query, context);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>To register the <code>QuerySecurityInterceptor</code> as a <code>QueryMessage</code>-specific <code>MessageHandlerInterceptor</code>, you can utilize the <code>MessagingConfigurer</code> as follows:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerQueryHandlerInterceptor(MessagingConfigurer configurer) {
-    configurer.registerQueryHandlerInterceptor(
-            config -&gt; new QuerySecurityInterceptor()
-    );
-}</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="reactive-dispatch-interceptors"><a class="anchor" href="#reactive-dispatch-interceptors"></a>Reactor dispatch interceptors</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>When using the <a href="../../modules/#axon-reactor" class="xref page">Reactor extension</a>, reactor gateways provide their own interceptor type: <code>ReactorMessageDispatchInterceptor</code>.
-Unlike the standard <code>MessageDispatchInterceptor</code>, the reactor variant runs inside the Reactor subscription chain.
-This means interceptors can access Reactor context using <code>Mono.deferContextual()</code>, enabling integration with reactive context holders such as Spring Security&#8217;s <code>ReactiveSecurityContextHolder</code>.</p>
-</div>
-<div class="paragraph">
-<p>The following example shows a reactor dispatch interceptor that extracts the authenticated user from Reactor context and attaches it as metadata:</p>
-</div>
-<div class="listingblock pseudocode">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SecurityReactorInterceptor
-        implements ReactorMessageDispatchInterceptor&lt;CommandMessage&gt; {
-
-    @Override
-    public Mono&lt;?&gt; interceptOnDispatch(
-            CommandMessage message,
-            ProcessingContext context, <i class="conum" data-value="1"></i><b>(1)</b>
-            ReactorMessageDispatchInterceptorChain&lt;CommandMessage&gt; chain
-    ) {
-        return Mono.deferContextual(ctx -&gt; { <i class="conum" data-value="2"></i><b>(2)</b>
-            SecurityContext secCtx = ctx.get(SecurityContext.class);
-            String userId = secCtx.getAuthentication().getName();
-            return chain.proceed( <i class="conum" data-value="3"></i><b>(3)</b>
-                    message.andMetadata(Metadata.with("userId", userId)),
-                    context
-            );
-        });
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The <code>ProcessingContext</code> is passed through from the gateway call.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td><code>Mono.deferContextual()</code> accesses the Reactor context from the subscriber.
-In a Spring WebFlux application, this is where <code>ReactiveSecurityContextHolder</code> stores the authenticated user.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>The interceptor enriches the message metadata and proceeds through the chain.</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>Register the interceptor:</p>
-</div>
-<div id="_tabs_1" class="openblock tabs is-loading">
-<div class="content">
-<div class="ulist tablist">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(
+        idProperty = "orderId",
+        startOnEventClass = OrderPlacedEvent.class,
+        workflowName = "OrderWorkflow",
+        workflowVersion = "0.0.2"
+)
+public void execute(SimpleWorkflowContext ctx) { /* ... */ }</code></pre>
+</div>
+</div>
+<div class="ulist">
 <ul>
-<li id="_tabs_1_spring_boot" class="tab">
-<p>Spring Boot</p>
+<li>
+<p><code>workflowVersion</code> is optional. The default is
+<code>org.axonframework.messaging.core.MessageType.DEFAULT_VERSION</code> (<code>"0.0.1"</code>), matching Axon Framework
+5&#8217;s native event-versioning convention.</p>
 </li>
-<li id="_tabs_1_configuration_api" class="tab">
-<p>Configuration API</p>
+<li>
+<p>The value must be a parseable semver string (<code>MAJOR.MINOR.PATCH</code> with an optional pre-release
+suffix). Invalid strings are rejected at configuration time via <code>Version.validate(&#8230;&#8203;)</code>.</p>
+</li>
+<li>
+<p>Every event the workflow emits carries this version on its <code>MessageType.version()</code>, which is AF5&#8217;s
+built-in event-version field, <strong>not</strong> a separate metadata key.</p>
+</li>
+<li>
+<p>The same value is reachable from inside the workflow body via <code>ctx.workflowVersion()</code> (Java) /
+<code>ctx.workflowVersion</code> (Kotlin).</p>
 </li>
 </ul>
 </div>
-<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div class="sect2">
+<h3 id="_starting_new_instances"><a class="anchor" href="#_starting_new_instances"></a>Starting new instances</h3>
 <div class="paragraph">
-<p>Declare the interceptor as a Spring bean.
-The Reactor auto-configuration discovers <code>ReactorMessageDispatchInterceptor</code> beans and registers them on the <code>ReactorDispatchInterceptorRegistry</code>.</p>
+<p>When multiple definitions share the same <code>(workflowName, startOnEventName, idProperty)</code> triple but
+differ by <code>version</code>, new starts route as follows:</p>
 </div>
-<div class="listingblock pseudocode">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
-ReactorMessageDispatchInterceptor&lt;CommandMessage&gt; securityInterceptor() {
-    return new SecurityReactorInterceptor();
-}</code></pre>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>No prior instance for the derived workflow id:</strong> start at the <strong>highest</strong> registered version.</p>
+</li>
+<li>
+<p><strong>Cross-version collision (existing instance at a different version, new start at a higher
+version):</strong> the new instance&#8217;s workflow id is augmented with the version suffix (<code>&lt;base&gt;#&lt;version&gt;</code>)
+so the two run in parallel. The older v1 instance keeps replaying on the v1 definition; the new
+v2 instance runs at the disambiguated id and replays on the v2 definition.</p>
+</li>
+<li>
+<p><strong>Same-version duplicate (existing instance at the same version as the new instance):</strong> rejected as
+a duplicate domain event; a warning is logged. For two parallel instances at the same version,
+use a different <code>idProperty</code> value.</p>
+</li>
+</ul>
 </div>
 </div>
-</div>
-<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
+<div class="sect2">
+<h3 id="_dispatching_the_body_of_an_existing_instance"><a class="anchor" href="#_dispatching_the_body_of_an_existing_instance"></a>Dispatching the body of an existing instance</h3>
 <div class="paragraph">
-<p>Decorate the <code>ReactorDispatchInterceptorRegistry</code> component to register interceptors:</p>
+<p><code>SimpleWorkflowExecution.resolveVersionedDefinition</code> decides which workflow body to invoke on
+every <code>execute(&#8230;&#8203;)</code> of an existing instance. The lookup runs in this order:</p>
 </div>
-<div class="listingblock pseudocode">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.componentRegistry(cr -&gt; cr.registerDecorator(
-        ReactorDispatchInterceptorRegistry.class,
-        0,
-        (config, name, registry) -&gt;
-                registry.registerCommandInterceptor(c -&gt; new SecurityReactorInterceptor())
-));</code></pre>
-</div>
-</div>
-</div>
-</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong><code>exact-match-start-config</code></strong>: <code>state.workflowVersion()</code> equals the start-time
+configuration&#8217;s <code>workflowVersion()</code>. The start-time definition is used directly.</p>
+</li>
+<li>
+<p><strong><code>exact-match-sibling</code></strong>: the registry has a sibling definition with the same workflow name
+<strong>and</strong> the same version as recorded state. The sibling&#8217;s definition is used.</p>
+</li>
+<li>
+<p><strong><code>closest-sibling</code></strong>: no exact-version sibling exists (typical after a mid-flight
+<code>ctx.migrateVersion(&#8230;&#8203;)</code> bump to a value that was not statically registered). The runtime picks the
+registered definition whose <code>workflowVersion()</code> is the <strong>highest version less than or equal to</strong>
+recorded state, and dispatches to it.</p>
+</li>
+<li>
+<p><strong><code>closest-higher-sibling</code></strong>: no registered version is <code>&#8656;</code> recorded state. The runtime picks
+the registered definition whose <code>workflowVersion()</code> is the <strong>lowest version strictly greater
+than</strong> recorded state. Covers the "annotation bumped past the in-flight version" case: a workflow
+started with <code>@Workflow(workflowVersion = "0.0.1")</code> keeps replaying after the developer bumps
+the annotation to <code>"0.0.2"</code> and the older definition is no longer registered.</p>
+</li>
+</ol>
 </div>
 <div class="paragraph">
-<p>This pattern extracts context at the reactive gateway boundary and attaches it as message metadata.
-Handlers can then read it using <code>@MetadataValue</code>:</p>
+<p>For example, with <code>[v1.0.0, v2.0.0]</code> registered and an instance whose state is <code>"1.0.1"</code> (after a
+<code>ctx.migrateVersion("foo", "1.0.1")</code> bump inside the v1 body), step 3 picks <code>v1.0.0</code>. It <strong>never</strong>
+jumps across the major boundary to <code>v2.0.0</code>. Symmetric for a v2 instance bumped to <code>"2.0.1"</code>: it
+stays on <code>v2.0.0</code>. With <code>[v0.0.2]</code> registered and state <code>"0.0.1"</code>, step 4 picks <code>v0.0.2</code>.</p>
+</div>
+<div class="paragraph">
+<p>When all four passes fail (no definition is registered for this workflow name at all), routing
+falls back to the start-time definition and logs at WARN. The drift safety net then pauses the
+workflow if step names diverge in incompatible ways.</p>
+</div>
+<div class="paragraph">
+<p>Every routing decision is logged at INFO with the full set of registered definitions:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
-public void handle(MyCommand command,
-                   @MetadataValue(value = "userId", required = false) String userId) {
-    // userId was extracted from Reactor context by the dispatch interceptor
+<pre class="highlightjs highlight"><code class="language-none hljs">Workflow OrderWorkflow (order-1) routing: state='1.0.1' definitions=[1.0.0, 2.0.0]
+  -&gt; target='1.0.0' [closest-sibling]
+  (no exact-version sibling registered; using highest registered version &lt;= recorded state)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The decision tag is one of <code>exact-match-start-config</code>, <code>exact-match-sibling</code>, <code>closest-sibling</code>,
+<code>closest-higher-sibling</code>, <code>legacy-fallback</code> (unparseable semver), <code>registry-missing</code>, or
+<code>no-match-fallback</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_worked_examples"><a class="anchor" href="#_worked_examples"></a>Worked examples</h3>
+<div class="paragraph">
+<p>What each column means:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>state</strong>: the version recorded on this workflow&#8217;s event history (the started event&#8217;s
+<code>MessageType.version()</code>, possibly bumped by <code>migrateVersion</code> calls inside the body).</p>
+</li>
+<li>
+<p><strong>registered</strong>: all workflow definitions currently registered for this workflow name.</p>
+</li>
+<li>
+<p><strong>start</strong>: the engine&#8217;s default pick before routing thinks about it (typically the highest
+registered version for this workflow name).</p>
+</li>
+<li>
+<p><strong>target</strong>: what routing actually chose after looking at <code>state</code>. This is the body the
+workflow will run.</p>
+</li>
+<li>
+<p><strong>tier</strong>: the routing rule that fired, matching the decision tag in INFO/WARN logs.</p>
+</li>
+</ul>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">state</th>
+<th class="tableblock halign-left valign-top">registered</th>
+<th class="tableblock halign-left valign-top">start</th>
+<th class="tableblock halign-left valign-top">→ target</th>
+<th class="tableblock halign-left valign-top">tier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[1.0.0]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>exact-match-start-config</strong>: state == start, use it.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[1.0.0, 2.0.0]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>2.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>exact-match-sibling</strong>: registry has a sibling exactly at state, use it.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.0.1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[1.0.0, 2.0.0]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>2.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>closest-sibling</strong>: no exact match; pick the closest registered version <strong>below</strong> state.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0.0.1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[0.0.2]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0.0.2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0.0.2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>closest-higher-sibling</strong>: nothing registered ≤ state; pick the closest <strong>above</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0.0.1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[0.0.2, 0.0.5]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0.0.5</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0.0.2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>closest-higher-sibling</strong>: pick the <strong>lowest</strong> above state, not the highest.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.5.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[2.0.0]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>2.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>2.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>closest-higher-sibling</strong>: closest above wins even across a major boundary.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0.0.5</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[0.0.1]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0.0.1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0.0.1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>closest-sibling</strong>: one definition registered, state drifted past it via <code>migrateVersion</code>; route to it anyway.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>not-a-semver</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[1.0.0]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1.0.0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>legacy-fallback</strong>: state isn&#8217;t parseable semver; fall back to the start config.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_programmatic_registration_no_annotation"><a class="anchor" href="#_programmatic_registration_no_annotation"></a>Programmatic registration (no annotation)</h3>
+<div class="paragraph">
+<p>For users wiring workflows manually rather than via the annotation scanner, the version is set on the
+<code>WorkflowCustomization</code> returned by <code>WorkflowModule.configure(&#8230;&#8203;).customized(&#8230;&#8203;)</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule.defaults("OrderWorkflow", SimpleWorkflowContext.class)
+              .workflowContextFactory(c -&gt; new SimpleWorkflowContextFactory())
+              .definition(d -&gt; d.declarative(c -&gt; orderWorkflow::execute)
+                                .workflowName("OrderWorkflow")
+                                .on(EventConditions.fromType(OrderPlacedEvent.class))
+                                .customized((c, w) -&gt; w.workflowVersion("0.0.2")
+                                                       .workflowIdProvider(...)));</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The annotation and programmatic paths thread the same <code>String version</code> field through
+<code>SimpleWorkflowConfiguration</code>; behaviour is identical.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_ctx_migrateversionchangeid_newversion_primitive"><a class="anchor" href="#_the_ctx_migrateversionchangeid_newversion_primitive"></a>The <code>ctx.migrateVersion(changeId, newVersion)</code> primitive</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Use this for additive changes within a single definition that don&#8217;t warrant a whole-body copy-paste.
+The <code>ctx.migrateVersion(changeId, newVersion)</code> primitive lets developers explicitly fork the workflow body
+when behavior diverges. New workflows record a version marker into the event store and adopt the new
+branch; workflows that have already executed past the call&#8217;s position under old code stay on the
+legacy branch.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why_versioning"><a class="anchor" href="#_why_versioning"></a>Why versioning?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Without an explicit fork mechanism, three classes of code change can silently corrupt in-flight
+workflows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Renamed step</strong>—replay can no longer match the new name against the old event and the step
+re-executes, producing duplicate side effects.</p>
+</li>
+<li>
+<p><strong>Changed step semantics without renaming</strong>—replay returns the old cached result to new code that
+expects different output.</p>
+</li>
+<li>
+<p><strong>Branching change in workflow logic</strong>—events replay correctly but the workflow control flow
+diverges between old and new executions.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>ctx.migrateVersion(changeId, newVersion)</code> addresses the second and third classes. The first remains a
+forbidden migration; see <a href="#forbidden-migrations">Forbidden migrations</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_the_ctx_migrateversionchangeid_newversion_contract"><a class="anchor" href="#_the_ctx_migrateversionchangeid_newversion_contract"></a>The <code>ctx.migrateVersion(changeId, newVersion)</code> contract</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEventClass = OrderPlacedEvent.class, workflowVersion = "0.0.1")
+public void execute(SimpleWorkflowContext ctx) {
+    ctx.awaitExecute("reserveStock", Boolean.class, InventoryService::reserveStock);
+
+    if (ctx.migrateVersion("payment-redesign", "0.0.2")) {
+        ctx.awaitExecute("processPayment", PaymentService::processV2);
+    } else {
+        ctx.awaitExecute("chargePayment", PaymentService::chargeV1);
+    }
 }</code></pre>
 </div>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
 <div class="paragraph">
-<p>Reactor context is only available at the gateway boundary, inside the reactive dispatch interceptor chain.
-Once the message crosses into the imperative bus, Reactor context is no longer accessible.
-The interceptor-to-metadata pattern shown above is the recommended approach for propagating context to handlers.</p>
+<p><strong>Returns a boolean.</strong> <code>true</code> iff the workflow has committed to (or is past) <code>newVersion</code> for this
+<code>changeId</code>; <code>false</code> if it stays on the legacy branch. Internally, <code>WorkflowState.effectiveVersionFor(changeId)</code>
+obtains this from the recorded migration step when one exists, otherwise from <code>state.workflowDefinitionId().version()</code>
+(driven by the started event&#8217;s <code>MessageType.version()</code>).</p>
 </div>
-</td>
+<div class="paragraph">
+<p><strong>Versions are semver strings,</strong> compared by <code>Version</code>. Downgrades
+(requested <code>&lt;</code> current, no recorded step) raise <code>IllegalArgumentException</code>. Same-version requests
+return <code>true</code> without publishing.</p>
+</div>
+<div class="paragraph">
+<p><strong>No event is emitted at workflow start.</strong> A migration step is recorded only when a workflow runs the
+call <strong>live</strong>, the requested version is strictly greater than the current, no step for the same
+<code>changeId</code> already exists, and the downstream-steps guard does not fire. Event history stays
+uncluttered: only workflows that actively migrated to a higher version carry migration steps.</p>
+</div>
+<div class="paragraph">
+<p><strong>The wire-level event name derives from the <code>changeId</code>.</strong> For the example above the marker event is
+named <code>Payment-redesign.Versioned</code> in the event store, with <code>MessageType.version() = "0.0.2"</code> on the
+envelope itself and metadata <code>{eventKind: VERSION_MARKER, versionChangeId: "payment-redesign",
+version: "0.0.2"}</code>. The <code>changeId</code> is the business-meaningful description of what changed; it
+surfaces directly in the event log.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="downstream-steps-guard"><a class="anchor" href="#downstream-steps-guard"></a>The downstream-steps guard</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A naive <code>version()</code> implementation would break workflows: if a workflow has already executed steps
+A, B, C under old code and a developer later inserts <code>ctx.migrateVersion("x", "0.0.2")</code> between A and B, the
+naive implementation would reach the version call with no marker in history and fork onto the v=2
+branch—even though B and C already ran.</p>
+</div>
+<div class="paragraph">
+<p>The actual implementation has a <strong>correctness invariant</strong>: <code>version()</code> returns the workflow&#8217;s current version unchanged (and emits nothing)
+if state contains any terminal step that the current invocation has not yet referenced. Those
+untouched-but-present steps prove old code already executed past this code point, so we must stay on
+the legacy branch.</p>
+</div>
+<div class="paragraph">
+<p>The mechanism: the workflow body runs from the top on every invocation (live or replay). The runtime
+tracks a per-invocation set of "step names the body has referenced so far." When <code>version()</code> runs,
+it compares this set against <code>state.workflowStepNames()</code>—anything in state but not yet referenced
+is "downstream" of the current code position. Steps below this point in the new code that are
+already in history can only have come from old code that ran past this point.</p>
+</div>
+<div class="sect2">
+<h3 id="_worked_example_aold_workflow_version_inserted_later"><a class="anchor" href="#_worked_example_aold_workflow_version_inserted_later"></a>Worked example A—old workflow, version() inserted later</h3>
+<div class="paragraph">
+<p>History: <code>A.started, A.completed, B.started, B.completed, C.started, C.completed, workflow.completed</code>.
+New code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">step A;                                       // line 1
+if (ctx.migrateVersion("x", "0.0.2")) {       // line 2—newly added
+    step D;                                   // line 3
+} else {
+    step B; step C;                           // line 4
+}</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 7.6923%;">
+<col style="width: 15.3846%;">
+<col style="width: 23.0769%;">
+<col style="width: 23.0769%;">
+<col style="width: 30.7693%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Moment</th>
+<th class="tableblock halign-left valign-top">Body line</th>
+<th class="tableblock halign-left valign-top"><code>referencedStepNames</code></th>
+<th class="tableblock halign-left valign-top"><code>state.workflowStepNames()</code></th>
+<th class="tableblock halign-left valign-top">What happens</th>
 </tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(replay catch-up complete)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, B, C}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All steps terminal</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 1: <code>step A</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, B, C}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A cached → record reference, return cached</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 2: <code>migrateVersion("x", "0.0.2")</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, B, C}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">state ∖ ref = <code>{B, C}</code> ≠ ∅ → <strong>return current version, no event</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 4: <code>step B</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, B}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, B, C}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B cached → returns cached</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 4: <code>step C</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, B, C}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, B, C}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C cached → returns cached</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">body returns</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, B, C}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, B, C}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Workflow stayed on legacy branch ✓</p></td>
+</tr>
+</tbody>
 </table>
+</div>
+<div class="sect2">
+<h3 id="_worked_example_bbrand_new_workflow_same_code"><a class="anchor" href="#_worked_example_bbrand_new_workflow_same_code"></a>Worked example B—brand-new workflow, same code</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 7.6923%;">
+<col style="width: 15.3846%;">
+<col style="width: 23.0769%;">
+<col style="width: 23.0769%;">
+<col style="width: 30.7693%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Moment</th>
+<th class="tableblock halign-left valign-top">Body line</th>
+<th class="tableblock halign-left valign-top"><code>referencedStepNames</code></th>
+<th class="tableblock halign-left valign-top"><code>state.workflowStepNames()</code></th>
+<th class="tableblock halign-left valign-top">What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">start</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Empty state</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 1: <code>step A</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A executes live</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 2: <code>migrateVersion("x", "0.0.2")</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">state ∖ ref = <code>{}</code> → <strong>emit marker, return "0.0.2"</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 3: <code>step D</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, D}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, D}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">D executes live</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">body returns</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, D}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">step names: <code>{A, D}</code>; versions map gains <code>x → "0.0.2"</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Workflow forked onto new branch ✓</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_worked_example_cworkflow_stopped_at_the_boundary"><a class="anchor" href="#_worked_example_cworkflow_stopped_at_the_boundary"></a>Worked example C—workflow stopped at the boundary</h3>
+<div class="paragraph">
+<p>History: <code>A.started, A.completed</code> only (the workflow was awaiting B when the deployment happened).
+Same new code as A.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 7.6923%;">
+<col style="width: 15.3846%;">
+<col style="width: 23.0769%;">
+<col style="width: 23.0769%;">
+<col style="width: 30.7693%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Moment</th>
+<th class="tableblock halign-left valign-top">Body line</th>
+<th class="tableblock halign-left valign-top"><code>referencedStepNames</code></th>
+<th class="tableblock halign-left valign-top"><code>state.workflowStepNames()</code></th>
+<th class="tableblock halign-left valign-top">What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(replay catch-up)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only A terminal</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 1: <code>step A</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A cached → record, return cached</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 2: <code>migrateVersion("x", "0.0.2")</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">state ∖ ref = <code>{}</code> → <strong>emit marker, return "0.0.2"</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">line 3: <code>step D</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>{A, D}</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">step names: <code>{A, D}</code>; versions: <code>x → "0.0.2"</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">D executes live—legacy B never runs</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Workflows that haven&#8217;t passed the version call yet adopt the new version on the next live run.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mandatory_rules"><a class="anchor" href="#_mandatory_rules"></a>Mandatory rules</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Call <code>ctx.migrateVersion(changeId, newVersion)</code> <strong>at most once per <code>changeId</code></strong> per workflow body. Multiple calls
+within one invocation could see different <code>referencedStepNames</code> snapshots and return inconsistent
+values.</p>
+</li>
+<li>
+<p>Never call <code>version()</code> inside a loop or combinator branch—the call must be reached
+deterministically and exactly once per body invocation.</p>
+</li>
+<li>
+<p><code>changeId</code> strings are durable identifiers. Once shipped, they should not be renamed; the event
+log keys versions by <code>changeId</code>, so renaming detaches new code from existing markers.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_three_phase_cleanup_lifecycle"><a class="anchor" href="#_three_phase_cleanup_lifecycle"></a>Three-phase cleanup lifecycle</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Phase 1: introduce the change. Both branches live.
+if (ctx.migrateVersion("payment-redesign", "0.0.2")) { newer(); } else { old(); }
+
+// Phase 2: once all v1 workflows have drained, delete the old branch.
+//          The migrate call stays. New workflows still record the step.
+ctx.migrateVersion("payment-redesign", "0.0.2");
+newer();
+
+// Phase 3: once no further versioning is anticipated, delete the call.
+//          Orphan migration steps in old event logs are inert—Axon's replay tolerates them.
+newer();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Phase 3 is safe.</strong> The engine&#8217;s replay is <strong>tolerant</strong> of orphan events: events whose metadata refers
+to constructs the current code never reads are silently absorbed by
+<code>EventSourcedWorkflowState.evolve(&#8230;&#8203;)</code>. This is a deliberate design: history is the source of
+truth, and event metadata that no longer matches a code construct is inert, not a corruption.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_allowed_migrations"><a class="anchor" href="#_allowed_migrations"></a>Allowed migrations</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 22.2222%;">
+<col style="width: 33.3333%;">
+<col style="width: 44.4445%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Migration</th>
+<th class="tableblock halign-left valign-top">Safe?</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Branch on <code>ctx.migrateVersion</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✅</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The intended primary use case</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Append a new step after the last existing step</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✅</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replay finds existing steps cached; the new step runs live</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Narrow the result type of a step in a backwards-compatible way</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✅</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provided old result values still satisfy the new type</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Restructure sequential steps into <code>allMatch</code> / <code>anyMatch</code> of the same step names</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">✅</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Combinators don&#8217;t change the per-step name-based lookup</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="forbidden-migrations"><a class="anchor" href="#forbidden-migrations"></a>Forbidden migrations</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 22.2222%;">
+<col style="width: 33.3333%;">
+<col style="width: 44.4445%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Migration</th>
+<th class="tableblock halign-left valign-top">Reason</th>
+<th class="tableblock halign-left valign-top">Remedy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rename a step (<code>"ship"</code> → <code>"shipment"</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Old <code>ship.completed</code> event sits in history; new code awaits <code>shipment</code> which never resolves.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Define a new workflow type with a new workflow name, not a version branch.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Change the payload shape returned by a step under the same name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Replay returns the old payload shape to new code that expects the new shape.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same—new workflow type.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remove a step that had side effects (for example a payment charge)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">History carries the side-effecting event but new code never reads it; data drifts between state and code.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same—new workflow type.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_combinator_restructuring"><a class="anchor" href="#_combinator_restructuring"></a>Combinator restructuring</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>ctx.migrateVersion</code> correctly handles changes that <strong>add a branch</strong> (sequential → version-gated sequential
+or sequential → version-gated parallel) because name-based step lookup re-finds terminal steps
+regardless of combinator wrapping.</p>
+</div>
+<div class="paragraph">
+<p>It does <strong>not</strong> make safe the renames, payload-shape changes, or side-effect removals listed above.
+The boundary is: the combinator structure may change <strong>around</strong> steps, but the step names and their
+result shapes must stay stable.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_kotlin_dsl"><a class="anchor" href="#_kotlin_dsl"></a>Kotlin DSL</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Kotlin DSL exposes the primitive on <code>Kontext</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">@Workflow(idProperty = "orderId", startOnEventClass = OrderPlacedEvent::class)
+fun Kontext.execute() {
+    awaitExecute&lt;Boolean&gt;("reserveStock") { InventoryService.reserveStock() }
+
+    if (migrateVersion("payment-redesign", "0.0.2")) {
+        awaitExecute&lt;Boolean&gt;("processPayment") { PaymentService.processV2() }
+    } else {
+        awaitExecute&lt;Boolean&gt;("chargePayment") { PaymentService.chargeV1() }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>All rules (current-version default, single-call-per-changeId, downstream-steps guard, downgrade
+rejection) apply identically to the Kotlin DSL.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_multi_versioned_workflows"><a class="anchor" href="#_multi_versioned_workflows"></a>Multi-versioned workflows</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Independent `changeId`s are tracked separately:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">boolean payV2 = ctx.migrateVersion("payment-redesign", "0.0.2");
+boolean shipV2 = ctx.migrateVersion("shipping-redesign", "0.0.3");
+// Each changeId is its own slot in state.versions—neither call affects the other.</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="drift-detection"><a class="anchor" href="#drift-detection"></a>Drift detection (safety net for non-versioned changes)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>ctx.migrateVersion(changeId, newVersion)</code> primitive protects workflows that <strong>opt in</strong> to versioning.
+For workflows where the developer changed the code without using <code>ctx.migrateVersion()</code>, the engine has a
+<strong>replay-drift guard</strong> that fires from every event-emitting primitive and pauses the workflow
+non-terminally instead of silently corrupting it.</p>
+</div>
+<div class="sect2">
+<h3 id="_what_the_guard_detects"><a class="anchor" href="#_what_the_guard_detects"></a>What the guard detects</h3>
+<div class="paragraph">
+<p>The same signal the version primitive uses: at the moment an event-emitting primitive is about to
+publish its first event for a new step, if state contains any terminal step that the current
+invocation has not yet referenced, the workflow has already executed past this code point under
+old code. Publishing a new event here would diverge from history.</p>
+</div>
+<div class="paragraph">
+<p>Example: workflow ran <code>step1; step2</code> (both terminal in history). Developer inserts a new step
+<code>step1_1</code> between them—without versioning—and ships. On replay the body references
+<code>{step1, step1_1}</code> but state holds <code>{step1, step2}</code>. step2&#8217;s side effects already landed; the new
+code now takes a different path and pretends step2 doesn&#8217;t exist. The guard catches this exact
+moment.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_what_the_guard_covers"><a class="anchor" href="#_what_the_guard_covers"></a>What the guard covers</h3>
+<div class="paragraph">
+<p>Every event-emitting primitive:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ctx.awaitExecute(&#8230;&#8203;)</code> / <code>ctx.execute(&#8230;&#8203;)</code>—before publishing <code>STARTED</code></p>
+</li>
+<li>
+<p><code>ctx.awaitWaitFor(&#8230;&#8203;)</code> / <code>ctx.waitFor(&#8230;&#8203;)</code>—before publishing <code>STARTED</code></p>
+</li>
+<li>
+<p><code>ctx.awaitModifyPayload(&#8230;&#8203;)</code> / <code>ctx.modifyPayload(&#8230;&#8203;)</code>—before publishing <code>COMPLETED</code></p>
+</li>
+<li>
+<p><code>ctx.fail(&#8230;&#8203;)</code> / <code>ctx.cancel(&#8230;&#8203;)</code> / <code>ctx.cancelStep(&#8230;&#8203;)</code>—before publishing the terminal
+workflow / step events. <strong>This is the case most easily missed</strong>: a developer inserting an early
+termination has every reason to assume it "just stops the workflow", but for an in-flight
+workflow that already completed steps under old code, the new terminate corrupts the historical
+trajectory.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>ctx.migrateVersion(&#8230;&#8203;)</code> itself is the deliberate exception—it already runs the same check but its
+response is to return the workflow&#8217;s current version unchanged and stay on the old branch, rather
+than throw. That&#8217;s the entire purpose of the primitive.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pause_dont_fail"><a class="anchor" href="#_pause_dont_fail"></a>Pause, don&#8217;t fail</h3>
+<div class="paragraph">
+<p>When the guard fires, it throws <code>WorkflowReplayDriftException</code>. The exception is caught by the
+workflow execution loop with a dedicated handler that:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Logs a warning with the workflow id, the primitive that drifted, and the orphan step names</p>
+</li>
+<li>
+<p><strong>Does not</strong> publish a <code>failedWorkflow</code> or <code>cancelledWorkflow</code> event</p>
+</li>
+<li>
+<p>Leaves the workflow in its current (non-terminal) state</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The workflow is effectively <strong>paused</strong>, not failed. Each subsequent replay hits the same drift,
+logs the same warning, stays paused. State is preserved verbatim across every paused replay.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_recovery"><a class="anchor" href="#_recovery"></a>Recovery</h3>
+<div class="paragraph">
+<p>The developer has two options to recover a paused workflow:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Revert the offending code change.</strong> The next replay will run cleanly and the workflow continues
+from where it was.</p>
+</li>
+<li>
+<p><strong>Wrap the change in <code>ctx.migrateVersion(changeId, newVersion)</code>.</strong> The next replay will hit the version
+primitive&#8217;s downstream-steps guard, which returns the workflow&#8217;s current version unchanged and
+routes the workflow back onto the old branch—same recovery, just expressed in code rather than
+reverted.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>No state surgery, no manual event-store edits, no special workflow-administration tooling.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_whats_in_the_log"><a class="anchor" href="#_whats_in_the_log"></a>What&#8217;s in the log</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">WARN  Workflow order-abc-123 paused due to replay drift: Workflow order-abc-123 cannot run
+      execute("step1_1") because history contains terminal steps the current code does not
+      reference: [step2]. This means old code ran past this point with steps the new code skips.
+      Either revert the change or wrap the new code in ctx.migrateVersion("&lt;changeId&gt;", "x.y.z") so old
+      workflows stay on the legacy branch. Revert the code change or wrap it in ctx.migrateVersion()
+      and replay.</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Telemetry-friendly accessors are available on the exception:
+<code>workflowId()</code>, <code>primitive()</code>, <code>aboutToExecute()</code>, <code>orphans()</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_limitations"><a class="anchor" href="#_limitations"></a>Limitations</h3>
+<div class="paragraph">
+<p>The guard is deterministic for <strong>deterministic workflow code</strong>—the same payload + same history
+will always produce the same body path on every replay. If a workflow body is non-deterministic
+(for example branches on <code>Math.random()</code> or external mutable state), the guard can produce different
+results across replays for the same workflow—but that&#8217;s already a workflow contract violation
+the engine cannot fix.</p>
+</div>
+<div class="paragraph">
+<p>The guard cannot detect every form of code drift. Specifically:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Step renames</strong> (<code>"ship"</code> &#8594; <code>"shipment"</code>): the new code awaits a step name that never appears
+in history. The wait will time out, not produce drift.</p>
+</li>
+<li>
+<p><strong>Payload-shape changes for the same step name</strong>: history returns the cached step result; new
+code reads the old shape. The guard cannot see semantic mismatches.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For both of these, the recommended remedy is documented in
+<a href="#forbidden-migrations">Forbidden migrations</a>: define a new workflow type with a new workflow name.</p>
+</div>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../anatomy-message/">Anatomy of a Message</a></span>
-  <span class="next"><a href="../supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a></span>
+  <span class="prev"><a href="../testing-workflows/">Testing</a></span>
+  <span class="next"><a href="../../testing/">Testing</a></span>
 </nav>
     </article>
   </div>

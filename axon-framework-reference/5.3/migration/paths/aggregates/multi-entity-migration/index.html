@@ -436,13 +436,17 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>In Domain-Driven Design (DDD), an <strong>Aggregate</strong> is a cluster of domain objects that can be treated as a single unit. Every aggregate has an <strong>Aggregate Root</strong>, which is an <strong>Entity</strong> that is responsible for maintaining the consistency of the entire cluster. All access to the aggregate&#8217;s members is strictly through the aggregate root.</p>
+<p>In Domain-Driven Design (DDD), an <strong>Aggregate</strong> is a cluster of domain objects that can be treated as a single unit.
+Every aggregate has an <strong>Aggregate Root</strong>, which is an <strong>Entity</strong> that is responsible for maintaining the consistency of the entire cluster.
+All access to the aggregate&#8217;s members is strictly through the aggregate root.</p>
 </div>
 <div class="paragraph">
-<p>In Axon Framework 4, this concept was explicitly modeled using the <code>@AggregateRoot</code> (or <code>@Aggregate</code>) annotation for the root entity, and <code>@AggregateMember</code> for any child entities. This structure enforced a clear hierarchy where the root entity acted as the primary entry point for commands and the orchestrator of state changes.</p>
+<p>In Axon Framework 4, this concept was explicitly modeled using the <code>@AggregateRoot</code> (or <code>@Aggregate</code>) annotation for the root entity, and <code>@AggregateMember</code> for any child entities.
+This structure enforced a clear hierarchy where the root entity acted as the primary entry point for commands and the orchestrator of state changes.</p>
 </div>
 <div class="paragraph">
-<p>However, dealing with hierarchical entity models and handling and correctly routing messages to the appropriate entity within an aggregate could become complex, especially in scenarios involving multiple child entities. This was one main reason for Axon Framework 5 towards the more flexible <a href="../../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">Dynamic Context Boundaries (DCB)</a>.</p>
+<p>However, dealing with hierarchical entity models and handling and correctly routing messages to the appropriate entity within an aggregate could become complex, especially in scenarios involving multiple child entities.
+This was one main reason for Axon Framework 5 towards the more flexible <a href="../../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">Dynamic Context Boundaries (DCB)</a>.</p>
 </div>
 <div class="paragraph">
 <p>Axon Framework 5 continues to support this hierarchical model but shifts the terminology towards a more generic <strong>Entity</strong> model, where the distinction between the "root" and "members" is expressed through <code>@EventSourcedEntity</code> and <code>@EntityMember</code>.</p>
@@ -458,19 +462,12 @@
 <div class="paragraph">
 <p>The following example shows a <code>GiftCard</code> aggregate with a collection of <code>Transaction</code> entities.</p>
 </div>
-<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="exampleblock">
 <div class="content">
-<div class="ulist tablist">
-<ul>
-<li id="_tabs_1_axon_framework_5" class="tab">
-<p>Axon Framework 5</p>
-</li>
-<li id="_tabs_1_axon_framework_4" class="tab">
-<p>Axon Framework 4</p>
-</li>
-</ul>
-</div>
-<div id="_tabs_1_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5">
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Axon Framework 5</dt>
+<dd>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import java.util.ArrayList;
@@ -520,6 +517,9 @@ public class Transaction {
 }</code></pre>
 </div>
 </div>
+</dd>
+</dl>
+</div>
 <div class="colist arabic">
 <table>
 <tr>
@@ -532,12 +532,11 @@ public class Transaction {
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>No specific annotation is required on the field if it&#8217;s managed via the constructor or sourcing handlers.</td>
-</tr>
-</table>
-</div>
-</div>
-<div id="_tabs_1_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_4">
+<td>No specific annotation is required on the field if it&#8217;s managed via the constructor or sourcing handlers.
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Axon Framework 4</dt>
+<dd>
 <div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@AggregateRoot
@@ -574,24 +573,28 @@ public class Transaction {
 }</code></pre>
 </div>
 </div>
-<div class="colist arabic">
-<table>
+</dd>
+</dl>
+</div></td>
+</tr>
 <tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
 <td><code>@AggregateMember</code> marks the collection of child entities.</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
 <td>Child entities are typically instantiated and added to the collection in an <code>@EventSourcingHandler</code>.</td>
 </tr>
 <tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
 <td><code>@EntityId</code> is used to identify the child entity within the collection.</td>
 </tr>
 </table>
 </div>
 </div>
 </div>
+<div class="paragraph">
+<p>Although this example shows a <code>List&lt;Transaction&gt;</code> field, <code>@EntityMember</code> works the same way for a single-object field (for example <code>private Transaction transaction;</code>) and for a <code>Map&lt;Key,Value&gt;</code> field (for example <code>private Map&lt;String, Transaction&gt; transactions;</code>, where the map&#8217;s own key identifies each entry).</p>
 </div>
 </div>
 </div>
@@ -640,7 +643,8 @@ private List&lt;Transaction&gt; transactions = new ArrayList&lt;&gt;();</code></
 </div>
 <div class="paragraph">
 <p>There is no direct replacement for <code>ForwardNone</code>.
-If you need to suppress event forwarding entirely, do not declare <code>@EventSourcingHandler</code> methods on the child entity. Axon will offer events but nothing will handle them.</p>
+If you need to suppress event forwarding entirely, do not declare <code>@EventSourcingHandler</code> methods on the child entity.
+Axon will offer events but nothing will handle them.</p>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -681,22 +685,6 @@ If you need to suppress event forwarding entirely, do not declare <code>@EventSo
 <p><a href="../../../../commands/entities/entity-hierarchies/" class="xref page">Entity Hierarchies</a>: full reference for <code>@EntityMember</code>, routing key configuration, and event routing in Axon Framework 5</p>
 </li>
 </ul>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="title">Maps are supported too</div>
-<div class="paragraph">
-<p><code>@AggregateMember</code> on a <code>Map&lt;Key,Value&gt;</code> field maps directly to <code>@EntityMember</code> on the same <code>Map&lt;Key,Value&gt;</code> field.
-The map&#8217;s own keys are preserved automatically as entries are added, evolved, or removed, so no extra identification logic is needed.</p>
-</div>
-</td>
-</tr>
-</table>
 </div>
 </div>
 </div>

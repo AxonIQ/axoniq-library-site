@@ -441,7 +441,7 @@ Axon Framework supports two approaches: annotated interceptor methods placed dir
 </div>
 </div>
 <div class="sect1">
-<h2 id="command-handler-interceptor-annotation"><a class="anchor" href="#command-handler-interceptor-annotation"></a><code>@CommandHandlerInterceptor</code> annotation</h2>
+<h2 id="_annotated_handler_interceptors"><a class="anchor" href="#_annotated_handler_interceptors"></a>Annotated handler interceptors</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Annotated interceptors are methods placed on a handling component class and marked with one of the interceptor annotations.
@@ -465,7 +465,7 @@ It can short-circuit processing entirely by returning without calling proceed, o
 </ul>
 </div>
 <div class="sect2">
-<h3 id="_commandhandlerinterceptor"><a class="anchor" href="#_commandhandlerinterceptor"></a><code>@CommandHandlerInterceptor</code></h3>
+<h3 id="command-handler-interceptor-annotation"><a class="anchor" href="#command-handler-interceptor-annotation"></a><code>@CommandHandlerInterceptor</code></h3>
 <div class="paragraph">
 <p>The <code>@CommandHandlerInterceptor</code> annotation marks a method as an interceptor for command handlers on the same component.
 It is a specialization of <code>@MessageHandlerInterceptor</code> scoped to <code>CommandMessage</code>.</p>
@@ -831,7 +831,8 @@ This makes it suitable for cross-cutting exception handling concerns such as log
 <div class="paragraph">
 <p>You can wire the exception and the full message (for example, <code>CommandMessage</code> or <code>EventMessage</code>) as parameters.
 The framework matches an exception handler based on which parameters it declares: the exception type must be assignable from the thrown exception, and the message type must be assignable from the message being handled.
-Omitting a parameter means it is not used for matching. Any value is accepted.</p>
+Omitting a parameter means it is not used for matching.
+Any value is accepted.</p>
 </div>
 <div class="paragraph">
 <p>You can introduce <code>@ExceptionHandler</code> annotated methods in any message handling component.</p>
@@ -918,6 +919,83 @@ Because of this, exception handlers <strong>do not</strong> work for static crea
     }
 }</code></pre>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="entity-command-handler-interceptors"><a class="anchor" href="#entity-command-handler-interceptors"></a>Entity command handler interceptors</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>An <a href="../../commands/entities/" class="xref page">entity&#8217;s</a> own <code>@CommandHandler</code> methods can be intercepted the same way as any other component, both by an annotated method on the entity class and by a declarative interceptor registered on its <code>EntityMetamodelBuilder</code>.
+An interceptor registered on a parent entity runs before an interceptor registered on a child entity added through <code>@EntityMember</code> or <code>EntityMetamodelBuilder.addChild(&#8230;&#8203;)</code>, and before the parent&#8217;s own command handlers.</p>
+</div>
+<div class="paragraph">
+<p>For a <a href="../../commands/entities/entity-polymorphism/" class="xref page">polymorphic entity</a>, a concrete type&#8217;s own interceptor runs before an interceptor declared on the super type, for every command reaching that concrete type&#8217;s instance, whether the command is declared on the concrete type or on the super type itself.
+This is the opposite order from the <code>@EntityMember</code>/<code>addChild(&#8230;&#8203;)</code> parent-before-child rule above; the two are unrelated mechanisms.</p>
+</div>
+<div class="paragraph">
+<p>Only command handling is covered: there is no interceptor support for <code>@EventSourcingHandler</code> methods.</p>
+</div>
+<div class="paragraph">
+<p><strong>Annotated <code>@CommandHandlerInterceptor</code> on the entity:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.commandhandling.interception.annotation.CommandHandlerInterceptor;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+
+@EventSourcedEntity(tagKey = "cardId")
+public class GiftCard {
+
+    private String cardId;
+    private boolean redeemed;
+
+    @EntityCreator
+    public GiftCard() {
+    }
+
+    @CommandHandlerInterceptor
+    void rejectIfAlreadyRedeemed(CommandMessage command) {
+        if (redeemed) {
+            throw new IllegalStateException("Gift card already redeemed");
+        }
+    }
+
+    @CommandHandler
+    void handle(RedeemGiftCard command, EventAppender eventAppender) {
+        eventAppender.append(new GiftCardRedeemed(command.cardId()));
+    }
+
+    @EventSourcingHandler
+    void on(GiftCardRedeemed event) {
+        this.cardId = event.cardId();
+        this.redeemed = true;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Declarative interceptor on the entity&#8217;s <code>EntityMetamodelBuilder</code>:</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.commandHandlerInterceptor((command, entity, context, chain) -&gt; {
+    if (entity != null &amp;&amp; entity.isRedeemed()) {
+        return MessageStream.failed(new IllegalStateException(
+                "Gift card already redeemed"
+        ));
+    }
+    return chain.proceed(command, entity, context);
+})</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Unlike the generic <code>MessageHandlerInterceptor</code>, an entity command handler interceptor receives the targeted entity instance (or <code>null</code> for a creational command), so it can base its decision on the entity&#8217;s current state.</p>
 </div>
 </div>
 </div>
