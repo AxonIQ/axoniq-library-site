@@ -1301,7 +1301,15 @@ This value defaults to 5000 milliseconds.</p>
 <p><code>claimExtensionThreshold</code>: Threshold to extend the claim in the absence of events.
 The value defaults to 5000 milliseconds.</p>
 </li>
+<li>
+<p><code>coordinatorClaimExtension</code>: Has the coordinator extend the claims of its work packages, instead of leaving that to the work packages themselves.
+Off by default.
+Enable it when handling a batch regularly takes longer than the claim timeout of the token store, since a work package can only extend its own claim from a worker thread.</p>
+</li>
 </ul>
+</div>
+<div class="paragraph">
+<p>With Spring Boot, these are also available as properties per processor: <code>axon.eventhandling.processors.&lt;name&gt;.token-claim-interval</code>, <code>axon.eventhandling.processors.&lt;name&gt;.claim-extension-threshold</code> (in milliseconds) and <code>axon.eventhandling.processors.&lt;name&gt;.coordinator-claim-extension</code>.</p>
 </div>
 <div class="paragraph">
 <p>Consider the following snippet if you want to configure these values:</p>
@@ -1439,6 +1447,11 @@ Hence, a staling processor thread will, one way or another, eventually lose the 
 <p>Blocking exceptions inside event handlers.</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>Note that a work package can only update its token timestamp from a worker thread.
+Lengthy handling therefore not only stales the segment it happens on, but also occupies a thread the work packages of other segments need to update their timestamp.
+Enabling <code>enableCoordinatorClaimExtension()</code> lets the coordinator extend the claims of its work packages, covering both the segment handling the lengthy batch and the ones waiting for a thread.</p>
 </div>
 </div>
 <div class="sect3">
@@ -2232,7 +2245,7 @@ This coordinator defaults to using a <code>ScheduledExecutorService</code> with 
 The <code>Coordinator</code> starts a <code>WorkPackage</code> for each segment and provides them the events to handle.
 The work package will, in turn, invoke the Event Handling Components to process the events.
 These packages run within the second thread pool, the so-called "worker executor" pool.
-The worker-pool also defaults to <code>ScheduledExecutorService</code> with a single thread.</p>
+The worker-pool defaults to a <code>ScheduledExecutorService</code> with four threads, shared by the work packages of all claimed segments.</p>
 </div>
 <div class="paragraph">
 <p>When you want to increase event handling throughput, we recommend changing the number of threads for the worker thread pool.
