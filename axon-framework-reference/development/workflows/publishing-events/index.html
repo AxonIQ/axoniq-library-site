@@ -4,10 +4,9 @@
     <script>(function(){try{var t=localStorage.getItem('axoniq-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Message Correlation</title>
-    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.3/messaging-concepts/message-correlation/">
-    <link rel="prev" href="../supported-parameters-annotated-handlers/">
-    <link rel="next" href="../component-message-intercepting/">
+    <title>Publishing Events</title>
+    <link rel="prev" href="../waiting-for-events/">
+    <link rel="next" href="../understanding-steps/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -308,8 +307,9 @@
     <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
-    <li><a href="../">Messaging Concepts</a></li>
-    <li><a href="./">Message Correlation</a></li>
+    <li><a href="../"><span class="advanced-framework">Workflows</span></a></li>
+    <li>Primitive Steps</li>
+    <li><a href="./">Publishing Events</a></li>
   </ul>
 </nav>
   </div>
@@ -430,46 +430,166 @@
   <div class="toc-menu"></div>
 </aside>
           <article class="doc">
-                <h1 class="page">Message Correlation</h1>
+                <h1 class="page">Publishing Events</h1>
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>In messaging systems it is common to group messages together or correlate them.
-In Axon Framework a command message might result in one or several event messages, and a query message might result in one or several query response messages.
-This correlation is implemented using specific message properties—correlation identifiers that track relationships between messages.</p>
+<p>A workflow often needs to tell the rest of the system that something happened—an order was approved, a payment was released, a task is ready for an agent.
+The <code>publish</code> / <code>awaitPublish</code> pair appends that business event as a durable workflow step.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><code>BaseWorkflowContext.publish(stepName, eventMessage, customizer)</code> is the canonical non-blocking primitive and returns a <code>WorkflowStepResult</code>.
+<code>awaitPublish(&#8230;&#8203;)</code> blocks until the step is recorded and returns <code>void</code>.
+<code>SimpleWorkflowContext</code> adds the payload and payload-plus-metadata overloads shown below.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_understanding_correlation"><a class="anchor" href="#_understanding_correlation"></a>Understanding correlation</h2>
+<h2 id="_the_awaitpublish_method"><a class="anchor" href="#_the_awaitpublish_method"></a>The <code>awaitPublish</code> method</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>When processing messages, it&#8217;s valuable to track:</p>
+<p>After the approval decision, we publish an <code>OrderApproved</code> event so a shipment workflow and the read model can react:</p>
+</div>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_java" class="tab">
+<p>Java</p>
+</li>
+<li id="_tabs_1_kotlin" class="tab">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_java--panel" class="tabpanel" aria-labelledby="_tabs_1_java">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitPublish("notifyApproved",                                  <i class="conum" data-value="1"></i><b>(1)</b>
+        new OrderApproved(orderId, approvedBy));                    <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The step name.
+It is the durable identifier of the step, exactly as for every other primitive.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The event to publish.
+A plain payload has its <code>MessageType</code> resolved through the configured <code>MessageTypeResolver</code>; add a <code>Metadata</code> argument to publish metadata with it.
+You can pass an <code>EventMessage</code> instead when you need to set the type yourself.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_1_kotlin--panel" class="tabpanel" aria-labelledby="_tabs_1_kotlin">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">awaitPublish("notifyApproved", OrderApproved(orderId, approvedBy))</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_one_event_two_roles"><a class="anchor" href="#_one_event_two_roles"></a>One event, two roles</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>publish</code> appends exactly one event: the event you pass, enriched with workflow metadata.</p>
+</div>
+<div class="et-player" data-autoplay>
+  <div class="et-src" data-title="awaitPublish">
+1 started ApprovalStarted {"orderId": "order-1"}
+2 completed OrderApproved {"orderId": "order-1", "approvedBy": "alice"}
+3 completed ApprovalCompleted {}
+  </div>
+</div>
+<div class="paragraph">
+<p>The <code>OrderApproved</code> event keeps its own type, payload, identifier and timestamp.
+The engine only adds metadata: <code>workflowId</code>, <code>stepName</code>, <code>stepType=COMPLETED</code> and <code>stepPrimitive=PUBLISH</code>.
+Those keys override metadata of the same name on the event you pass.</p>
+</div>
+<div class="paragraph">
+<p>That single event plays both roles:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Correlation ID</strong>: The identifier of the original message that started the entire business transaction or workflow (the root cause).</p>
+<p>For consumers it is the business event.
+Entities, projections and other workflows receive the event you published, with an additional <code>workflowId</code> tag.</p>
 </li>
 <li>
-<p><strong>Causation ID</strong>: The identifier of the immediate parent message that directly caused this message to be created.</p>
+<p>For the workflow it is the completed step.
+On replay the step is found in the workflow state and the event is not published again.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>For example, if a command triggers an event, which in turn triggers another command, which triggers more events:</p>
+<p>The workflow payload is not modified by <code>publish</code>.
+Use <a href="../payload-and-state/" class="xref page"><code>setPayload</code></a> when the published data should also become part of the workflow state.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_workflow_to_workflow_communication"><a class="anchor" href="#_workflow_to_workflow_communication"></a>Workflow-to-workflow communication</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A published event is routed like any business event.
+Another workflow can start on it or wait for it with <a href="../waiting-for-events/" class="xref page"><code>awaitEvent</code></a>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>Command A (id: cmd-1)
-  └─&gt; Event B (id: evt-2, correlationId: cmd-1, causationId: cmd-1)
-      └─&gt; Command C (id: cmd-3, correlationId: cmd-1, causationId: evt-2)
-          └─&gt; Event D (id: evt-4, correlationId: cmd-1, causationId: cmd-3)</pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Approval workflow
+ctx.awaitPublish("notifyApproved",                                  <i class="conum" data-value="1"></i><b>(1)</b>
+        new OrderApproved(orderId, approvedBy));                    <i class="conum" data-value="2"></i><b>(2)</b>
+
+// Shipment workflow, started on OrderApproved
+@Workflow(idProperty = "orderId",
+          startOnEventClass = OrderApproved.class,
+          workflowNamespace = "io.myapp.shipping")
+public void execute(SimpleWorkflowContext ctx) {
+    ctx.awaitExecute("prepareShipment", Boolean.class, () -&gt; true);
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>All messages share the same <code>correlationId</code> (cmd-1), allowing you to trace the entire workflow.
-Each message&#8217;s <code>causationId</code> points to its immediate parent, allowing you to reconstruct the message chain.</p>
+<p>When the publisher also waits for a reply, register the wait first with the non-blocking <code>waitForEvent</code>, then publish, then block on the handle.
+A wait registered after the reply has already passed is never woken.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reply = ctx.waitForEvent("awaitQuote", QuoteReceived.class,
+        associate(payloadProperty("orderId"), equalsTo(orderId)));
+ctx.awaitPublish("requestQuote", new QuoteRequested(orderId));
+reply.await();</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_naming_publish_steps"><a class="anchor" href="#_naming_publish_steps"></a>Naming publish steps</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The step name is the durable identifier of the publish, not the wire name of the event.
+Consumers see only the event&#8217;s own type.
+Name the step after the intent, as a verb phrase, unique within the workflow body: <code>notifyApproved</code>, <code>requestQuote</code>, <code>announceShipment</code>.
+Two publishes of the same event type need two step names.</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -479,20 +599,9 @@ Each message&#8217;s <code>causationId</code> points to its immediate parent, al
 </td>
 <td class="content">
 <div class="paragraph">
-<p><strong>Terminology change from earlier versions</strong>: The correlation terminology has been updated to align with industry standards:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>The old <code>traceId</code> is now called <code>correlationId</code></p>
-</li>
-<li>
-<p>The old <code>correlationId</code> is now called <code>causationId</code></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>If you have logic depending on the old metadata keys, you can either override the <code>MessageOriginProvider</code> to use the old format or implement a transition period.</p>
+<p>A workflow started by a published event derives its own instance id from that event.
+An id equal to an existing instance is rejected as a duplicate.
+When two workflows are keyed by the same property, give them distinct id prefixes through their <code>WorkflowIdProvider</code>.</p>
 </div>
 </td>
 </tr>
@@ -501,291 +610,27 @@ Each message&#8217;s <code>causationId</code> points to its immediate parent, al
 </div>
 </div>
 <div class="sect1">
-<h2 id="_correlation_data_provider"><a class="anchor" href="#_correlation_data_provider"></a>Correlation data provider</h2>
+<h2 id="_non_blocking_form"><a class="anchor" href="#_non_blocking_form"></a>Non-blocking form</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Messages in Axon Framework use the <a href="../anatomy-message/#meta-data" class="xref page">metadata</a> property to transport meta-information about the message.
-The metadata is of type <code>Map&lt;String, String&gt;</code> and is passed around with the message.</p>
-</div>
-<div class="paragraph">
-<p>To fill the metadata of a new message produced during message processing, a <code>CorrelationDataProvider</code> is used.
-The active <code>ProcessingContext</code> is in charge of populating the metadata of new messages based on configured correlation data providers.</p>
-</div>
-<div class="paragraph">
-<p>Axon Framework provides several implementations of the <code>CorrelationDataProvider</code> functional interface:</p>
-</div>
-<div class="sect2">
-<h3 id="MessageOriginProvider"><a class="anchor" href="#MessageOriginProvider"></a><code>MessageOriginProvider</code></h3>
-<div class="paragraph">
-<p>By default, the <code>MessageOriginProvider</code> is registered as the correlation data provider.
-It is responsible for propagating two values from one message to another: the <code>correlationId</code> and <code>causationId</code>. These values are added to the <code>Message#metadata</code>.</p>
-</div>
-<div class="paragraph">
-<p>The <code>MessageOriginProvider</code> works as follows:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>correlationId</strong>: References the identifier of the original message that started the entire workflow:</p>
-<div class="ulist">
-<ul>
-<li>
-<p>If the parent message already has a <code>correlationId</code> in its metadata, that value is propagated</p>
-</li>
-<li>
-<p>Otherwise, the parent message&#8217;s identifier is used</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p><strong>causationId</strong>: Always set to the identifier of the parent message.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>This allows you to trace the entire chain of messages back to the original trigger.</p>
+<p><code>publish</code> returns a <code>WorkflowStepResult</code> you can await later or combine with other steps:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// When handling a command that publishes an event:
-@CommandHandler
-public void handle(PlaceOrderCommand command, EventAppender appender) {
-    // Command message id: "cmd-123"
-    // Command has no correlationId yet (it's the root)
-
-    // Create and publish event...
-    appender.append(new OrderPlacedEvent());
-
-    // Event metadata will contain:
-    // - correlationId: "cmd-123" (from command id, since command had none)
-    // - causationId: "cmd-123" (direct parent)
-}
-
-// When the event triggers another command:
-@EventHandler
-public void on(OrderPlacedEvent event, CommandDispatcher dispatcher) {
-    // Event message id: "evt-456"
-    // Event metadata:
-    // - correlationId: "cmd-123"
-    // - causationId: "cmd-123"
-
-    // Create and send command...
-    dispatcher.send(new ShipOrderCommand());
-
-    // Command metadata will contain:
-    // - correlationId: "cmd-123" (propagated from event)
-    // - causationId: "evt-456" (immediate parent)
-}</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var notified = ctx.publish("notifyApproved", new OrderApproved(orderId, approvedBy));
+var reserved = ctx.execute("reserveStock", Map.of(), (pc, p) -&gt; inventory.reserve(p));
+ctx.allMatch(WorkflowStepResult::success, notified, reserved).await();</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>In the example above, it is the <code>ProcessingContext</code>-aware <code>EventAppender</code> and <code>CommandDispatcher</code> that know to:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Wrap your command and event in a <code>CommandMessage</code> and <code>EventMessage</code> respectively.</p>
-</li>
-<li>
-<p>Invoke the <code>CorrelationDataProvider</code> with the <code>Message</code> that is currently handled, retrieved from the <code>ProcessingContext</code>.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>This correlation data process will take effect regardless of the <code>CorrelationDataProvider</code> implementation used.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="SimpleCorrelationDataProvider"><a class="anchor" href="#SimpleCorrelationDataProvider"></a><code>SimpleCorrelationDataProvider</code></h3>
-<div class="paragraph">
-<p>The <code>SimpleCorrelationDataProvider</code> unconditionally copies values of specified metadata keys from one message to another.
-To use it, provide the list of keys to copy in the constructor:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AxonConfig {
-
-    public CorrelationDataProvider simpleProvider() {
-        return new SimpleCorrelationDataProvider("tenantId", "userId");
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This is useful when you have custom metadata keys that should propagate through your message chain.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="MultiCorrelationDataProvider"><a class="anchor" href="#MultiCorrelationDataProvider"></a><code>MultiCorrelationDataProvider</code></h3>
-<div class="paragraph">
-<p>A <code>MultiCorrelationDataProvider</code> combines the effect of multiple correlation data providers.
-This allows you to use both the standard <code>MessageOriginProvider</code> and custom providers:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class Configuration {
-
-    public CorrelationDataProvider customCorrelationDataProviders() {
-        return new MultiCorrelationDataProvider(
-            List.of(
-                new MessageOriginProvider(),
-                new SimpleCorrelationDataProvider("tenantId", "userId")
-            )
-        );
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_implementing_custom_correlation_data_provider"><a class="anchor" href="#_implementing_custom_correlation_data_provider"></a>Implementing custom correlation data provider</h3>
-<div class="paragraph">
-<p>If the predefined providers don&#8217;t fulfill your requirements, you can implement your own <code>CorrelationDataProvider</code>.
-The interface is functional and requires a single method:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class AuthCorrelationDataProvider implements CorrelationDataProvider {
-
-    private final Function&lt;String, String&gt; usernameProvider;
-
-    public AuthCorrelationDataProvider(Function&lt;String, String&gt; userProvider) {
-        this.usernameProvider = userProvider;
-    }
-
-    @Override
-    public Map&lt;String, String&gt; correlationDataFor(Message message) {
-        Map&lt;String, String&gt; correlationData = new HashMap&lt;&gt;();
-
-        // Extract auth token from metadata
-        String token = message.metadata().get("authorization");
-        if (token != null) {
-            String username = usernameProvider.apply(token);
-            correlationData.put("username", username);
-        }
-
-        return correlationData;
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Note that:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>The method returns <code>Map&lt;String, String&gt;</code> (all values must be Strings).</p>
-</li>
-<li>
-<p>The method should not return <code>null</code> (return an empty map instead).</p>
-</li>
-<li>
-<p>Exceptions thrown from this method might interfere with transaction rollback, so they are caught and ignored by the framework.</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_configuration"><a class="anchor" href="#_configuration"></a>Configuration</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>When the default <code>MessageOriginProvider</code> isn&#8217;t sufficient for your use case, you need to register custom correlation data providers in your application.</p>
-</div>
-<div class="paragraph">
-<p>If you are using the Axon Configuration API, use the <code>registerCorrelationDataProvider</code> method (call it multiple times to register multiple providers).
-If you are using Spring Boot Autoconfiguration, provide Spring Bean factory methods.</p>
-</div>
-<div id="_tabs_1" class="openblock tabs is-loading">
-<div class="content">
-<div class="ulist tablist">
-<ul>
-<li id="_tabs_1_configuration_api" class="tab">
-<p>Configuration API</p>
-</li>
-<li id="_tabs_1_spring_boot" class="tab">
-<p>Spring Boot</p>
-</li>
-</ul>
-</div>
-<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void buildConfiguration() {
-    MessagingConfigurer.create()
-                       .registerCorrelationDataProvider(
-                               config -&gt; new MessageOriginProvider()
-                       )
-                       .registerCorrelationDataProvider(
-                               config -&gt; new SimpleCorrelationDataProvider("tenantId", "userId")
-                       )
-                       .start();
-}</code></pre>
-</div>
-</div>
-</div>
-<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
-public class CorrelationDataProviderConfiguration {
-
-    // Configuring CorrelationDataProvider beans overrides the default MessageOriginProvider
-    @Bean
-    public CorrelationDataProvider messageOriginProvider() {
-        return new MessageOriginProvider();
-    }
-
-    @Bean
-    public CorrelationDataProvider tenantCorrelationProvider() {
-        return new SimpleCorrelationDataProvider("tenantId", "userId");
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_correlation_in_distributed_scenarios"><a class="anchor" href="#_correlation_in_distributed_scenarios"></a>Correlation in distributed scenarios</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>In distributed systems, correlation identifiers are especially valuable for:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Distributed tracing</strong>: Track a request across multiple services.</p>
-</li>
-<li>
-<p><strong>Log aggregation</strong>: Group log entries from different services that belong to the same workflow.</p>
-</li>
-<li>
-<p><strong>Debugging</strong>: Understand the chain of events that led to a particular state.</p>
-</li>
-<li>
-<p><strong>Monitoring</strong>: Track end-to-end latency of business transactions.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>When messages cross service boundaries (via event stores, message brokers, or HTTP), the correlation metadata travels with them.
-This allows you to maintain visibility across your entire distributed system.</p>
-</div>
-<div class="paragraph">
-<p>Many observability tools (like Zipkin, Jaeger, or OpenTelemetry) use similar correlation concepts.
-The <code>correlationId</code> in Axon aligns with the "trace ID" concept in these tools, while the <code>causationId</code> provides more detailed parent-child relationships within the trace.</p>
+<p>Each <code>publish</code> call is its own ordered append.
+Two calls produce two events and two steps.</p>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a></span>
-  <span class="next"><a href="../component-message-intercepting/">Component Message Intercepting</a></span>
+  <span class="prev"><a href="../waiting-for-events/">Waiting for Events</a></span>
+  <span class="next"><a href="../understanding-steps/">Understanding Steps</a></span>
 </nav>
     </article>
   </div>
