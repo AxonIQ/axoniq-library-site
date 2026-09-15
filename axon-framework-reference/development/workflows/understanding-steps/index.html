@@ -1152,7 +1152,7 @@ Because the outcome of the interrupted attempt is unknown, the engine resolves i
 <p><strong>No retry policy</strong> → the step records a terminal <strong>FAILED</strong> status. The failure is surfaced to your workflow body as a <code>StepFailedException</code> whose cause is a <code>StepIndeterminateException</code> (the dedicated "in-flight at a crash, not re-run, outcome indeterminate" marker). <code>awaitExecute(&#8230;&#8203;)</code> throws it; a non-blocking <code>execute(&#8230;&#8203;)</code> handle reports it via <code>result.failure()</code> / <code>result.error()</code>.</p>
 </li>
 <li>
-<p><strong>With a retry policy</strong> → the interrupted attempt is treated as a failed attempt and the step goes to <strong>RETRYING</strong>; the engine schedules the next attempt per the policy (backoff included). This is identical to the normal retry-on-failure flow, so a step you <strong>want</strong> re-attempted after a crash should carry a <code>RetryPolicy</code> (and an idempotent action, since a retry runs the effect again).</p>
+<p><strong>With a retry policy</strong> → the interrupted attempt is treated as a failed attempt and the step goes to <strong>RETRYING</strong>; the engine schedules the next attempt per the policy (backoff included). This is identical to the normal retry-on-failure flow, so a step you <strong>want</strong> re-attempted after a crash should carry a <code>RetryPolicy</code> (and an idempotent action, since a retry runs the effect again). Each retry attempt records <strong>RETRY_STARTED</strong> before it runs, and runs only if the event store accepted that record. A node that lost the workflow instance during the backoff is rejected there and never runs the action.</p>
 </li>
 </ul>
 </div>
@@ -1242,14 +1242,17 @@ ctx.awaitExecute("validateAddress",
 </table>
 </div>
 <div class="paragraph">
-<p>The <code>reserveInventory</code> step with <code>RetryPolicy.maxRetries(3)</code>—fails twice, succeeds on the third attempt:</p>
+<p>The <code>reserveInventory</code> step with <code>RetryPolicy.maxRetries(3)</code>—fails twice, succeeds on the third attempt.
+Every retry attempt records <code>RetryStarted</code> before its action runs; <code>attempt</code> on that event is the attempt being started:</p>
 </div>
 <div class="et-player" data-autoplay>
   <div class="et-src" data-title="reserveInventory with retry">
-1 started   ReserveInventoryStarted
-2 retrying  ReserveInventoryRetrying  {"attempt": 1, "maxRetries": 3, "error": "InventoryUnavailableException"}
-3 retrying  ReserveInventoryRetrying  {"attempt": 2, "maxRetries": 3, "error": "InventoryUnavailableException"}
-4 completed ReserveInventoryCompleted {"reserved": true}
+1 started      ReserveInventoryStarted
+2 retrying     ReserveInventoryRetrying      {"attempt": 1, "maxRetries": 3, "error": "InventoryUnavailableException"}
+3 retryStarted ReserveInventoryRetryStarted  {"attempt": 2, "maxRetries": 3, "error": "InventoryUnavailableException"}
+4 retrying     ReserveInventoryRetrying      {"attempt": 2, "maxRetries": 3, "error": "InventoryUnavailableException"}
+5 retryStarted ReserveInventoryRetryStarted  {"attempt": 3, "maxRetries": 3, "error": "InventoryUnavailableException"}
+6 completed    ReserveInventoryCompleted     {"reserved": true}
   </div>
 </div>
 <div class="sect2">
@@ -1308,7 +1311,8 @@ This also applies when the workflow cancels a step through <code>ctx.cancelStep(
 <h3 id="_crash_recovery"><a class="anchor" href="#_crash_recovery"></a>Crash recovery</h3>
 <div class="paragraph">
 <p>Retries are event-sourced—on crash recovery, the engine replays retry events and recalculates backoff from persisted timestamps.
-If the process restarts while a step is in <code>RETRYING</code> state, the engine resumes from the correct attempt number with the remaining backoff delay.</p>
+If the process restarts while a step is in <code>RETRYING</code> state, the engine resumes from the correct attempt number with the remaining backoff delay.
+If it restarts while a step is in <code>RETRY_STARTED</code> state, that attempt was running at the crash. It is treated as a failed attempt with the recorded attempt number, so the step goes to <code>RETRYING</code> and the retry count is not reset.</p>
 </div>
 </div>
 </div>
