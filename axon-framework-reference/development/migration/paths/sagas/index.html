@@ -436,9 +436,8 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>Axon Framework 5 has no <code>Saga</code> construct. Replace it with existing core framework building blocks.
-The familiar <code>@Saga</code> stereotype and related APIs will not be ported to the Axon Framework 5 core.
-The same applies to the <code>DeadlineManager</code> and related APIs.
-A legacy layer allows migrating running sagas and deadlines.</p>
+The familiar <code>@Saga</code> stereotype and related APIs are not part of the Axon Framework 5 core; a legacy layer allows
+migrating running sagas, and the same applies to <code>DeadlineManager</code> and related APIs.</p>
 </div>
 <div class="paragraph">
 <p>For <strong>new</strong> processes, Axon Framework 5 provides several ways to implement them with the existing framework building blocks.
@@ -481,20 +480,21 @@ Business processes covered by sagas can span weeks or months.
 <code>axon-legacy</code> lets running saga instances continue while new instances start on an Axon Framework 5 native implementation of the business process.</p>
 </div>
 <div class="paragraph">
-<p>The <code>axon-legacy</code> module brings forward the following Axon Framework 4 saga and deadline infrastructure, adapted to the Axon Framework 5 APIs:</p>
+<p>The <code>axon-legacy</code> module brings forward the following Axon Framework 4 saga infrastructure, adapted to the Axon Framework 5 APIs:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>@Saga</code>, <code>@SagaEventHandler</code>, <code>@StartSaga</code>, <code>@EndSaga</code>, <code>SagaLifecycle</code> and the association-value mechanism</p>
+<p><code>@SagaEventHandler</code>, <code>@StartSaga</code>, <code>@EndSaga</code>, <code>SagaLifecycle</code> and the association-value mechanism</p>
 </li>
 <li>
 <p><code>SagaStore</code> and its concrete implementations, to support existing saga stores</p>
 </li>
-<li>
-<p><code>DeadlineManager</code> and <code>@DeadlineHandler</code></p>
-</li>
 </ul>
+</div>
+<div class="paragraph">
+<p>The <code>org.axonframework.spring.stereotype.Saga</code> annotation itself keeps its Axon Framework 4 package. Spring Boot autoconfiguration for legacy sagas activates only
+when both <code>axon-legacy</code> and <code>axon-spring-boot-starter</code> are on the classpath; see <a href="#spring-boot-sagas">Configuring legacy sagas with Spring Boot</a>.</p>
 </div>
 <div class="paragraph">
 <p>The legacy module supports existing saga classes as-is. Add <code>axon-legacy</code> as a dependency to your project.</p>
@@ -507,12 +507,12 @@ Business processes covered by sagas can span weeks or months.
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The <code>axon-legacy</code> module is <strong>under development</strong> and scheduled for 5.4.0. Until it lands, there is no supported way to upgrade an application with sagas in flight.</p>
-</div>
-<div class="paragraph">
-<p><a href="https://github.com/AxonFramework/AxonFramework/issues/3728">GitHub Issue #3728</a> tracks the saga side and
-<a href="https://github.com/AxonFramework/AxonFramework/issues/3065">GitHub Issue #3065</a> the deadline side. Until they are
-released, plan on the code-level migration below and on the drainage strategy in <a href="#strategy">Migrating an application with running sagas</a>.</p>
+<p>The saga side of <code>axon-legacy</code> (<a href="https://github.com/AxonFramework/AxonFramework/issues/3728">GitHub Issue #3728</a>),
+including Spring Boot autoconfiguration, targets 5.4.0. Deadlines
+(<a href="https://github.com/AxonFramework/AxonFramework/issues/3065">GitHub Issue #3065</a> and
+<a href="https://github.com/AxonFramework/AxonFramework/issues/5006">GitHub Issue #5006</a>) are not yet ported: <code>DeadlineManager</code>
+and <code>@DeadlineHandler</code> remain outstanding. Until they land, plan on the code-level migration below and on the
+drainage strategy in <a href="#strategy">Migrating an application with running sagas</a> for the deadline part of a saga.</p>
 </div>
 </td>
 </tr>
@@ -520,8 +520,336 @@ released, plan on the code-level migration below and on the drainage strategy in
 </div>
 <div class="paragraph">
 <p>The <code>axon-legacy</code> module is a migration aid, not a supported way to write new processes. <code>@StartSaga</code> is deprecated.
-The legacy module does not start new saga instances.
-Existing instances receive their events and run to completion; new work goes to the Axon Framework 5 implementation written alongside it.</p>
+Use the legacy module to let existing instances receive their events and run to completion while new work goes to the
+Axon Framework 5 implementation written alongside it. A ported <code>@StartSaga</code> handler can still create instances until
+you remove or disable that annotation as part of the drainage strategy.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="spring-boot-sagas"><a class="anchor" href="#spring-boot-sagas"></a>Configuring legacy sagas with Spring Boot</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Add <code>axon-legacy</code> next to <code>axon-spring-boot-starter</code> as a dependency. Autoconfiguration for legacy sagas activates
+once <code>axon-legacy</code> is on the classpath; no further setup is needed for a <code>@Saga</code>-annotated, component-scanned class to
+start receiving events.</p>
+</div>
+<div class="sect2">
+<h3 id="_processor_assignment"><a class="anchor" href="#_processor_assignment"></a>Processor assignment</h3>
+<div class="paragraph">
+<p>Each <code>@Saga</code> class gets its own pooled streaming event processor, named <code>&lt;SimpleName&gt;Processor</code> (for example,
+<code>OrderSagaProcessor</code> for <code>OrderSaga</code>). The processor starts at the head of the stream (the latest token), so a saga
+ignores events that occurred before the processor first starts, matching the Axon Framework 4
+<code>TrackingEventProcessor</code> default for sagas.</p>
+</div>
+<div class="paragraph">
+<p>Tuning a saga&#8217;s processor does not change which events it sees. The head token survives every
+<code>axon.eventhandling.processors.&lt;name&gt;.*</code> entry and any <code>EventProcessorDefinition</code> that does not set an initial token
+of its own.</p>
+</div>
+<div class="paragraph">
+<p>To make a saga process the stream from the start, set the initial token explicitly with a <code>SagaProcessorDefinition</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+SagaProcessorDefinition replayIntoOrderSaga() {
+    return SagaProcessorDefinition.forSaga(OrderSaga.class)
+                                  .whenPooledStreaming(config -&gt; config.initialToken(
+                                          source -&gt; source.firstToken(null)
+                                  ));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Every <code>axon.eventhandling.processors.&lt;name&gt;.*</code> property (<code>mode</code>, <code>source</code>, <code>token-claim-interval</code>, <code>thread-count</code>,
+<code>batch-size</code>, and <code>token-store</code>) applies to a saga&#8217;s processor as it applies to any other processor. A pooled saga
+processor needs a <code>TokenStore</code> bean, as does any other pooled processor.</p>
+</div>
+<div class="paragraph">
+<p><code>initial-segment-count</code> is the exception. A saga&#8217;s processor starts with a single segment, and the property does not
+raise it; raise the count with a <code>SagaProcessorDefinition</code>, see <a href="#configuring-a-sagas-processor">Configuring a saga&#8217;s processor</a>. Segments do not
+split the stream: every segment reads every event and keeps only the sagas it owns. A higher count lets several
+threads process sagas concurrently within an application instance.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><code>mode=subscribing</code> switches the saga to a subscribing processor, which has no segments and no token store. Every
+application instance then starts its own instance of the same saga. Keep sagas on a pooled streaming processor in a
+multi-instance deployment.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Processor names derived from a saga&#8217;s simple name are mixed-case (for example, <code>SimpleSagaProcessor</code>). Relaxed
+property binding lowercases a dotted key and silently fails to match, so target the processor with bracket notation
+instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.eventhandling.processors[SimpleSagaProcessor].mode=subscribing</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>@Namespace</code> on the saga type replaces <code>@ProcessingGroup</code>: it overrides the derived processor name. Two saga classes
+carrying the same <code>@Namespace</code> value (or deriving the same default name) share one processor, reproducing the Axon
+Framework 4 behavior of co-locating sagas in one processing group.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Keep the original processor name, or in-flight sagas lose events.</p>
+</div>
+<div class="paragraph">
+<p><code>@ProcessingGroup</code> does not exist in Axon Framework 5, so a saga carrying it no longer compiles. Removing the
+annotation renames the processor to <code>&lt;SimpleName&gt;Processor</code>. Token stores are keyed on the processor name, so the
+existing token no longer matches, the renamed processor starts at the head of the stream, and every event published
+before that token was written is never delivered to the sagas still running.</p>
+</div>
+<div class="paragraph">
+<p>Replace <code>@ProcessingGroup("orders")</code> with <code>@Namespace("orders")</code>, keeping the value, so the existing token is found:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Axon Framework 4: @Saga @ProcessingGroup("orders")
+@Saga
+@Namespace("orders")
+public class OrderSaga {
+
+    @StartSaga
+    @SagaEventHandler(associationProperty = "orderId")
+    public void on(OrderPlaced event) {
+        // The processor stays named "orders", so its Axon Framework 4 token is found and resumed.
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This applies to any saga whose processor was not already named <code>&lt;SimpleName&gt;Processor</code>, including one named through
+<code>assignProcessingGroup</code> or a hand-registered <code>SagaConfiguration</code>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Processor settings and <code>EventProcessorDefinition</code> beans apply to a saga&#8217;s processor as they apply to any other, and
+an <code>EventProcessorDefinition</code> selector can assign a saga to its named processor.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="configuring-a-sagas-processor"><a class="anchor" href="#configuring-a-sagas-processor"></a>Configuring a saga&#8217;s processor</h3>
+<div class="paragraph">
+<p>Declare a <code>SagaProcessorDefinition</code> bean. It runs after the saga defaults and the processor properties, so it has
+the last word on the processor&#8217;s configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+SagaProcessorDefinition orderSagaSegments() {
+    return SagaProcessorDefinition.forSaga(OrderSaga.class)
+                                  .whenPooledStreaming(config -&gt; config.initialSegmentCount(4));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Choose the processor in one of two ways:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>forSaga(OrderSaga.class)</code></dt>
+<dd>
+<p>the processor carrying that saga, wherever it ended up, including a <code>@Namespace</code>-renamed
+one. The saga type picks the processor, it does not narrow the customization to that saga, so when sagas share a
+processor this configures all of them. A log message names the others.</p>
+</dd>
+<dt class="hdlist1"><code>forProcessor("orders")</code></dt>
+<dd>
+<p>the processor with that name. Use it for a processor several sagas share.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Both OrderSaga and ShipmentSaga carry @Namespace("orders"), so they share one processor.
+@Bean
+SagaProcessorDefinition ordersProcessor() {
+    return SagaProcessorDefinition.forProcessor("orders")
+                                  .whenPooledStreaming(config -&gt; config.batchSize(50));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then choose how much of the configuration to reach:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>customized(&#8230;&#8203;)</code></dt>
+<dd>
+<p>the settings both processor modes share: the error handler, the unit of work factory, and
+extensions. Applies whatever mode the processor runs in.</p>
+</dd>
+<dt class="hdlist1"><code>whenPooledStreaming(&#8230;&#8203;)</code></dt>
+<dd>
+<p>the <code>PooledStreamingEventProcessorConfiguration</code>, with the initial token and segment
+count. Applies only while the processor runs in pooled streaming mode.</p>
+</dd>
+<dt class="hdlist1"><code>whenSubscribing(&#8230;&#8203;)</code></dt>
+<dd>
+<p>the <code>SubscribingEventProcessorConfiguration</code>, with its <code>eventSource</code> and
+<code>ignoredMessageHandler</code>. Applies only while the processor runs in subscribing mode.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Applies only when axon.eventhandling.processors[OrderSagaProcessor].mode=subscribing.
+@Bean
+SagaProcessorDefinition orderSagaEventSource(SubscribableEventSource eventSource) {
+    return SagaProcessorDefinition.forSaga(OrderSaga.class)
+                                  .whenSubscribing(config -&gt; config.eventSource(eventSource));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Naming a mode does not switch the processor to it. The mode comes from <code>axon.eventhandling.processors.&lt;name&gt;.mode</code> or
+a matching <code>EventProcessorDefinition</code>; a definition written for the other mode is skipped and logged.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><code>PooledStreamingEventProcessorModule.Customization</code> beans do not apply to a saga&#8217;s processor. <code>SagaProcessorDefinition</code>
+replaces them.</p>
+</div>
+<div class="paragraph">
+<p>An <code>EventProcessorDefinition</code> naming the processor does apply. Prefer <code>SagaProcessorDefinition</code> for a saga: an
+<code>EventProcessorDefinition</code> also fixes the processor&#8217;s mode, so one written to set a batch size overrules
+<code>mode=subscribing</code> on that processor.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>A saga and an ordinary event handler cannot share a processor. When both resolve to the same name, startup fails with
+a <code>DuplicateModuleRegistrationException</code>. To put them on one processor on purpose, drop <code>@Saga</code> from the class and
+register a <code>Module</code> bean combining a declarative saga component with autodetected handlers.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_saga_store_selection"><a class="anchor" href="#_saga_store_selection"></a>Saga store selection</h3>
+<div class="paragraph">
+<p>A saga&#8217;s store is resolved in this order:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>A user-defined <code>SagaStore</code> bean.</p>
+</li>
+<li>
+<p>A <code>JpaSagaStore</code> (bean name <code>sagaStore</code>), when an <code>EntityManagerFactory</code> bean is present. <code>SagaEntry</code> and
+<code>AssociationValueEntry</code> are registered with the persistence unit automatically.</p>
+</li>
+<li>
+<p>A <code>JdbcSagaStore</code> (bean name <code>sagaStoreNoSchema</code> or <code>sagaStoreWithSchema</code>), when a <code>DataSource</code> bean is present. A
+user-declared <code>SagaSqlSchema</code> bean selects the schema-aware variant.</p>
+</li>
+<li>
+<p>An <code>InMemorySagaStore</code> (bean name <code>sagaStore</code>), as the final fallback.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><code>@Saga(sagaStore = "beanName")</code> overrides the store for one saga type, resolving the named bean instead of the one in
+the chain above.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_suppressing_autoconfiguration_for_one_saga"><a class="anchor" href="#_suppressing_autoconfiguration_for_one_saga"></a>Suppressing autoconfiguration for one saga</h3>
+<div class="paragraph">
+<p>Discovery registers a <code>SpringSagaDescriptor</code> bean named <code>&lt;sagaBeanName&gt;$$Registrar</code> for every <code>@Saga</code> bean. Declaring
+a bean under that name yourself keeps discovery from configuring that saga.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you want to opt out a specific saga from <code>@Saga</code> discovery to manually configure it, drop the annotation and register it
+through a <code>Module</code> bean, see <a href="#behavior-changes">Behavior changes from Axon Framework 4</a>.</p>
+</div>
+<div class="paragraph">
+<p>If a <code>&lt;sagaBeanName&gt;$$Registrar</code> bean already exists when discovery reaches it, discovery aborts for <strong>all</strong> sagas processed after that point in bean-definition order. This is a known Axon Framework 4 behaviour that has been ported unchanged to the legacy module.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="behavior-changes"><a class="anchor" href="#behavior-changes"></a>Behavior changes from Axon Framework 4</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Pooled streaming replaces the tracking processor.</strong> A saga&#8217;s processor is pooled streaming, not a
+<code>TrackingEventProcessor</code>, and needs a <code>TokenStore</code> bean as any pooled processor does. A saga still only sees events
+published after its processor first started; replaying into one requires setting an initial token explicitly, see
+<a href="#spring-boot-sagas">Configuring legacy sagas with Spring Boot</a>.</p>
+</li>
+<li>
+<p><strong>No resource injection.</strong> <code>ResourceInjector</code> and <code>SpringResourceInjector</code> are not ported. A saga&#8217;s collaborators
+arrive as handler method parameters instead, resolved the same way as for any other event handler, including Spring
+beans.</p>
+</li>
+<li>
+<p><strong>No <code>@ProcessingGroup</code>.</strong> <code>@Namespace</code> on the saga type renames or co-locates a saga&#8217;s processor. It co-locates
+sagas with each other only: a saga and an ordinary event handler resolving to one processor name fail at startup. See
+<a href="#spring-boot-sagas">Configuring legacy sagas with Spring Boot</a> for the workaround.</p>
+</li>
+<li>
+<p><strong>Dead-letter queues are not supported for sagas.</strong> Enabling a dead letter queue for a saga&#8217;s processor by name has
+no effect.</p>
+</li>
+<li>
+<p><strong>Deadlines are not ported yet</strong> (see the note in <a href="#legacy-module">Running existing sagas on Axon Framework 5</a>).</p>
+</li>
+<li>
+<p><strong>The in-memory saga store is an explicit, overridable bean</strong>, not an internal default. An application that wants a
+default store alongside named per-saga stores declares the default store itself.</p>
+</li>
+<li>
+<p><strong>A <code>@Saga</code> class must be public with an accessible no-argument constructor.</strong></p>
+</li>
+<li>
+<p><strong>Component-scan saga classes, or declare them with a <code>@Scope("prototype")</code> annotated <code>@Bean</code> method.</strong> A plain <code>@Bean</code> method ignores the
+<code>@Scope("prototype")</code> that <code>@Saga</code> declares and requires to avoid the saga being registered additionally as a plain singleton event handling component bean. Annotate the bean method with <code>@Scope("prototype")</code> if the
+saga cannot be component-scanned.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
