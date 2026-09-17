@@ -4,10 +4,9 @@
     <script>(function(){try{var t=localStorage.getItem('axoniq-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
         <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Infrastructure</title>
-    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.3/events/infrastructure/">
-    <link rel="prev" href="../../dead-letter-queue/">
-    <link rel="next" href="../event-store-internals/">
+    <title>Managing Workflow Instances</title>
+    <link rel="prev" href="../workflow-lifecycle/">
+    <link rel="next" href="../step-orchestration/">
     <meta name="generator" content="Antora 3.1.10">
     <link rel="stylesheet" href="../../../../_/css/site.css">
     <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
@@ -308,8 +307,8 @@
     <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../../">Axon Framework Reference</a></li>
-    <li><a href="../">Events</a></li>
-    <li><a href="./">Infrastructure</a></li>
+    <li><a href="../"><span class="advanced-framework">Workflows</span></a></li>
+    <li><a href="./">Workflow Manager</a></li>
   </ul>
 </nav>
   </div>
@@ -430,820 +429,128 @@
   <div class="toc-menu"></div>
 </aside>
           <article class="doc">
-                <h1 class="page">Infrastructure</h1>
+                <h1 class="page">Managing Workflow Instances</h1>
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Event handling in Axon Framework involves several infrastructure components that work together to publish, store, and distribute events across your application.</p>
-</div>
-<div class="paragraph">
-<p>This page covers the key infrastructure components you&#8217;ll work with:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong><a href="#event_gateway">Event gateway</a></strong>: Provides a convenient API for publishing events.</p>
-</li>
-<li>
-<p><strong><a href="#event_appender">Event appender</a></strong>: Appends events within message handlers and entities.</p>
-</li>
-<li>
-<p><strong><a href="#event_bus">Event bus</a></strong>: Dispatches events to subscribed event handlers.</p>
-</li>
-<li>
-<p><strong><a href="#event_store">Event store</a></strong>: Persists events and provides event sourcing capabilities.</p>
-</li>
-<li>
-<p><strong><a href="#event_storage_engine">Event storage engine</a></strong>: Handles the low-level persistence of events.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Next to the infrastructure components, this chapter contains a section for:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong><a href="#configuring_event_conversion">Event conversion</a></strong></p>
-</li>
-<li>
-<p><strong><a href="#distributing_events">Distributing events</a></strong></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>For more details on event stores specifically, see the <a href="../event-store-internals/" class="xref page">event store internals</a> page.</p>
+<p><code>WorkflowManager</code> is the outside-in API for inspecting workflow instances and requesting cancellation from application
+code, support tooling, or administration services. Use <code>WorkflowContext</code> inside a workflow definition. Use
+<code>WorkflowManager</code> when the caller is outside the workflow.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="event_gateway"><a class="anchor" href="#event_gateway"></a>Event gateway</h2>
+<h2 id="_retrieve_the_manager_instance"><a class="anchor" href="#_retrieve_the_manager_instance"></a>Retrieve the manager instance</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The event gateway provides a convenient API for publishing events.
-While you can publish events directly through the event bus and event store, the gateway is generally the easiest option.
-Axon Framework constructs an <code>EventGateway</code> component for you out of the box, retrievable from the configuration.
-For more details on how to publish events with the event gateway, read the following <a href="../event-publishing/#event_gateway" class="xref page">section</a>.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="event_appender"><a class="anchor" href="#event_appender"></a>Event appender</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The <code>EventAppender</code> is the preferred way to append events from within message handlers and entities.
-Events appended through the <code>EventAppender</code> are published when the processing context commits.
-This, for example, ensure they are part of the same transactional boundary as the command being handled.
-Axon Framework constructs and injects a unique <code>EventAppender</code> for every message handling task, as those resemble the processing context scope.
-For more details on how to publish events with an <code>EventAppender</code>, read the following <a href="../event-publishing/#event_appender" class="xref page">section</a>.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="event_bus"><a class="anchor" href="#event_bus"></a>Event bus</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The <code>EventBus</code> is the mechanism that dispatches events to the subscribed event handlers.
-Axon provides two implementations of the Event Bus: any <code>EventStore</code> implementation and the <code>SimpleEventBus</code>.
-Both implementations support <a href="../event-processors/subscribing/" class="xref page">subscribing processors</a>.
-The <code>EventBus</code></p>
-</div>
-<div class="paragraph">
-<p>Note that the <code>SimpleEventBus</code> has a volatile storage.
-As such, it 'forgets' events as soon as they have been published to subscribed components.
-Although useful in some scenarios, we recommend a persistent storage solution for your events.
-This is where the <code>EventStore</code>, as described in more detail <a href="#event_store">here</a>, comes in.
-By persisting events you gain all benefits provided by <a href="https://www.axoniq.io/concepts/cqrs-and-event-sourcing">Event Sourcing</a>, as like recreating your entities at a later stage.</p>
-</div>
-<div class="paragraph">
-<p>The default Event Bus (and Event Store) is Axon Server.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="event_store"><a class="anchor" href="#event_store"></a>Event store</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The <code>EventStore</code> is the infrastructure component responsible for persisting and retrieving events.
-It combines the functionality of an <code>EventBus</code> with durable storage, allowing it to both store events and distribute them to subscribers.
-Event sourcing repositories use the event store to load and reconstruct entities from their event history.</p>
-</div>
-<div class="paragraph">
-<p>Axon Framework provides the <code>StorageEngineBackedEventStore</code> as its default <code>EventStore</code> implementation.
-This implementation delegates the actual storage operations to an <code>EventStorageEngine</code>, which handles the low-level persistence details.
-This separation allows you to choose different storage backends while keeping the same high-level event store behavior.</p>
-</div>
-<div class="paragraph">
-<p>You are able to configure your <code>EventStore</code> manually through the <code>EventSourcingConfigurer#registerEventStore</code> operation.
-However, chances are all you ever need to adjust is the <code>EventStorageEngine</code> since the default <code>StorageEngineBackedEventStore</code> suffices.
-The <code>EventSourcingConfigurer</code> has the <code>registerEventStorageEngine</code> method as a shorthand to simply switching the event storage solution.
-The sections below show configuration examples to configure a storage engine.</p>
-</div>
-<div class="paragraph">
-<p>For detailed information on event store configuration, Dynamic Consistency Boundaries (DCB), event tags, and consistency markers, see the <a href="../event-store-internals/" class="xref page">Event Store Specifics</a> page.</p>
-</div>
-<div class="sect2">
-<h3 id="event_storage_engine"><a class="anchor" href="#event_storage_engine"></a>Event storage engine</h3>
-<div class="paragraph">
-<p>The <code>EventStorageEngine</code> is the interface responsible for the actual storage and retrieval of events.
-Axon Framework provides several implementations, each suited to different use cases and deployment scenarios:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong><code>AxonServerEventStorageEngine</code></strong>: The default storage engine when using Axon Server.
-Provides full DCB support with event tagging and criteria-based querying.
-Recommended for production use.</p>
-</li>
-<li>
-<p><strong><code>AggregateBasedAxonServerEventStorageEngine</code></strong>: Uses Axon Server&#8217;s aggregate-oriented APIs.
-Compatible with Axon Server versions that do not support DCB.
-Events are organized by aggregate identifier and sequence number.</p>
-</li>
-<li>
-<p><strong><code>PostgresqlEventStorageEngine</code></strong>: Stores events directly in a PostgreSQL 16+ database with full DCB support.
-Use this engine when running without Axon Server.</p>
-</li>
-<li>
-<p><strong><code>AggregateBasedJpaEventStorageEngine</code></strong>: Stores events in a JPA-compatible database.
-Organizes events by aggregate identifier and sequence number.
-Useful when Axon Server is not available.</p>
-</li>
-<li>
-<p><strong><code>InMemoryEventStorageEngine</code></strong>: Stores events in memory.
-Ideal for testing and short-lived tools.
-Not suitable for production use.</p>
-</li>
-</ul>
-</div>
-<div class="sect3 axoniq-feature">
-<h4 id="axonserver_event_storage_engine"><a class="anchor" href="#axonserver_event_storage_engine"></a><code>AxonServerEventStorageEngine</code></h4>
-<div class="paragraph">
-<p>The <code>AxonServerEventStorageEngine</code> connects to <a href="https://www.axoniq.io/products/axon-server" class="external" target="_blank" rel="noopener">Axon Server</a>, fully supporting a Dynamic Consistency Boundaries where events may have several tags.
-This is the default storage engine when using Axon Server with DCB support.
-As such, configuration is rather straightforward:</p>
-</div>
-<div class="paragraph">
-<p>The <code>AxonServerEventStorageEngine</code> also implements <code>SnapshotStore</code> and is registered as the default for both, so sourcing an entity that has a snapshot resolves the snapshot and the events that follow it in a single round trip to Axon Server, instead of the two separate queries a generic <code>EventStorageEngine</code>/<code>SnapshotStore</code> combination requires. See <a href="../../snapshotting/" class="xref page">Snapshotting</a> for more on snapshot storage in general.</p>
-</div>
-<div id="_tabs_1" class="openblock tabs is-loading">
-<div class="content">
-<div class="ulist tablist">
-<ul>
-<li id="_tabs_1_configuration_api" class="tab">
-<p>Configuration API</p>
-</li>
-<li id="_tabs_1_spring_boot" class="tab">
-<p>Spring Boot</p>
-</li>
-</ul>
-</div>
-<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
-<div class="paragraph">
-<p>Declare dependencies:</p>
+<p>The default workflow configuration registers <code>WorkflowManager</code> as a component:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--somewhere in the POM file--&gt;
-&lt;dependency&gt;
-    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
-    &lt;artifactId&gt;axon-server-connector&lt;/artifactId&gt;
-    &lt;version&gt;${axoniq.version}&lt;/version&gt;
-&lt;/dependency&gt;
-&lt;dependency&gt;
-    &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
-    &lt;artifactId&gt;axon-eventsourcing&lt;/artifactId&gt;
-    &lt;version&gt;${axon.version}&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
-</div>
-</div>
-</div>
-<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
-<div class="paragraph">
-<p>Declare dependencies:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--somewhere in the POM file--&gt;
-&lt;dependency&gt;
-    &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
-    &lt;artifactId&gt;axon-spring-boot-starter&lt;/artifactId&gt;
-    &lt;version&gt;${axon.version}&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="title">Disable Axon Server default</div>
-<div class="paragraph">
-<p>If you want to disable Axon Server as the default <code>EventStorageEngine</code>, you have two options:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Set the <code>axon.axonserver.enabled</code> property to <code>false</code>.</p>
-</li>
-<li>
-<p>Exclude the <code>axon-server-connector</code> dependency from the <code>axon-spring-boot-starter</code> dependency.</p>
-</li>
-</ol>
-</div>
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect3 axoniq-feature">
-<h4 id="aggregate_based_axonserver_event_storage_engine"><a class="anchor" href="#aggregate_based_axonserver_event_storage_engine"></a><code>AggregateBasedAxonServerEventStorageEngine</code></h4>
-<div class="paragraph">
-<p>The <code>AggregateBasedAxonServerEventStorageEngine</code> uses Axon Server&#8217;s API before we supported the Dynamic Consistency Boundary.
-This makes it <strong>the</strong> <code>EventStorageEngine</code> to use when your stored events have not yet been migrated to a DCB-supporting storage solution.
-Although Axon Server is the default, the <code>AggregateBasedAxonServerEventStorageEngine</code> should be configured consciously:</p>
-</div>
-<div id="_tabs_2" class="openblock tabs is-loading">
-<div class="content">
-<div class="ulist tablist">
-<ul>
-<li id="_tabs_2_configuration_api" class="tab">
-<p>Configuration API</p>
-</li>
-<li id="_tabs_2_spring_boot" class="tab">
-<p>Spring Boot</p>
-</li>
-</ul>
-</div>
-<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.axonserver.connector.api.AxonServerConnectionManager;
-import io.axoniq.framework.axonserver.connector.event.AggregateBasedAxonServerEventStorageEngine;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-
-public class AxonConfig {
-
-    public void configureStorageEngine(EventSourcingConfigurer configurer) {
-        configurer.registerEventStorageEngine(config -&gt; {
-            AxonServerConnectionManager connectionManager = config.getComponent(AxonServerConnectionManager.class);
-            // AxonServerConnectionManager#getConnection returns a connection to the default context.
-            // Use AxonServerConnectionManager#getConnection(String) to retrieve a connection to another context.
-            return new AggregateBasedAxonServerEventStorageEngine(
-                    connectionManager.getConnection(),
-                    config.getComponent(EventConverter.class)
-            );
-        });
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.axonserver.connector.api.AxonServerConnectionManager;
-import io.axoniq.framework.axonserver.connector.event.AggregateBasedAxonServerEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.springframework.context.annotation.Bean;
-
-@Configuration
-public class AxonConfig {
-
-    @Bean
-    public EventStorageEngine storageEngine(AxonServerConnectionManager connectionManager,
-                                            EventConverter eventConverter) {
-        // AxonServerConnectionManager#getConnection returns a connection to the default context.
-        // Use AxonServerConnectionManager#getConnection(String) to retrieve a connection to another context.
-        return new AggregateBasedAxonServerEventStorageEngine(
-                connectionManager.getConnection(),
-                eventConverter
-        );
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect3 axoniq-feature">
-<h4 id="postgresql_event_storage_engine"><a class="anchor" href="#postgresql_event_storage_engine"></a><code>PostgresqlEventStorageEngine</code></h4>
-<div class="paragraph">
-<p>The <code>PostgresqlEventStorageEngine</code> stores events directly in a PostgreSQL 16+ database, fully supporting Dynamic Consistency Boundaries where events may have several tags.
-This is the default storage engine when running without Axon Server.</p>
-</div>
-<div class="paragraph">
-<p>The engine creates its schema automatically on startup—an <code>events</code> table, a <code>tags</code> table for DCB tag data, a <code>consistency_tags</code> table for concurrent-write safety, and an <code>events_monotonic_seq</code> sequence—so no manual DDL is required.</p>
-</div>
-<div id="_tabs_3" class="openblock tabs is-loading">
-<div class="content">
-<div class="ulist tablist">
-<ul>
-<li id="_tabs_3_configuration_api" class="tab">
-<p>Configuration API</p>
-</li>
-<li id="_tabs_3_spring_boot" class="tab">
-<p>Spring Boot</p>
-</li>
-</ul>
-</div>
-<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
-<div class="paragraph">
-<p>Declare dependencies:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--somewhere in the POM file--&gt;
-&lt;dependency&gt;
-    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
-    &lt;artifactId&gt;axoniq-postgresql&lt;/artifactId&gt;
-    &lt;version&gt;${axoniq.version}&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The <code>PostgresqlEventStorageEngine</code> registers itself automatically once a <code>DataSource</code> is present in the component registry.
-To register an explicit engine—for example when overriding defaults—use <code>EventSourcingConfigurer</code>:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.postgresql.PostgresqlEventStorageEngine;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-
-import javax.sql.DataSource;
-
-public class AxonConfig {
-
-    public void configureStorageEngine(EventSourcingConfigurer configurer) {
-        configurer.registerEventStorageEngine(config -&gt; new PostgresqlEventStorageEngine(
-                config.getComponent(DataSource.class),
-                config.getComponent(EventConverter.class)
-        ));
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
-<div class="paragraph">
-<p>Declare dependencies:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--somewhere in the POM file--&gt;
-&lt;dependency&gt;
-    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
-    &lt;artifactId&gt;axoniq-postgresql&lt;/artifactId&gt;
-    &lt;version&gt;${axoniq.version}&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Configure your PostgreSQL data source using standard Spring Boot properties:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.datasource.url=jdbc:postgresql://localhost/mydb
-spring.datasource.username=user
-spring.datasource.password=password</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The <code>PostgresqlEventStorageEngine</code> registers itself automatically once a <code>DataSource</code> bean is present.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="title">Axon Server takes precedence</div>
-<div class="paragraph">
-<p>When both <code>axoniq-postgresql</code> and <code>axon-server-connector</code> are on the classpath, the Axon Server engine takes precedence.
-To use PostgreSQL instead, either remove <code>axon-server-connector</code> from your dependencies or register <code>PostgresqlEventStorageEngine</code> explicitly as shown above.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>For schema details, connection pool sizing, and multi-instance coordination, see <a href="../../tuning/rdbms-tuning/#postgresql_operations" class="xref page">PostgreSQL operations</a>.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="aggregatebasedjpaeventstorageengine"><a class="anchor" href="#aggregatebasedjpaeventstorageengine"></a><code>AggregateBasedJpaEventStorageEngine</code></h4>
-<div class="paragraph">
-<p>The <code>AggregateBasedJpaEventStorageEngine</code> stores events in a JPA-compatible data source.
-The JPA event store stores events in entries.
-These entries contain the converted form of an event, as well as metadata fields for fast lookup and querying.
-Entries are organized by aggregate identifier and sequence number, with a global index for streaming.
-This makes it an "aggregate-based" storage solution.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="title">Aggregate-based vs DCB</div>
-<div class="paragraph">
-<p>The <code>AggregateBasedJpaEventStorageEngine</code> stores events by aggregate identifier and sequence number.
-Due to the aggregate focus, this storage engine does not support the Dynamic Consistency Boundary, as there is no means to store several tags per event.
-For DCB support, use Axon Server or one of Axon&#8217;s extensions as your event store.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>To use the <code>AggregateBasedJpaEventStorageEngine</code>, you must have the JPA (<code>jakarta.persistence</code>) annotations on your classpath.
-By default, the event store needs you to configure your persistence context (for example, as defined in the <code>META-INF/persistence.xml</code> file) to contain the entity class <code>AggregateEventEntry</code>.</p>
-</div>
-<div class="paragraph">
-<p>Below is an example configuration of a persistence context:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0"&gt;
-    &lt;persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL"&gt; <i class="conum" data-value="1"></i><b>(1)</b>
-        &lt;class&gt;org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry&lt;/class&gt; <i class="conum" data-value="2"></i><b>(2)</b>
-    &lt;/persistence-unit&gt;
-&lt;/persistence&gt;</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>In this example, there is a specific persistence unit for the event store.
-You may, however, choose to add this class to any other persistence unit configuration.</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>This line registers the <code>AggregateEventEntry</code> (the class used by the <code>AggregateBasedJpaEventStorageEngine</code>) with the persistence context.</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="title">Concurrency and Unique Key Constraints</div>
-<div class="paragraph">
-<p>Axon ensure access to entities are serialized within a given JVM, preventing two threads from accessing an entities concurrently.
-However, if you have multiple JVMs using the same database, this won&#8217;t help you.
-In that case, you must rely on the database to detect conflicts.</p>
-</div>
-<div class="paragraph">
-<p>Concurrent access to the event store will result in a Key Constraint Violation, as the table only allows a single event for a given aggregate identifier and sequence number.
-Therefore, inserting a second event for an existing aggregate with an existing sequence number will result in an error.</p>
-</div>
-<div class="paragraph">
-<p>The <code>AggregateBasedJpaEventStorageEngine</code> can detect this error and translate it to a <code>ConcurrencyException</code>.
-However, each database system reports this violation differently.
-If you register your <code>DataSource</code> with the <code>AggregateBasedJpaEventStorageEngine</code>, it will try to detect the type of database and figure out which error codes represent a Key Constraint Violation.
-Alternatively, you may provide a <code>PersistenceExceptionResolver</code> instance, which can tell if a given exception represents a key constraint violation.</p>
-</div>
-<div class="paragraph">
-<p>If no <code>DataSource</code> or <code>PersistenceExceptionResolver</code> is provided, exceptions from the database driver are thrown as-is.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>By default, the <code>AggregateBasedJpaEventStorageEngine</code> requires an <code>EntityManagerProvider</code> implementation that returns the <code>EntityManager</code> instance for the <code>EventStorageEngine</code> to use.
-This also allows application managed persistence contexts to be used.
-It is the <code>EntityManagerProvider&#8217;s responsibility to provide a correct instance of the `EntityManager</code>.</p>
-</div>
-<div class="paragraph">
-<p>There are a few implementations of the <code>EntityManagerProvider</code> available, each for different needs.
-The <code>SimpleEntityManagerProvider</code> simply returns the <code>EntityManager</code> instance which is given to it at construction time.
-This makes the implementation a simple option for container managed contexts.
-Alternatively, there is the <code>ContainerManagedEntityManagerProvider</code>, which returns the default persistence context, and is used by default by the JPA event store.</p>
-</div>
-<div class="paragraph">
-<p>If you have a persistence unit called <code>"myPersistenceUnit"</code> which you wish to use in the <code>AggregateBasedJpaEventStorageEngine</code>, the <code>EntityManagerProvider</code> implementation could look like this:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import org.axonframework.common.jpa.EntityManagerProvider;
-
-public class MyEntityManagerProvider implements EntityManagerProvider {
-
-    private EntityManager entityManager;
-
-    @Override
-    public EntityManager getEntityManager() {
-        return entityManager;
-    }
-
-    @PersistenceContext(unitName = "myPersistenceUnit")
-    public void setEntityManager(EntityManager entityManager) {
-        this.entityManager = entityManager;
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>With your persistence details in place, you are able to configure the <code>AggregateBasedJpaEventStorageEngine</code> as the <code>EventStorageEngine</code> of your Axon application:</p>
-</div>
-<div id="_tabs_4" class="openblock tabs is-loading">
-<div class="content">
-<div class="ulist tablist">
-<ul>
-<li id="_tabs_4_configuration_api" class="tab">
-<p>Configuration API</p>
-</li>
-<li id="_tabs_4_spring_boot" class="tab">
-<p>Spring Boot</p>
-</li>
-</ul>
-</div>
-<div id="_tabs_4_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_4_configuration_api">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.persistence.EntityManagerFactory;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
-import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-
-public class AxonConfig {
-
-    public void configureStorageEngine(
-            EventSourcingConfigurer configurer,
-            EntityManagerFactory entityManagerFactory,
-            EventConverter eventConverter
-    ) {
-        configurer.registerEventStorageEngine(
-                config -&gt; new AggregateBasedJpaEventStorageEngine(
-                        new JpaTransactionalExecutorProvider(entityManagerFactory),
-                        eventConverter,
-                        // The AggregateBasedJpaEventStorageEngineConfiguration lambda allows for further customization.
-                        engineConfig -&gt; engineConfig
-                )
-        );
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-<div id="_tabs_4_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_4_spring_boot">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import jakarta.persistence.EntityManagerFactory;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
-import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class AxonConfig {
-
-    @Bean
-    public EventStorageEngine storageEngine(EntityManagerFactory entityManagerFactory,
-                                            EventConverter eventConverter) {
-        return new AggregateBasedJpaEventStorageEngine(
-                new JpaTransactionalExecutorProvider(entityManagerFactory),
-                eventConverter,
-                // The AggregateBasedJpaEventStorageEngineConfiguration lambda allows for further customization.
-                engineConfig -&gt; engineConfig
-        );
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>Note that persistence providers, such as Hibernate, use a first-level cache in their <code>EntityManager</code> implementation.
-Typically, this means that all entities used or returned in queries are attached to the <code>EntityManager</code>.
-They are only cleared when the surrounding transaction is committed or an explicit "clear" is performed inside the transaction.
-This is especially the case when the queries are executed in the context of a transaction.</p>
-</div>
-<div class="paragraph">
-<p>To work around this issue, make sure to exclusively query for non-entity objects.
-You can use JPA&#8217;s <code>SELECT new SomeClass(parameters) FROM &#8230;&#8203;</code> style queries to work around this issue.
-Alternatively, call <code>EntityManager.flush()</code> and <code>EntityManager.clear()</code> after fetching a batch of events.
-Failure to do so might result in `OutOfMemoryException`s when loading large streams of events.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_inmemoryeventstorageengine"><a class="anchor" href="#_inmemoryeventstorageengine"></a><code>InMemoryEventStorageEngine</code></h4>
-<div class="paragraph">
-<p>The <code>InMemoryEventStorageEngine</code> keeps stored events in memory.
-While it probably outperforms any other event store out there, it is not really meant for long-term production use.
-However, it is useful in short-lived tools or tests that require an event store.</p>
-</div>
-<div id="_tabs_5" class="openblock tabs is-loading">
-<div class="content">
-<div class="ulist tablist">
-<ul>
-<li id="_tabs_5_configuration_api" class="tab">
-<p>Configuration API</p>
-</li>
-<li id="_tabs_5_spring_boot" class="tab">
-<p>Spring Boot</p>
-</li>
-</ul>
-</div>
-<div id="_tabs_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_5_configuration_api">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-
-public class AxonConfig {
-
-    public void configureStorageEngine(EventSourcingConfigurer configurer) {
-        configurer.registerEventStorageEngine(config -&gt; new InMemoryEventStorageEngine());
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-<div id="_tabs_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_5_spring_boot">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class AxonConfig {
-
-    @Bean
-    public EventStorageEngine storageEngine() {
-        return new InMemoryEventStorageEngine();
-    }
-}</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="paragraph">
-<p>To recap, this implementation is primarily useful for:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Unit and integration testing.</p>
-</li>
-<li>
-<p>Short-lived tools and utilities.</p>
-</li>
-<li>
-<p>Development and prototyping.</p>
-</li>
-</ul>
-</div>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowManager workflowManager = configuration.getComponent(WorkflowManager.class);</code></pre>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="configuring_event_conversion"><a class="anchor" href="#configuring_event_conversion"></a>Configuring event conversion</h2>
+<h2 id="_find_an_instance_and_read_its_state"><a class="anchor" href="#_find_an_instance_and_read_its_state"></a>Find an instance and read its state</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Event stores need a way to convert events to a serialized form for storage.
-Axon uses the <code>Converter</code>, as described in detail <a href="../../conversion/" class="xref page">here</a>, for this purpose.
-The default <code>Converter</code> is the <code>JacksonConverter</code>, which uses <a href="https://github.com/FasterXML/jackson">Jackson</a> to convert to and from JSON format.</p>
-</div>
-<div class="paragraph">
-<p>The <code>JacksonConverter</code> produces a compact serialized form and is widely supported across different platforms and languages.
-This makes it ideal for:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Storing events in an event store.</p>
-</li>
-<li>
-<p>Long-term storage with good human readability.</p>
-</li>
-<li>
-<p>Integration with external systems.</p>
-</li>
-<li>
-<p>Efficient network transmission.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>For event conversion Axon uses the <code>EventConverter</code>, which is used at the storage and network layer of Axon.
-This can be seen in the <a href="#event_storage_engine">event storage engine</a> configuration examples, which all expect an <code>EventConverter</code>.</p>
-</div>
-<div class="paragraph">
-<p>For complete details on converters and conversion, see <a href="../../conversion/" class="xref page">Conversion</a>.</p>
-</div>
-<div class="sect2">
-<h3 id="_converting_events_vs_the_others"><a class="anchor" href="#_converting_events_vs_the_others"></a>Converting events vs 'the others'</h3>
-<div class="paragraph">
-<p>It is possible to use a different converter for the storage of events than for other objects that Axon needs to convert (such as commands and queries).
-The <code>JacksonConverter</code> creates compact JSON output that is suitable for long-term event storage and cross-platform compatibility.</p>
-</div>
-<div class="paragraph">
-<p>If no explicit <code>EventConverter</code> is configured, events are converted using the message converter that has been configured (which defaults to the <code>JacksonConverter</code>).
-For more details on different converter options and layers, see <a href="../../conversion/#converter_configuration_levels" class="xref page">here</a></p>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1 axoniq-feature">
-<h2 id="distributing_events"><a class="anchor" href="#distributing_events"></a>Distributing events</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>To distribute events between applications, it is important to know whether the applications belong to the same bounded context.
-If you don&#8217;t recognize this concept, we recommend reading the <a href="https://www.axoniq.io/concepts/domain-driven-design">Bounded Context</a> section first.
-Applications within the same context "speak the same language."
-In other words, they communicate using the same set of messages, and thus events.</p>
-</div>
-<div class="paragraph">
-<p>As such, we can share the <code>EventStore&#8217;s</code> data source between these applications.
-We may thus achieve distribution by utilizing the source itself.</p>
-</div>
-<div class="paragraph">
-<p>However, sharing the entire event API is not recommended whenever the applications do not belong to the same context.
-Instead, we should protect the boundary of the contexts, except for some clearly defined cross-boundary messages.
-Since accessing the same source isn&#8217;t an option, we require a different solution to share events.</p>
-</div>
-<div class="paragraph">
-<p>To distribute events between bounded contexts, you can use Axon Server&#8217;s <a href="../../../../axon-server-reference/v2026.1/axon-server/administration/multi-context/" class="xref page">Multi-Context</a> solution, for example.
-The multi-context support requires application registration to specific contexts.
-Axon&#8217;s configuration API has the <code>ComponentFactory</code> to allow construction of specific infrastructure components.
-The <code>AxonServerEventStorageEngineFactory</code> is provided out of the box, which gives users the ability to request a component of type <code>EventStorageEngine</code> with name <code>storageEngine@{context-name}</code>:</p>
+<p>Build a <code>WorkflowStateQuery</code> with explicit state restrictions. The finder returns a lazy result immediately. Resolve
+the detached <code>WorkflowState</code> asynchronously.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.axonserver.connector.event.AxonServerEventStorageEngine;
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">workflowManager.findOne(WorkflowStateQuery.byWorkflowId(orderId))
+               .singleState()
+               .thenAccept(state -&gt; {
+                   if (state != null) {
+                       use(state);
+                   }
+               });</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>No matching instance completes with <code>null</code>. For a query matching more than one instance, calling <code>join()</code> throws a
+<code>CompletionException</code> whose cause is <code>NonUniqueWorkflowInstanceMatchException</code>. Use a workflow ID whenever the caller
+already knows it.</p>
+</div>
+<div class="paragraph">
+<p>The result of <code>findOne</code> is a <code>WorkflowInstances.Single</code>, which is also a zero-or-one <code>WorkflowInstances</code> collection.
+Use <code>singleState()</code> for direct zero-or-one state resolution. <code>instances()</code> and <code>size()</code> remain available when code handles single
+and multiple searches uniformly; for a single result, <code>size()</code> completes with zero or one.</p>
+</div>
+<div class="paragraph">
+<p>The detached state has copied structural state such as its payload map and steps. It is safe to retain while the live workflow
+continues to change. Application objects stored in payload values are not generically deep-copied.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_find_several_instances"><a class="anchor" href="#_find_several_instances"></a>Find several instances</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Use the same query type for one or many instances. The query is composed from named state restrictions and combines
+them with logical AND. A workflow-definition restriction uses <code>VersionedType</code>, which identifies the workflow
+definition by qualified name and version; it is distinct from the <code>MessageType</code> of a lifecycle event envelope.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var paymentWorkflows = workflowManager.findMany(
+        WorkflowStateQuery.byWorkflowDefinitionId(VersionedType.of("PaymentWorkflow", "1.0"))
+                          .workflowStatus(WorkflowStatus.STARTED)
+);
 
-public class AxonConfig {
+CompletableFuture&lt;Integer&gt; count = paymentWorkflows.size();
+Publisher&lt;WorkflowInstance&gt; instances = paymentWorkflows.instances();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>instances()</code> follows the Reactive Streams demand protocol. Each emitted <code>WorkflowInstance</code> is a lazy handle, so call
+<code>state()</code> on it to obtain its state. The manager does not provide a <code>Predicate</code>-based finder. The named restrictions
+in <code>WorkflowStateQuery</code> allow live and history repositories to execute the same search efficiently. A
+<code>WorkflowInstances</code> result includes matching live executions and historic workflow instances. When a workflow is
+available from both sources, the live execution represents that workflow in the result.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_request_cancellation"><a class="anchor" href="#_request_cancellation"></a>Request cancellation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Cancellation requests are asynchronous and apply only to live workflow executions. Historic instances can appear in a
+<code>WorkflowInstances</code> result and their state can be read, but they do not receive cancellation requests. Use the manager
+for a request made by an external caller; use <code>ctx.cancel()</code> or <code>ctx.cancelStep(&#8230;&#8203;)</code> when workflow logic itself
+decides to stop.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var order = workflowManager.findOne(WorkflowStateQuery.byWorkflowId(orderId));
 
-    public EventStorageEngine contextSpecificStorageEngine(Configuration configuration,
-                                                           String context) {
-        return configuration.getComponent(AxonServerEventStorageEngine.class, "storageEngine@" + context);
-    }
-}</code></pre>
+// Cancel one running step. The future is true only when a terminal step cancellation was recorded.
+CompletableFuture&lt;Boolean&gt; stepCancelled = order.requestStepCancellation("awaitApproval", null);
+
+// Cancel all currently running steps but leave the workflow active.
+CompletableFuture&lt;Integer&gt; cancelledSteps = order.requestCancellationOfAllSteps(null);
+
+// Cancel the workflow. The future completes after its cancellation event is durable and its body is woken.
+CompletableFuture&lt;Void&gt; workflowCancelled = order.requestWorkflowCancellation(null);</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The context-specific engine can, for example, be configured as the message source for a <a href="../event-processors/streaming/" class="xref page">Streaming Processor</a> to start reading from.</p>
+<p>Requesting cancellation of a single step records that step as cancelled and lets the workflow observe a
+<code>StepCancellationException</code>. Cancelling all steps does not itself terminate the workflow. Requesting workflow
+cancellation interrupts running steps and records the workflow as <code>CANCELLED</code>.</p>
 </div>
 <div class="paragraph">
-<p>Alternatively, you can use a message broker to distribute events between contexts.</p>
-</div>
-<div class="paragraph">
-<p>Although this allows further event distribution, we still recommend consciously sharing <em>the correct</em> events.
-Ideally, we add a form of context mapping, like an anti-corruption layer, between the contexts.
-In other words, we recommend using a separate component that maps the events from the local context to a shared language right before distribution.</p>
-</div>
-<div class="paragraph">
-<p>For example, this mapper would publish the messages on the AMQP queue or Kafka topic.
-When it comes to Axon Server, we could, for example, use a distinct shared/global context to contain the shared language.</p>
+<p>For the workflow and step-level termination effects, see <a href="../workflow-lifecycle/" class="xref page">Workflow Lifecycle</a> and
+<a href="../understanding-steps/#cancelling-a-step" class="xref page">Cancelling a Step</a>.</p>
 </div>
 </div>
 </div>
         <nav class="pagination">
-  <span class="prev"><a href="../../dead-letter-queue/"><span class="advanced-framework">Dead-Letter Queue</span></a></span>
-  <span class="next"><a href="../event-store-internals/">Event Store Internals</a></span>
+  <span class="prev"><a href="../workflow-lifecycle/">Workflow Lifecycle</a></span>
+  <span class="next"><a href="../step-orchestration/">Step Orchestration</a></span>
 </nav>
     </article>
   </div>
