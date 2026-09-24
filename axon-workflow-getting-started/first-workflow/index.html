@@ -449,8 +449,8 @@ If the application crashes, the engine replays those events and resumes exactly 
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class OrderFulfillmentWorkflow {
 
     @Workflow(idProperty = "orderId", startOnEventName = "OrderPlaced")
-    public void execute(SimpleWorkflowContext ctx) {
-        ctx.awaitExecute("reserveStock", Boolean.class,
+    public void execute(SimpleWorkflowContext workflowContext) {
+        workflowContext.awaitExecute("reserveStock", Boolean.class,
                 InventoryService::reserveStock); <i class="conum" data-value="1"></i><b>(1)</b>
     }
 }</code></pre>
@@ -481,20 +481,20 @@ The engine records a STARTED and COMPLETED event for this step automatically.</t
     Logger logger = LoggerFactory.getLogger(OrderFulfillmentWorkflow.class);
 
     @Workflow(idProperty = "orderId", startOnEventName = "OrderPlaced")
-    public void execute(SimpleWorkflowContext ctx) {
+    public void execute(SimpleWorkflowContext workflowContext) {
 
-        var customerId = ctx.workflowPayload().get("customerId");
-        var amount = ctx.workflowPayload().get("amount");
+        var customerId = workflowContext.workflowPayload().get("customerId");
+        var amount = workflowContext.workflowPayload().get("amount");
 
-        var reservation = ctx.awaitExecute("reserveStock",
+        var reservation = workflowContext.awaitExecute("reserveStock",
                 payload("customerId", customerId, "amount", amount).getValues(),
                 (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock(input))); <i class="conum" data-value="1"></i><b>(1)</b>
         if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
-            ctx.fail(new RuntimeException("Stock unavailable")); <i class="conum" data-value="2"></i><b>(2)</b>
+            workflowContext.fail(new RuntimeException("Stock unavailable")); <i class="conum" data-value="2"></i><b>(2)</b>
             return;
         }
 
-        logger.info("Stock reserved for order {}", ctx.workflowPayload().get("orderId"));
+        logger.info("Stock reserved for order {}", workflowContext.workflowPayload().get("orderId"));
     }
 }</code></pre>
 </div>
@@ -619,20 +619,20 @@ This gives you event sourcing, audit trails, and crash recovery without addition
 <div class="title">src/main/java/io/axoniq/example/order/OrderFulfillmentWorkflow.java</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEventName = "OrderPlaced")
-public void execute(SimpleWorkflowContext ctx) {
+public void execute(SimpleWorkflowContext workflowContext) {
 
-    var customerId = ctx.workflowPayload().get("customerId");
-    var amount = ctx.workflowPayload().get("amount");
+    var customerId = workflowContext.workflowPayload().get("customerId");
+    var amount = workflowContext.workflowPayload().get("amount");
 
-    var reservation = ctx.awaitExecute("reserveStock",
+    var reservation = workflowContext.awaitExecute("reserveStock",
             payload("customerId", customerId, "amount", amount).getValues(),
             (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock(input)));
     if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
-        ctx.fail(new RuntimeException("Stock unavailable"));
+        workflowContext.fail(new RuntimeException("Stock unavailable"));
         return;
     }
 
-    ctx.awaitExecute("initiatePayment",                         <i class="conum" data-value="1"></i><b>(1)</b>
+    workflowContext.awaitExecute("initiatePayment",             <i class="conum" data-value="1"></i><b>(1)</b>
                      payload("customerId", customerId,
                              "amount", amount).getValues(),
                      PaymentService::initiatePayment,
@@ -683,30 +683,30 @@ The <code>awaitEvent</code> convenience suspends the workflow until a matching e
 <div class="title">src/main/java/io/axoniq/example/order/OrderFulfillmentWorkflow.java</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEventName = "OrderPlaced")
-public void execute(SimpleWorkflowContext ctx) {
+public void execute(SimpleWorkflowContext workflowContext) {
 
-    var customerId = ctx.workflowPayload().get("customerId");
-    var amount = ctx.workflowPayload().get("amount");
+    var customerId = workflowContext.workflowPayload().get("customerId");
+    var amount = workflowContext.workflowPayload().get("amount");
 
-    var reservation = ctx.awaitExecute("reserveStock",
+    var reservation = workflowContext.awaitExecute("reserveStock",
             payload("customerId", customerId, "amount", amount).getValues(),
             (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock(input)));
     if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
-        ctx.fail(new RuntimeException("Stock unavailable"));
+        workflowContext.fail(new RuntimeException("Stock unavailable"));
         return;
     }
 
-    ctx.awaitExecute("initiatePayment",
+    workflowContext.awaitExecute("initiatePayment",
                      payload("customerId", customerId,
                              "amount", amount).getValues(),
                      PaymentService::initiatePayment,
                      step -&gt; step.timeout(Duration.ofSeconds(30))
                                  .eventNameCustomizer(baseName("InitiatingPaymentForCustomer")));
 
-    var confirmation = ctx.awaitEvent("awaitPayment",     <i class="conum" data-value="1"></i><b>(1)</b>
+    var confirmation = workflowContext.awaitEvent("awaitPayment", <i class="conum" data-value="1"></i><b>(1)</b>
             PaymentConfirmed.class,
             associate(payloadProperty("orderId"),
-                    equalsTo(ctx.workflowPayload().get("orderId"))),
+                    equalsTo(workflowContext.workflowPayload().get("orderId"))),
             step -&gt; step.timeout(Duration.ofMinutes(15))); <i class="conum" data-value="2"></i><b>(2)</b>
 
     logger.info("Payment confirmed: {}", confirmation);
@@ -769,7 +769,7 @@ They can be published from anywhere—a command handler, an <code>EventGateway</
 <h2 id="_kotlin_dsl"><a class="anchor" href="#_kotlin_dsl"></a>Kotlin DSL</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>If you prefer Kotlin, <code>WorkflowKontext</code> is the runtime-facing context and <code>Kontext</code> is the author-facing DSL wrapper.
+<p>If you prefer Kotlin, <code>WorkflowKontext</code> is the workflow context instance and <code>Kontext</code> is the author-facing DSL wrapper.
 <code>Kontext</code> offers the same kind of concise defaults as the Java DSL:</p>
 </div>
 <div class="listingblock">
@@ -791,7 +791,8 @@ They can be published from anywhere—a command handler, an <code>EventGateway</
 </div>
 </div>
 <div class="paragraph">
-<p>Under the hood, <code>Kontext</code> still builds the same <code>ExecuteStepDefinition</code> and <code>WaitForStepDefinition</code> objects as the runtime-facing API through <code>WorkflowKontext</code>.
+<p>Under the hood, <code>Kontext</code> builds the same DSL <code>ExecuteStepDefinition</code> and <code>WaitForStepDefinition</code> objects exposed by
+<code>WorkflowContext</code> through <code>WorkflowKontext</code>.
 You can stay concise for common cases and drop down to explicit definitions only when you need full control.
 When you need to pass step-local data with a named Kotlin argument, use <code>inputPayload = &#8230;&#8203;</code>.
 To learn more about all execution options, event associations, orchestration patterns, and advanced configuration, see the <a href="../../axon-framework-reference/development/workflows/" class="xref page">Reference Guide</a>.</p>

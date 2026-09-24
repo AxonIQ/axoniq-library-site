@@ -476,8 +476,8 @@ The <code>publish</code> / <code>awaitPublish</code> pair appends that business 
 <div id="_tabs_1_java--panel" class="tabpanel" aria-labelledby="_tabs_1_java">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitPublish("notifyApproved",                                  <i class="conum" data-value="1"></i><b>(1)</b>
-        new OrderApproved(orderId, approvedBy));                    <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">workflowContext.awaitPublish("notifyApproved",                      <i class="conum" data-value="1"></i><b>(1)</b>
+                 new OrderApproved(orderId, approvedBy));                    <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -556,15 +556,15 @@ Another workflow can start on it or wait for it with <a href="../waiting-for-eve
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Approval workflow
-ctx.awaitPublish("notifyApproved",                                  <i class="conum" data-value="1"></i><b>(1)</b>
-        new OrderApproved(orderId, approvedBy));                    <i class="conum" data-value="2"></i><b>(2)</b>
+workflowContext.awaitPublish("notifyApproved",                      <i class="conum" data-value="1"></i><b>(1)</b>
+                 new OrderApproved(orderId, approvedBy));                    <i class="conum" data-value="2"></i><b>(2)</b>
 
 // Shipment workflow, started on OrderApproved
 @Workflow(idProperty = "orderId",
           startOnEventClass = OrderApproved.class,
           workflowNamespace = "io.myapp.shipping")
-public void execute(SimpleWorkflowContext ctx) {
-    ctx.awaitExecute("prepareShipment", Boolean.class, () -&gt; true);
+public void execute(SimpleWorkflowContext workflowContext) {
+    workflowContext.awaitExecute("prepareShipment", Boolean.class, () -&gt; true);
 }</code></pre>
 </div>
 </div>
@@ -574,9 +574,9 @@ A wait registered after the reply has already passed is never woken.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reply = ctx.waitForEvent("awaitQuote", QuoteReceived.class,
-        associate(payloadProperty("orderId"), equalsTo(orderId)));
-ctx.awaitPublish("requestQuote", new QuoteRequested(orderId));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reply = workflowContext.waitForEvent("awaitQuote", QuoteReceived.class,
+                             associate(payloadProperty("orderId"), equalsTo(orderId)));
+workflowContext.awaitPublish("requestQuote", new QuoteRequested(orderId));
 reply.await();</code></pre>
 </div>
 </div>
@@ -617,9 +617,9 @@ When two workflows are keyed by the same property, give them distinct id prefixe
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var notified = ctx.publish("notifyApproved", new OrderApproved(orderId, approvedBy));
-var reserved = ctx.execute("reserveStock", Map.of(), (pc, p) -&gt; inventory.reserve(p));
-ctx.allMatch(WorkflowStepResult::success, notified, reserved).await();</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var notified = workflowContext.publish("notifyApproved", new OrderApproved(orderId, approvedBy));
+var reserved = workflowContext.execute("reserveStock", Map.of(), (pc, p) -&gt; inventory.reserve(p));
+workflowContext.allMatch(WorkflowStepResult::success, notified, reserved).await();</code></pre>
 </div>
 </div>
 <div class="paragraph">

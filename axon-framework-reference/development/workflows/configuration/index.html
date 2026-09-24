@@ -449,7 +449,7 @@ This section covers the declarative (programmatic) configuration API, which give
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId",
           startOnEventClass = OrderPlacedEvent.class,
           workflowNamespace = "io.myapp.orders")
-public void execute(SimpleWorkflowContext ctx) { /* ... */ }</code></pre>
+public void execute(SimpleWorkflowContext workflowContext) { /* ... */ }</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -486,7 +486,7 @@ configurer.componentRegistry(r -&gt; r.registerEnhancer(registry -&gt;
                         .usingContext(SimpleWorkflowContext.class)
                         .workflowContextFactory(c -&gt; new SimpleWorkflowContextFactory())
                         .workflowExecutionFactory(c -&gt;
-                                new DSLAdoptingExecutionFactory&lt;&gt;(SimpleWorkflowContext.class))
+                                new WorkflowContextAdoptingExecutionFactory&lt;&gt;(SimpleWorkflowContext.class))
                         .definitions(d -&gt; d
                                 .declarative(c -&gt; new OrderFulfillmentWorkflow()::execute)
                                 .workflowName("OrderFulfillment")
@@ -537,7 +537,8 @@ var configuration = configurer.start(); <i class="conum" data-value="1"></i><b>(
 </div>
 </div>
 <div class="paragraph">
-<p>Specifies the workflow context type. Use <code>SimpleWorkflowContext.class</code> for the built-in context, or your own custom context class.</p>
+<p>Specifies the author-facing workflow context type. Use <code>SimpleWorkflowContext.class</code> for the built-in context, or your
+own custom context class. Both implement <code>WorkflowContext</code>, the contract supplied to workflow bodies.</p>
 </div>
 </div>
 <div class="sect2">
@@ -555,11 +556,21 @@ var configuration = configurer.start(); <i class="conum" data-value="1"></i><b>(
 <h3 id="_step_3_execution_factory"><a class="anchor" href="#_step_3_execution_factory"></a>Step 3: Execution factory</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.workflowExecutionFactory(c -&gt; new DSLAdoptingExecutionFactory&lt;&gt;(SimpleWorkflowContext.class))</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.workflowExecutionFactory(c -&gt; new WorkflowContextAdoptingExecutionFactory&lt;&gt;(SimpleWorkflowContext.class))</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p><code>DSLAdoptingExecutionFactory</code> is the standard execution factory for DSL-based contexts (anything extending <code>AbstractDSLWorkflowContext</code>). It bridges the context to the engine&#8217;s execution model.</p>
+<p><code>WorkflowContextAdoptingExecutionFactory</code> is the standard execution factory for author-facing workflow contexts
+(anything extending <code>AbstractWorkflowContext</code>). It bridges a <code>WorkflowContext</code> to the engine&#8217;s internal
+<code>WorkflowExecutionOperations</code> runtime contract. Workflow definitions should depend on the author-facing context, not
+on the runtime contract.</p>
+</div>
+<div class="paragraph">
+<p>Import <code>WorkflowContextAdoptingExecutionFactory</code> and <code>AbstractWorkflowContext</code> from
+<code>io.axoniq.framework.workflow.runtime.execution</code>. The author-facing <code>WorkflowContext</code>, step definitions,
+<code>EventCondition</code>, <code>EventConditions</code>, and workflow lifecycle exceptions reside in
+<code>io.axoniq.framework.workflow.dsl.api</code>; retry configuration resides in
+<code>io.axoniq.framework.workflow.dsl.api.retry</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -1030,7 +1041,7 @@ Extend whichever layer best fits the API you want to expose to workflow authors.
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule
     .usingContext(ApprovalWorkflowContext.class)
     .workflowContextFactory(c -&gt; new ApprovalWorkflowContextFactory())
-    .workflowExecutionFactory(c -&gt; new DSLAdoptingExecutionFactory&lt;&gt;(ApprovalWorkflowContext.class))
+    .workflowExecutionFactory(c -&gt; new WorkflowContextAdoptingExecutionFactory&lt;&gt;(ApprovalWorkflowContext.class))
     .definitions(d -&gt; d
             .declarative(c -&gt; new PurchaseApprovalWorkflow()::execute)
             .workflowName("PurchaseApproval")
@@ -1044,11 +1055,11 @@ Extend whichever layer best fits the API you want to expose to workflow authors.
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void execute(ApprovalWorkflowContext ctx) {
-    if (!ctx.requestApproval("team-lead", Duration.ofDays(3))) {
-        ctx.escalate("department-head");
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void execute(ApprovalWorkflowContext workflowContext) {
+    if (!workflowContext.requestApproval("team-lead", Duration.ofDays(3))) {
+        workflowContext.escalate("department-head");
     }
-    ctx.notifyOutcome(ctx.requester(), "approved");
+    workflowContext.notifyOutcome(workflowContext.requester(), "approved");
 }</code></pre>
 </div>
 </div>
