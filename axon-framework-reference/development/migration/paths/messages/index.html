@@ -466,8 +466,8 @@ Axon Framework 5 introduces dedicated annotations to explicitly define the natur
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>@TargetAggregateIdentifier</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>@TargetEntityId</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Framework 5 moves from the "Aggregate" terminology towards a more general "Entity" model. This aligns with the Dynamic Consistency Boundary (DCB) principles where boundaries are more fluid. See the <a href="../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">architecture principles</a> for more details.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>@TargetEntityId</code> + <code>@Command(routingKey = "&#8230;&#8203;")</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axon Framework 5 moves from the "Aggregate" terminology towards a more general "Entity" model. This aligns with the Dynamic Consistency Boundary (DCB) principles where boundaries are more fluid. Note that AF4&#8217;s <code>@TargetAggregateIdentifier</code> also served as the routing key; in AF5 the routing key must be declared explicitly via <code>@Command(routingKey = "&#8230;&#8203;")</code> to keep same-target commands handled sequentially. See the <a href="../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">architecture principles</a> for more details.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>@Revision</code></p></td>
@@ -580,6 +580,23 @@ Instead of using the <code>@Revision</code> annotation, you now specify the vers
 <p>When sending a command to an entity (formerly aggregate), you previously used <code>@TargetAggregateIdentifier</code>.
 In Axon Framework 5, this is replaced by <code>@TargetEntityId</code>. This shift is part of the broader move towards Dynamic Consistency Boundaries. See the <a href="../../understanding-architecture-principles/#moving-away-from-aggregates" class="xref page">architecture principles</a> for more context.</p>
 </div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In Axon Framework 4, <code>@TargetAggregateIdentifier</code> did two things: it identified the target <strong>and</strong> acted as the command&#8217;s routing key, guaranteeing that commands for the same aggregate were handled by the same instance, one at a time. <code>@TargetEntityId</code> only does the first. To preserve the sequential-handling guarantee you must also make the routing key explicit with <code>@Command(routingKey = "&lt;field&gt;")</code>, naming the field annotated with <code>@TargetEntityId</code>. Effectively, AF4&#8217;s <code>@TargetAggregateIdentifier</code> equals AF5&#8217;s <code>@TargetEntityId</code> plus <code>@Command(routingKey = "&#8230;&#8203;")</code>.</p>
+</div>
+<div class="paragraph">
+<p>Omitting the <code>routingKey</code> compiles and passes unit tests, but under concurrent load commands with the same target ID may be handled in parallel, breaking state-based validation.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 <div class="listingblock axon4">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4
@@ -592,6 +609,7 @@ public class MarkOrderAsShippedCommand {
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF5
+@Command(routingKey = "orderId")
 public class MarkOrderAsShippedCommand {
     @TargetEntityId
     private String orderId;

@@ -516,6 +516,20 @@ Renames packages and classes within the <code>org.axonframework.*</code> namespa
 </li>
 <li>
 <p><strong>Annotation rewrites</strong>:`@Aggregate` → <code>@EventSourced</code>, <code>@AggregateRoot</code> → <code>@EventSourcedEntity</code>, <code>@TargetAggregateIdentifier</code> → <code>@TargetEntityId</code>, <code>@Revision</code> → <code>@Event(version = …)</code>, <code>@ProcessingGroup</code> → <code>@Namespace</code>, <code>@EntityCreator</code> added to constructors</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>AF4&#8217;s <code>@TargetAggregateIdentifier</code> was <strong>both</strong> the target-id and the command&#8217;s routing key, keeping same-entity commands handled sequentially. In AF5 that routing key must be explicit as <code>@Command(routingKey = "&#8230;&#8203;")</code>. Whether the OpenRewrite rewrite lifts it for you depends on the recipe version: older versions rename <code>@TargetAggregateIdentifier</code> to <code>@TargetEntityId</code> only and leave a bare (or absent) <code>@Command</code>, while newer versions also fill in the <code>routingKey</code>. Do not assume either way; verify each command and reconcile it to the correct end state regardless of what the rewrite produced. See <a href="../paths/messages/#_target_entity_identification" class="xref page">Target entity identification</a> for the required end state.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 </li>
 <li>
 <p><strong>Message API</strong>:accessor method renames, <code>AggregateLifecycle.apply(&#8230;&#8203;)</code> replaced with <code>EventAppender#append(&#8230;&#8203;)</code></p>
