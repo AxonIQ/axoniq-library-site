@@ -522,8 +522,9 @@ Any async steps still running are interrupted (see <a href="#complete-with-runni
 <div class="sectionbody">
 <div class="paragraph">
 <p>The workflow context passed to your workflow method is your single entry point to all engine capabilities.
-For Java, <code>WorkflowContext</code> is the author-facing workflow-body contract. <code>BaseWorkflowContext</code> is the canonical DSL
-layer implementing it, and <code>SimpleWorkflowContext</code> adds convenience methods on top:</p>
+For Java, <code>WorkflowContext</code> is the shared author-facing workflow-body contract. <code>BaseWorkflowContext</code> is the
+canonical Java DSL layer implementing it, with Java-friendly named overloads; <code>SimpleWorkflowContext</code> adds further
+convenience methods on top.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -540,10 +541,15 @@ layer implementing it, and <code>SimpleWorkflowContext</code> adds convenience m
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Workflow data</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflowId()</code>—the unique workflow instance ID<br>
-<code>workflowVersion()</code>—the workflow&#8217;s current definition version (semver string; see <a href="../versioning/" class="xref page">Workflow Versioning</a>)<br>
+<code>workflowDefinitionId()</code>—the workflow definition identity; use <code>.version()</code> for its current definition version (see <a href="../versioning/" class="xref page">Workflow Versioning</a>)<br>
 <code>workflowPayload()</code>—the current workflow payload<br>
 <code>workflowStatus()</code>—the current status (STARTED, COMPLETED, FAILED, &#8230;&#8203;)<br>
-<code>workflowStepNames()</code>—names of all steps executed so far</p></td>
+<code>workflowStepNames()</code>—names of steps in this workflow execution<br>
+<code>getStep(stepName)</code> / <code>containsStep(stepName)</code>—inspect whether a named step exists and retrieve it when present</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Component access</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>resolveComponent(componentType)</code>—resolve a component from the processing context for this workflow invocation</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Execute actions</strong></p></td>
