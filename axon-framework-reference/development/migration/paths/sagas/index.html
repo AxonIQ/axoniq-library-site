@@ -497,7 +497,43 @@ Business processes covered by sagas can span weeks or months.
 when both <code>axon-legacy</code> and <code>axon-spring-boot-starter</code> are on the classpath; see <a href="#spring-boot-sagas">Configuring legacy sagas with Spring Boot</a>.</p>
 </div>
 <div class="paragraph">
-<p>The legacy module supports existing saga classes as-is. Add <code>axon-legacy</code> as a dependency to your project.</p>
+<p>Add <code>axon-legacy</code> as a dependency to the project. The legacy module preserves the Saga annotations, association
+values, and <code>SagaStore</code> contract. Saga classes require the following source changes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Replace static <code>SagaLifecycle</code> calls with calls on a <code>SagaLifecycle</code> parameter of the <code>@SagaEventHandler</code> method.</p>
+</li>
+<li>
+<p>Replace injected <code>CommandGateway</code> fields with a <code>CommandDispatcher</code> parameter of the <code>@SagaEventHandler</code> method.</p>
+</li>
+<li>
+<p>Move dependencies stored in <code>@Inject</code> or <code>@Autowired</code> fields to the <code>@SagaEventHandler</code> methods that use them.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 does not inject dependencies into fields of legacy Saga instances. If a Saga currently keeps a
+service or another collaborator in an <code>@Inject</code> or <code>@Autowired</code> field, add that dependency as a parameter to each
+<code>@SagaEventHandler</code> method that needs it, then remove the field. Axon resolves the parameter when it invokes the
+handler.</p>
+</div>
+<div class="sect2">
+<h3 id="_synchronous_event_handlers"><a class="anchor" href="#_synchronous_event_handlers"></a>Synchronous event handlers</h3>
+<div class="paragraph">
+<p>An <code>@SagaEventHandler</code> in <code>axon-legacy</code> must complete on the thread that invoked it. Do not return
+<code>CompletableFuture</code>, <code>Mono</code>, <code>Publisher</code>, or another asynchronous result type from a legacy Saga event handler.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 4 invoked Saga event handlers synchronously and ignored their return values. The legacy module keeps
+that contract so the <code>SagaStore</code> update runs in the invoking thread&#8217;s transaction. A handler that returns incomplete
+asynchronous work fails with a <code>SagaExecutionException</code>.</p>
+</div>
+<div class="paragraph">
+<p>Keep existing <code>void</code> handlers synchronous. Use <code>CommandDispatcher.send(&#8230;&#8203;)</code> for an existing fire-and-forget
+<code>CommandGateway.send(&#8230;&#8203;)</code> call. For an existing <code>sendAndWait(&#8230;&#8203;)</code> call, wait for the command result before the
+handler returns.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -523,6 +559,7 @@ drainage strategy in <a href="#strategy">Migrating an application with running s
 Use the legacy module to let existing instances receive their events and run to completion while new work goes to the
 Axon Framework 5 implementation written alongside it. A ported <code>@StartSaga</code> handler can still create instances until
 you remove or disable that annotation as part of the drainage strategy.</p>
+</div>
 </div>
 </div>
 </div>
