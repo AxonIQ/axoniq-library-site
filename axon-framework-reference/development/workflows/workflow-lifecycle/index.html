@@ -844,22 +844,22 @@ This is useful for cleanup, notifications, or triggering follow-up processes.</p
         // ... workflow logic
     }
 
-    @OnSuccess <i class="conum" data-value="1"></i><b>(1)</b>
+    @WorkflowCompletedHandler <i class="conum" data-value="1"></i><b>(1)</b>
     public void onCompleted(WorkflowStatus status, SimpleWorkflowContext ctx) {
         logger.info("Order {} fulfilled successfully!", ctx.workflowPayload().get("orderId"));
     }
 
-    @OnFailure <i class="conum" data-value="2"></i><b>(2)</b>
+    @WorkflowFailedHandler <i class="conum" data-value="2"></i><b>(2)</b>
     public void onFailed(WorkflowStatus status, SimpleWorkflowContext ctx) {
         logger.warn("Order {} failed: {}", ctx.workflowPayload().get("orderId"), status);
     }
 
-    @OnCancellation <i class="conum" data-value="3"></i><b>(3)</b>
+    @WorkflowCancelledHandler <i class="conum" data-value="3"></i><b>(3)</b>
     public void onCancelled(WorkflowStatus status, SimpleWorkflowContext ctx) {
         logger.info("Order {} was cancelled", ctx.workflowPayload().get("orderId"));
     }
 
-    @OnTimeout <i class="conum" data-value="4"></i><b>(4)</b>
+    @WorkflowTimedOutHandler <i class="conum" data-value="4"></i><b>(4)</b>
     public void onTimedOut(WorkflowStatus status, SimpleWorkflowContext ctx) {
         logger.warn("Order {} timed out", ctx.workflowPayload().get("orderId"));
     }
@@ -889,6 +889,11 @@ This is useful for cleanup, notifications, or triggering follow-up processes.</p
 <div class="paragraph">
 <p>Each listener method receives the <code>WorkflowStatus</code> and the <code>WorkflowContext</code>, giving you access to the workflow payload and ID.</p>
 </div>
+<div class="paragraph">
+<p>Annotation-based listeners execute through the same handler pipeline as every other Axon Framework message
+handler: tracing, handler timeouts, <code>@MessageHandlerInterceptor</code>, replay-awareness, and any
+<code>HandlerEnhancerDefinition</code> registered in the configuration all apply automatically, with no extra setup.</p>
+</div>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -899,7 +904,8 @@ This is useful for cleanup, notifications, or triggering follow-up processes.</p
 <div class="paragraph">
 <p>Lifecycle listeners must be defined in the same class as the <code>@Workflow</code> method.
 Only methods on the workflow instance&#8217;s class (and its type hierarchy) are scanned for listener annotations.
-Use the <code>workflowName</code> attribute (for example, <code>@OnSuccess(workflowName = "myWorkflow")</code>) to bind a listener to a specific workflow when multiple workflows are defined in the same class.</p>
+Use the <code>workflowName</code> attribute (for example, <code>@WorkflowCompletedHandler(workflowName = "myWorkflow")</code>) to bind
+a listener to a specific workflow when multiple workflows are defined in the same class.</p>
 </div>
 </td>
 </tr>
@@ -915,11 +921,11 @@ Use the <code>workflowName</code> attribute (for example, <code>@OnSuccess(workf
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.customized((c, w) -&gt; w
         .registerWorkflowStatusChangeListener(WorkflowStatus.COMPLETED,
-                (status, context) -&gt; {
+                (status, context, processingContext) -&gt; {
                     logger.info("Workflow {} completed", context.workflowId());
                 })
         .registerWorkflowStatusChangeListener(WorkflowStatus.FAILED,
-                (status, context) -&gt; {
+                (status, context, processingContext) -&gt; {
                     logger.warn("Workflow {} failed", context.workflowId());
                 })
 )</code></pre>
@@ -932,6 +938,12 @@ Use the <code>workflowName</code> attribute (for example, <code>@OnSuccess(workf
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">w.unregisterWorkflowStatusChangeListener(WorkflowStatus.COMPLETED, myListener);</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p><code>WorkflowStatusChangeListener</code> is a functional interface with a single method,
+<code>onWorkflowStatus(WorkflowStatus, WorkflowContext, ProcessingContext)</code>. Receiving the <code>ProcessingContext</code> lets a
+programmatic listener participate in the same handler pipeline annotation-based listeners do, for example,
+propagating correlation data or interacting with the active transaction, with no extra setup required.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -949,6 +961,59 @@ They run in the context of the workflow execution and have access to the full wo
 </table>
 </div>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_method_parameters"><a class="anchor" href="#_method_parameters"></a>Method parameters</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Both the <code>@Workflow</code> method and annotation-based lifecycle listeners can declare additional parameters beyond
+the workflow context, resolved the same way every other Axon Framework annotated handler resolves its
+parameters:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@WorkflowCompletedHandler
+public void onCompleted(WorkflowStatus status, SimpleWorkflowContext ctx, OrderFulfillmentWorkflow self) {
+    logger.info("Order {} fulfilled successfully! (workflow instance: {})", ctx.workflowPayload().get("orderId"), self);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The following parameters are supported for workflow related handler methods:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Parameter type</th>
+<th class="tableblock halign-left valign-top">Resolved to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WorkflowContext</code> (or your custom subtype)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow context of the invocation in progress.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WorkflowStatus</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The status that triggered the listener. Only available on lifecycle listener methods.
+Declaring it on the <code>@Workflow</code> method itself has no matching value, so that method won&#8217;t be recognized as a handler.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow instance&#8217;s own type (or a supertype)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow-annotated component instance itself, letting a listener call other methods or read fields on it.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any type with a public constructor accepting your <code>WorkflowContext</code> type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Your <code>WorkflowContext</code>, wrapped in that type. Useful for giving a lifecycle listener the same convenience type
+(for example, <code>SimpleWorkflowContext</code>) the <code>@Workflow</code> method itself uses.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div class="sect1">

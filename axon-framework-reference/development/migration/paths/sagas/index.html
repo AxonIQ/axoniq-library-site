@@ -490,6 +490,9 @@ Business processes covered by sagas can span weeks or months.
 <li>
 <p><code>SagaStore</code> and its concrete implementations, to support existing saga stores</p>
 </li>
+<li>
+<p><code>SagaConfigurer</code>, with its Axon Framework 4 package and fluent manager, repository, and store configuration hooks</p>
+</li>
 </ul>
 </div>
 <div class="paragraph">
@@ -788,11 +791,11 @@ replaces them.</p>
 <div class="paragraph">
 <p>A saga and an ordinary event handler cannot share a processor. When both resolve to the same name, startup fails with
 a <code>DuplicateModuleRegistrationException</code>. To put them on one processor on purpose, drop <code>@Saga</code> from the class and
-register a <code>Module</code> bean combining a declarative saga component with autodetected handlers.</p>
+register a <code>Module</code> bean combining a declarative <code>SagaConfigurer.forType(&#8230;&#8203;)</code> component with autodetected handlers.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_saga_store_selection"><a class="anchor" href="#_saga_store_selection"></a>Saga store selection</h3>
+<h3 id="saga-store-selection"><a class="anchor" href="#saga-store-selection"></a>Saga store selection</h3>
 <div class="paragraph">
 <p>A saga&#8217;s store is resolved in this order:</p>
 </div>
@@ -852,6 +855,17 @@ through a <code>Module</code> bean, see <a href="#behavior-changes">Behavior cha
 <div class="ulist">
 <ul>
 <li>
+<p><strong><code>SagaConfigurer</code> is an Axon Framework 5 component builder.</strong> <code>forType</code>, <code>configureSagaManager</code>,
+<code>configureRepository</code>, and <code>configureSagaStore</code> keep their Axon Framework 4 names, fluent return types, and override
+precedence, but their builder functions now receive the Axon Framework 5
+<code>org.axonframework.common.configuration.Configuration</code>. Register the configurer as a declarative event handling
+component; where Axon Framework 4 called <code>initialize(Configuration)</code>, the framework now calls <code>build(Configuration)</code>,
+which returns the Saga manager itself. <code>SagaConfiguration</code> and its manager, repository, store, processing-group,
+processor, and error-handler accessors are not ported. Configure processor assignment and error handling on the
+<code>EventProcessorModule</code> instead. <code>configureSagaFactory</code> has no Axon Framework 4 equivalent; use it when the Saga has no
+accessible no-argument constructor.</p>
+</li>
+<li>
 <p><strong>Pooled streaming replaces the tracking processor.</strong> A saga&#8217;s processor is pooled streaming, not a
 <code>TrackingEventProcessor</code>, and needs a <code>TokenStore</code> bean as any pooled processor does. A saga still only sees events
 published after its processor first started; replaying into one requires setting an initial token explicitly, see
@@ -875,8 +889,14 @@ no effect.</p>
 <p><strong>Deadlines are not ported yet</strong> (see the note in <a href="#legacy-module">Running existing sagas on Axon Framework 5</a>).</p>
 </li>
 <li>
-<p><strong>The in-memory saga store is an explicit, overridable bean</strong>, not an internal default. An application that wants a
-default store alongside named per-saga stores declares the default store itself.</p>
+<p><strong>A <code>SagaStore</code> is mandatory.</strong> Axon Framework 4 quietly fell back to an <code>InMemorySagaStore</code> when an application
+registered no <code>SagaStore</code>, so a misconfigured application started and stored its sagas in memory, losing them on
+restart. Axon Framework 5 refuses instead: with no <code>SagaStore</code> available, <code>SagaConfigurer</code> fails to build its Saga
+manager and throws an <code>AxonConfigurationException</code> naming the saga type. Spring Boot applications are unaffected in
+practice, because <a href="#saga-store-selection">Saga store selection</a> ends in an <code>InMemorySagaStore</code> bean; the change is visible to applications
+configured without Spring, which must now register a <code>SagaStore</code> component explicitly. The in-memory store is
+therefore an explicit, overridable bean rather than an internal default, and an application that wants a default store
+alongside named per-saga stores declares that default itself.</p>
 </li>
 <li>
 <p><strong>A <code>@Saga</code> class must be public with an accessible no-argument constructor.</strong></p>
