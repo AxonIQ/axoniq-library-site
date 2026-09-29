@@ -442,7 +442,7 @@ You still add it as a dependency, but you no longer wire anything up afterwards,
 <div class="paragraph">
 <p>Axon Framework maps each of your tenants onto exactly one Axon Server context, and that mapping is what keeps one tenant&#8217;s messages and events apart from another&#8217;s.
 It works as it did in Axon Framework 4, and a command or query still names its tenant in the <code>tenantId</code> metadata key, so your tenant identifiers stay valid and so does the habit of tagging a message once as it enters the system.
-One default does shift, which <a href="#step-tenant-discovery">Step 2: Replace <code>axon.axonserver.contexts</code> with a predicate</a> covers.</p>
+One default does shift, which <a href="#step-tenant-discovery">Step 2: Configure static tenants</a> covers.</p>
 </div>
 <div class="paragraph">
 <p>What genuinely changes is that you use the regular components again.
@@ -614,24 +614,32 @@ An application that carries the module but has no <code>AxonServerConnectionMana
 </div>
 </div>
 <div class="sect1">
-<h2 id="step-tenant-discovery"><a class="anchor" href="#step-tenant-discovery"></a>Step 2: Replace <code>axon.axonserver.contexts</code> with a predicate</h2>
+<h2 id="step-tenant-discovery"><a class="anchor" href="#step-tenant-discovery"></a>Step 2: Configure static tenants</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The extension gave you two ways to decide which contexts counted, and they ruled each other out.
-Either you listed them in <code>axon.axonserver.contexts</code>, or you registered a <code>TenantConnectPredicate</code> to catch contexts created later.
-Setting the property turned the runtime discovery off entirely.</p>
+<p>Use <code>axoniq.multitenancy.tenants</code> to configure the fixed set of tenant identifiers in a Spring Boot application.
+It registers a <code>TenantConnectPredicate</code>, so the same set also filters contexts created after the application starts.
+When using the Configuration API, load the property in your application and register a predicate through
+<code>StaticTenantConnectPredicate.from(properties.getProperty(StaticTenantConnectPredicate.TENANTS_PROPERTY))</code>.
+For dynamic selection, register your own predicate as described in
+<a href="../../../multi-tenancy/tenant-management/#filtering-contexts" class="xref page">Filtering which contexts are tenants</a>.</p>
 </div>
-<div class="paragraph">
-<p>The predicate is now the single mechanism, and it handles both cases.
-The Axon Framework 4 extension already filtered the contexts it discovered at startup through it, so what changed is that the property no longer bypasses it.
-<a href="../../../multi-tenancy/tenant-management/#filtering-contexts" class="xref page">Filtering which contexts are tenants</a> goes through it properly.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+For migration compatibility, Spring Boot also accepts the old <code>axon.axonserver.contexts</code> property. The new
+<code>axoniq.multitenancy.tenants</code> name is recommended and the old name is deprecated. If both are configured, the new
+property takes precedence.
+</td>
+</tr>
+</table>
 </div>
 <div class="sect2">
 <h3 id="static-tenants"><a class="anchor" href="#static-tenants"></a>Tenants you know up front</h3>
-<div class="paragraph">
-<p>There is no property for this any more.
-Write a predicate over the set you used to list.</p>
-</div>
 <div id="_tabs_3" class="openblock tabs is-loading">
 <div class="content">
 <div class="ulist tablist">
@@ -657,11 +665,14 @@ Write a predicate over the set you used to list.</p>
 <div id="_tabs_3_axon_framework_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_axon_framework_5_configuration_api">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerFixedTenantSet(MessagingConfigurer configurer) {
-    Set&lt;String&gt; tenantContexts = Set.of("tenant-a", "tenant-b", "tenant-c");
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerFixedTenantSet(MessagingConfigurer configurer, Properties properties) {
+    if (!properties.containsKey("axoniq.multitenancy.tenants")) {
+        return;
+    }
     configurer.componentRegistry(registry -&gt; registry.registerComponent(
             TenantConnectPredicate.class,
-            config -&gt; tenant -&gt; tenantContexts.contains(tenant.tenantId())));
+            config -&gt; StaticTenantConnectPredicate.from(
+                    properties.getProperty("axoniq.multitenancy.tenants"))));
 }</code></pre>
 </div>
 </div>
@@ -669,11 +680,7 @@ Write a predicate over the set you used to list.</p>
 <div id="_tabs_3_axon_framework_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_axon_framework_5_spring_boot">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
-public TenantConnectPredicate tenantConnectPredicate() {
-    Set&lt;String&gt; tenantContexts = Set.of("tenant-a", "tenant-b", "tenant-c");
-    return tenant -&gt; tenantContexts.contains(tenant.tenantId());
-}</code></pre>
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axoniq.multitenancy.tenants=tenant-a,tenant-b,tenant-c</code></pre>
 </div>
 </div>
 </div>
@@ -1347,8 +1354,9 @@ Where a projection has to survive a restart, use a streaming processor, or a sub
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.axonserver.contexts</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">(unused)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unused by multi-tenancy. Replaced by a <code>TenantConnectPredicate</code>, see <a href="#step-tenant-discovery">Step 2: Replace <code>axon.axonserver.contexts</code> with a predicate</a>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq.multitenancy.tenants</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Defines a fixed tenant set in Spring Boot. It is supported as a deprecated compatibility alias; the new property
+  takes precedence when both are configured. See <a href="#step-tenant-discovery">Step 2: Configure static tenants</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>axon.multi-tenancy.use-metadata-helper</code></p></td>
