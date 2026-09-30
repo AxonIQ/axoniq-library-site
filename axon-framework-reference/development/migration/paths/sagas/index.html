@@ -445,7 +445,7 @@ The <a href="../../../../../saga-guide/development/" class="xref page">Sagas and
 </div>
 <div class="paragraph">
 <p>For sagas that are <strong>already running</strong> (considering business processes running for months), rewriting is not an option.
-That case is served by the <code>axon-legacy</code> module, described in <a href="#legacy-module">Running existing sagas on Axon Framework 5</a>.</p>
+That case is served by the <code>axoniq-legacy</code> module, described in <a href="#legacy-module">Running existing sagas on Axon Framework 5</a>.</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -462,7 +462,7 @@ That case is served by the <code>axon-legacy</code> module, described in <a href
 <a href="../../../../../saga-guide/development/" class="xref page">Sagas and Process Managers</a> guide and write it today.</p>
 </div>
 <div class="paragraph">
-<p><strong>Migrating running sagas:</strong> Use the Axon Framework 4 compatible APIs of the <code>axon-legacy</code> module to keep existing saga classes running until all legacy saga instances are drained naturally.
+<p><strong>Migrating running sagas:</strong> Use the Axon Framework 4 compatible APIs of the <code>axoniq-legacy</code> module to keep existing saga classes running until all legacy saga instances are drained naturally.
 The legacy module should be treated as a way to finish existing instances, not to keep sagas in Axon Framework 5.</p>
 </div>
 </td>
@@ -475,12 +475,12 @@ The legacy module should be treated as a way to finish existing instances, not t
 <h2 id="legacy-module"><a class="anchor" href="#legacy-module"></a>Running existing sagas on Axon Framework 5</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>axon-legacy</code> module allows migrating to Axon Framework 5 while saga instances started on Axon Framework 4 are still running.
+<p>The <code>axoniq-legacy</code> module allows migrating to Axon Framework 5 while saga instances started on Axon Framework 4 are still running.
 Business processes covered by sagas can span weeks or months.
-<code>axon-legacy</code> lets running saga instances continue while new instances start on an Axon Framework 5 native implementation of the business process.</p>
+<code>axoniq-legacy</code> lets running saga instances continue while new instances start on an Axon Framework 5 native implementation of the business process.</p>
 </div>
 <div class="paragraph">
-<p>The <code>axon-legacy</code> module brings forward the following Axon Framework 4 saga infrastructure, adapted to the Axon Framework 5 APIs:</p>
+<p>The <code>axoniq-legacy</code> module brings forward the following Axon Framework 4 saga infrastructure, adapted to the Axon Framework 5 APIs:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -497,10 +497,10 @@ Business processes covered by sagas can span weeks or months.
 </div>
 <div class="paragraph">
 <p>The <code>org.axonframework.spring.stereotype.Saga</code> annotation itself keeps its Axon Framework 4 package. Spring Boot autoconfiguration for legacy sagas activates only
-when both <code>axon-legacy</code> and <code>axon-spring-boot-starter</code> are on the classpath; see <a href="#spring-boot-sagas">Configuring legacy sagas with Spring Boot</a>.</p>
+when both <code>axoniq-legacy</code> and <code>axon-spring-boot-starter</code> are on the classpath; see <a href="#spring-boot-sagas">Configuring legacy sagas with Spring Boot</a>.</p>
 </div>
 <div class="paragraph">
-<p>Add <code>axon-legacy</code> as a dependency to the project. The legacy module preserves the Saga annotations, association
+<p>Add <code>axoniq-legacy</code> as a dependency to the project. The legacy module preserves the Saga annotations, association
 values, and <code>SagaStore</code> contract. Saga classes require the following source changes:</p>
 </div>
 <div class="ulist">
@@ -525,7 +525,7 @@ handler.</p>
 <div class="sect2">
 <h3 id="_synchronous_event_handlers"><a class="anchor" href="#_synchronous_event_handlers"></a>Synchronous event handlers</h3>
 <div class="paragraph">
-<p>An <code>@SagaEventHandler</code> in <code>axon-legacy</code> must complete on the thread that invoked it. Do not return
+<p>An <code>@SagaEventHandler</code> in <code>axoniq-legacy</code> must complete on the thread that invoked it. Do not return
 <code>CompletableFuture</code>, <code>Mono</code>, <code>Publisher</code>, or another asynchronous result type from a legacy Saga event handler.</p>
 </div>
 <div class="paragraph">
@@ -546,7 +546,7 @@ handler returns.</p>
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The saga side of <code>axon-legacy</code> (<a href="https://github.com/AxonFramework/AxonFramework/issues/3728">GitHub Issue #3728</a>),
+<p>The saga side of <code>axoniq-legacy</code> (<a href="https://github.com/AxonFramework/AxonFramework/issues/3728">GitHub Issue #3728</a>),
 including Spring Boot autoconfiguration, targets 5.4.0. Deadlines
 (<a href="https://github.com/AxonFramework/AxonFramework/issues/3065">GitHub Issue #3065</a> and
 <a href="https://github.com/AxonFramework/AxonFramework/issues/5006">GitHub Issue #5006</a>) are not yet ported: <code>DeadlineManager</code>
@@ -558,7 +558,7 @@ drainage strategy in <a href="#strategy">Migrating an application with running s
 </table>
 </div>
 <div class="paragraph">
-<p>The <code>axon-legacy</code> module is a migration aid, not a supported way to write new processes. <code>@StartSaga</code> is deprecated.
+<p>The <code>axoniq-legacy</code> module is a migration aid, not a supported way to write new processes. <code>@StartSaga</code> is deprecated.
 Use the legacy module to let existing instances receive their events and run to completion while new work goes to the
 Axon Framework 5 implementation written alongside it. A ported <code>@StartSaga</code> handler can still create instances until
 you remove or disable that annotation as part of the drainage strategy.</p>
@@ -570,8 +570,8 @@ you remove or disable that annotation as part of the drainage strategy.</p>
 <h2 id="spring-boot-sagas"><a class="anchor" href="#spring-boot-sagas"></a>Configuring legacy sagas with Spring Boot</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Add <code>axon-legacy</code> next to <code>axon-spring-boot-starter</code> as a dependency. Autoconfiguration for legacy sagas activates
-once <code>axon-legacy</code> is on the classpath; no further setup is needed for a <code>@Saga</code>-annotated, component-scanned class to
+<p>Add <code>axoniq-legacy</code> next to <code>axon-spring-boot-starter</code> as a dependency. Autoconfiguration for legacy sagas activates
+once <code>axoniq-legacy</code> is on the classpath; no further setup is needed for a <code>@Saga</code>-annotated, component-scanned class to
 start receiving events.</p>
 </div>
 <div class="sect2">
