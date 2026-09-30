@@ -1194,6 +1194,188 @@ axon.axonserver.enabled=true</code></pre>
 </div>
 </div>
 </div>
+<div class="sect2 axoniq-feature">
+<h3 id="SpringCloudCommandBusConnector"><a class="anchor" href="#SpringCloudCommandBusConnector"></a><code>SpringCloudCommandBusConnector</code></h3>
+<div class="paragraph">
+<p>The <code>SpringCloudCommandBusConnector</code> distributes commands over HTTP between the application instances a Spring Cloud <code>DiscoveryClient</code> reports, without an Axon Server in between.
+It suits deployments that already run a service registry, such as Eureka, Consul, or Kubernetes, and would rather route commands through it than add another component.
+Commands with the same routing key always go to the same instance, chosen from the instances that report handling that command.</p>
+</div>
+<div class="paragraph">
+<p>The connector calls the instances it routes between <em>members</em>, the word its API, properties, and log messages use.</p>
+</div>
+<div class="sect3">
+<h4 id="_adding_the_connector"><a class="anchor" href="#_adding_the_connector"></a>Adding the connector</h4>
+<div class="paragraph">
+<p>Add the starter alongside a discovery implementation of your choosing:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+    &lt;artifactId&gt;axoniq-springcloud&lt;/artifactId&gt;
+    &lt;version&gt;${axoniq-framework.version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+    &lt;artifactId&gt;axoniq-spring-boot-starter&lt;/artifactId&gt;
+    &lt;version&gt;${axoniq-framework.version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-netflix-eureka-client&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Axoniq Framework does not manage the versions of the discovery implementations, so import the Spring Cloud release train matching your Spring Boot version:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-dependencies&lt;/artifactId&gt;
+            &lt;version&gt;${spring-cloud.version}&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The starter brings the connector, its autoconfiguration, and the servlet web stack commands travel over.
+The discovery implementation stays your choice, and is what supplies the <code>DiscoveryClient</code> and <code>Registration</code> the connector needs.
+No configuration of the connector itself is needed.</p>
+</div>
+<div class="paragraph">
+<p>An application that adds the starter without a discovery implementation says so on start-up rather than starting with commands that are never distributed.
+The same holds for an application that could not serve the endpoints other members reach it on: one without a web stack, or one running on WebFlux.
+Set <code>axon.springcloud.enabled=false</code> to handle commands locally instead.</p>
+</div>
+<div class="paragraph">
+<p>Applications preferring to wire these beans themselves can depend on <code>axoniq-springcloud</code> alone.
+Spring itself is still required: the connector learns about the cluster from Spring Cloud&#8217;s discovery events, and receives commands and capability requests through two Spring MVC controllers.
+Each Spring Cloud component Axoniq Framework supports has a module of its own, so an application takes only the ones it uses.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Distributing commands through Spring Cloud and through Axon Server are alternatives: an application uses one or the other, not both.
+Only one connector distributes commands, and an explicitly configured one wins, so make the choice explicit: set <code>axon.axonserver.enabled=false</code> to distribute commands through Spring Cloud, or <code>axon.springcloud.enabled=false</code> to distribute them through Axon Server.
+An application that leaves both enabled distributes commands through Axon Server.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Command throughput is claimed against your Axoniq license.
+Without Axon Server there to supply it, the license comes from Axoniq Platform, or from a license file the application instances read themselves.
+Whether a throughput limit applies is a property of the license itself rather than of where it comes from, and not every license carries one.
+See <a href="../../framework-comparison/#enforcing_subscription" class="xref page">Feature entitlement and message throughput</a> for how a limit is enforced when a license carries one.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_reaching_the_other_members"><a class="anchor" href="#_reaching_the_other_members"></a>Reaching the other members</h4>
+<div class="paragraph">
+<p>Members reach each other over two paths, which have to be the same on every member of a cluster:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.springcloud.command-endpoint=/axoniq-springcloud/command
+axon.springcloud.capabilities-endpoint=/axoniq-springcloud/member-capabilities</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Both are served on the application&#8217;s own HTTP port, alongside its other endpoints, and carry traffic between members only.
+Keep them off any ingress reachable from outside the cluster.
+An application with Spring Security in place has to permit both paths and exempt the command endpoint from cross-site request forgery protection, or members cannot reach each other.</p>
+</div>
+<div class="paragraph">
+<p>Outgoing requests to other members use the application&#8217;s own <code>RestClient.Builder</code> bean when it has one, which is where an interceptor authenticating them belongs.
+Spring Boot contributes such a builder by default, so the application&#8217;s <code>spring.http.client.*</code> settings apply to this traffic as well.
+Define a <code>RestClient</code> bean named <code>axoniqSpringCloudRestClient</code> to give this traffic a client of its own.
+An application whose <code>RestClient.Builder</code> is load balanced has to do so: members are addressed by host and port rather than by service ID, which a load-balanced client cannot resolve.</p>
+</div>
+<div class="paragraph">
+<p>Instances that are not served from the root publish their context root as service instance metadata, and tell the connector which metadata property holds it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">eureka.instance.metadata-map.contextRoot=/orders
+axon.springcloud.context-root-metadata-property-name=contextRoot</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_keeping_up_with_the_cluster"><a class="anchor" href="#_keeping_up_with_the_cluster"></a>Keeping up with the cluster</h4>
+<div class="paragraph">
+<p>Members ask each other what they handle once per discovery heartbeat, which makes the heartbeat interval the speed at which a change reaches the rest of the cluster.
+The heartbeats come from the discovery implementation: Eureka publishes one on every registry fetch, <code>eureka.client.registry-fetch-interval-seconds</code>, which is 30 seconds by default.
+A deployment whose discovery implementation publishes no heartbeats can drive a round itself, by calling <code>updateMemberships()</code> on the <code>SpringCloudMemberRegistry</code> bean.</p>
+</div>
+<div class="paragraph">
+<p>A command no member reports handling fails with a <code>NoHandlerForCommandException</code>, which is also what a dispatch sees for up to one heartbeat after the last member handling that command has gone away.
+A member that does not answer within <code>axon.springcloud.command-reply-timeout</code> fails the command it was sent and is taken out of the ring, so the commands behind it go elsewhere until a later heartbeat finds it again.
+A member that answers with a failure of its own, such as a handler that threw, stays in the ring, since it was reachable.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_narrowing_which_instances_are_considered"><a class="anchor" href="#_narrowing_which_instances_are_considered"></a>Narrowing which instances are considered</h4>
+<div class="paragraph">
+<p>A discovery registry reports every service registered with it, not only those running this connector.
+Each instance it reports is asked for its capabilities, and one that answers with a client error is left alone for <code>axon.springcloud.ignore-period</code> before being asked again.</p>
+</div>
+<div class="paragraph">
+<p>On a registry holding many services, contribute a <code>Predicate&lt;ServiceInstance&gt;</code> bean to decide which instances are considered at all.
+Instances it rejects are never asked, which is cheaper than discovering them and ignoring them one heartbeat at a time.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public Predicate&lt;ServiceInstance&gt; axoniqSpringCloudInstanceFilter() {
+    return instance -&gt; "orders".equals(instance.getServiceId());
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The predicate has to accept this application&#8217;s own instance as well, since it is a member of the ring like any other.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_properties"><a class="anchor" href="#_properties"></a>Properties</h4>
+<div class="paragraph">
+<p>The two endpoint paths above are the properties a cluster has to agree on.
+The rest rarely need changing:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Set to false to distribute messages some other way, or not at all.
+axon.springcloud.enabled=true
+# How long a member is given to answer a command before it is treated as unreachable.
+axon.springcloud.command-reply-timeout=30s
+# How long an instance is given to answer a capabilities request. Keep it well under the heartbeat interval.
+axon.springcloud.capabilities-timeout=2s
+# How long a service instance is left alone after answering the capabilities endpoint with a client error.
+axon.springcloud.ignore-period=1m
+# The metadata property holding an instance's context root. Unset by default, for instances served from the root.
+#axon.springcloud.context-root-metadata-property-name=contextRoot</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The command load factor is not among them: it belongs to the distributed command bus as a whole, and is set through the <code>DistributedCommandBusConfiguration</code> the <code>DistributedCommandBus</code> is built with.
+A member with twice the load factor of another receives roughly twice the commands.</p>
+</div>
+</div>
+</div>
 <div class="sect2">
 <h3 id="_routing_strategy"><a class="anchor" href="#_routing_strategy"></a>Routing strategy</h3>
 <div class="paragraph">
