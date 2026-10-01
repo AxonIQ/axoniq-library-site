@@ -478,26 +478,22 @@ Here&#8217;s a complete example showing how to set up the Axon configuration wit
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var configurer = MessagingConfigurer.create();
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var configurer = WorkflowConfigurer.create();
 
-configurer.componentRegistry(r -&gt; r.registerEnhancer(registry -&gt;
-        registry.registerModule(
-                WorkflowModule
-                        .usingContext(SimpleWorkflowContext.class)
-                        .workflowContextFactory(c -&gt; new SimpleWorkflowContextFactory())
-                        .workflowExecutionFactory(c -&gt;
-                                new WorkflowContextAdoptingExecutionFactory&lt;&gt;(SimpleWorkflowContext.class))
-                        .definitions(d -&gt; d
-                                .declarative(c -&gt; new OrderFulfillmentWorkflow()::execute)
-                                .workflowName("OrderFulfillment")
-                                .on(EventConditions.fromType(OrderPlacedEvent.class))
-                                .customized((c, w) -&gt; w
-                                        .eventNameCustomizer(namespace("io.myapp.orders"))
-                                        .workflowIdProvider(fromPayloadAttribute(c, "orderId"))
-                                )
+configurer.registerWorkflowModule(
+        WorkflowModule
+                .defaults("order-workflows", SimpleWorkflowContext.class)
+                .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
+                .definition(d -&gt; d
+                        .declarative(c -&gt; new OrderFulfillmentWorkflow()::execute)
+                        .workflowName("OrderFulfillment")
+                        .on(EventConditions.fromType(OrderPlacedEvent.class))
+                        .customized((c, w) -&gt; w
+                                .eventNameCustomizer(namespace("io.myapp.orders"))
+                                .workflowIdProvider(new PayloadPropertyWorkflowIdProvider("orderId"))
                         )
-        )
-));
+                )
+);
 
 var configuration = configurer.start(); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
@@ -521,60 +517,47 @@ var configuration = configurer.start(); <i class="conum" data-value="1"></i><b>(
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-none hljs">WorkflowModule
-    .usingContext(ContextType.class)           // 1. Which context type
-    .workflowContextFactory(...)               // 2. How to create context instances
-    .workflowExecutionFactory(...)             // 3. How to create executions
-    .definitions(d -&gt; d                        // 4. Define one or more workflows
+    .defaults("module-name", ContextType.class) // 1. Module name and context type
+    .contextFactory(...)                    // 2. How to create context instances
+    .definition(d -&gt; d                          // 3. Define a workflow
         .declarative(...) or .autodetected(...)
     );</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_step_1_context_type"><a class="anchor" href="#_step_1_context_type"></a>Step 1: Context type</h3>
+<h3 id="_step_1_module_name_and_context_type"><a class="anchor" href="#_step_1_module_name_and_context_type"></a>Step 1: Module name and context type</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule.usingContext(SimpleWorkflowContext.class)</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule.defaults("order-workflows", SimpleWorkflowContext.class)</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Specifies the author-facing workflow context type. Use <code>SimpleWorkflowContext.class</code> for the built-in context, or your
-own custom context class. Both implement <code>WorkflowContext</code>, the contract supplied to workflow bodies.</p>
+<p>Specifies the module name and the author-facing workflow context type. Use <code>SimpleWorkflowContext.class</code> for the built-in context, or your
+own custom context class. Both implement <code>WorkflowContext</code>, the contract supplied to workflow bodies.
+The context type must extend <code>AbstractWorkflowContext</code>.
+<code>WorkflowModule.configure(name, contextType)</code> is the variant that also lets you supply a <code>WorkflowConfigurationRegistry</code>,
+a <code>WorkflowExecutionRepository</code>, history settings, and the configuration of the event processors, see <a href="#running-on-several-nodes">Running on several nodes</a>.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_step_2_context_factory"><a class="anchor" href="#_step_2_context_factory"></a>Step 2: Context factory</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.workflowContextFactory(c -&gt; new SimpleWorkflowContextFactory())</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.contextFactory(c -&gt; new SimpleWorkflowContextFactory())</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Provides a factory that creates new context instances for each workflow execution.</p>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_step_3_execution_factory"><a class="anchor" href="#_step_3_execution_factory"></a>Step 3: Execution factory</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.workflowExecutionFactory(c -&gt; new WorkflowContextAdoptingExecutionFactory&lt;&gt;(SimpleWorkflowContext.class))</code></pre>
-</div>
-</div>
 <div class="paragraph">
-<p><code>WorkflowContextAdoptingExecutionFactory</code> is the standard execution factory for author-facing workflow contexts
-(anything extending <code>AbstractWorkflowContext</code>). It bridges a <code>WorkflowContext</code> to the engine&#8217;s internal
-<code>WorkflowExecutionOperations</code> runtime contract. Workflow definitions should depend on the author-facing context, not
-on the runtime contract.</p>
-</div>
-<div class="paragraph">
-<p>Import <code>WorkflowContextAdoptingExecutionFactory</code> and <code>AbstractWorkflowContext</code> from
-<code>io.axoniq.framework.workflow.runtime.execution</code>. The author-facing <code>WorkflowContext</code>, step definitions,
+<p>Import <code>AbstractWorkflowContext</code> from <code>io.axoniq.framework.workflow.runtime.execution</code>. The author-facing <code>WorkflowContext</code>, step definitions,
 <code>EventCondition</code>, <code>EventConditions</code>, and workflow lifecycle exceptions reside in
 <code>io.axoniq.framework.workflow.dsl.api</code>; retry configuration resides in
 <code>io.axoniq.framework.workflow.dsl.api.retry</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_step_4_workflow_definitions"><a class="anchor" href="#_step_4_workflow_definitions"></a>Step 4: Workflow definitions</h3>
+<h3 id="_step_3_workflow_definitions"><a class="anchor" href="#_step_3_workflow_definitions"></a>Step 3: Workflow definitions</h3>
 <div class="paragraph">
 <p>You can define workflows in two ways:</p>
 </div>
@@ -583,7 +566,7 @@ on the runtime contract.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.definitions(d -&gt; d
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.definition(d -&gt; d
         .declarative(c -&gt; workflow::execute)
         .workflowName("OrderFulfillment")
         .on(EventConditions.fromType(OrderPlacedEvent.class))
@@ -596,28 +579,29 @@ on the runtime contract.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.definitions(d -&gt; d
-        .autodetected(c -&gt; new OrderFulfillmentWorkflow(),
-                      SimpleWorkflowContext.class)
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.definition(d -&gt; d
+        .autodetected(c -&gt; new OrderFulfillmentWorkflow())
 )</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>You can chain multiple definitions:</p>
+<p>You can add multiple definitions to the same module by calling <code>definition(&#8230;&#8203;)</code> repeatedly:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.definitions(d -&gt; d
-        .declarative(c -&gt; workflowA::execute)
-        .workflowName("WorkflowA")
-        .on(EventConditions.fromType(EventA.class))
-        .notCustomized()
-
-        .declarative(c -&gt; workflowB::execute)
-        .workflowName("WorkflowB")
-        .on(EventConditions.fromType(EventB.class))
-        .notCustomized()
-)</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule
+    .defaults("my-workflows", SimpleWorkflowContext.class)
+    .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
+    .definition(d -&gt; d
+            .declarative(c -&gt; workflowA::execute)
+            .workflowName("WorkflowA")
+            .on(EventConditions.fromType(EventA.class))
+            .notCustomized())
+    .definition(d -&gt; d
+            .declarative(c -&gt; workflowB::execute)
+            .workflowName("WorkflowB")
+            .on(EventConditions.fromType(EventB.class))
+            .notCustomized());</code></pre>
 </div>
 </div>
 </div>
@@ -698,7 +682,7 @@ on the runtime contract.</p>
 .workflowIdProvider(fromPayloadAttribute(c, "orderId", id -&gt; "order-" + id))
 
 // Extract directly without transformation
-.workflowIdProvider(fromPayloadAttribute(c, "orderId"))</code></pre>
+.workflowIdProvider(new PayloadPropertyWorkflowIdProvider("orderId"))</code></pre>
 </div>
 </div>
 </div>
@@ -715,7 +699,7 @@ on the runtime contract.</p>
         .eventNameCustomizer(namespace("io.myapp.orders")
                 .stepCompleted("Done")
                 .workflowBaseName("OrderFulfillment"))
-        .workflowIdProvider(fromPayloadAttribute(c, "orderId"))
+        .workflowIdProvider(new PayloadPropertyWorkflowIdProvider("orderId"))
         .registerWorkflowStatusChangeListener(WorkflowStatus.COMPLETED,
                 (status, context, processingContext) -&gt; {
                     logger.info("Workflow {} completed", context.workflowId());
@@ -755,10 +739,125 @@ on the runtime contract.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>recoverableExceptionPolicy(&#8230;&#8203;)</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Decide which exceptions escaping the body pause the workflow instead of failing it. See <a href="../error-handling/#recoverable-policy" class="xref page">Configuring the policy</a>.</p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflowVersion(String)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The version of this workflow definition. Defaults to the default version. See <a href="../versioning/" class="xref page">Versioning</a>.</p></td>
+</tr>
 </tbody>
 </table>
 <div class="paragraph">
 <p>If you don&#8217;t need any customizations, use <code>.notCustomized()</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="running-on-several-nodes"><a class="anchor" href="#running-on-several-nodes"></a>Running on several nodes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each <code>WorkflowModule</code> runs its engine on its own pooled streaming event processor, named after the module.
+The history projector runs on a second processor named <code>WorkflowHistoryProjector[&lt;module name&gt;]</code>.
+Each workflow instance belongs to one segment of the engine processor, chosen by the hash of its workflow id.
+Subscribing processors, including Axon Server persistent streams, cannot back workflows.</p>
+</div>
+<div class="sect2">
+<h3 id="_token_store"><a class="anchor" href="#_token_store"></a>Token store</h3>
+<div class="paragraph">
+<p>The processor claims its segments in the unnamed <code>TokenStore</code> component of your application.
+Register a durable store, for example <code>JpaTokenStore</code>, as an unnamed component.
+Without one, the engine falls back to an in-memory token store and logs a warning.
+Claims then stay inside the process, so run a single node only.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_processor_settings"><a class="anchor" href="#_processor_settings"></a>Processor settings</h3>
+<div class="paragraph">
+<p><code>WorkflowModule.configure(&#8230;&#8203;)</code> accepts <code>processorConfiguration(&#8230;&#8203;)</code> for the engine processor and <code>historyProcessorConfiguration(&#8230;&#8203;)</code> for the history processor.
+Both take a function that receives and returns a <code>PooledStreamingEventProcessorConfiguration</code>.
+Only the initial segment count is applied to a new token store. To change it later, split or merge the stored tokens.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule
+    .configure("order-workflows", SimpleWorkflowContext.class)
+    .processorConfiguration(processor -&gt; processor.initialSegmentCount(8))
+    .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
+    .definition(d -&gt; d /* ... */);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_failover"><a class="anchor" href="#_failover"></a>Failover</h3>
+<div class="paragraph">
+<p>When a node stops, another node claims its segments and resumes the unfinished workflow instances.
+Every event an instance appends carries an append condition on its workflow id.
+A node that lost its claim without noticing has its append rejected, logs a warning, and stops that instance.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="spring-boot"><a class="anchor" href="#spring-boot"></a>Spring Boot</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Workflow support is part of the Axoniq Framework Spring Boot starter, <code>io.axoniq.framework:axoniq-spring-boot-starter</code>.
+It activates when the workflow engine is on the classpath, for example through <code>axoniq-workflow-dsl</code>.
+Set <code>axon.workflow.enabled=false</code> to turn it off.
+The auto-configuration registers every Spring bean that has <code>@Workflow</code> annotated methods.
+A <code>RecoverableWorkflowExceptionPolicy</code> bean sets the exception policy, as described in <a href="../error-handling/#recoverable-policy" class="xref page">Configuring the policy</a>.
+All <code>@Workflow</code> beans with the same context type share one <code>WorkflowModule</code>, named after the simple name of that context type.</p>
+</div>
+<div class="paragraph">
+<p>The engine processor is configured with <code>axon.workflow.<strong></code> properties.
+The history processor uses the same properties under <code>axon.workflow.history.</strong></code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 16.6666%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">Default</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>initial-segment-count</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>16</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Number of segments created on first start.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>batch-size</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maximum number of events read from the event store per poll.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>thread-count</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>4</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maximum number of segments claimed by one node.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>token-claim-interval</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>5000</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Milliseconds between attempts to claim segments.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>claim-extension-threshold</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>5000</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Milliseconds after which a claim is extended.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>coordinator-claim-extension</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>false</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Whether the coordinator extends claims.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>See <a href="#running-on-several-nodes">Running on several nodes</a> for the token store and failover.</p>
 </div>
 </div>
 </div>
@@ -796,7 +895,7 @@ The engine manages a set of internal metadata keys automatically, and Axon Frame
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>stepType</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The step&#8217;s lifecycle phase: <code>STARTED</code>, <code>COMPLETED</code>, <code>FAILED</code>, <code>TIMED_OUT</code>, or <code>CANCELLED</code> (step events only).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The step&#8217;s lifecycle phase: <code>STARTED</code>, <code>RETRYING</code>, <code>RETRY_STARTED</code>, <code>COMPLETED</code>, <code>FAILED</code>, <code>TIMED_OUT</code>, or <code>CANCELLED</code> (step events only).</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>stepPrimitive</code></p></td>
@@ -805,6 +904,18 @@ The engine manages a set of internal metadata keys automatically, and Axon Frame
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflowStatus</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The workflow status: <code>STARTED</code>, <code>COMPLETED</code>, <code>FAILED</code>, <code>TIMED_OUT</code>, or <code>CANCELLED</code> (workflow events only).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflowDefinitionName</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The qualified name of the workflow definition (workflow events).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflowDefinitionVersion</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The version of the workflow definition (workflow events).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>versionChangeId</code>, <code>version</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The recorded version change identifier and the workflow version, on version marker events.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>modifyPayload</code></p></td>
@@ -875,10 +986,10 @@ Axon Framework automatically registers a <code>MessageOriginProvider</code> by d
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.eventProcessing(ep -&gt; ep
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.eventSourcing(es -&gt; es.messaging(m -&gt; m
     .registerCorrelationDataProvider(config -&gt;
         new MessageOriginProvider()) <i class="conum" data-value="1"></i><b>(1)</b>
-);</code></pre>
+));</code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -894,7 +1005,7 @@ Axon Framework automatically registers a <code>MessageOriginProvider</code> by d
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.eventProcessing(ep -&gt; ep
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.eventSourcing(es -&gt; es.messaging(m -&gt; m
     .registerCorrelationDataProvider(config -&gt;
         message -&gt; {
             var metadata = message.metadata();
@@ -907,7 +1018,7 @@ Axon Framework automatically registers a <code>MessageOriginProvider</code> by d
             }
             return result;
         })
-);</code></pre>
+));</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1041,10 +1152,9 @@ Extend whichever layer best fits the API you want to expose to workflow authors.
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule
-    .usingContext(ApprovalWorkflowContext.class)
-    .workflowContextFactory(c -&gt; new ApprovalWorkflowContextFactory())
-    .workflowExecutionFactory(c -&gt; new WorkflowContextAdoptingExecutionFactory&lt;&gt;(ApprovalWorkflowContext.class))
-    .definitions(d -&gt; d
+    .defaults("purchase-approval", ApprovalWorkflowContext.class)
+    .contextFactory(c -&gt; new ApprovalWorkflowContextFactory())
+    .definition(d -&gt; d
             .declarative(c -&gt; new PurchaseApprovalWorkflow()::execute)
             .workflowName("PurchaseApproval")
             .on(EventConditions.fromType(PurchaseRequestSubmitted.class))

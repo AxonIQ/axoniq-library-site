@@ -478,7 +478,7 @@ This keeps side effects out of fixture tests and makes each workflow transition 
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
     &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
     &lt;artifactId&gt;axoniq-workflow-test&lt;/artifactId&gt;
-    &lt;version&gt;${axoniq-workflow.version}&lt;/version&gt;
+    &lt;version&gt;${axoniq-framework.version}&lt;/version&gt;
     &lt;scope&gt;test&lt;/scope&gt;
 &lt;/dependency&gt;</code></pre>
 </div>
@@ -565,7 +565,7 @@ class UserSignupFixtureTest {
     void setUp() {
         WorkflowModule&lt;SimpleWorkflowContext&gt; module = WorkflowModule
                 .defaults("UserSignup", SimpleWorkflowContext.class)
-                .workflowContextFactory(c -&gt; new SimpleWorkflowContextFactory())
+                .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
                 .definition(d -&gt; d.autodetected(c -&gt; new UserSignupWorkflow()));
 
         fixture = WorkflowTestFixture.of(module);
@@ -629,7 +629,7 @@ Use the overload that matches how much control the test needs:</p>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule&lt;SimpleWorkflowContext&gt; module = WorkflowModule
         .defaults("UserSignup", SimpleWorkflowContext.class)
-        .workflowContextFactory(c -&gt; new SimpleWorkflowContextFactory())
+        .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
         .definition(d -&gt; d.autodetected(c -&gt; new UserSignupWorkflow()));
 
 WorkflowTestFixture&lt;GivenWhen.Phase, Then.Phase&gt; fixture =
@@ -783,37 +783,10 @@ fixture.then()
 <div class="sect2">
 <h3 id="_testing_retry_backoff"><a class="anchor" href="#_testing_retry_backoff"></a>Testing retry backoff</h3>
 <div class="paragraph">
-<p>Retry backoff uses the same fixture-controlled scheduler. Supply a failing action for the first attempt, advance time
-past the configured backoff, then release the retry attempt with its successful result.</p>
-</div>
-<div class="paragraph">
-<p>The following example assumes that <code>reserveCredit</code> uses a retry policy with a one-second fixed backoff:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">fixture.given()
-       .publishEvent(new RegistrationReceivedEvent("2", "piggy@muppets.biz", "vip"))
-       .executionExists();
-
-fixture.when()
-       .execute("reserveCredit", (processingContext, inputPayload) -&gt; {
-           throw new StepFailedException("temporary credit failure");
-       });
-
-fixture.then()
-       .step("reserveCredit", StepStatus.RETRYING);
-
-fixture.when()
-       .timePasses(Duration.ofSeconds(1))
-       .executeReturning("reserveCredit", Map.of("reservationId", "res-123"));
-
-fixture.then()
-       .step("reserveCredit", StepStatus.COMPLETED);</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Use <code>execute(&#8230;&#8203;)</code> for the failed retry attempt. <code>executeFailing(&#8230;&#8203;)</code> is for steps expected to reach terminal <code>FAILED</code>
-state, whereas a retrying step first reaches <code>RETRYING</code>.</p>
+<p>Retry backoff uses the same fixture-controlled scheduler, so <code>timePasses(&#8230;&#8203;)</code> advances the wait between attempts.
+The stepping fixture resolves the action of a step name once and reuses it for every retry attempt.
+<code>execute(&#8230;&#8203;)</code>, <code>executeReturning(&#8230;&#8203;)</code> and <code>executeFailing(&#8230;&#8203;)</code> wait for a terminal status, so they cannot stop on <code>RETRYING</code>.
+Test the retry policy against <code>WorkflowTestDriver.live(&#8230;&#8203;)</code> with a workflow action that fails once and then succeeds.</p>
 </div>
 </div>
 </div>
@@ -1029,7 +1002,7 @@ class SignupThen extends Then&lt;SignupThen, SignupGivenWhen&gt; {
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowTestFixture&lt;SignupGivenWhen, SignupThen&gt; fixture =
         WorkflowTestFixture.of(
                 WorkflowModule.defaults("UserSignup", SimpleWorkflowContext.class)
-                              .workflowContextFactory(c -&gt; new SimpleWorkflowContextFactory())
+                              .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
                               .definition(d -&gt; d.autodetected(c -&gt; new UserSignupWorkflow())),
                 UnaryOperator.identity(),
                 new SignupGivenWhen(),
@@ -1110,6 +1083,90 @@ void vip_registration_completes_after_magic_event() {
 </div>
 </div>
 <div class="sect1">
+<h2 id="_more_fixture_examples"><a class="anchor" href="#_more_fixture_examples"></a>More fixture examples</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_a_wait_that_times_out"><a class="anchor" href="#_a_wait_that_times_out"></a>A wait that times out</h3>
+<div class="paragraph">
+<p>This workflow waits 5 minutes for a confirmation and handles the timeout in a separate step:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = ctx.waitForEvent("waitForConfirmation", EventConditions.never(),
+        step -&gt; step.timeout(Duration.ofMinutes(5)));
+confirmation.await();
+if (confirmation.timeout()) {
+    ctx.awaitExecute("handleTimeout", Map.of(), (pc, payload) -&gt; Map.of("handledBy", "workflow"));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Advance fixture time past the timeout, then release the handling step:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">fixture.when()
+       .publishEvent(new PaymentRequested("payment-1"))
+       .executionExists()
+       .timePasses(Duration.ofMinutes(5).plusSeconds(1));
+
+fixture.then()
+       .step("waitForConfirmation", StepStatus.TIMED_OUT)
+       .waitingIn("handleTimeout");
+
+fixture.when()
+       .executeReturning("handleTimeout", Map.of("handledBy", "test"));
+
+fixture.then()
+       .workflowFinished(WorkflowStatus.COMPLETED);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_a_failed_step"><a class="anchor" href="#_a_failed_step"></a>A failed step</h3>
+<div class="paragraph">
+<p>When the workflow body does not catch a step failure, the workflow ends <code>FAILED</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">fixture.given()
+       .publishEvent(new RegistrationReceivedEvent("2", "piggy@muppets.biz", "vip"))
+       .execute("createUser");
+
+fixture.when()
+       .executeFailing("activateUser", new StepFailedException("activation service down"));
+
+fixture.then()
+       .workflowFinished(WorkflowStatus.FAILED)
+       .step("activateUser", StepStatus.FAILED)
+       .noStep("sendWelcomeEmail");</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_several_workflow_instances"><a class="anchor" href="#_several_workflow_instances"></a>Several workflow instances</h3>
+<div class="paragraph">
+<p>Assertions apply to the selected execution or history.
+When several instances run, select one with a predicate or a workflow id:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">fixture.given()
+       .publishEvent(new RegistrationReceivedEvent("2", "piggy@muppets.biz", "vip"))
+       .publishEvent(new RegistrationReceivedEvent("3", "kermit@muppets.biz", "vip"));
+
+fixture.then()
+       .executionExists(execution -&gt; "3".equals(execution.state().payload().get("id")))
+       .waitingIn("createUser");</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After an instance finishes, select its history with <code>historyExists(workflowId)</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_advanced_testing"><a class="anchor" href="#_advanced_testing"></a>Advanced testing</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -1159,7 +1216,7 @@ Use this for integration-style tests where production actions should run.</p></t
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule&lt;SimpleWorkflowContext&gt; module = WorkflowModule
         .defaults("TestModule", SimpleWorkflowContext.class)
-        .workflowContextFactory(c -&gt; new SimpleWorkflowContextFactory())
+        .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
         .definition(d -&gt; d.autodetected(c -&gt; new UserSignupWorkflow()));
 
 WorkflowTestDriver driver = WorkflowTestDriver.stepper(module, false, UnaryOperator.identity());

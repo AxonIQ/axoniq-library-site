@@ -677,13 +677,29 @@ Use this when you want to run multiple steps concurrently, or when you need to c
 </td>
 <td class="content">
 <div class="paragraph">
-<p>If your workflow body returns while an async step started with <code>execute(&#8230;&#8203;)</code> is still running, the engine cancels that step and writes its <code>CANCELLED</code> event before the workflow transitions to <code>COMPLETED</code>.
+<p>If your workflow body returns while an async step started with <code>execute(&#8230;&#8203;)</code> is still running, the engine interrupts that step and completes the workflow.
+The step gets no terminal event of its own; only the workflow-level event is written.
 If you need the workflow to wait for the step&#8217;s real result, call <code>.await()</code> on the returned <code>WorkflowStepResult</code> (or use <code>awaitExecute</code> / <code>allMatch</code> / <code>anyMatch</code>).
 See <a href="../workflow-lifecycle/#complete-with-running-steps" class="xref page">Normal completion with running steps</a>.</p>
 </div>
 </td>
 </tr>
 </table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="blocking-boundary"><a class="anchor" href="#blocking-boundary"></a>Blocking and asynchronous work</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>An execute action is a plain synchronous function.
+It runs on the workflow executor, which uses one virtual thread per task, so a blocking call such as JDBC or HTTP blocks only that workflow instance.
+The action has a timeout (5 seconds by default, set it with <code>step.timeout(&#8230;&#8203;)</code>).
+The engine does not force-interrupt the action when the timeout expires, and a late result is discarded.</p>
+</div>
+<div class="paragraph">
+<p>For work that finishes elsewhere, use two steps: an <code>execute</code> step that starts the work with a correlation id, then a <code>waitForEvent</code> step associated with that id.
+See <a href="../waiting-for-events/" class="xref page">Waiting for Events</a>.</p>
 </div>
 </div>
 </div>

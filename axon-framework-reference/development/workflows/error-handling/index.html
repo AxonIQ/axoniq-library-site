@@ -467,7 +467,7 @@ without ending and how it resumes.</p>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Workflow terminal</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The workflow itself ended with <code>COMPLETED</code>, <code>FAILED</code>, <code>CANCELLED</code> or <code>TIMED_OUT</code>. A terminal event is stored. Nothing runs again.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ctx.fail(&#8230;&#8203;)</code>, <code>ctx.cancel(&#8230;&#8203;)</code>, a workflow timeout, or an exception nobody caught, see <a href="#terminal">When the workflow stops for good</a>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ctx.fail(&#8230;&#8203;)</code>, <code>ctx.cancel(&#8230;&#8203;)</code>, a <code>TimeoutException</code> escaping the body, or an exception nobody caught, see <a href="#terminal">When the workflow stops for good</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Workflow stopped, not ended</strong></p></td>
@@ -595,6 +595,25 @@ if (shipping.failure()) { // blocks until the step reaches a terminal status
 <p>The saga pattern in <a href="../common-patterns/" class="xref page">Common Patterns</a> shows compensation in reverse order.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="exhausted-retries"><a class="anchor" href="#exhausted-retries"></a>After retries are exhausted</h3>
+<div class="paragraph">
+<p>When the retry policy is exhausted, the step records a durable <code>FAILED</code> event and throws a <code>StepFailedException</code>.
+Catch it in the body to compensate, as shown above. If the body does not catch it, the workflow ends <code>FAILED</code>.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The engine cannot resume or retry a <code>FAILED</code> workflow. <code>WorkflowManager</code> can only request cancellation.
+</td>
+</tr>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -673,14 +692,14 @@ interrupted, and the instance is removed from the engine.</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Explicit, graceful stop.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Workflow timeout</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <code>java.util.concurrent.TimeoutException</code> that escapes the body as the top-level exception</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>TIMED_OUT</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Configured on the workflow.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Checked before the recoverable policy. A <code>TimeoutException</code> wrapped as the cause of another exception is classified by the policy, see <a href="#recoverable">Recoverable versus unrecoverable exceptions</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A <code>StepFailedException</code> the body did not catch</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>FAILED</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The step outcome is durable and business-visible, so the failure ends the workflow. The exception is stored as the cause.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The step outcome is durable and business-visible, so the failure ends the workflow. The exception is stored as the cause. Exception: <code>StepInterruptedException</code>, raised when the engine stops, ends the body without a terminal status, see <a href="#stopped">When the workflow stops without ending</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Any other exception the body did not catch and that is not recoverable</p></td>
@@ -690,7 +709,7 @@ interrupted, and the instance is removed from the engine.</p>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Lifecycle listeners such as <code>@OnFailure</code> fire on each terminal status. See
+<p>Lifecycle listeners such as <code>@WorkflowFailedHandler</code> fire on each terminal status. See
 <a href="../workflow-lifecycle/" class="xref page">Workflow Lifecycle</a>.</p>
 </div>
 </div>
@@ -759,9 +778,17 @@ on 2 occasions:</p>
 <p>The body runs again from its recorded state. Completed steps are not re-executed. A workflow stopped by a
 replay drift resumes as soon as fixed code is deployed and the node restarts.</p>
 </div>
+</div>
+<div class="sect2">
+<h3 id="checkpoint-safety"><a class="anchor" href="#checkpoint-safety"></a>Recovery never skips unfinished work</h3>
 <div class="paragraph">
-<p>To find such workflows, query <code>WorkflowManager</code> for instances in <code>STARTED</code> whose last step event is older than
-you expect, and correlate with the log lines above.</p>
+<p>The processor stores its position as the recovery point. The engine does not move that position past an event
+until the workflow state caused by that event is durable. For example, the position does not pass an event that
+wakes an <code>awaitEvent</code> step before the step&#8217;s <code>COMPLETED</code> event is stored.</p>
+</div>
+<div class="paragraph">
+<p>When a segment is released, the release fails instead of storing a position past work that is not durable yet.
+The next node to claim the segment starts from the older position, so at most some events are delivered again.</p>
 </div>
 </div>
 <div class="sect2">
@@ -786,7 +813,7 @@ treats these as recoverable:</p>
 <p><code>AxonTransientException</code>, the framework&#8217;s marker for a condition worth retrying</p>
 </li>
 <li>
-<p><code>TimeoutException</code> and <code>IOException</code>, raised when infrastructure did not answer</p>
+<p><code>TimeoutException</code> (only when wrapped as a cause, a top-level one times out the workflow) and <code>IOException</code>, raised when infrastructure did not answer</p>
 </li>
 </ul>
 </div>

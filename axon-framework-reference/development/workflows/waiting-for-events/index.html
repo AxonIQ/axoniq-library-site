@@ -531,7 +531,7 @@ COMPLETED event.</p>
 <div class="et-player" data-autoplay>
   <div class="et-src" data-title="awaitEvent — timeout">
 1 started AwaitPaymentStarted {"startTime": "2026-03-25T10:00:00Z", "eventName": "PaymentConfirmed", "associations": ["payload:orderId=123"], "timeoutTime": "2026-03-25T10:15:00Z"}
-2 timedout AwaitPaymentTimedOut {"timeout": "2026-03-25T10:15:00Z"}
+2 timedout AwaitPaymentTimedOut "2026-03-25T10:15:00Z"
   </div>
 </div>
 </div>
@@ -594,8 +594,7 @@ Only <code>PaymentConfirmed</code> events whose <code>orderId</code> equals this
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">payload:paymentReference=123
-metadata:tenantId=acme
-message:timestamp&gt;2026-01-01T12:00:00Z</code></pre>
+metadata:tenantId=acme</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -604,13 +603,13 @@ message:timestamp&gt;2026-01-01T12:00:00Z</code></pre>
 <div class="ulist">
 <ul>
 <li>
-<p><code>source</code> identifies where the left-hand value comes from. <code>payload</code> is the first required qualifier.</p>
+<p><code>source</code> identifies where the left-hand value comes from. Supported sources are <code>payload</code> and <code>metadata</code>.</p>
 </li>
 <li>
 <p><code>path</code> is source-specific lookup text, such as a payload property or metadata key. This maps to a value retriever.</p>
 </li>
 <li>
-<p><code>operator</code> is resolved through <code>ValueComparisonOperatorRegistry</code>.</p>
+<p><code>operator</code> is resolved through <code>ValueComparisonOperatorRegistry</code>. The built-in operator is <code>=</code>.</p>
 </li>
 <li>
 <p><code>value</code> is stored in serialized text form.</p>
@@ -668,7 +667,7 @@ if(stepResult.success()){
 <td class="content">
 <div class="paragraph">
 <p>If you need to branch explicitly on timeout, cancellation, or success, prefer non-blocking <code>waitForEvent(&#8230;&#8203;)</code> and inspect the returned <code>WorkflowStepResult</code>.
-The blocking helpers are best when your workflow only needs the successful event payload and treats other outcomes as exceptional.</p>
+The blocking helpers are best when your workflow only needs the successful event payload. <code>awaitEvent</code> throws <code>StepTimedOutException</code> on timeout and <code>StepCancellationException</code> on cancellation.</p>
 </div>
 </td>
 </tr>
@@ -712,7 +711,7 @@ var approval = ctx.waitForEvent("awaitApproval",                     <i class="c
                   equalsTo(ctx.workflowPayload().get("orderId"))),
         step -&gt; step.timeout(Duration.ofMinutes(30)));
 
-ctx.allMatch(WorkflowStepResult::isCompleted, payment, approval)   <i class="conum" data-value="2"></i><b>(2)</b>
+ctx.allMatch(WorkflowStepResult::success, payment, approval)   <i class="conum" data-value="2"></i><b>(2)</b>
    .await();
 
 logger.info("Both payment and approval received — proceeding!");</code></pre>
@@ -726,7 +725,7 @@ logger.info("Both payment and approval received — proceeding!");</code></pre>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td><code>allMatch</code> blocks until both events have arrived. See <a href="../step-orchestration/" class="xref page">Step Orchestration</a> for more on combinators.</td>
+<td><code>allMatch</code> blocks until both waits have finished. With <code>success</code> as predicate, it ends early when one of them times out. See <a href="../step-orchestration/" class="xref page">Step Orchestration</a> for more on combinators.</td>
 </tr>
 </table>
 </div>
@@ -756,7 +755,7 @@ Under the hood, this is a <code>waitForEvent</code> with an event condition that
 <div class="et-player" data-autoplay>
   <div class="et-src" data-title="sleep — 10-day delay">
 1 started CooldownPeriodStarted {"startTime": "2026-03-25T10:00:00Z", "eventName": "Void", "associations": [], "timeoutTime": "2026-04-04T10:00:00Z"}
-2 timedout CooldownPeriodTimedOut {"timeout": "2026-04-04T10:00:00Z"}
+2 timedout CooldownPeriodTimedOut "2026-04-04T10:00:00Z"
   </div>
 </div>
 <div class="paragraph">
@@ -819,7 +818,7 @@ public void execute(SimpleWorkflowContext ctx) {
             step -&gt; step.timeout(Duration.ofSeconds(30)));
 
     // Wait for both to complete
-    ctx.allMatch(WorkflowStepResult::isCompleted,                   <i class="conum" data-value="3"></i><b>(3)</b>
+    ctx.allMatch(WorkflowStepResult::success,                       <i class="conum" data-value="3"></i><b>(3)</b>
                  paymentConfirmation, paymentInitiation).await();
 
     logger.info("Payment initiated and confirmed for order {}",
@@ -839,7 +838,7 @@ public void execute(SimpleWorkflowContext ctx) {
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td><code>allMatch</code> blocks until both the payment initiation completes and the confirmation event arrives.</td>
+<td><code>allMatch</code> blocks until both the payment initiation and the confirmation event have succeeded, or one of them ends without success.</td>
 </tr>
 </table>
 </div>
@@ -865,7 +864,7 @@ public void execute(SimpleWorkflowContext ctx) {
 1 external OrderPlaced {"orderId": 123, "customerId": 456, "email": "joe@example.com", "amount": 99.95}
 2 started OrderFulfillmentWorkflow#ExecuteStarted
 3 started ReserveStockStarted
-4 completed ReserveStockCompleted {"__reserveStock": true}
+4 completed ReserveStockCompleted {"reserved": true}
 5 started AwaitPaymentStarted {"startTime": "2026-03-25T10:00:05Z", "eventName": "PaymentConfirmed", "associations": ["payload:orderId=123"], "timeoutTime": "2026-03-25T10:15:05Z"}
 6 started InitiatePaymentStarted {"orderId": 123, "customerId": 456, "email": "joe@example.com", "amount": 99.95}
 7 completed InitiatePaymentCompleted

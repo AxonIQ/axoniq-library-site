@@ -521,8 +521,8 @@ parallel instances, use a different <code>idProperty</code> value.</p>
 <div class="sect2">
 <h3 id="_dispatching_the_body_of_an_existing_instance"><a class="anchor" href="#_dispatching_the_body_of_an_existing_instance"></a>Dispatching the body of an existing instance</h3>
 <div class="paragraph">
-<p><code>SimpleWorkflowExecution.resolveVersionedDefinition</code> decides which workflow body to invoke on
-every <code>execute(&#8230;&#8203;)</code> of an existing instance. The lookup runs in this order:</p>
+<p><code>WorkflowConfigurationRegistry.resolveDefinitionForReplay</code> decides which workflow body to invoke on
+every run of an existing instance. The lookup runs in this order:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -556,7 +556,7 @@ jumps across the major boundary to <code>v2.0.0</code>. Symmetric for a v2 insta
 stays on <code>v2.0.0</code>. With <code>[v0.0.2]</code> registered and state <code>"0.0.1"</code>, step 4 picks <code>v0.0.2</code>.</p>
 </div>
 <div class="paragraph">
-<p>When all four passes fail (no definition is registered for this workflow name at all), routing
+<p>When no definition is registered for this workflow name at all (<code>no-match-fallback</code>), routing
 falls back to the start-time definition and logs at WARN. The drift safety net then pauses the
 workflow if step names diverge in incompatible ways.</p>
 </div>
@@ -689,7 +689,7 @@ workflow will run.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule.defaults("OrderWorkflow", SimpleWorkflowContext.class)
-              .workflowContextFactory(c -&gt; new SimpleWorkflowContextFactory())
+              .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
               .definition(d -&gt; d.declarative(c -&gt; orderWorkflow::execute)
                                 .workflowName("OrderWorkflow")
                                 .on(EventConditions.fromType(OrderPlacedEvent.class))
@@ -752,18 +752,18 @@ public void execute(SimpleWorkflowContext ctx) {
     ctx.awaitExecute("reserveStock", Boolean.class, InventoryService::reserveStock);
 
     if (ctx.migrateVersion("payment-redesign", "0.0.2")) {
-        ctx.awaitExecute("processPayment", PaymentService::processV2);
+        ctx.awaitExecute("processPayment", Boolean.class, PaymentService::processV2);
     } else {
-        ctx.awaitExecute("chargePayment", PaymentService::chargeV1);
+        ctx.awaitExecute("chargePayment", Boolean.class, PaymentService::chargeV1);
     }
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p><strong>Returns a boolean.</strong> <code>true</code> iff the workflow has committed to (or is past) <code>newVersion</code> for this
-<code>changeId</code>; <code>false</code> if it stays on the legacy branch. Internally, <code>WorkflowState.effectiveVersionFor(changeId)</code>
-obtains this from the recorded migration step when one exists, otherwise from <code>state.workflowDefinitionId().version()</code>
-(driven by the started event&#8217;s <code>MessageType.version()</code>).</p>
+<code>changeId</code>; <code>false</code> if it stays on the legacy branch. Internally, <code>WorkflowState.versionFor(changeId)</code>
+returns the version recorded by the migration step when one exists, otherwise <code>state.workflowDefinitionId().version()</code>
+(driven by the started event&#8217;s <code>MessageType.version()</code>). The call returns <code>true</code> when that version is greater than or equal to <code>newVersion</code>.</p>
 </div>
 <div class="paragraph">
 <p><strong>Versions are semver strings,</strong> compared by <code>Version</code>. Downgrades
@@ -779,8 +779,8 @@ uncluttered: only workflows that actively migrated to a higher version carry mig
 <div class="paragraph">
 <p><strong>The wire-level event name derives from the <code>changeId</code>.</strong> For the example above the marker event is
 named <code>Payment-redesign.Versioned</code> in the event store, with <code>MessageType.version() = "0.0.2"</code> on the
-envelope itself and metadata <code>{eventKind: VERSION_MARKER, versionChangeId: "payment-redesign",
-version: "0.0.2"}</code>. The <code>changeId</code> is the business-meaningful description of what changed; it
+envelope itself. It is a COMPLETED step event (<code>stepName</code> is the <code>changeId</code>) with the extra metadata
+<code>versionChangeId: "payment-redesign"</code> and <code>version: "0.0.2"</code>. The <code>changeId</code> is the business-meaningful description of what changed; it
 surfaces directly in the event log.</p>
 </div>
 </div>
@@ -790,26 +790,26 @@ surfaces directly in the event log.</p>
 <h2 id="downstream-steps-guard"><a class="anchor" href="#downstream-steps-guard"></a>The downstream-steps guard</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A naive <code>version()</code> implementation would break workflows: if a workflow has already executed steps
+<p>A naive <code>migrateVersion</code> implementation would break workflows: if a workflow has already executed steps
 A, B, C under old code and a developer later inserts <code>ctx.migrateVersion("x", "0.0.2")</code> between A and B, the
 naive implementation would reach the version call with no marker in history and fork onto the v=2
 branch—even though B and C already ran.</p>
 </div>
 <div class="paragraph">
-<p>The actual implementation has a <strong>correctness invariant</strong>: <code>version()</code> returns the workflow&#8217;s current version unchanged (and emits nothing)
+<p>The actual implementation has a <strong>correctness invariant</strong>: <code>migrateVersion</code> returns <code>false</code> for the legacy branch (and emits nothing)
 if state contains any terminal step that the current invocation has not yet referenced. Those
 untouched-but-present steps prove old code already executed past this code point, so we must stay on
 the legacy branch.</p>
 </div>
 <div class="paragraph">
 <p>The mechanism: the workflow body runs from the top on every invocation (live or replay). The runtime
-tracks a per-invocation set of "step names the body has referenced so far." When <code>version()</code> runs,
+tracks a per-invocation set of "step names the body has referenced so far." When <code>migrateVersion</code> runs,
 it compares this set against <code>state.workflowStepNames()</code>—anything in state but not yet referenced
 is "downstream" of the current code position. Steps below this point in the new code that are
 already in history can only have come from old code that ran past this point.</p>
 </div>
 <div class="sect2">
-<h3 id="_worked_example_aold_workflow_version_inserted_later"><a class="anchor" href="#_worked_example_aold_workflow_version_inserted_later"></a>Worked example A—old workflow, version() inserted later</h3>
+<h3 id="_worked_example_a_old_workflow_migrateversion_inserted_later"><a class="anchor" href="#_worked_example_a_old_workflow_migrateversion_inserted_later"></a>Worked example A: Old workflow, <code>migrateVersion</code> inserted later</h3>
 <div class="paragraph">
 <p>History: <code>A.started, A.completed, B.started, B.completed, C.started, C.completed, workflow.completed</code>.
 New code:</p>
@@ -888,7 +888,7 @@ if (ctx.migrateVersion("x", "0.0.2")) {       // line 2—newly added
 </table>
 </div>
 <div class="sect2">
-<h3 id="_worked_example_bbrand_new_workflow_same_code"><a class="anchor" href="#_worked_example_bbrand_new_workflow_same_code"></a>Worked example B—brand-new workflow, same code</h3>
+<h3 id="_worked_example_b_brand_new_workflow_same_code"><a class="anchor" href="#_worked_example_b_brand_new_workflow_same_code"></a>Worked example B: Brand-new workflow, same code</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 7.6923%;">
@@ -946,7 +946,7 @@ if (ctx.migrateVersion("x", "0.0.2")) {       // line 2—newly added
 </table>
 </div>
 <div class="sect2">
-<h3 id="_worked_example_cworkflow_stopped_at_the_boundary"><a class="anchor" href="#_worked_example_cworkflow_stopped_at_the_boundary"></a>Worked example C—workflow stopped at the boundary</h3>
+<h3 id="_worked_example_c_workflow_stopped_at_the_boundary"><a class="anchor" href="#_worked_example_c_workflow_stopped_at_the_boundary"></a>Worked example C: Workflow stopped at the boundary</h3>
 <div class="paragraph">
 <p>History: <code>A.started, A.completed</code> only (the workflow was awaiting B when the deployment happened).
 Same new code as A.</p>
@@ -1016,7 +1016,7 @@ within one invocation could see different <code>referencedStepNames</code> snaps
 values.</p>
 </li>
 <li>
-<p>Never call <code>version()</code> inside a loop or combinator branch—the call must be reached
+<p>Never call <code>migrateVersion</code> inside a loop or combinator branch: the call must be reached
 deterministically and exactly once per body invocation.</p>
 </li>
 <li>
@@ -1225,6 +1225,9 @@ moment.</p>
 <p><code>ctx.awaitWaitFor(&#8230;&#8203;)</code> / <code>ctx.waitFor(&#8230;&#8203;)</code>—before publishing <code>STARTED</code></p>
 </li>
 <li>
+<p><code>ctx.publish(&#8230;&#8203;)</code> / <code>ctx.awaitPublish(&#8230;&#8203;)</code>: before publishing the step&#8217;s <code>COMPLETED</code> event</p>
+</li>
+<li>
 <p><code>ctx.awaitModifyPayload(&#8230;&#8203;)</code> / <code>ctx.modifyPayload(&#8230;&#8203;)</code>—before publishing <code>COMPLETED</code></p>
 </li>
 <li>
@@ -1251,7 +1254,7 @@ workflow execution loop with a dedicated handler that:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Logs a warning with the workflow id, the primitive that drifted, and the orphan step names</p>
+<p>Logs a warning with the workflow id, the step about to execute, and the orphan step names</p>
 </li>
 <li>
 <p><strong>Does not</strong> publish a <code>failedWorkflow</code> or <code>cancelledWorkflow</code> event</p>
@@ -1293,17 +1296,16 @@ reverted.</p>
 <h3 id="_whats_in_the_log"><a class="anchor" href="#_whats_in_the_log"></a>What&#8217;s in the log</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-none hljs">WARN  Workflow order-abc-123 paused due to replay drift: Workflow order-abc-123 cannot run
-      execute("step1_1") because history contains terminal steps the current code does not
-      reference: [step2]. This means old code ran past this point with steps the new code skips.
-      Either revert the change or wrap the new code in ctx.migrateVersion("&lt;changeId&gt;", "x.y.z") so old
-      workflows stay on the legacy branch. Revert the code change or wrap it in ctx.migrateVersion()
-      and replay.</code></pre>
+<pre class="highlightjs highlight"><code class="language-none hljs">WARN  Workflow order-abc-123 paused due to replay drift: Workflow order-abc-123 cannot proceed at
+      "step1_1" because history contains terminal steps the current code does not reference:
+      [step2]. This means old code ran past this point with steps the new code skips. Either revert
+      the change or wrap the new code in ctx.migrateVersion("&lt;changeId&gt;", N) so old workflows stay
+      on the legacy branch. Revert the code change or wrap it in ctx.migrateVersion() and replay.</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Telemetry-friendly accessors are available on the exception:
-<code>workflowId()</code>, <code>primitive()</code>, <code>aboutToExecute()</code>, <code>orphans()</code>.</p>
+<code>workflowId()</code>, <code>aboutToExecute()</code>, <code>orphans()</code>.</p>
 </div>
 </div>
 <div class="sect2">

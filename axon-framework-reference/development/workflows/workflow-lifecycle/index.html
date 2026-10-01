@@ -446,6 +446,7 @@ This section covers how workflows terminate—both intentionally and unexpectedl
 <div class="paragraph">
 <p>Each workflow instance runs on a <strong>virtual thread</strong>.
 Virtual threads are lightweight—a suspended workflow (for example, waiting for an event) consumes almost no memory or OS resources, so you can run thousands of concurrent workflow instances without issue.
+Memory use is proportional to the number of non-terminal instances on the node.
 In a future version, the engine will support offloading long-running suspended workflows to disk, freeing memory entirely until they are resumed.</p>
 </div>
 </td>
@@ -458,7 +459,7 @@ In a future version, the engine will support offloading long-running suspended w
 <h2 id="_workflow_states"><a class="anchor" href="#_workflow_states"></a>Workflow states</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A workflow is always in one of these states:</p>
+<p>Once started, a workflow is always in one of these states:</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -491,7 +492,7 @@ Any async steps still running are interrupted (see <a href="#complete-with-runni
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>TIMED_OUT</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow exceeded its overall timeout.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <code>TimeoutException</code> escaped the workflow body.</p></td>
 </tr>
 </tbody>
 </table>
@@ -509,7 +510,7 @@ Any async steps still running are interrupted (see <a href="#complete-with-runni
 <p>The engine writes workflow lifecycle events with event-store tags as well:
 <code>workflowId=&lt;id&gt;</code> on engine-published workflow events and
 <code>workflowEvent=lifecycle</code> on workflow lifecycle events.
-<code>waitForEvent</code> step STARTED and terminal events additionally carry <code>workflowEvent=waitForStep</code>.</p>
+<code>waitForEvent</code> step events with status STARTED, COMPLETED, CANCELLED or TIMED_OUT additionally carry <code>workflowEvent=waitForStep</code>.</p>
 </div>
 </td>
 </tr>
@@ -974,8 +975,8 @@ parameters:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@WorkflowCompletedHandler
-public void onCompleted(WorkflowStatus status, SimpleWorkflowContext ctx, OrderFulfillmentWorkflow self) {
-    logger.info("Order {} fulfilled successfully! (workflow instance: {})", ctx.workflowPayload().get("orderId"), self);
+public void onCompleted(WorkflowStatus status, SimpleWorkflowContext ctx, WorkflowState state) {
+    logger.info("Order {} fulfilled successfully! (status: {})", ctx.workflowPayload().get("orderId"), state.workflowStatus());
 }</code></pre>
 </div>
 </div>
@@ -1004,8 +1005,8 @@ public void onCompleted(WorkflowStatus status, SimpleWorkflowContext ctx, OrderF
 Declaring it on the <code>@Workflow</code> method itself has no matching value, so that method won&#8217;t be recognized as a handler.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow instance&#8217;s own type (or a supertype)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow-annotated component instance itself, letting a listener call other methods or read fields on it.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WorkflowState</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The state of the workflow instance, taken from the live execution or, when it is no longer live, from the stored history.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Any type with a public constructor accepting your <code>WorkflowContext</code> type</p></td>

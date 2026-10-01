@@ -481,7 +481,7 @@ var reservations = lineItems.stream()
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Fan-in: wait for all reservations
-var guard = ctx.allMatch(WorkflowStepResult::isCompleted, reservations); <i class="conum" data-value="1"></i><b>(1)</b>
+var guard = ctx.allMatch(WorkflowStepResult::success, reservations); <i class="conum" data-value="1"></i><b>(1)</b>
 
 if (!guard.success()) {
     // Some reservations failed — cancel the rest and compensate
@@ -531,12 +531,13 @@ for (var approver : approvers) {
 var approvals = approvers.stream()
         .map(approver -&gt; ctx.waitForEvent(
                 "approval-" + approver,                                    <i class="conum" data-value="1"></i><b>(1)</b>
-                EventConditions.fromQualifiedName(ctx.resolve(ApprovalDecisionEvent.class)),
+                ApprovalDecisionEvent.class,
+                associate(payloadProperty("approver"), equalsTo(approver)),
                 step -&gt; step.timeout(Duration.ofDays(5))))
         .toArray(WorkflowStepResult[]::new);
 
 // Fan-in: wait for all approvals
-var result = ctx.allMatch(WorkflowStepResult::isCompleted, approvals);
+var result = ctx.allMatch(WorkflowStepResult::success, approvals);
 
 if (!result.success()) {
     ctx.fail(new RuntimeException("Not all approvals received within deadline"));
@@ -667,7 +668,8 @@ ctx.awaitExecute("requestApproval",
 
 // Wait for their response
 var decision = ctx.waitForEvent("awaitApproval",
-        EventConditions.fromQualifiedName(ctx.resolve(ApprovalDecisionEvent.class)),
+        ApprovalDecisionEvent.class,
+        associate(payloadProperty("requestId"), equalsTo(ctx.workflowId())),
         step -&gt; step.timeout(Duration.ofDays(3)));
 
 if (decision.timeout()) {                                                <i class="conum" data-value="1"></i><b>(1)</b>
@@ -677,7 +679,8 @@ if (decision.timeout()) {                                                <i clas
             ApprovalService::escalate);
 
     decision = ctx.waitForEvent("awaitEscalatedApproval",
-            EventConditions.fromQualifiedName(ctx.resolve(ApprovalDecisionEvent.class)),
+            ApprovalDecisionEvent.class,
+            associate(payloadProperty("requestId"), equalsTo(ctx.workflowId())),
             step -&gt; step.timeout(Duration.ofDays(1)));
 
     if (decision.timeout()) {
@@ -716,10 +719,10 @@ if (failureCount &lt; 3) {                                                  <i c
                 payload("to", email, "subject", subject).getValues(),
                 EmailService::send);
         ctx.setPayload("resetEmailFailures",
-                payload("emailFailures", 0));                             <i class="conum" data-value="2"></i><b>(2)</b>
+                Map.of("emailFailures", 0));                                 <i class="conum" data-value="2"></i><b>(2)</b>
     } catch (StepFailedException e) {
         ctx.setPayload("recordEmailFailure",
-                payload("emailFailures", failureCount + 1));              <i class="conum" data-value="3"></i><b>(3)</b>
+                Map.of("emailFailures", failureCount + 1));            <i class="conum" data-value="3"></i><b>(3)</b>
         logger.warn("Email failed ({}/3), will skip next time", failureCount + 1);
     }
 } else {
@@ -790,7 +793,7 @@ ctx.awaitExecute("sendReminder",
 <div class="paragraph">
 <p>Workflows talk to each other through published events.
 A parent publishes an event with <a href="../publishing-events/" class="xref page"><code>awaitPublish</code></a>; a child workflow starts on it.
-The child publishes its completion event the same way; the parent matches it with <code>awaitEvent</code> on a shared correlation ID (for example, <code>orderId</code>).</p>
+The child publishes its completion event the same way; the parent matches it with <code>waitForEvent</code> on a shared correlation ID (for example, <code>orderId</code>).</p>
 </div>
 <div class="paragraph">
 <p>Each <code>awaitPublish</code> appends exactly one event: the business event itself, recorded as the publisher&#8217;s completed step.
@@ -884,7 +887,7 @@ The <code>childWorkflowId</code> from the payload becomes this workflow&#8217;s 
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>The final <code>notifyParent</code> step publishes <code>PaymentProcessCompleted</code>, which wakes the parent&#8217;s <code>awaitEvent</code>.</td>
+<td>The final <code>notifyParent</code> step publishes <code>PaymentProcessCompleted</code>, which wakes the parent&#8217;s <code>waitForEvent</code>.</td>
 </tr>
 </table>
 </div>
@@ -893,10 +896,10 @@ The <code>childWorkflowId</code> from the payload becomes this workflow&#8217;s 
 </div>
 <div class="et-player" data-autoplay>
   <div class="et-src" data-title="Parent — OrderFulfillmentWorkflow (123)">
-1 started AwaitPaymentProcessStarted {"startTime": "2026-03-26T10:00:01Z"}
+1 started AwaitPaymentProcessStarted {"startTime": "2026-03-26T10:00:01Z", "associations": ["payload:orderId=123"], "timeoutTime": "2026-03-26T10:30:01Z"}
 2 completed PaymentProcessStarted {"childWorkflowId": "payment-123", "orderId": 123, "amount": 99.95}
 9 external PaymentProcessCompleted {"orderId": 123, "childWorkflowId": "payment-123"}
-10 completed AwaitPaymentProcessCompleted
+10 completed AwaitPaymentProcessCompleted {"orderId": 123, "childWorkflowId": "payment-123"}
 11 completed OrderFulfillmentWorkflow#ExecuteCompleted
   </div>
   <div class="et-src" data-title="Child — PaymentProcessWorkflow (payment-123)">
@@ -912,7 +915,7 @@ The <code>childWorkflowId</code> from the payload becomes this workflow&#8217;s 
 <div class="paragraph">
 <p>The parent registers its wait (<code>AwaitPaymentProcessStarted</code>) and then publishes: its <code>paymentProcessStarted</code> step is the <code>PaymentProcessStarted</code> event itself, one record in the parent&#8217;s stream and the trigger of the child.
 The child runs its steps and its final <code>notifyParent</code> step is the <code>PaymentProcessCompleted</code> event.
-The engine routes that event to the parent, where it matches the <code>awaitEvent</code> on <code>payloadProperty("orderId")</code>.</p>
+The engine routes that event to the parent, where it matches the <code>waitForEvent</code> on <code>payloadProperty("orderId")</code>.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -924,6 +927,22 @@ The engine routes that event to the parent, where it matches the <code>awaitEven
 <div class="paragraph">
 <p>Several running workflows can wait for the same published event.
 One <code>awaitPublish</code> wakes every waiting instance whose association matches, and starts every workflow definition that lists the event as its start event.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>A child is an independent workflow.
+The engine does not link it to the parent.
+Cancelling, failing or timing out the parent does not stop the child.</p>
 </div>
 </td>
 </tr>

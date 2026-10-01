@@ -464,8 +464,8 @@ var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var approval = ctx.waitForEvent("awaitApproval",
-        EventConditions.fromQualifiedName(ctx.resolve(ManagerApproved.class)),
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var approval = ctx.waitForEvent("awaitApproval", ManagerApproved.class,
+        associate(payloadProperty("orderId"), equalsTo(ctx.workflowId())),
         step -&gt; step.timeout(Duration.ofMinutes(30)));
 
 var backgroundCheck = ctx.execute("runBackgroundCheck", ctx.workflowPayload(),
@@ -504,12 +504,12 @@ They are <strong>not</strong> automatically cancelled—if you need cleanup, can
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var accepted = ctx.waitForEvent("paymentAccepted",
-        EventConditions.fromQualifiedName(ctx.resolve(CardPaymentAccepted.class)),
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var accepted = ctx.waitForEvent("paymentAccepted", CardPaymentAccepted.class,
+        associate(payloadProperty("orderId"), equalsTo(ctx.workflowId())),
         step -&gt; step.timeout(Duration.ofMinutes(10)));
 
-var declined = ctx.waitForEvent("paymentDeclined",
-        EventConditions.fromQualifiedName(ctx.resolve(CardPaymentDeclined.class)),
+var declined = ctx.waitForEvent("paymentDeclined", CardPaymentDeclined.class,
+        associate(payloadProperty("orderId"), equalsTo(ctx.workflowId())),
         step -&gt; step.timeout(Duration.ofMinutes(10)));
 
 var result = ctx.anyMatch(WorkflowStepResult::isCompleted,     <i class="conum" data-value="1"></i><b>(1)</b>
@@ -951,7 +951,7 @@ public void execute(SimpleWorkflowContext ctx) {
 8 completed ShipOrderCompleted
 9 completed OrderFulfillmentWorkflow#ExecuteCompleted
   </div>
-  <div class="et-src" data-title="CustomerNotificationWorkflow (123)">
+  <div class="et-src" data-title="CustomerNotificationWorkflow (456)">
 1 started CustomerNotificationWorkflow#ExecuteStarted
 3 started SendConfirmationEmailStarted {"email": "joe@example.com", "orderId": 123}
 5 completed SendConfirmationEmailCompleted

@@ -1256,8 +1256,11 @@ The same holds for an application that could not serve the endpoints other membe
 Set <code>axon.springcloud.enabled=false</code> to handle commands locally instead.</p>
 </div>
 <div class="paragraph">
+<p>The same starter also carries the <a href="../../queries/infrastructure/#SpringCloudQueryBusConnector" class="xref page"><code>SpringCloudQueryBusConnector</code></a>, which distributes queries over the same discovery and the same ring.</p>
+</div>
+<div class="paragraph">
 <p>Applications preferring to wire these beans themselves can depend on <code>axoniq-springcloud</code> alone.
-Spring itself is still required: the connector learns about the cluster from Spring Cloud&#8217;s discovery events, and receives commands and capability requests through two Spring MVC controllers.
+Spring itself is still required: the connector learns about the cluster from Spring Cloud&#8217;s discovery events, and receives messages and capability requests through Spring MVC controllers.
 Each Spring Cloud component Axoniq Framework supports has a module of its own, so an application takes only the ones it uses.</p>
 </div>
 <div class="admonitionblock note">
@@ -1286,18 +1289,19 @@ See <a href="../../framework-comparison/#enforcing_subscription" class="xref pag
 <div class="sect3">
 <h4 id="_reaching_the_other_members"><a class="anchor" href="#_reaching_the_other_members"></a>Reaching the other members</h4>
 <div class="paragraph">
-<p>Members reach each other over two paths, which have to be the same on every member of a cluster:</p>
+<p>Members reach each other over three paths, which have to be the same on every member of a cluster:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">axon.springcloud.command-endpoint=/axoniq-springcloud/command
+axon.springcloud.query-endpoint=/axoniq-springcloud/query
 axon.springcloud.capabilities-endpoint=/axoniq-springcloud/member-capabilities</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Both are served on the application&#8217;s own HTTP port, alongside its other endpoints, and carry traffic between members only.
+<p>All three are served on the application&#8217;s own HTTP port, alongside its other endpoints, and carry traffic between members only.
 Keep them off any ingress reachable from outside the cluster.
-An application with Spring Security in place has to permit both paths and exempt the command endpoint from cross-site request forgery protection, or members cannot reach each other.</p>
+An application with Spring Security in place has to permit all three paths and exempt the command and query endpoints from cross-site request forgery protection, or members cannot reach each other.</p>
 </div>
 <div class="paragraph">
 <p>Outgoing requests to other members use the application&#8217;s own <code>RestClient.Builder</code> bean when it has one, which is where an interceptor authenticating them belongs.
@@ -1353,7 +1357,7 @@ public Predicate&lt;ServiceInstance&gt; axoniqSpringCloudInstanceFilter() {
 <div class="sect3">
 <h4 id="_properties"><a class="anchor" href="#_properties"></a>Properties</h4>
 <div class="paragraph">
-<p>The two endpoint paths above are the properties a cluster has to agree on.
+<p>The three endpoint paths above are the properties a cluster has to agree on.
 The rest rarely need changing:</p>
 </div>
 <div class="listingblock">
@@ -1369,6 +1373,9 @@ axon.springcloud.ignore-period=1m
 # The metadata property holding an instance's context root. Unset by default, for instances served from the root.
 #axon.springcloud.context-root-metadata-property-name=contextRoot</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>The properties governing how queries are answered are described with the <a href="../../queries/infrastructure/#SpringCloudQueryBusConnector" class="xref page">query connector</a>.</p>
 </div>
 <div class="paragraph">
 <p>The command load factor is not among them: it belongs to the distributed command bus as a whole, and is set through the <code>DistributedCommandBusConfiguration</code> the <code>DistributedCommandBus</code> is built with.

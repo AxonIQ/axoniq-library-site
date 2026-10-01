@@ -445,7 +445,7 @@
 <p>Java 21 or higher</p>
 </li>
 <li>
-<p>Axon Framework 5.1.0</p>
+<p>Axon Framework 5.4 or higher</p>
 </li>
 <li>
 <p>Maven (Gradle works too, but this tutorial uses Maven)</p>
@@ -464,18 +464,18 @@
 <div class="title">pom.xml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependencies&gt;
-    &lt;!-- Workflow Engine DSL (includes both Java and Kotlin DSL) --&gt;
+    &lt;!-- Workflow Engine Java DSL (brings in the engine transitively) --&gt;
     &lt;dependency&gt;
-        &lt;groupId&gt;io.axoniq.framework.workflow&lt;/groupId&gt;
-        &lt;artifactId&gt;axon-workflow-dsl&lt;/artifactId&gt;
-        &lt;version&gt;${workflow.version}&lt;/version&gt;
+        &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+        &lt;artifactId&gt;axoniq-workflow-dsl&lt;/artifactId&gt;
+        &lt;version&gt;${axoniq-framework.version}&lt;/version&gt;
     &lt;/dependency&gt;
 
     &lt;!-- Workflow Engine Test utilities --&gt;
     &lt;dependency&gt;
-        &lt;groupId&gt;io.axoniq.framework.workflow&lt;/groupId&gt;
-        &lt;artifactId&gt;axon-workflow-test&lt;/artifactId&gt;
-        &lt;version&gt;${workflow.version}&lt;/version&gt;
+        &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+        &lt;artifactId&gt;axoniq-workflow-test&lt;/artifactId&gt;
+        &lt;version&gt;${axoniq-framework.version}&lt;/version&gt;
         &lt;scope&gt;test&lt;/scope&gt;
     &lt;/dependency&gt;
 &lt;/dependencies&gt;</code></pre>
@@ -489,10 +489,12 @@
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The <code>axon-workflow-dsl</code> module includes both Java DSL layers (<code>BaseWorkflowContext</code> and the convenience-focused
-<code>SimpleWorkflowContext</code>), which implement the author-facing <code>WorkflowContext</code> contract, plus the Kotlin DSL
-(<code>WorkflowKontext</code> with the author-facing <code>Kontext</code> wrapper).
-You don&#8217;t need separate dependencies for Kotlin support.</p>
+<p>The <code>axoniq-workflow-dsl</code> module includes both Java DSL layers (<code>BaseWorkflowContext</code> and the convenience-focused
+<code>SimpleWorkflowContext</code>), which implement the author-facing <code>WorkflowContext</code> contract.
+The engine (<code>axoniq-workflow-engine</code>) is a transitive dependency.
+It does not depend on Kotlin.
+For the Kotlin DSL (<code>WorkflowKontext</code> with the author-facing <code>Kontext</code> wrapper), add <code>axoniq-workflow-dsl-kotlin</code>.
+For Spring Boot, use <code>axoniq-spring-boot-starter</code>, which includes workflow support.</p>
 </div>
 </td>
 </tr>
@@ -519,20 +521,20 @@ You don&#8217;t need separate dependencies for Kotlin support.</p>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>runtime</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Core engine: primitives, combinators, execution, configuration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-workflow-engine</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Core engine: primitives, combinators, execution, configuration, and the <code>WorkflowContext</code> API</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dsl</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">DSL layers for Java (<code>BaseWorkflowContext</code> and <code>SimpleWorkflowContext</code>) and Kotlin (<code>WorkflowKontext</code> and <code>Kontext</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-workflow-dsl</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Java DSL layers (<code>BaseWorkflowContext</code> and <code>SimpleWorkflowContext</code>)</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>test</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-workflow-dsl-kotlin</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kotlin DSL (<code>WorkflowKontext</code> and <code>Kontext</code>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>axoniq-workflow-test</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Testing utilities: <code>AbstractWorkflowTestBase</code>, <code>DelayedPublisher</code></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>example</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Example workflows demonstrating all features</p></td>
 </tr>
 </tbody>
 </table>

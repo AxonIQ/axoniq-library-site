@@ -433,7 +433,7 @@
 <div class="paragraph">
 <p>A workflow definition is just imperative Java code.
 You write the business logic; the engine records every step as a durable event.
-If the application crashes, the engine replays those events and resumes exactly where it left off.</p>
+If the application crashes, the engine replays those events and resumes after the last completed step.</p>
 </div>
 </div>
 </div>
@@ -573,7 +573,7 @@ Each unique <code>orderId</code> gets its own workflow instance.</p>
 <div class="paragraph">
 <p>You can also use <code>startOnConditions</code> to filter which events trigger the workflow.
 Use the canonical qualified form.
-For example, <code>startOnConditions = {"payload:amount&gt;100"}</code> would only process high-value orders.</p>
+For example, <code>startOnConditions = {"payload:status=vip"}</code> would only start the workflow for events whose <code>status</code> payload property equals <code>vip</code>.</p>
 </div>
 </td>
 </tr>
@@ -589,7 +589,9 @@ For example, <code>startOnConditions = {"payload:amount&gt;100"}</code> would on
 </div>
 <div class="paragraph">
 <p>The engine records everything.
-On crash recovery, it replays those events and resumes execution from where it left off—no manual state management needed.</p>
+On crash recovery, it replays those events and resumes after the last completed step.
+A step that was running during the crash is not executed twice: it fails with a <code>StepIndeterminateException</code>, or is retried if the step has a retry policy.
+No manual state management is needed.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -738,14 +740,14 @@ Here&#8217;s the full event store:</p>
 4 completed ReserveStockCompleted {"reserved": true}
 5 started InitiatingPaymentForCustomerStarted {"customerId": 456, "amount": 99.95}
 6 completed InitiatingPaymentForCustomerCompleted
-7 started AwaitPaymentStarted {"startTime": "2026-03-25T10:00:05Z"}
+7 started AwaitPaymentStarted {"startTime": "2026-03-25T10:00:05Z", "eventName": "PaymentConfirmed", "associations": ["payload:orderId=123"], "timeoutTime": "2026-03-25T10:15:05Z"}
 8 external PaymentConfirmed {"orderId": 123, "transactionId": "txn-456"}
 9 completed AwaitPaymentCompleted {"orderId": 123, "transactionId": "txn-456"}
 10 completed OrderFulfillmentWorkflow#ExecuteCompleted
   </div>
 </div>
 <div class="paragraph">
-<p>The <code>AwaitPaymentStarted</code> event records when the wait began.
+<p>The <code>AwaitPaymentStarted</code> event records when the wait began, which event it waits for, the associations and the timeout deadline.
 When the external <code>PaymentConfirmed</code> event arrives, it unblocks the workflow and the matched payload is recorded in <code>AwaitPaymentCompleted</code>.</p>
 </div>
 <div class="admonitionblock note">
@@ -770,10 +772,12 @@ They can be published from anywhere—a command handler, an <code>EventGateway</
 <div class="sectionbody">
 <div class="paragraph">
 <p>If you prefer Kotlin, <code>WorkflowKontext</code> is the workflow context instance and <code>Kontext</code> is the author-facing DSL wrapper.
-<code>Kontext</code> offers the same kind of concise defaults as the Java DSL:</p>
+<code>Kontext</code> offers the same kind of concise defaults as the Java DSL.
+The Kotlin DSL needs the <code>axoniq-workflow-dsl-kotlin</code> dependency.</p>
 </div>
+<!-- vale AxonIQ.Names = NO -->
 <div class="listingblock">
-<div class="title">src/main/kt/io/axoniq/example/order/OrderFulfillmentWorkflow.kt</div>
+<div class="title">src/main/kotlin/io/axoniq/example/order/OrderFulfillmentWorkflow.kt</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin">class OrderFulfillmentWorkflow {
 
@@ -790,6 +794,7 @@ They can be published from anywhere—a command handler, an <code>EventGateway</
 }</code></pre>
 </div>
 </div>
+<!-- vale AxonIQ.Names = YES -->
 <div class="paragraph">
 <p>Under the hood, <code>Kontext</code> builds the same DSL <code>ExecuteStepDefinition</code> and <code>WaitForStepDefinition</code> objects exposed by
 <code>WorkflowContext</code> through <code>WorkflowKontext</code>.
