@@ -473,6 +473,68 @@ public class AxonConfig {
 }</code></pre>
 </div>
 </div>
+<div id="axon-components-as-spring-beans" class="paragraph">
+<p>Components registered through the <code>ComponentRegistry</code>, whether by Axon&#8217;s defaults or by a <code>ConfigurationEnhancer</code>, become Spring beans as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A component registered by type only becomes a bean named after the fully qualified name of that type, for example <code>org.axonframework.messaging.commandhandling.CommandBus</code>.
+Injecting the type yields this component, also when named components of the same type exist.</p>
+</li>
+<li>
+<p>A component registered under a name becomes a bean with that name.
+Inject it with <code>@Qualifier</code> carrying the component name.
+Without a qualifier, Spring only injects a named component when it is the only candidate for the type.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Properties that refer to a component by its name, such as the <code>source</code> and <code>token-store</code> settings of an event processor, use these bean names.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
+
+@Component
+class ReplayTokenStoreEnhancer implements ConfigurationEnhancer {
+
+    @Override
+    public void enhance(ComponentRegistry registry) {
+        registry.registerComponent(TokenStore.class, "replayTokenStore", config -&gt; new InMemoryTokenStore());
+    }
+}
+@Component
+class TokenStoreMaintenance {
+
+    private final TokenStore tokenStore;
+    private final TokenStore replayTokenStore;
+
+    TokenStoreMaintenance(TokenStore tokenStore, <i class="conum" data-value="1"></i><b>(1)</b>
+                          @Qualifier("replayTokenStore") TokenStore replayTokenStore) { <i class="conum" data-value="2"></i><b>(2)</b>
+        this.tokenStore = tokenStore;
+        this.replayTokenStore = replayTokenStore;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The default <code>TokenStore</code>, injected by type.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>TokenStore</code> registered under the name <code>replayTokenStore</code>.</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>You rarely need to register message handlers or entities yourself either.
 Methods annotated with <code>@CommandHandler</code>, <code>@EventHandler</code>, or <code>@QueryHandler</code> on any Spring bean, and classes annotated with <code>@EventSourced</code>, are discovered automatically and registered as <code>Modules</code>, out of the box.
@@ -982,6 +1044,12 @@ The <code>SpringAxonApplication</code> bean is the root configurer that gets wra
 As a <code>BeanPostProcessor</code>, it checks, right after Spring creates a bean, whether any registered decorator or enhancer targets that bean&#8217;s type; if so, the decorator is applied and the wrapped instance is used in place of the original, so the standard Axon decorator mechanism works seamlessly for Spring-managed beans.
 As a <code>BeanFactoryPostProcessor</code>, it allows the resulting <code>Configuration</code> to look up any bean from the Spring <code>ApplicationContext</code>, not just those explicitly registered with the <code>ComponentRegistry</code>.
 This is what makes the <code>CommandBus</code> bean shown above available to Axon: it is treated as the registered <code>CommandBus</code> component, and any decorator registered through the <code>ComponentRegistry</code> (or through a <code>ConfigurationEnhancer</code>) is applied on top of it.</p>
+</div>
+<div class="paragraph">
+<p>Components registered with the <code>ComponentRegistry</code> become bean definitions when the registry initializes, just before Spring creates the first application bean.
+A named component is registered as a fallback bean (<code>AbstractBeanDefinition#setFallback</code>).
+When an unqualified injection point matches both the type-level component and named components, Spring selects the single non-fallback candidate: the type-level component.
+A <code>@Qualifier</code> selects a named component by its bean name.</p>
 </div>
 <div class="sect2">
 <h3 id="_lifecycle_integration"><a class="anchor" href="#_lifecycle_integration"></a>Lifecycle integration</h3>
