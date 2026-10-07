@@ -1306,9 +1306,15 @@ An application with Spring Security in place has to permit all three paths and e
 </div>
 <div class="paragraph">
 <p>Outgoing requests to other members use the application&#8217;s own <code>RestClient.Builder</code> bean when it has one, which is where an interceptor authenticating them belongs.
-Spring Boot contributes such a builder by default, so the application&#8217;s <code>spring.http.client.*</code> settings apply to this traffic as well.
-Define a <code>RestClient</code> bean named <code>axoniqSpringCloudRestClient</code> to give this traffic a client of its own.
+Spring Boot contributes such a builder by default, so the application&#8217;s <code>spring.http.client.*</code> settings apply to commands as well.
+Define a <code>RestClient</code> bean named <code>axoniqSpringCloudRestClient</code> for commands to give that traffic a client of its own.
 An application whose <code>RestClient.Builder</code> is load balanced has to do so: members are addressed by host and port rather than by service ID, which a load-balanced client cannot resolve.</p>
+</div>
+<div class="paragraph">
+<p>Members ask each other for their capabilities on a client with a transport of its own, named <code>axoniqSpringCloudCapabilitiesRestClient</code>.
+Transport settings on the application&#8217;s HTTP client, such as an SSL bundle set through <code>spring.http.client.*</code>, do not reach it, while settings the JVM applies to every connection, such as the <code>javax.net.ssl.trustStore</code> system property, do.
+Members that trust each other only through an SSL bundle, or authenticate each other with client certificates, define this client themselves, with a read timeout no longer than <code>axon.springcloud.capabilities-timeout</code>.
+Without it, members fail to learn what the others handle, and route nothing to each other.</p>
 </div>
 <div class="paragraph">
 <p>Instances that are not served from the root publish their context root as service instance metadata, and tell the connector which metadata property holds it:</p>

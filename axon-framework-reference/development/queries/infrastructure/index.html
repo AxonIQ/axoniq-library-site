@@ -804,12 +804,58 @@ Queries already dispatched are waited for: shutdown completes once their respons
 </div>
 </div>
 <div class="sect3">
+<h4 id="_the_query_client"><a class="anchor" href="#_the_query_client"></a>The query client</h4>
+<div class="paragraph">
+<p>Queries and subscription queries are sent on a client of their own, named <code>axoniqSpringCloudQueryRestClient</code>.
+It is built from the application&#8217;s <code>RestClient.Builder</code> when there is one, so interceptors such as authentication still apply, but on a transport with no read timeout and no shared connection pool.
+An application whose <code>RestClient.Builder</code> is load balanced defines this client itself, as it does the <a href="../../commands/infrastructure/#SpringCloudCommandBusConnector" class="xref page">command client</a>.</p>
+</div>
+<div class="paragraph">
+<p>Transport settings on the application&#8217;s HTTP client do not reach the query client: an SSL bundle set through <code>spring.http.client.*</code>, or a custom <code>ClientHttpRequestFactory</code> on the builder.
+Settings the JVM applies to every connection, such as the <code>javax.net.ssl.trustStore</code> system property, still do.
+Members that trust each other only through an SSL bundle, or authenticate each other with client certificates, define the query client themselves, free of a read timeout and of a bounded connection pool:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.springboot.autoconfig.SpringCloudAutoConfiguration;
+import org.springframework.boot.ssl.SslBundles;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
+
+@Configuration
+public class AxonConfig {
+
+    @Bean(SpringCloudAutoConfiguration.QUERY_REST_CLIENT_BEAN)
+    public RestClient axoniqSpringCloudQueryRestClient(RestClient.Builder builder, SslBundles sslBundles) {
+        HttpClient httpClient = HttpClient.newBuilder()
+                                          .connectTimeout(Duration.ofSeconds(2))
+                                          .sslContext(sslBundles.getBundle("cluster").createSslContext())
+                                          .build();
+        // No read timeout, and a connection per stream rather than a bounded pool:
+        // the connector bounds every query and subscription itself.
+        return builder.requestFactory(new JdkClientHttpRequestFactory(httpClient))
+                      .build();
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
 <h4 id="_subscription_queries"><a class="anchor" href="#_subscription_queries"></a>Subscription queries</h4>
 <div class="paragraph">
 <p>A subscription query is two activities.
 First, an update stream is opened on every node advertising the query&#8217;s name.
 Second, one of those nodes is asked for the initial result, which is a query like any other.
 The two are returned as a single stream: the initial result, and then the updates.</p>
+</div>
+<div class="paragraph">
+<p>The initial result is asked for only once every node has registered the subscription, not just the node answering it.
+The nodes are subscribed to in parallel, so this waits for the slowest of them to answer.</p>
 </div>
 <div class="paragraph">
 <p>Every node advertising the name is subscribed to, not just the one a plain query would route to.
@@ -832,15 +878,19 @@ axon.springcloud.subscription-inactivity-timeout=60s</code></pre>
 Unlike a plain query, a subscription has no deadline of its own: it lasts as long as the subscriber wants it to, and a node with nothing to report is behaving correctly.
 What stands in for a deadline is silence, which is how a node that disappeared without its socket reporting so looks.</p>
 </div>
+<div class="paragraph">
+<p>Each open subscription holds a connection to every node advertising its query for as long as it lasts, so a node holding 50 subscriptions to a query three nodes handle holds 150 connections.
+They are opened on the client queries are sent with, which keeps them apart from the connections commands use.</p>
+</div>
 <div class="sect4">
 <h5 id="_ending_a_subscription"><a class="anchor" href="#_ending_a_subscription"></a>Ending a subscription</h5>
 <div class="paragraph">
 <p>A node that completes a subscription query says so explicitly, and that ends the subscription: there will never be another update to it, so the subscribing node stops waiting on the other nodes as well.</p>
 </div>
 <div class="paragraph">
-<p>A node that simply stops answering, having shut down or been partitioned away, is a different thing.
-That ends its own part in the subscription and says nothing about the subscription itself, so the remaining nodes carry on and the subscription ends once the last of them has.
-A node that fails, rather than ending quietly, fails the whole subscription: carrying on with the rest would leave the subscriber receiving some of the updates and believing it received all of them.</p>
+<p>Any other end of a node&#8217;s part fails the whole subscription: the node reporting a failure, shutting down, sending nothing for longer than <code>axon.springcloud.subscription-inactivity-timeout</code>, or losing its connection.
+The subscribing node cannot tell such a node apart from one that is still emitting updates it no longer receives, so carrying on with the rest would leave the subscriber receiving some of the updates and believing it received all of them.
+Establish the subscription query again to get a fresh initial result and a complete stream of updates from the nodes still there.</p>
 </div>
 </div>
 <div class="sect4">
