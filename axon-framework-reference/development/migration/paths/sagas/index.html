@@ -496,6 +496,13 @@ Business processes covered by sagas can span weeks or months.
 </ul>
 </div>
 <div class="paragraph">
+<p>An existing <code>JpaSagaStore</code>, <code>JdbcSagaStore</code>, or <code>MongoSagaStore</code> reads unchanged only when the Axon Framework 4
+node&#8217;s <code>Serializer</code> was Jackson. Many applications never configured one, which then defaulted to <code>XStreamSerializer</code>,
+so the serialized saga column holds XStream XML instead. Configure such a store with an <code>XStreamConverter</code> to keep
+reading, and writing, that data; see <a href="../../../conversion/#xstream_converter" class="xref page">XStreamConverter</a> in the Conversion
+page.</p>
+</div>
+<div class="paragraph">
 <p>The <code>org.axonframework.spring.stereotype.Saga</code> annotation itself keeps its Axon Framework 4 package. Spring Boot autoconfiguration for legacy sagas activates only
 when both <code>axoniq-legacy</code> and <code>axon-spring-boot-starter</code> are on the classpath; see <a href="#spring-boot-sagas">Configuring legacy sagas with Spring Boot</a>.</p>
 </div>
@@ -537,25 +544,6 @@ asynchronous work fails with a <code>SagaExecutionException</code>.</p>
 <p>Keep existing <code>void</code> handlers synchronous. Use <code>CommandDispatcher.send(&#8230;&#8203;)</code> for an existing fire-and-forget
 <code>CommandGateway.send(&#8230;&#8203;)</code> call. For an existing <code>sendAndWait(&#8230;&#8203;)</code> call, wait for the command result before the
 handler returns.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>The saga side of <code>axoniq-legacy</code> (<a href="https://github.com/AxonFramework/AxonFramework/issues/3728">GitHub Issue #3728</a>),
-including Spring Boot autoconfiguration, targets 5.4.0. Deadlines
-(<a href="https://github.com/AxonFramework/AxonFramework/issues/3065">GitHub Issue #3065</a> and
-<a href="https://github.com/AxonFramework/AxonFramework/issues/5006">GitHub Issue #5006</a>) are not yet ported: <code>DeadlineManager</code>
-and <code>@DeadlineHandler</code> remain outstanding. Until they land, plan on the code-level migration below and on the
-drainage strategy in <a href="#strategy">Migrating an application with running sagas</a> for the deadline part of a saga.</p>
-</div>
-</td>
-</tr>
-</table>
 </div>
 <div class="paragraph">
 <p>The <code>axoniq-legacy</code> module is a migration aid, not a supported way to write new processes. <code>@StartSaga</code> is deprecated.
@@ -884,9 +872,6 @@ sagas with each other only: a saga and an ordinary event handler resolving to on
 <li>
 <p><strong>Dead-letter queues are not supported for sagas.</strong> Enabling a dead letter queue for a saga&#8217;s processor by name has
 no effect.</p>
-</li>
-<li>
-<p><strong>Deadlines are not ported yet</strong> (see the note in <a href="#legacy-module">Running existing sagas on Axon Framework 5</a>).</p>
 </li>
 <li>
 <p><strong>A <code>SagaStore</code> is mandatory.</strong> Axon Framework 4 quietly fell back to an <code>InMemorySagaStore</code> when an application

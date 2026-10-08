@@ -761,9 +761,6 @@ When deciding which converter to use for your application, consider:</p>
 <li>
 <p>External systems require XML</p>
 </li>
-<li>
-<p>You&#8217;re migrating from XStream and need XML compatibility</p>
-</li>
 </ul>
 </div>
 <div class="paragraph">
@@ -918,6 +915,103 @@ In Spring Boot applications, the auto-configuration can create a schema store th
 <div class="paragraph">
 <p>For production use with multiple services, consider implementing a custom <code>SchemaStore</code> that connects to a central schema registry.
 We doing so, be sure to implement caching to maintain performance.</p>
+</div>
+</div>
+<div class="sect2 axoniq-feature">
+<h3 id="xstream_converter"><a class="anchor" href="#xstream_converter"></a>Legacy support - XStreamConverter</h3>
+<div class="paragraph">
+<p>The <code>XStreamConverter</code>, part of the <code>axoniq-legacy</code> module, wraps an application-supplied <a href="https://x-stream.github.io/">XStream</a> instance to read and write the same XML an Axon Framework 4 node&#8217;s <code>XStreamSerializer</code> produced for that instance&#8217;s configuration.</p>
+</div>
+<div class="paragraph">
+<p>It exists for exactly one purpose: giving an Axon Framework 5 application time to let deadlines and events that an Axon Framework 4 node scheduled, and sagas it started, run their course, instead of forcing every one of them to fire or complete before the switch to Axon Framework 5. Try to ensure this cross-over from Framework 4 to 5 is as short as possible.
+The formats the <code>XStreamConverter</code> and <code>XStreamSerializer</code> produce are interchangeable for most payloads, with two exceptions: a <code>String</code> or <code>byte[]</code> value is passed through as already-serialized content rather than run through XStream (see below), and a metadata value that is not itself a <code>String</code> is coerced to one on the way through, rather than kept as its original type.
+Many applications never configured a <code>Serializer</code> for their legacy saga stores, which then defaulted to XStream, so this is a common gap when adding Axon Framework 5 nodes to such an application.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">What about the JacksonConverter with an XMLMapper?</div>
+<div class="paragraph">
+<p>A Jackson <code>XmlMapper</code> producing XML is not the same as reading XStream&#8217;s XML.
+With enough custom <code>JsonDeserializer</code>
+implementations and a naming strategy for XStream&#8217;s escaping, standing in for XStream&#8217;s own aliases, a <code>JacksonConverter</code>
+can read simple, non-polymorphic object graphs an Axon Framework 4 <code>XStreamSerializer</code> wrote.
+It stops there: XStream&#8217;s object references (shared or cyclic identity) and its generic <code>class</code>-attribute type resolution have no Jackson equivalent to configure, so anything beyond the simplest graphs needs a deserializer hand-written per concrete type, and even that is not safe against silent data loss rather than a clear failure.
+The other direction fails outright:
+<code>XStreamSerializer</code> cannot read what <code>JacksonConverter</code> writes, regardless of configuration. <code>XStreamConverter</code> exists for exactly this gap.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Note that the <code>XStreamConverter</code> is deprecated from the moment it is introduced.
+It is <strong>not</strong> a general-purpose converter, and Axon Framework never registers it by default.
+Remove it from your configuration once the data it reads has been drained or rewritten in your application&#8217;s regular converter format.</p>
+</div>
+<div class="paragraph">
+<p>Nothing stops users from configuring <code>XStreamConverter</code> as the general or event <code>Converter</code>, to read an event store an Axon Framework 4 node&#8217;s <code>XStreamSerializer</code> wrote.
+Events are not like sagas, deadlines, or scheduled events, though:
+nothing drains them.
+An event store is replayed indefinitely, so events left in XStream format stay dependent on XStream.
+Hence, we strongly recommend you migrate XStream-serialized events to (for example) JSON.</p>
+</div>
+<div class="paragraph">
+<p><code>XStreamConverter</code> allows <code>"org.axonframework.**"</code> on the <code>XStream</code> instance you give it, the same baseline <code>XStreamSerializer</code> added by default, so its own ported types (scope descriptors, metadata) resolve.
+XStream deserializes by instantiating arbitrary classes named in the XML it reads, which is unsafe against untrusted input unless the set of types it may instantiate is restricted; note that this baseline allows every class in every Axon Framework jar on the classpath, not only <code>axoniq-legacy&#8217;s own ported types.
+Unlike `XStreamSerializer&#8217;s `disableAxonTypeSecurity()</code>, <code>XStreamConverter</code> applies this baseline unconditionally: there is no opt-out, so even an otherwise fully locked-down <code>XStream</code> instance gets it widened.
+You remain responsible for allowing your own saga, deadline, and event payload classes, typically with <code>XStream#allowTypesByWildcard(String[])</code> or <code>XStream#allowTypes(Class[])</code>.</p>
+</div>
+<div class="paragraph">
+<p>Running on Java 9 or later with reflective access restricted to named modules, XStream may need <code>--add-opens</code> JVM arguments to reflect on types in <code>java.base</code> or other platform modules; see <a href="https://x-stream.github.io/faq.html#Compatibility_cannot_access_from_unnamed_module">XStream&#8217;s FAQ</a>.</p>
+</div>
+<div class="paragraph">
+<p>To use it, add the <code>axoniq-legacy</code> module and XStream to your dependencies:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+    &lt;artifactId&gt;axoniq-legacy&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;com.thoughtworks.xstream&lt;/groupId&gt;
+    &lt;artifactId&gt;xstream&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then construct it with your own <code>XStream</code> instance and pass it to the <code>converter(&#8230;&#8203;)</code> builder method of a legacy <code>SagaStore</code> or <code>DeadlineManager</code>, for example.
+For Axon Framework 4' and Spring Boot users, note that Axon&#8217;s auto-configuration a pre-configured a <code>XStream</code> instance. This was done to be compatible with the pre-JDK17 usage of the <code>XStreamSerializer</code>. This automated instance does not exist in this legacy module, as it exposes classes too much to reflection. Hence, it is strongly recommended to declare the <code>XStream</code> object yourself <strong>including</strong> the allow-list for your own saga, deadline, and event payload classes.</p>
+</div>
+<div class="listingblock pseudocode">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">XStream xStream = new XStream();
+xStream.allowTypesByWildcard(new String[]{"com.example.myapp.**"});
+Converter xStreamConverter = new XStreamConverter(xStream);
+
+JpaSagaStore sagaStore = JpaSagaStore.builder()
+                                     .entityManagerProvider(entityManagerProvider)
+                                     .converter(xStreamConverter)
+                                     .build();</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+A saga store matches the saga type column against the saga class name.
+If an Axon Framework 4 application mapped its saga classes to some other type name, an XStream alias being the usual way, rewrite that column to the class name before using it with a legacy saga store; see the <code>JpaSagaStore</code>/<code>JdbcSagaStore</code>/<code>MongoSagaStore</code> class Javadoc for details.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
