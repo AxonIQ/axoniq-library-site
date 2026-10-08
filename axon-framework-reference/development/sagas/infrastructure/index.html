@@ -519,14 +519,14 @@ public SagaStore mySagaStore() {
 <p>The <code>JpaSagaStore</code> uses JPA to store the state and association values of sagas. Sagas themselves do not need any JPA annotations; Axon will serialize the sagas using a <code>Converter</code> (similar to event conversion, you can choose between different converter implementations like <code>JacksonConverter</code>, which can be set by configuring the default <code>Converter</code> in your application. For more details, see <a href="../../conversion/" class="xref page">Converters</a>.</p>
 </div>
 <div class="paragraph">
-<p>The <code>JpaSagaStore</code> is configured with an <code>EntityManagerProvider</code>, which provides access to an <code>EntityManager</code> instance to use. This abstraction allows for the use of both application managed and container managed <code>EntityManager`s. Optionally, you can define the serializer to serialize the Saga instances with. Axon defaults to the `XStreamSerializer</code>.</p>
+<p>The <code>JpaSagaStore</code> is configured with an <code>EntityManagerProvider</code>, which provides access to an <code>EntityManager</code> instance to use. This abstraction allows for the use of both application managed and container managed <code>EntityManager`s. It also needs the `Converter</code> to convert the saga instances with.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="JdbcSagaStore"><a class="anchor" href="#JdbcSagaStore"></a><code>JdbcSagaStore</code></h3>
 <div class="paragraph">
 <p>The <code>JdbcSagaStore</code> uses plain JDBC to store stage instances and their association values.
-Similar to the <code>JpaSagaStore</code>, saga instances do not need to be aware of how they are stored. The store serializes the saga instances using a serializer.</p>
+Similar to the <code>JpaSagaStore</code>, saga instances do not need to be aware of how they are stored. The store converts the saga instances using a <code>Converter</code>.</p>
 </div>
 <div class="paragraph">
 <p>You should configure the <code>JdbcSagaStore</code> with either a <code>DataSource</code> or a <code>ConnectionProvider</code>.
@@ -568,7 +568,25 @@ You can change the schema by configuring a different version through the <code>J
 <p>The <code>MongoSagaStore</code> also ensures that at any time, only a single Saga instance exists for any unique Saga in a single JVM. This ensures that no state changes are lost due to concurrency issues.</p>
 </div>
 <div class="paragraph">
-<p>The <code>MongoSagaStore</code> is initialized using a <code>MongoTemplate</code> and optionally a <code>Serializer</code>. The <code>MongoTemplate</code> provides a reference to the collection to store the sagas in. Axon provides the <code>DefaultMongoTemplate</code>, which takes a <code>MongoClient</code> instance as well as the database name and name of the collection to store the sagas in. The database name and collection name may be omitted. In that case, they default to <code>&quot;axonframework&quot;</code> and <code>&quot;sagas&quot;</code>, respectively.</p>
+<p>The <code>MongoSagaStore</code> is initialized using a <code>MongoTemplate</code> and a <code>Converter</code>. The <code>MongoTemplate</code> provides a reference to the collection to store the sagas in. Axon provides the <code>DefaultMongoTemplate</code>, which takes a <code>MongoClient</code> instance as well as the database name and name of the collection to store the sagas in. The database name and collection name may be omitted. In that case, they default to <code>&quot;axonframework&quot;</code> and <code>&quot;sagas&quot;</code>, respectively.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="saga_state_stored_with_xstream"><a class="anchor" href="#saga_state_stored_with_xstream"></a>Saga state stored with XStream</h3>
+<div class="paragraph">
+<p>Axon Framework 4&#8217;s saga stores serialized saga state with its <code>XStreamSerializer</code> unless the application configured another serializer, and so did its Spring Boot auto-configuration unless <code>axon.serializer.general</code> was set.
+Such saga state is XStream XML, which a JSON-based converter such as the <code>JacksonConverter</code> cannot read: loading the saga fails.
+To keep handling these sagas, and to let Axon Framework 4 nodes handle them too during a rolling upgrade, give the saga store an <code>XStreamConverter</code>.
+It reads the stored state and writes it back in the same form.
+See <a href="../../conversion/#xstream_converter" class="xref page">XStreamConverter</a> for its dependencies, an example, and for allowing your saga classes on the <code>XStream</code> instance.</p>
+</div>
+<div class="paragraph">
+<p>Spring Boot does not configure the <code>XStreamConverter</code> for you.
+Define your own <code>SagaStore</code> bean with it instead, and the auto-configured saga store backs off.</p>
+</div>
+<div class="paragraph">
+<p>A saga class with an XStream alias (<code>xStream.alias("orderSaga", OrderSaga.class)</code>) was stored under that alias in the saga type column, which the saga stores match against the class name.
+Rewrite that column to the class name before using the table or collection, also when your <code>XStream</code> instance defines the alias.</p>
 </div>
 </div>
 </div>
