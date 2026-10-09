@@ -891,6 +891,22 @@ alongside named per-saga stores declares that default itself.</p>
 <code>@Scope("prototype")</code> that <code>@Saga</code> declares and requires to avoid the saga being registered additionally as a plain singleton event handling component bean. Annotate the bean method with <code>@Scope("prototype")</code> if the
 saga cannot be component-scanned.</p>
 </li>
+<li>
+<p><strong>Saga deadlines need no wiring.</strong> The legacy module registers the <code>ScopeAwareProvider</code> a deadline manager delivers
+deadlines through, and every saga manager registers itself with it. A deadline manager you define yourself takes that
+provider: autowire the <code>ScopeAwareProvider</code> bean in Spring, or call
+<code>configuration.getComponent(ScopeAwareProvider.class)</code> otherwise. Axon Framework 4&#8217;s <code>ConfigurationScopeAwareProvider</code>
+is not ported.</p>
+</li>
+<li>
+<p><strong>A deadline that fires before the application has started waits for it.</strong> A scheduler that is already running fires
+overdue deadlines immediately, before the event processors have built the saga managers. Such a deadline waits until
+the application has started, at most 30 seconds, and fails afterwards so that its deadline manager retries it. Set
+<code>axon.deadline.scope-aware-provider-readiness-timeout</code> to change the timeout, or register a
+<code>ScopeAwareProviderSettings</code> component without Spring. To avoid the wait, start the scheduler after the application:
+with db-scheduler&#8217;s Spring Boot starter by setting <code>db-scheduler.delay-startup-until-context-ready=true</code>, and without
+Spring by starting it after <code>configuration.start()</code>.</p>
+</li>
 </ul>
 </div>
 </div>
