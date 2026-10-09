@@ -58,11 +58,11 @@ module.exports = {
     {
       title: 'Guides',
       include: [
+        { component: 'message-scheduling-guide' },
+        { component: 'saga-guide' },
         { component: 'identifier-generation-guide' },
         { component: 'message-handler-customization-guide' },
-        { component: 'message-scheduling-guide' },
         { component: 'meta-annotations-guide' },
-        { component: 'saga-guide' },
       ],
     },
     {
