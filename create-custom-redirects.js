@@ -55,7 +55,8 @@ const rewriteMappings = {
     "/appendices/message-handler-tuning": "/message-handler-customization-guide/latest",
     "/appendices/meta-annotations": "/meta-annotations-guide/latest",
     "/appendices/identifier-generation": "/identifier-generation-guide/latest",
-    "/appendices/query-reference": "/axon-server-query-language-guide",
+    "/appendices/query-reference": "/axon-server-query-language-guide/latest",
+    "/axoniq-console-reference": "/axoniq-platform-reference"
 }
 
 /**
@@ -63,8 +64,8 @@ const rewriteMappings = {
  * For example, "/architecture-overview" will be replaced with "https://www.axoniq.io/concepts/cqrs-and-event-sourcing"
  */
 const fullReplaceMappings = {
-    "/architecture-overview": "https://www.axoniq.io/concepts/cqrs-and-event-sourcing",
-    "/axon-server-introduction": "https://www.axoniq.io/products/axon-server",
+    "/architecture-overview": "/home/",
+    "/axon-server-introduction": "/home/",
     "/axon-server/": `/axon-server-reference/latest/`,
     "/release-notes/rn-axon-framework": `https://docs.axoniq.io/axon-framework-reference/latest/release-notes`,
     "/release-notes/rn-axon-server": `/axon-server-reference/latest/release-notes/`,
@@ -81,10 +82,33 @@ const fullReplaceMappings = {
     // Redirect any unknown release notes to extension overview
     "/release-notes/rn-extensions": "/axon-framework-extensions/",
     // The quickstart no longer exists, redirect to the demo
-    "/getting-started/quick-start": "/bikerental-demo/main",
+    "/getting-started/quick-start": "/axon-framework-5-getting-started/",
     "/axon-server/migration": `/axon-server-reference/latest/axon-server/migration`,
-    // This page no longer exists, redirect to its parent
-    "/axon-framework/axon-framework-commands/modeling": "/axon-framework-reference/latest/axon-framework-commands",
+    '/bikerental-console-demo': `/axoniq-console-reference/`,
+
+    // Old console documentation that is so out of date we redirect to reference
+    "/axoniq-console-reference": "/axoniq-platform-reference",
+
+    // this is really obsolete, so we redirect to old documentation
+    "/axon-framework/upgrading-to-4-7": "/axon-framework-reference/4.13/upgrading-to-4-7/",
+    // these pages have been restructures as part of the Axon 5 documentation rewrite. These are possibly the best redirects
+    "/axon-framework/axon-framework-commands": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/aggregate": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/multi-entity-aggregates": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/state-stored-aggregates": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/aggregate-creation-from-another-aggregate": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/aggregate-polymorphism": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/modeling/conflict-resolution": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/command-dispatchers": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/command-handlers": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/infrastructure": "/axon-framework-reference/latest/commands",
+    "/axon-framework/axon-framework-commands/configuration": "/axon-framework-reference/latest/commands",
+    "/axon-framework/events/event-dispatchers": "/axon-framework-reference/latest/events/event-publishing",
+    "/axon-framework/events/event-bus-and-event-store": "/axon-framework-reference/latest/events/infrastructure",
+    "/axon-framework/queries/implementations": "/axon-framework-reference/latest/queries/query-handlers",
+    "/axon-framework/testing/commands-events": "/axon-framework-reference/latest/testing",
+    "/axon-framework/testing/sagas-1": "/axon-framework-reference/latest/testing",
 }
 
 // Redirect all unknown URLs to the home page
@@ -98,75 +122,79 @@ const redirectFallback = "/home/"
 const latestDefinitions = [
     {
         baseFolder: "axon-framework-reference",
-        latestVersion: "4.10"
+        latestVersion: "5.0"
     },
     {
         baseFolder: "message-handler-customization-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.13"
     },
     {
         baseFolder: "meta-annotations-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.13"
     },
     {
         baseFolder: "identifier-generation-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.13"
     },
     {
         baseFolder: "deadlines-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.13"
     },
     {
         baseFolder: "dead-letter-queue-guide",
-        latestVersion: "4.10"
+        latestVersion: "4.13"
     },
     {
         baseFolder: "axon-server-reference",
-        latestVersion: "v2024.2"
+        latestVersion: "v2026.1"
     },
     {
         baseFolder: "amqp-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "jgroups-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "jobrunr-pro-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "multitenancy-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "kotlin-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "kafka-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "mongodb-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "reactor-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "spring-aot-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "spring-cloud-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
     },
     {
         baseFolder: "tracing-extension-reference",
-        latestVersion: "4.10"
+        latestVersion: "4.12"
+    },
+    {
+        baseFolder: "axon-server-query-language-guide",
+        latestVersion: "v2026.0"
     },
 ]
 const app = express()
