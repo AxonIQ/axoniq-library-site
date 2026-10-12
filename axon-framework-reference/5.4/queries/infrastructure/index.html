@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script>(function(){try{var t=localStorage.getItem('axoniq-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
+        <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Infrastructure</title>
+    <link rel="canonical" href="https://docs.axoniq.io/axon-framework-reference/5.3/queries/infrastructure/">
+    <link rel="prev" href="../query-dispatchers/">
+    <link rel="next" href="../configuration/">
+    <meta name="generator" content="Antora 3.1.10">
+    <link rel="stylesheet" href="../../../../_/css/site.css">
+    <link rel="stylesheet" href="../../../../_/css/vendor/tabs.css">
+    <link rel="icon" href="../../../../_/img/favicon.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../../../../_/img/favicon.png"><!-- 180×180 -->
+    <link rel="manifest" href="../../../../_/static/manifest.webmanifest">
+    <!-- event terminal -->
+    <style>
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.5em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      background-color: #1a73e8;
+      border-radius: 0;
+      vertical-align: middle;
+      margin-left: 0.4em;
+    }
+
+    /* Event terminal — light theme */
+    .event-terminal {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      overflow: hidden;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    .et-header {
+      background: #f0f2f5;
+      color: #24292f;
+      padding: 0.4em 0.8em;
+      font-weight: 600;
+      font-size: 0.9em;
+      border-bottom: 1px solid #e1e4e8;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .et-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1e8e3e;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .et-live-dot.recording {
+      animation: et-blink 0.8s ease-in-out infinite;
+      background: #f9ab00;
+    }
+    @keyframes et-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .et-body { padding: 0.3em 0; }
+    .et-row {
+      padding: 0.15em 0.8em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      transition: background-color 0.15s, opacity 0.25s, transform 0.25s;
+    }
+    .et-row:hover { background: #f0f2f5; }
+    .et-row.et-hidden {
+      opacity: 0; height: 0; padding-top: 0; padding-bottom: 0;
+      overflow: hidden; transform: translateX(-8px);
+    }
+    .et-row.et-visible { opacity: 1; height: auto; transform: translateX(0); }
+    .et-row.et-flash { background: #e8f0fe; }
+
+    .et-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .et-dot.started    { background: #1a73e8; }
+    .et-dot.completed  { background: #1e8e3e; }
+    .et-dot.timedout   { background: #e8710a; }
+    .et-dot.failed     { background: #d93025; }
+    .et-dot.cancelled  { background: #9334e6; }
+    .et-dot.retrying   { background: #f9ab00; }
+    .et-dot.external   { background: #e8710a; border: 2px solid #e8710a; background: #fff; }
+
+    .et-name { color: #24292f; font-weight: 500; }
+    .et-payload { color: #8b949e; margin-left: auto; font-size: 0.9em; }
+    .et-key { color: #0550ae; }
+    .et-str { color: #0a3069; }
+    .et-num { color: #0550ae; }
+    .et-bool { color: #cf222e; }
+
+    /* Controls */
+    .et-controls {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.5em 0; margin-top: 1.5em;
+    }
+    .et-btn {
+      background: #f0f2f5; border: 1px solid #d0d7de; border-radius: 4px;
+      padding: 0.25em 0.6em; font-size: 0.85em; cursor: pointer;
+      color: #24292f; transition: background 0.1s; line-height: 1;
+    }
+    .et-btn:hover { background: #e1e4e8; }
+    .et-btn:active { background: #d0d7de; }
+    .et-play { background: #1a73e8; color: #fff; border-color: #1a73e8; padding: 0.25em 0.8em; }
+    .et-play:hover { background: #1557b0; }
+    .et-counter {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.8em; color: #8b949e; margin-left: 0.5em;
+    }
+    .et-legend {
+      display: flex; gap: 1.2em; align-items: center;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75em; color: #666; margin-bottom: 1.5em; padding: 0.3em 0;
+    }
+    .et-legend .et-dot { margin-right: 0.3em; }
+
+    /* Hide source data */
+    .et-src { display: none; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      function highlightJson(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/"([^"]+)"(?=\s*:)/g, '<span class="et-key">"$1"</span>')
+          .replace(/:\s*"([^"]*?)"/g, ': <span class="et-str">"$1"</span>')
+          .replace(/:\s*(true|false)/g, ': <span class="et-bool">$1</span>')
+          .replace(/:\s*(\d+\.?\d*)/g, ': <span class="et-num">$1</span>');
+      }
+
+      function parseLine(line) {
+        line = line.trim();
+        if (!line) return null;
+        var m = line.match(/^(\d+)\s+(started|completed|timedout|failed|cancelled|retrying|external)\s+(\S+)\s*(.*)?$/);
+        if (!m) return null;
+        return { step: parseInt(m[1]), status: m[2], name: m[3], payload: m[4] || '' };
+      }
+
+      function buildPlayer(el) {
+        var autoplay = el.hasAttribute('data-autoplay');
+        var sources = el.querySelectorAll('.et-src');
+        var statuses = {};
+
+        // Build controls
+        var controls = document.createElement('div');
+        controls.className = 'et-controls';
+        controls.innerHTML =
+          '<button class="et-btn" title="Reset">⏮</button>' +
+          '<button class="et-btn" title="Step back">◀</button>' +
+          '<button class="et-btn et-play" title="Play">▶</button>' +
+          '<button class="et-btn" title="Step forward">▶|</button>' +
+          '<span class="et-counter"></span>';
+        el.insertBefore(controls, sources[0]);
+
+        // Build terminals
+        sources.forEach(function(src) {
+          var title = src.getAttribute('data-title') || '';
+          var lines = src.textContent.split('\n');
+          var terminal = document.createElement('div');
+          terminal.className = 'event-terminal';
+          var header = '<div class="et-header"><span class="et-live-dot"></span>' + title + '</div><div class="et-body">';
+          var rows = '';
+          lines.forEach(function(line) {
+            var ev = parseLine(line);
+            if (!ev) return;
+            statuses[ev.status] = true;
+            var payloadHtml = ev.payload ? '<span class="et-payload">' + highlightJson(ev.payload) + '</span>' : '';
+            rows += '<div class="et-row" data-step="' + ev.step + '">' +
+              '<span class="et-dot ' + ev.status + '"></span>' +
+              '<span class="et-name">' + ev.name + '</span>' +
+              payloadHtml + '</div>';
+          });
+          terminal.innerHTML = header + rows + '</div>';
+          el.insertBefore(terminal, src);
+        });
+
+        // Build legend
+        var legendMap = {
+          started: 'STARTED', completed: 'COMPLETED', timedout: 'TIMED_OUT',
+          failed: 'FAILED', cancelled: 'CANCELLED', retrying: 'RETRYING', external: 'EXTERNAL'
+        };
+        var legend = document.createElement('div');
+        legend.className = 'et-legend';
+        Object.keys(legendMap).forEach(function(s) {
+          if (statuses[s]) {
+            legend.innerHTML += '<span class="et-dot ' + s + '"></span> ' + legendMap[s] + ' ';
+          }
+        });
+        el.appendChild(legend);
+
+        // Init player state
+        var allRows = el.querySelectorAll('.et-row[data-step]');
+        var maxStep = 0;
+        allRows.forEach(function(r) {
+          var s = parseInt(r.getAttribute('data-step'));
+          if (s > maxStep) maxStep = s;
+        });
+        el._maxStep = maxStep;
+        el._current = 0;
+        el._playing = false;
+        el._timer = null;
+        el._hasAutoPlayed = false;
+
+        function update() {
+          var current = el._current;
+          allRows.forEach(function(r) {
+            var s = parseInt(r.getAttribute('data-step'));
+            if (s <= current) {
+              r.classList.add('et-visible');
+              r.classList.remove('et-hidden');
+              r.classList.toggle('et-flash', s === current);
+            } else {
+              r.classList.remove('et-visible', 'et-flash');
+              r.classList.add('et-hidden');
+            }
+          });
+          el.querySelector('.et-counter').textContent = current + ' / ' + maxStep;
+          el.querySelector('.et-play').textContent = el._playing ? '⏸' : '▶';
+          var isRecording = current > 0 && current < maxStep;
+          el.querySelectorAll('.et-live-dot').forEach(function(d) {
+            d.classList.toggle('recording', isRecording);
+          });
+        }
+
+        function play() {
+          if (el._current >= maxStep) el._current = 0;
+          el._playing = true;
+          update();
+          el._timer = setInterval(function() {
+            if (el._current < maxStep) { el._current++; update(); }
+            else { el._playing = false; clearInterval(el._timer); update(); }
+          }, 350);
+        }
+
+        // Wire controls
+        var btns = controls.querySelectorAll('.et-btn');
+        btns[0].onclick = function() { el._playing = false; clearInterval(el._timer); el._current = 0; update(); };
+        btns[1].onclick = function() { if (el._current > 0) { el._current--; update(); } };
+        btns[2].onclick = function() {
+          if (el._playing) { el._playing = false; clearInterval(el._timer); update(); }
+          else play();
+        };
+        btns[3].onclick = function() { if (el._current < maxStep) { el._current++; update(); } };
+
+        update();
+
+        // Autoplay on scroll into view
+        if (autoplay && 'IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting && !el._hasAutoPlayed) {
+                el._hasAutoPlayed = true;
+                obs.disconnect();
+                setTimeout(play, 300);
+              }
+            });
+          }, { threshold: 0.3 });
+          obs.observe(el);
+        }
+      }
+
+      document.querySelectorAll('.et-player').forEach(buildPlayer);
+    });
+    </script>
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5QD58ZB');</script>
+        <!-- End Google Tag Manager -->
+
+    <script>var uiRootPath = '../../../../_'</script>
+
+
+<link rel="icon" href="../../../../_/img/favicon.png" type="image/png">
+  </head>
+  <body class="article">
+    <div class="header_container">
+      <div class="banner">
+    <a href="https://platform.axoniq.io/resource-center/long-term-support">Long-Term Support on Axon Framework 4 is now live for existing customers. Visit the resource center for instructions on setting it up. <span class="banner_button">Access it here</span></a>
+</div>
+    </div>
+    <script>(function(){var b=document.querySelector('.banner');if(b)document.documentElement.style.setProperty('--banner-height',b.offsetHeight+'px');})();</script>
+    <div class="content_container">
+      <header class="topbar">
+  <div class="topbar-left">
+    <button type="button" class="topbar-burger" id="drawer-burger" aria-label="Open navigation" aria-expanded="false">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../../">Axon Framework Reference</a></li>
+    <li><a href="../">Queries</a></li>
+    <li><a href="./">Infrastructure</a></li>
+  </ul>
+</nav>
+  </div>
+  <div class="topbar-right">
+    <div class="theme-switch" role="group" aria-label="Theme">
+      <button type="button" class="theme-switch-btn" data-theme-choice="light" aria-label="Light theme" title="Light">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <button type="button" class="theme-switch-btn" data-theme-choice="dark" aria-label="Dark theme" title="Dark">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button type="button" class="theme-switch-btn" data-theme-choice="auto" aria-label="Match system theme" title="Auto">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </button>
+    </div>
+    <button type="button" class="topbar-search" id="cmdk-launch" aria-label="Search documentation">
+      <svg class="topbar-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <span class="topbar-search-placeholder">Search documentation…</span>
+      <span class="topbar-search-kbd">⌘K / Ctrl+K</span>
+    </button>
+  </div>
+</header>
+      <div class="body">
+<aside class="nav-container" data-component="axon-framework-reference" data-version="5.4">
+  <nav class="drawer" id="drawer" aria-label="Documentation navigation">
+  <div class="drawer-header">
+    <a class="drawer-brand" href="https://docs.axoniq.io" aria-label="Axoniq Docs home">
+      <img src="../../../../_/img/logo.svg" class="drawer-brand-logo" alt=""/>
+      <span class="drawer-brand-label">Axoniq Documentation</span>
+    </a>
+
+    <button type="button" class="drawer-product" id="drawer-product" aria-haspopup="menu" aria-expanded="false">
+      <span class="drawer-product-icon" aria-hidden="true">
+        <img src="../../../../_/img/af5.svg" alt=""/>
+      </span>
+      <span class="drawer-product-name">Axon Framework</span>
+      <span class="drawer-product-chip">5.3</span>
+      <svg class="drawer-product-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+
+    <div class="drawer-product-menu" id="drawer-product-menu" role="menu" hidden>
+
+      <section class="product-group" data-product="af" data-product-name="Axon Framework" data-product-icon="img">
+        <header class="product-group-head">
+          <span class="product-group-icon"><img src="../../../../_/img/af5.svg" alt=""/></span>
+          <span class="product-group-name">Axon Framework</span>
+        </header>
+        <ul class="product-versions">
+          <li><a role="menuitem" class="product-version" data-version="development" href="../../../development/"><span class="pv-num">development</span><span class="pv-tag pv-tag--dev">Dev</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="5.4" href="../../"><span class="pv-num">5.4</span><span class="pv-tag pv-tag--dev">Dev</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="5.3" href="../../../5.3/"><span class="pv-num">5.3</span><span class="pv-tag pv-tag--latest">Latest</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="5.2" href="../../../5.2/"><span class="pv-num">5.2</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="5.1" href="../../../5.1/"><span class="pv-num">5.1</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="5.0" href="../../../5.0/"><span class="pv-num">5.0</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="4.13" href="../../../4.13/"><span class="pv-num">4.13</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="4.12" href="../../../4.12/"><span class="pv-num">4.12</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="4.11" href="../../../4.11/"><span class="pv-num">4.11</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="4.10" href="../../../4.10/"><span class="pv-num">4.10</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="0" href="../../../0/"><span class="pv-num">older releases</span><span class="pv-tag pv-tag--dev">Dev</span></a></li>
+        </ul>
+      </section>
+
+      <section class="product-group" data-product="as" data-product-name="Axon Server" data-product-icon="img">
+        <header class="product-group-head">
+          <span class="product-group-icon"><img src="../../../../_/img/axon-server.svg" alt=""/></span>
+          <span class="product-group-name">Axon Server</span>
+        </header>
+        <ul class="product-versions">
+          <li><a role="menuitem" class="product-version" data-version="v2026.1" href="../../../../axon-server-reference/v2026.1/"><span class="pv-num">v2026.1</span><span class="pv-tag pv-tag--latest">Latest</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="v2026.0" href="../../../../axon-server-reference/v2026.0/"><span class="pv-num">v2026.0</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="v2025.2" href="../../../../axon-server-reference/v2025.2/"><span class="pv-num">v2025.2</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="v2025.1" href="../../../../axon-server-reference/v2025.1/"><span class="pv-num">v2025.1</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="v2025.0" href="../../../../axon-server-reference/v2025.0/"><span class="pv-num">v2025.0</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="v2024.2" href="../../../../axon-server-reference/v2024.2/"><span class="pv-num">v2024.2</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="v2024.1" href="../../../../axon-server-reference/v2024.1/"><span class="pv-num">v2024.1</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="0" href="../../../../axon-server-reference/0/"><span class="pv-num">older releases</span><span class="pv-tag pv-tag--dev">Dev</span></a></li>
+        </ul>
+      </section>
+
+
+      <section class="product-group" data-product="platform" data-product-name="Axoniq Platform" data-product-icon="platform">
+        <header class="product-group-head">
+          <span class="product-group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>
+          <span class="product-group-name">Axoniq Platform</span>
+        </header>
+        <ul class="product-versions">
+          <li><a role="menuitem" class="product-version" data-version="" href="../../../../axoniq-platform-reference/"><span class="pv-num">default</span><span class="pv-tag pv-tag--latest">Latest</span></a></li>
+        </ul>
+      </section>
+
+      <div class="product-menu-divider">Extensions</div>
+      <section class="product-group" data-product="amqp-extension-reference" data-product-name="Spring AMQP Reference"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">Spring AMQP Reference</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="4.12" href="/amqp-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/amqp-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/amqp-extension-reference/4.10/"><span class="pv-num">4.10</span></a></li></ul></section><section class="product-group" data-product="jgroups-extension-reference" data-product-name="JGroups Extension Reference"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">JGroups Extension Reference</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="4.12" href="/jgroups-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/jgroups-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/jgroups-extension-reference/4.10/"><span class="pv-num">4.10</span></a></li></ul></section><section class="product-group" data-product="jobrunr-pro-extension-reference" data-product-name="JobRunr Pro Extension Reference"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">JobRunr Pro Extension Reference</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="4.12" href="/jobrunr-pro-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/jobrunr-pro-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/jobrunr-pro-extension-reference/4.10/"><span class="pv-num">4.10</span></a></li></ul></section><section class="product-group" data-product="kafka-extension-reference" data-product-name="Kafka Extension Reference"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">Kafka Extension Reference</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="4.12" href="/kafka-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/kafka-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/kafka-extension-reference/4.10/"><span class="pv-num">4.10</span></a></li></ul></section><section class="product-group" data-product="kotlin-extension-reference" data-product-name="Kotlin Extension Reference"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">Kotlin Extension Reference</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="4.12" href="/kotlin-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/kotlin-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/kotlin-extension-reference/4.10/"><span class="pv-num">4.10</span></a></li></ul></section><section class="product-group" data-product="mongodb-extension-reference" data-product-name="MongoDB Extension Reference"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">MongoDB Extension Reference</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="main" href="/mongodb-extension-reference/main/"><span class="pv-num">main</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.12" href="/mongodb-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/mongodb-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/mongodb-extension-reference/4.10/"><span class="pv-num">4.10</span><span class="pv-tag pv-tag--dev">Dev</span></a></li></ul></section><section class="product-group" data-product="multitenancy-extension-reference" data-product-name="Multitenancy Extension Reference"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">Multitenancy Extension Reference</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="development" href="/multitenancy-extension-reference/development/"><span class="pv-num">development</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.12" href="/multitenancy-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/multitenancy-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/multitenancy-extension-reference/4.10/"><span class="pv-num">4.10</span></a></li></ul></section><section class="product-group" data-product="reactor-extension-reference" data-product-name="Reactor Extension Reference"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">Reactor Extension Reference</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="main" href="/reactor-extension-reference/main/"><span class="pv-num">main</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.12" href="/reactor-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/reactor-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/reactor-extension-reference/4.10/"><span class="pv-num">4.10</span><span class="pv-tag pv-tag--dev">Dev</span></a></li></ul></section><section class="product-group" data-product="spring-aot-extension-reference" data-product-name="Spring AOT Extension Guide"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">Spring AOT Extension Guide</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="development" href="/spring-aot-extension-reference/development/"><span class="pv-num">development</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.12" href="/spring-aot-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/spring-aot-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/spring-aot-extension-reference/4.10/"><span class="pv-num">4.10</span></a></li></ul></section><section class="product-group" data-product="spring-cloud-extension-reference" data-product-name="Spring Cloud Extension Guide"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">Spring Cloud Extension Guide</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="main" href="/spring-cloud-extension-reference/main/"><span class="pv-num">main</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.12" href="/spring-cloud-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/spring-cloud-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/spring-cloud-extension-reference/4.10/"><span class="pv-num">4.10</span></a></li></ul></section><section class="product-group" data-product="tracing-extension-reference" data-product-name="Tracing Extension Guide"><header class="product-group-head"><span class="product-group-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="product-group-name">Tracing Extension Guide</span></header><ul class="product-versions"><li><a role="menuitem" class="product-version" data-version="main" href="/tracing-extension-reference/main/"><span class="pv-num">main</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.12" href="/tracing-extension-reference/4.12/"><span class="pv-num">4.12</span><span class="pv-tag pv-tag--dev">Dev</span></a></li><li><a role="menuitem" class="product-version" data-version="4.11" href="/tracing-extension-reference/4.11/"><span class="pv-num">4.11</span><span class="pv-tag pv-tag--latest">Latest</span></a></li><li><a role="menuitem" class="product-version" data-version="4.10" href="/tracing-extension-reference/4.10/"><span class="pv-num">4.10</span></a></li></ul></section>
+    </div>
+  </div>
+
+  <div class="drawer-body">
+    <section class="nav-section"><div class="nav-section-title" role="heading" aria-level="3">Getting started</div><ul class="nav-tree"><li><a class="nav-link" data-href="/home/basics/" href="/home/basics/">Basics</a></li><li><details class="nav-group" data-nav-id="nav-0"><summary class="nav-link nav-parent" data-href="/home/guides/"><a class="nav-parent-link" href="/home/guides/"><span>Guides</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/home/guides/axon-framework/" href="/home/guides/axon-framework/">Axon Framework</a></li><li><a class="nav-link" data-href="/home/guides/axon-server/" href="/home/guides/axon-server/">Axon Server</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-1"><summary class="nav-link nav-parent" data-href="/axon-framework-5-getting-started/"><a class="nav-parent-link" href="/axon-framework-5-getting-started/"><span>Getting Started with Axon Framework 5</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-5-getting-started/" href="/axon-framework-5-getting-started/">Introduction</a></li><li><a class="nav-link" data-href="/axon-framework-5-getting-started/sample-domain-event-modeling/" href="/axon-framework-5-getting-started/sample-domain-event-modeling/">University Domain</a></li><li><a class="nav-link" data-href="/axon-framework-5-getting-started/project-structure/" href="/axon-framework-5-getting-started/project-structure/">Project Structure</a></li><li><a class="nav-link" data-href="/axon-framework-5-getting-started/implement-command-create-course/" href="/axon-framework-5-getting-started/implement-command-create-course/">Feature: Course Creation</a></li><li><a class="nav-link" data-href="/axon-framework-5-getting-started/implement-command-subscribe-student/" href="/axon-framework-5-getting-started/implement-command-subscribe-student/">Feature: Subscribe Student</a></li><li><a class="nav-link" data-href="/axon-framework-5-getting-started/configure-axon-server/" href="/axon-framework-5-getting-started/configure-axon-server/">Connecting to Axon Server</a></li><li><a class="nav-link" data-href="/axon-framework-5-getting-started/implement-stateless-event-handler/" href="/axon-framework-5-getting-started/implement-stateless-event-handler/">Feature: Send Notification When Student Subscribed</a></li><li><a class="nav-link" data-href="/axon-framework-5-getting-started/implement-stateful-event-handler/" href="/axon-framework-5-getting-started/implement-stateful-event-handler/">Feature: Send Notification To The Administrator When All Courses Are Fully Booked</a></li><li><a class="nav-link" data-href="/axon-framework-5-getting-started/implement-read-model/" href="/axon-framework-5-getting-started/implement-read-model/">Feature: Build Course Statistics Read Model (Projection)</a></li></ul></details></li></ul></section>
+<section class="nav-section"><div class="nav-section-title" role="heading" aria-level="3">Reference guides</div><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-2"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/"><span>Axon Framework</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/" href="/axon-framework-reference/5.4/">Introduction</a></li><li><details class="nav-group" data-nav-id="nav-3"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/migration/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/migration/"><span>Migration Guide</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/why-upgrade/" href="/axon-framework-reference/5.4/migration/why-upgrade/">Why Upgrade?</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/prerequisites/" href="/axon-framework-reference/5.4/migration/prerequisites/">Prerequisites</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/openrewrite-code-conversion/" href="/axon-framework-reference/5.4/migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/solved-architecture-choices/" href="/axon-framework-reference/5.4/migration/solved-architecture-choices/">Resolved Problems</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/understanding-architecture-principles/" href="/axon-framework-reference/5.4/migration/understanding-architecture-principles/">Understanding Choices</a></li><li><details class="nav-group" data-nav-id="nav-4"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/migration/paths/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/migration/paths/"><span>Migration Paths</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/messages/" href="/axon-framework-reference/5.4/migration/paths/messages/">Messages</a></li><li><details class="nav-group" data-nav-id="nav-5"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/migration/paths/aggregates/"><span>Aggregates</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/configuration-migration/" href="/axon-framework-reference/5.4/migration/paths/aggregates/configuration-migration/">Configuration Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/event-tagging/" href="/axon-framework-reference/5.4/migration/paths/aggregates/event-tagging/">Event tagging</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/multi-entity-migration/" href="/axon-framework-reference/5.4/migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/polymorphism-migration/" href="/axon-framework-reference/5.4/migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/projectors-event-processors/" href="/axon-framework-reference/5.4/migration/paths/projectors-event-processors/">Projectors and Event Processors</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/token-store/" href="/axon-framework-reference/5.4/migration/paths/token-store/">Token Store</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/event-store/" href="/axon-framework-reference/5.4/migration/paths/event-store/">Event Store</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/snapshotting/" href="/axon-framework-reference/5.4/migration/paths/snapshotting/"><span class="advanced-framework" title="Axoniq Framework">Snapshotting</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/sagas/" href="/axon-framework-reference/5.4/migration/paths/sagas/">Sagas</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/test-fixtures/" href="/axon-framework-reference/5.4/migration/paths/test-fixtures/">Test Fixtures</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/configuration/" href="/axon-framework-reference/5.4/migration/paths/configuration/">Configuration Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/serializers/" href="/axon-framework-reference/5.4/migration/paths/serializers/">Serializer Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/dlq/" href="/axon-framework-reference/5.4/migration/paths/dlq/"><span class="advanced-framework" title="Axoniq Framework">Dead-Letter Queue Migration</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/interceptors/" href="/axon-framework-reference/5.4/migration/paths/interceptors/">Interceptor Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/sequencing-policies/" href="/axon-framework-reference/5.4/migration/paths/sequencing-policies/">Sequencing Policy Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/timeouts/" href="/axon-framework-reference/5.4/migration/paths/timeouts/">Timeout Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/distributed-tracing/" href="/axon-framework-reference/5.4/migration/paths/distributed-tracing/"><span class="advanced-framework" title="Axoniq Framework">Distributed Tracing</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/upcasters/" href="/axon-framework-reference/5.4/migration/paths/upcasters/"><span class="advanced-framework" title="Axoniq Framework">Upcaster Migration</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/multi-tenancy/" href="/axon-framework-reference/5.4/migration/paths/multi-tenancy/"><span class="advanced-framework" title="Axoniq Framework">Multi-Tenancy Migration</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/advanced-migration/paths/5.0-to-5.1/" href="/axon-framework-reference/5.4/advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/advanced-migration/paths/5.2.0-to-5.2.1/" href="/axon-framework-reference/5.4/advanced-migration/paths/5.2.0-to-5.2.1/">Axoniq Framework 5.2.0 to 5.2.1 Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection-migration/migration-path/" href="/axon-framework-reference/5.4/data-protection-migration/migration-path/"><span class="advanced-framework" title="Axoniq Framework">Data Protection Module Migration</span></a></li></ul></details></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-6"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/messaging-concepts/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/messaging-concepts/"><span>Messaging Concepts</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/anatomy-message/" href="/axon-framework-reference/5.4/messaging-concepts/anatomy-message/">Anatomy of a Message</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/message-intercepting/" href="/axon-framework-reference/5.4/messaging-concepts/message-intercepting/">Message Intercepting</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/supported-parameters-annotated-handlers/" href="/axon-framework-reference/5.4/messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/message-correlation/" href="/axon-framework-reference/5.4/messaging-concepts/message-correlation/">Message Correlation</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/component-message-intercepting/" href="/axon-framework-reference/5.4/messaging-concepts/component-message-intercepting/">Component Message Intercepting</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/exception-handling/" href="/axon-framework-reference/5.4/messaging-concepts/exception-handling/">Exception Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/annotated-exception-handling/" href="/axon-framework-reference/5.4/messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/processing-context/" href="/axon-framework-reference/5.4/messaging-concepts/processing-context/">Processing Context</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-7"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/commands/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/commands/"><span>Commands</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/command-handlers/" href="/axon-framework-reference/5.4/commands/command-handlers/">Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/command-dispatchers/" href="/axon-framework-reference/5.4/commands/command-dispatchers/">Dispatching</a></li><li><details class="nav-group" data-nav-id="nav-8"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/commands/entities/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/commands/entities/"><span>Entities</span></a></summary><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-9"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/commands/entities/event-sourced-entity/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/commands/entities/event-sourced-entity/"><span>Event-sourced entities</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/entities/entity-creator/" href="/axon-framework-reference/5.4/commands/entities/entity-creator/">Entity creator</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/entities/stateful-command-handler/" href="/axon-framework-reference/5.4/commands/entities/stateful-command-handler/">Stateful command handlers</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/entities/entity-hierarchies/" href="/axon-framework-reference/5.4/commands/entities/entity-hierarchies/">Entity hierarchies</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/entities/entity-polymorphism/" href="/axon-framework-reference/5.4/commands/entities/entity-polymorphism/">Polymorphic entities</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/infrastructure/" href="/axon-framework-reference/5.4/commands/infrastructure/">Infrastructure</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/configuration/" href="/axon-framework-reference/5.4/commands/configuration/">Configuration</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-10"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/events/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/events/"><span>Events</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-handlers/" href="/axon-framework-reference/5.4/events/event-handlers/">Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-publishing/" href="/axon-framework-reference/5.4/events/event-publishing/">Publishing</a></li><li><details class="nav-group" data-nav-id="nav-11"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/events/event-processors/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/events/event-processors/"><span>Event Processors</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-processors/subscribing/" href="/axon-framework-reference/5.4/events/event-processors/subscribing/">Subscribing Event Processor</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-processors/streaming/" href="/axon-framework-reference/5.4/events/event-processors/streaming/">Streaming Event Processor</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/connector/persistent-streams/" href="/axon-framework-reference/5.4/connector/persistent-streams/"><span class="advanced-framework" title="Axoniq Framework">Persistent Streams</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/dead-letter-queue/" href="/axon-framework-reference/5.4/dead-letter-queue/"><span class="advanced-framework" title="Axoniq Framework">Dead-Letter Queue</span></a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-12"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/events/infrastructure/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/events/infrastructure/"><span>Infrastructure</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-store-internals/" href="/axon-framework-reference/5.4/events/event-store-internals/">Event Store Internals</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-versioning/" href="/axon-framework-reference/5.4/events/event-versioning/">Versioning</a></li><li><details class="nav-group" data-nav-id="nav-13"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/message-transformation/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/message-transformation/"><span><span class="advanced-framework" title="Axoniq Framework">Event Transformation</span></span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/message-transformation/defining-transformations/" href="/axon-framework-reference/5.4/message-transformation/defining-transformations/">Defining transformations</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/message-transformation/configuring-transformations/" href="/axon-framework-reference/5.4/message-transformation/configuring-transformations/">Configuring transformations</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/message-transformation/demo/" href="/axon-framework-reference/5.4/message-transformation/demo/">Example</a></li></ul></details></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-14"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/queries/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/queries/"><span>Queries</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/queries/query-handlers/" href="/axon-framework-reference/5.4/queries/query-handlers/">Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/queries/query-dispatchers/" href="/axon-framework-reference/5.4/queries/query-dispatchers/">Dispatching</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/queries/infrastructure/" href="/axon-framework-reference/5.4/queries/infrastructure/">Infrastructure</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/queries/configuration/" href="/axon-framework-reference/5.4/queries/configuration/">Configuration</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-15"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/workflows/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/workflows/"><span><span class="advanced-framework" title="Axoniq Framework">Workflows</span></span></a></summary><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-16"><summary class="nav-link nav-parent"><span>Primitive Steps</span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/execute-steps/" href="/axon-framework-reference/5.4/workflows/execute-steps/">Execute Steps</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/waiting-for-events/" href="/axon-framework-reference/5.4/workflows/waiting-for-events/">Waiting for Events</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/publishing-events/" href="/axon-framework-reference/5.4/workflows/publishing-events/">Publishing Events</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/understanding-steps/" href="/axon-framework-reference/5.4/workflows/understanding-steps/">Understanding Steps</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/workflow-lifecycle/" href="/axon-framework-reference/5.4/workflows/workflow-lifecycle/">Workflow Lifecycle</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/error-handling/" href="/axon-framework-reference/5.4/workflows/error-handling/">Error Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/workflow-manager/" href="/axon-framework-reference/5.4/workflows/workflow-manager/">Workflow Manager</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/step-orchestration/" href="/axon-framework-reference/5.4/workflows/step-orchestration/">Step Orchestration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/common-patterns/" href="/axon-framework-reference/5.4/workflows/common-patterns/">Common Patterns</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/payload-and-state/" href="/axon-framework-reference/5.4/workflows/payload-and-state/">Payload &amp; State</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/configuration/" href="/axon-framework-reference/5.4/workflows/configuration/">Configuration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/testing-workflows/" href="/axon-framework-reference/5.4/workflows/testing-workflows/">Testing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows/versioning/" href="/axon-framework-reference/5.4/workflows/versioning/">Versioning</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-17"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/testing/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/testing/"><span>Testing</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/testing/basic-testing/" href="/axon-framework-reference/5.4/testing/basic-testing/">Basic Testing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/testing/matchers-and-field-filters/" href="/axon-framework-reference/5.4/testing/matchers-and-field-filters/">Matchers and Field Filters</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/testing/advanced-testing/" href="/axon-framework-reference/5.4/testing/advanced-testing/">Advanced Testing</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/conversion/" href="/axon-framework-reference/5.4/conversion/">Conversion</a></li><li><details class="nav-group" data-nav-id="nav-18"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/data-protection/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/data-protection/"><span><span class="advanced-framework" title="Axoniq Framework">Data Protection</span></span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection/installation/" href="/axon-framework-reference/5.4/data-protection/installation/">Installation</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection/annotations/" href="/axon-framework-reference/5.4/data-protection/annotations/">Annotations</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection/configuration/" href="/axon-framework-reference/5.4/data-protection/configuration/">Configuration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection/crypto-engines/" href="/axon-framework-reference/5.4/data-protection/crypto-engines/">Crypto engines</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection/java-records/" href="/axon-framework-reference/5.4/data-protection/java-records/">Java records</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection/advanced/" href="/axon-framework-reference/5.4/data-protection/advanced/">Advanced</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-19"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/multi-tenancy/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/multi-tenancy/"><span><span class="advanced-framework" title="Axoniq Framework">Multi-Tenancy</span></span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/tenant-management/" href="/axon-framework-reference/5.4/multi-tenancy/tenant-management/">Tenant management</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/tenant-sequencing/" href="/axon-framework-reference/5.4/multi-tenancy/tenant-sequencing/">Tenant sequencing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/tenant-scoped-components/" href="/axon-framework-reference/5.4/multi-tenancy/tenant-scoped-components/">Tenant-scoped components</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/tenant-command-handling/" href="/axon-framework-reference/5.4/multi-tenancy/tenant-command-handling/">Tenant-aware command processing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/tenant-event-storage/" href="/axon-framework-reference/5.4/multi-tenancy/tenant-event-storage/">Tenant-aware event storage</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/tenant-data-protection/" href="/axon-framework-reference/5.4/multi-tenancy/tenant-data-protection/">Data protection</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/tenant-event-processing/" href="/axon-framework-reference/5.4/multi-tenancy/tenant-event-processing/">Tenant-aware event processing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/tenant-dead-letter-queue/" href="/axon-framework-reference/5.4/multi-tenancy/tenant-dead-letter-queue/">Tenant-aware dead-letter queues</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/tenant-query-handling/" href="/axon-framework-reference/5.4/multi-tenancy/tenant-query-handling/">Tenant-aware query processing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/multi-tenancy/demo/" href="/axon-framework-reference/5.4/multi-tenancy/demo/">Example</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-20"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/tuning/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/tuning/"><span>Tuning</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/tuning/command-processing/" href="/axon-framework-reference/5.4/tuning/command-processing/">Command Processing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/snapshotting/" href="/axon-framework-reference/5.4/snapshotting/"><span class="advanced-framework" title="Axoniq Framework">Snapshots</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/caching/" href="/axon-framework-reference/5.4/caching/"><span class="advanced-framework" title="Axoniq Framework">Caching</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/tuning/event-processing/" href="/axon-framework-reference/5.4/tuning/event-processing/">Event Processing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/tuning/rdbms-tuning/" href="/axon-framework-reference/5.4/tuning/rdbms-tuning/">Relational Databases</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-21"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/monitoring/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/monitoring/"><span>Monitoring</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/tracing/" href="/axon-framework-reference/5.4/tracing/">Tracing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/monitoring/metrics/" href="/axon-framework-reference/5.4/monitoring/metrics/">Metrics</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/monitoring/health/" href="/axon-framework-reference/5.4/monitoring/health/">Health Indicators</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/monitoring/processors/" href="/axon-framework-reference/5.4/monitoring/processors/">Event Processor Monitoring</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/monitoring/message-tracking/" href="/axon-framework-reference/5.4/monitoring/message-tracking/">Message Tracking</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-22"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/configuration/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/configuration/"><span>Configuration API</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/configuration/configurer/" href="/axon-framework-reference/5.4/configuration/configurer/">Application configurers</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/configuration/registries/" href="/axon-framework-reference/5.4/configuration/registries/">Component registry and lifecycle registry</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/configuration/configuration-enhancer/" href="/axon-framework-reference/5.4/configuration/configuration-enhancer/">Configuration enhancers</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/configuration/module/" href="/axon-framework-reference/5.4/configuration/module/">Modules</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/configuration/configuration/" href="/axon-framework-reference/5.4/configuration/configuration/">Configuration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/configuration/component-factory/" href="/axon-framework-reference/5.4/configuration/component-factory/">Component factories</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/configuration/spring/" href="/axon-framework-reference/5.4/configuration/spring/">Spring Boot integration</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/spring-boot-integration/" href="/axon-framework-reference/5.4/spring-boot-integration/">Spring Boot Integration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/framework-comparison/" href="/axon-framework-reference/5.4/framework-comparison/">Framework Comparison</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/modules/" href="/axon-framework-reference/5.4/modules/">Modules</a></li><li><details class="nav-group" data-nav-id="nav-23"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/release-notes/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/release-notes/"><span>Release Notes</span></a></summary><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-24"><summary class="nav-link nav-parent"><span>Axon Framework</span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/release-notes/major-releases/" href="/axon-framework-reference/5.4/release-notes/major-releases/">Major Releases</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/release-notes/minor-releases/" href="/axon-framework-reference/5.4/release-notes/minor-releases/">Minor Releases</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-25"><summary class="nav-link nav-parent"><span><span class="advanced-framework" title="Axoniq Framework">Axoniq Framework</span></span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/advanced-release-notes/major-releases/" href="/axon-framework-reference/5.4/advanced-release-notes/major-releases/">Major Releases</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/advanced-release-notes/minor-releases/" href="/axon-framework-reference/5.4/advanced-release-notes/minor-releases/">Minor Releases</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-26"><summary class="nav-link nav-parent"><span><span class="advanced-framework" title="Axoniq Framework">Axoniq Data Protection</span></span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection-release-notes/major-releases/" href="/axon-framework-reference/5.4/data-protection-release-notes/major-releases/">Major Releases</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection-release-notes/minor-releases/" href="/axon-framework-reference/5.4/data-protection-release-notes/minor-releases/">Minor Releases</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-27"><summary class="nav-link nav-parent"><span><span class="advanced-framework" title="Axoniq Framework">Axoniq Workflow Engine</span></span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows-release-notes/major-releases/" href="/axon-framework-reference/5.4/workflows-release-notes/major-releases/">Major Releases</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows-release-notes/minor-releases/" href="/axon-framework-reference/5.4/workflows-release-notes/minor-releases/">Minor Releases</a></li></ul></details></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/known-issues-and-workarounds/" href="/axon-framework-reference/5.4/known-issues-and-workarounds/">Known Issues and Workarounds</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-28"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/"><span>Axon Server</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/" href="/axon-server-reference/v2026.1/">Introduction</a></li><li><details class="nav-group" data-nav-id="nav-29"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/installation/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/installation/"><span>Installation</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/installation/local-installation/" href="/axon-server-reference/v2026.1/axon-server/installation/local-installation/">Local installation</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/installation/docker-k8s/" href="/axon-server-reference/v2026.1/axon-server/installation/docker-k8s/">Docker / K8s</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-30"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/administration/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/administration/"><span>Administration</span></a></summary><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-31"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/"><span>Configuration</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/configuration/" href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/configuration/">System properties</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/command-line-interface/" href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/command-line-interface/">Command Line Interface</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/rest-api/" href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/rest-api/">REST API</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/grpc-api/" href="/axon-server-reference/v2026.1/axon-server/administration/admin-configuration/grpc-api/">gRPC API</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-32"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/"><span>Monitoring</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/actuator-endpoints/" href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/actuator-endpoints/">Actuator Endpoints</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/axon-server-metrics/" href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/axon-server-metrics/">Axon Server Metrics</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/grpc-metrics/" href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/grpc-metrics/">gRPC Metrics</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/heartbeat-monitoring/" href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/heartbeat-monitoring/">Heartbeat Monitoring</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/diagnostics/" href="/axon-server-reference/v2026.1/axon-server/administration/monitoring/diagnostics/">Diagnostics</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/multi-context/" href="/axon-server-reference/v2026.1/axon-server/administration/multi-context/">Multi-Context</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/tiered-storage/" href="/axon-server-reference/v2026.1/axon-server/administration/tiered-storage/">Tiered Storage</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/event-transformation/" href="/axon-server-reference/v2026.1/axon-server/administration/event-transformation/">Persistent Event Transformation</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/tagging/" href="/axon-server-reference/v2026.1/axon-server/administration/tagging/">Tagging</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/backups/" href="/axon-server-reference/v2026.1/axon-server/administration/backups/">Backups</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/recovery/" href="/axon-server-reference/v2026.1/axon-server/administration/recovery/">Recovery</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/plugins/" href="/axon-server-reference/v2026.1/axon-server/administration/plugins/">Axon Server Plugins</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/persistent-streams/" href="/axon-server-reference/v2026.1/axon-server/administration/persistent-streams/">Persistent Streams</a></li><li><details class="nav-group" data-nav-id="nav-33"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/administration/logging/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/administration/logging/"><span>Logging</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/logging/logging-format/" href="/axon-server-reference/v2026.1/axon-server/administration/logging/logging-format/">Logging Format</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/administration/error-codes/" href="/axon-server-reference/v2026.1/axon-server/administration/error-codes/">Error Codes</a></li><li><details class="nav-group" data-nav-id="nav-34"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/administration/integration/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/administration/integration/"><span>Integrations</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/openapi/integration-api/" href="/axon-server-reference/v2026.1/openapi/integration-api/">Axon Server Integration HTTP API</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/openapi/integration-outbound-api/" href="/axon-server-reference/v2026.1/openapi/integration-outbound-api/">Axon Server Outbound HTTP API</a></li></ul></details></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-35"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/clustering/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/clustering/"><span>Clustering</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/clustering/cluster-basics/" href="/axon-server-reference/v2026.1/axon-server/clustering/cluster-basics/">Cluster Basics</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/clustering/node-roles/" href="/axon-server-reference/v2026.1/axon-server/clustering/node-roles/">Node Roles</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/clustering/replication-groups/" href="/axon-server-reference/v2026.1/axon-server/clustering/replication-groups/">Replication Groups</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/clustering/replication-logs/" href="/axon-server-reference/v2026.1/axon-server/clustering/replication-logs/">Replication Logs</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-36"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/security/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/security/"><span>Security</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/security/ssl/" href="/axon-server-reference/v2026.1/axon-server/security/ssl/">SSL</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/security/access-control-ee/" href="/axon-server-reference/v2026.1/axon-server/security/access-control-ee/">Access Control for Axon Server</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/security/access-control-clients/" href="/axon-server-reference/v2026.1/axon-server/security/access-control-clients/">Security for Axon Framework Client Applications</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/security/access-control-cli/" href="/axon-server-reference/v2026.1/axon-server/security/access-control-cli/">Access Control and the CLI</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/security/access-control-api/" href="/axon-server-reference/v2026.1/axon-server/security/access-control-api/">Access Control on the REST and gRPC APIs</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/security/access-control-ldap/" href="/axon-server-reference/v2026.1/axon-server/security/access-control-ldap/">LDAP Authentication</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/security/access-control-oauth2/" href="/axon-server-reference/v2026.1/axon-server/security/access-control-oauth2/">OAuth2 Authentication</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-37"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/performance/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/performance/"><span>Performance</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/performance/tuning-event-processing/" href="/axon-server-reference/v2026.1/axon-server/performance/tuning-event-processing/">Event Segments</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/performance/flow-control/" href="/axon-server-reference/v2026.1/axon-server/performance/flow-control/">Flow Control</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-38"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/migration/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/migration/"><span>Migration</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/migration/non-axon-server-to-axon-server/" href="/axon-server-reference/v2026.1/axon-server/migration/non-axon-server-to-axon-server/">Non-Axon Server to Axon Server</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-39"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/axon-server/architecture/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/axon-server/architecture/"><span>Architecture</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/architecture/config-database/" href="/axon-server-reference/v2026.1/axon-server/architecture/config-database/">Config Database</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/axon-server/troubleshooting/" href="/axon-server-reference/v2026.1/axon-server/troubleshooting/">Troubleshooting</a></li><li><details class="nav-group" data-nav-id="nav-40"><summary class="nav-link nav-parent" data-href="/axon-server-reference/v2026.1/release-notes/"><a class="nav-parent-link" href="/axon-server-reference/v2026.1/release-notes/"><span>Release Notes</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/rn-as-major-releases/" href="/axon-server-reference/v2026.1/rn-as-major-releases/">Major Releases</a></li><li><a class="nav-link" data-href="/axon-server-reference/v2026.1/rn-as-minor-releases/" href="/axon-server-reference/v2026.1/rn-as-minor-releases/">Patch Releases</a></li></ul></details></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-41"><summary class="nav-link nav-parent" data-href="/axoniq-platform-reference/"><a class="nav-parent-link" href="/axoniq-platform-reference/"><span>Axoniq Platform</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axoniq-platform-reference/" href="/axoniq-platform-reference/">Introduction</a></li><li><details class="nav-group" data-nav-id="nav-42"><summary class="nav-link nav-parent" data-href="/axoniq-platform-reference/features/"><a class="nav-parent-link" href="/axoniq-platform-reference/features/"><span>Features</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axoniq-platform-reference/features/metrics/" href="/axoniq-platform-reference/features/metrics/">Framework Metrics</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/features/management/" href="/axoniq-platform-reference/features/management/">Processor Management</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/features/dlq/" href="/axoniq-platform-reference/features/dlq/">Dead-Letter Queues</a></li><li><details class="nav-group" data-nav-id="nav-43"><summary class="nav-link nav-parent" data-href="/axoniq-platform-reference/features/automatic-clustering/"><a class="nav-parent-link" href="/axoniq-platform-reference/features/automatic-clustering/"><span>Automatic Clustering</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axoniq-platform-reference/features/cluster-node-lifecycle/" href="/axoniq-platform-reference/features/cluster-node-lifecycle/">Node Restarts and Replacement</a></li></ul></details></li><li><a class="nav-link" data-href="/axoniq-platform-reference/features/development-agent/" href="/axoniq-platform-reference/features/development-agent/">Development Agent</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-44"><summary class="nav-link nav-parent" data-href="/axoniq-platform-reference/monitoring/"><a class="nav-parent-link" href="/axoniq-platform-reference/monitoring/"><span>Monitoring</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axoniq-platform-reference/monitoring/inbox/" href="/axoniq-platform-reference/monitoring/inbox/">Inbox</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/monitoring/alert-rules/" href="/axoniq-platform-reference/monitoring/alert-rules/">Alert Rules</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/monitoring/exceptions/" href="/axoniq-platform-reference/monitoring/exceptions/">Exceptions</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/monitoring/how-alerts-work/" href="/axoniq-platform-reference/monitoring/how-alerts-work/">How Alerts Are Evaluated</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/monitoring/integrations/" href="/axoniq-platform-reference/monitoring/integrations/">Integrations</a></li><li><details class="nav-group" data-nav-id="nav-45"><summary class="nav-link nav-parent"><span>Reference</span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axoniq-platform-reference/monitoring/default-rules/" href="/axoniq-platform-reference/monitoring/default-rules/">Default Rules</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/monitoring/subjects-and-metrics/" href="/axoniq-platform-reference/monitoring/subjects-and-metrics/">Subjects and Metrics</a></li></ul></details></li><li><a class="nav-link" data-href="/axoniq-platform-reference/monitoring/whats-changed/" href="/axoniq-platform-reference/monitoring/whats-changed/">What Changed From the Previous Monitoring</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-46"><summary class="nav-link nav-parent" data-href="/axoniq-platform-reference/environments/"><a class="nav-parent-link" href="/axoniq-platform-reference/environments/"><span>Workspaces and Environments</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axoniq-platform-reference/environments/roles/" href="/axoniq-platform-reference/environments/roles/">Axoniq Platform Roles</a></li></ul></details></li><li><a class="nav-link" data-href="/axoniq-platform-reference/subscriptions/" href="/axoniq-platform-reference/subscriptions/">Subscriptions</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/billing/" href="/axoniq-platform-reference/billing/">Billing</a></li><li><details class="nav-group" data-nav-id="nav-47"><summary class="nav-link nav-parent" data-href="/axoniq-platform-reference/licensing/"><a class="nav-parent-link" href="/axoniq-platform-reference/licensing/"><span>Licensing</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axoniq-platform-reference/licensing/license-sources/" href="/axoniq-platform-reference/licensing/license-sources/">License Sources</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/licensing/offline-licenses/" href="/axoniq-platform-reference/licensing/offline-licenses/">Running Without a Platform Connection</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/licensing/rotation-and-expiry/" href="/axoniq-platform-reference/licensing/rotation-and-expiry/">Rotation and Expiry</a></li></ul></details></li><li><a class="nav-link" data-href="/axoniq-platform-reference/authentication/" href="/axoniq-platform-reference/authentication/">Authentication</a></li><li><details class="nav-group" data-nav-id="nav-48"><summary class="nav-link nav-parent" data-href="/axoniq-platform-reference/connectors/"><a class="nav-parent-link" href="/axoniq-platform-reference/connectors/"><span>Clients and Connectors</span></a></summary><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-49"><summary class="nav-link nav-parent" data-href="/axoniq-platform-reference/connectors/axon-framework/"><a class="nav-parent-link" href="/axoniq-platform-reference/connectors/axon-framework/"><span>Axon Framework</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axoniq-platform-reference/connectors/axon-framework-metrics/" href="/axoniq-platform-reference/connectors/axon-framework-metrics/">Metric Collection</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/connectors/axon-framework-operations/" href="/axoniq-platform-reference/connectors/axon-framework-operations/">Operations</a></li></ul></details></li><li><a class="nav-link" data-href="/axoniq-platform-reference/connectors/axon-server/" href="/axoniq-platform-reference/connectors/axon-server/">Axon Server</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/connectors/access-tokens/" href="/axoniq-platform-reference/connectors/access-tokens/">Access Tokens</a></li><li><a class="nav-link" data-href="/axoniq-platform-reference/connectors/lts-repository/" href="/axoniq-platform-reference/connectors/lts-repository/">Axon Framework 4 LTS Repository</a></li></ul></details></li></ul></details></li></ul></section>
+<section class="nav-section"><div class="nav-section-title" role="heading" aria-level="3">Core concepts</div><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-50"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/messaging-concepts/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/messaging-concepts/"><span>Messaging Concepts</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/anatomy-message/" href="/axon-framework-reference/5.4/messaging-concepts/anatomy-message/">Anatomy of a Message</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/message-intercepting/" href="/axon-framework-reference/5.4/messaging-concepts/message-intercepting/">Message Intercepting</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/supported-parameters-annotated-handlers/" href="/axon-framework-reference/5.4/messaging-concepts/supported-parameters-annotated-handlers/">Supported Parameters for Annotated Handlers</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/message-correlation/" href="/axon-framework-reference/5.4/messaging-concepts/message-correlation/">Message Correlation</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/component-message-intercepting/" href="/axon-framework-reference/5.4/messaging-concepts/component-message-intercepting/">Component Message Intercepting</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/exception-handling/" href="/axon-framework-reference/5.4/messaging-concepts/exception-handling/">Exception Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/annotated-exception-handling/" href="/axon-framework-reference/5.4/messaging-concepts/annotated-exception-handling/">Annotated Exception Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/messaging-concepts/processing-context/" href="/axon-framework-reference/5.4/messaging-concepts/processing-context/">Processing Context</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-51"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/commands/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/commands/"><span>Commands</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/command-handlers/" href="/axon-framework-reference/5.4/commands/command-handlers/">Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/command-dispatchers/" href="/axon-framework-reference/5.4/commands/command-dispatchers/">Dispatching</a></li><li><details class="nav-group" data-nav-id="nav-52"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/commands/entities/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/commands/entities/"><span>Entities</span></a></summary><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-53"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/commands/entities/event-sourced-entity/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/commands/entities/event-sourced-entity/"><span>Event-sourced entities</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/entities/entity-creator/" href="/axon-framework-reference/5.4/commands/entities/entity-creator/">Entity creator</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/entities/stateful-command-handler/" href="/axon-framework-reference/5.4/commands/entities/stateful-command-handler/">Stateful command handlers</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/entities/entity-hierarchies/" href="/axon-framework-reference/5.4/commands/entities/entity-hierarchies/">Entity hierarchies</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/entities/entity-polymorphism/" href="/axon-framework-reference/5.4/commands/entities/entity-polymorphism/">Polymorphic entities</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/infrastructure/" href="/axon-framework-reference/5.4/commands/infrastructure/">Infrastructure</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/commands/configuration/" href="/axon-framework-reference/5.4/commands/configuration/">Configuration</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-54"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/events/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/events/"><span>Events</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-handlers/" href="/axon-framework-reference/5.4/events/event-handlers/">Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-publishing/" href="/axon-framework-reference/5.4/events/event-publishing/">Publishing</a></li><li><details class="nav-group" data-nav-id="nav-55"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/events/event-processors/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/events/event-processors/"><span>Event Processors</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-processors/subscribing/" href="/axon-framework-reference/5.4/events/event-processors/subscribing/">Subscribing Event Processor</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-processors/streaming/" href="/axon-framework-reference/5.4/events/event-processors/streaming/">Streaming Event Processor</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/connector/persistent-streams/" href="/axon-framework-reference/5.4/connector/persistent-streams/"><span class="advanced-framework" title="Axoniq Framework">Persistent Streams</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/dead-letter-queue/" href="/axon-framework-reference/5.4/dead-letter-queue/"><span class="advanced-framework" title="Axoniq Framework">Dead-Letter Queue</span></a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-56"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/events/infrastructure/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/events/infrastructure/"><span>Infrastructure</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-store-internals/" href="/axon-framework-reference/5.4/events/event-store-internals/">Event Store Internals</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/events/event-versioning/" href="/axon-framework-reference/5.4/events/event-versioning/">Versioning</a></li><li><details class="nav-group" data-nav-id="nav-57"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/message-transformation/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/message-transformation/"><span><span class="advanced-framework" title="Axoniq Framework">Event Transformation</span></span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/message-transformation/defining-transformations/" href="/axon-framework-reference/5.4/message-transformation/defining-transformations/">Defining transformations</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/message-transformation/configuring-transformations/" href="/axon-framework-reference/5.4/message-transformation/configuring-transformations/">Configuring transformations</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/message-transformation/demo/" href="/axon-framework-reference/5.4/message-transformation/demo/">Example</a></li></ul></details></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-58"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/queries/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/queries/"><span>Queries</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/queries/query-handlers/" href="/axon-framework-reference/5.4/queries/query-handlers/">Handling</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/queries/query-dispatchers/" href="/axon-framework-reference/5.4/queries/query-dispatchers/">Dispatching</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/queries/infrastructure/" href="/axon-framework-reference/5.4/queries/infrastructure/">Infrastructure</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/queries/configuration/" href="/axon-framework-reference/5.4/queries/configuration/">Configuration</a></li></ul></details></li></ul></section>
+<section class="nav-section"><div class="nav-section-title" role="heading" aria-level="3">Operations</div><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-59"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/testing/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/testing/"><span>Testing</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/testing/basic-testing/" href="/axon-framework-reference/5.4/testing/basic-testing/">Basic Testing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/testing/matchers-and-field-filters/" href="/axon-framework-reference/5.4/testing/matchers-and-field-filters/">Matchers and Field Filters</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/testing/advanced-testing/" href="/axon-framework-reference/5.4/testing/advanced-testing/">Advanced Testing</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/conversion/" href="/axon-framework-reference/5.4/conversion/">Conversion</a></li><li><details class="nav-group" data-nav-id="nav-60"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/tuning/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/tuning/"><span>Tuning</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/tuning/command-processing/" href="/axon-framework-reference/5.4/tuning/command-processing/">Command Processing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/snapshotting/" href="/axon-framework-reference/5.4/snapshotting/"><span class="advanced-framework" title="Axoniq Framework">Snapshots</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/caching/" href="/axon-framework-reference/5.4/caching/"><span class="advanced-framework" title="Axoniq Framework">Caching</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/tuning/event-processing/" href="/axon-framework-reference/5.4/tuning/event-processing/">Event Processing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/tuning/rdbms-tuning/" href="/axon-framework-reference/5.4/tuning/rdbms-tuning/">Relational Databases</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-61"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/monitoring/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/monitoring/"><span>Monitoring</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/tracing/" href="/axon-framework-reference/5.4/tracing/">Tracing</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/monitoring/metrics/" href="/axon-framework-reference/5.4/monitoring/metrics/">Metrics</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/monitoring/health/" href="/axon-framework-reference/5.4/monitoring/health/">Health Indicators</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/monitoring/processors/" href="/axon-framework-reference/5.4/monitoring/processors/">Event Processor Monitoring</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/monitoring/message-tracking/" href="/axon-framework-reference/5.4/monitoring/message-tracking/">Message Tracking</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/spring-boot-integration/" href="/axon-framework-reference/5.4/spring-boot-integration/">Spring Boot Integration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/modules/" href="/axon-framework-reference/5.4/modules/">Modules</a></li></ul></section>
+<section class="nav-section"><div class="nav-section-title" role="heading" aria-level="3">Migration (AF4 → AF5)</div><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-62"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/migration/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/migration/"><span>Migration Guide</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/why-upgrade/" href="/axon-framework-reference/5.4/migration/why-upgrade/">Why Upgrade?</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/prerequisites/" href="/axon-framework-reference/5.4/migration/prerequisites/">Prerequisites</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/openrewrite-code-conversion/" href="/axon-framework-reference/5.4/migration/openrewrite-code-conversion/">OpenRewrite Code Conversion</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/solved-architecture-choices/" href="/axon-framework-reference/5.4/migration/solved-architecture-choices/">Resolved Problems</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/understanding-architecture-principles/" href="/axon-framework-reference/5.4/migration/understanding-architecture-principles/">Understanding Choices</a></li><li><details class="nav-group" data-nav-id="nav-63"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/migration/paths/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/migration/paths/"><span>Migration Paths</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/messages/" href="/axon-framework-reference/5.4/migration/paths/messages/">Messages</a></li><li><details class="nav-group" data-nav-id="nav-64"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/migration/paths/aggregates/"><span>Aggregates</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/configuration-migration/" href="/axon-framework-reference/5.4/migration/paths/aggregates/configuration-migration/">Configuration Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/event-tagging/" href="/axon-framework-reference/5.4/migration/paths/aggregates/event-tagging/">Event tagging</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/multi-entity-migration/" href="/axon-framework-reference/5.4/migration/paths/aggregates/multi-entity-migration/">Multi-Entity Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/aggregates/polymorphism-migration/" href="/axon-framework-reference/5.4/migration/paths/aggregates/polymorphism-migration/">Polymorphic Migration</a></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/projectors-event-processors/" href="/axon-framework-reference/5.4/migration/paths/projectors-event-processors/">Projectors and Event Processors</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/token-store/" href="/axon-framework-reference/5.4/migration/paths/token-store/">Token Store</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/event-store/" href="/axon-framework-reference/5.4/migration/paths/event-store/">Event Store</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/snapshotting/" href="/axon-framework-reference/5.4/migration/paths/snapshotting/"><span class="advanced-framework" title="Axoniq Framework">Snapshotting</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/sagas/" href="/axon-framework-reference/5.4/migration/paths/sagas/">Sagas</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/test-fixtures/" href="/axon-framework-reference/5.4/migration/paths/test-fixtures/">Test Fixtures</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/configuration/" href="/axon-framework-reference/5.4/migration/paths/configuration/">Configuration Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/serializers/" href="/axon-framework-reference/5.4/migration/paths/serializers/">Serializer Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/dlq/" href="/axon-framework-reference/5.4/migration/paths/dlq/"><span class="advanced-framework" title="Axoniq Framework">Dead-Letter Queue Migration</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/interceptors/" href="/axon-framework-reference/5.4/migration/paths/interceptors/">Interceptor Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/sequencing-policies/" href="/axon-framework-reference/5.4/migration/paths/sequencing-policies/">Sequencing Policy Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/timeouts/" href="/axon-framework-reference/5.4/migration/paths/timeouts/">Timeout Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/distributed-tracing/" href="/axon-framework-reference/5.4/migration/paths/distributed-tracing/"><span class="advanced-framework" title="Axoniq Framework">Distributed Tracing</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/upcasters/" href="/axon-framework-reference/5.4/migration/paths/upcasters/"><span class="advanced-framework" title="Axoniq Framework">Upcaster Migration</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/migration/paths/multi-tenancy/" href="/axon-framework-reference/5.4/migration/paths/multi-tenancy/"><span class="advanced-framework" title="Axoniq Framework">Multi-Tenancy Migration</span></a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/advanced-migration/paths/5.0-to-5.1/" href="/axon-framework-reference/5.4/advanced-migration/paths/5.0-to-5.1/">Axon Framework 5.0 to Axoniq Framework Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/advanced-migration/paths/5.2.0-to-5.2.1/" href="/axon-framework-reference/5.4/advanced-migration/paths/5.2.0-to-5.2.1/">Axoniq Framework 5.2.0 to 5.2.1 Migration</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection-migration/migration-path/" href="/axon-framework-reference/5.4/data-protection-migration/migration-path/"><span class="advanced-framework" title="Axoniq Framework">Data Protection Module Migration</span></a></li></ul></details></li></ul></details></li></ul></section>
+<section class="nav-section"><div class="nav-section-title" role="heading" aria-level="3">Guides</div><ul class="nav-tree"><li><a class="nav-link" data-href="/message-scheduling-guide/development/" href="/message-scheduling-guide/development/">Message Scheduling</a></li><li><a class="nav-link" data-href="/saga-guide/development/" href="/saga-guide/development/">Long-running processes</a></li><li><a class="nav-link" data-href="/saga-guide/development/bike-rental-event-model/" href="/saga-guide/development/bike-rental-event-model/">Bike rental event model</a></li><li><a class="nav-link" data-href="/saga-guide/development/choosing-an-approach/" href="/saga-guide/development/choosing-an-approach/">Choosing an approach</a></li><li><a class="nav-link" data-href="/saga-guide/development/workflows/" href="/saga-guide/development/workflows/"><span class="advanced-framework" title="Axoniq Framework">Workflows</span></a></li><li><a class="nav-link" data-href="/saga-guide/development/vertical-slices/" href="/saga-guide/development/vertical-slices/">Vertical slices</a></li><li><a class="nav-link" data-href="/saga-guide/development/state-in-a-repository/" href="/saga-guide/development/state-in-a-repository/">State in a repository</a></li><li><a class="nav-link" data-href="/saga-guide/development/state-from-context-events/" href="/saga-guide/development/state-from-context-events/">State from context events</a></li><li><a class="nav-link" data-href="/saga-guide/development/state-from-process-events/" href="/saga-guide/development/state-from-process-events/">State from process events</a></li><li><a class="nav-link" data-href="/saga-guide/development/testing/" href="/saga-guide/development/testing/">Testing</a></li><li><a class="nav-link" data-href="/saga-guide/development/deadlines/" href="/saga-guide/development/deadlines/">Deadlines</a></li><li><a class="nav-link" data-href="/identifier-generation-guide/development/" href="/identifier-generation-guide/development/">Identifier Generation</a></li><li><a class="nav-link" data-href="/message-handler-customization-guide/development/parameter-resolvers/" href="/message-handler-customization-guide/development/parameter-resolvers/">Parameter Resolvers</a></li><li><a class="nav-link" data-href="/message-handler-customization-guide/development/handler-enhancers/" href="/message-handler-customization-guide/development/handler-enhancers/">Handler Enhancers</a></li><li><a class="nav-link" data-href="/meta-annotations-guide/development/" href="/meta-annotations-guide/development/">Meta Annotations</a></li></ul></section>
+<section class="nav-section"><div class="nav-section-title" role="heading" aria-level="3">Extensions</div><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-65"><summary class="nav-link nav-parent" data-href="/amqp-extension-reference/4.11/"><a class="nav-parent-link" href="/amqp-extension-reference/4.11/"><span>Spring AMQP Reference</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/amqp-extension-reference/4.11/" href="/amqp-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/amqp-extension-reference/4.11/forwarding/" href="/amqp-extension-reference/4.11/forwarding/">Forwarding events to an AMQP exchange</a></li><li><a class="nav-link" data-href="/amqp-extension-reference/4.11/reading/" href="/amqp-extension-reference/4.11/reading/">Reading events from an AMQP Queue</a></li><li><a class="nav-link" data-href="/amqp-extension-reference/4.11/release-notes/" href="/amqp-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-66"><summary class="nav-link nav-parent" data-href="/jgroups-extension-reference/4.11/"><a class="nav-parent-link" href="/jgroups-extension-reference/4.11/"><span>JGroups Extension Reference</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/jgroups-extension-reference/4.11/" href="/jgroups-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/jgroups-extension-reference/4.11/springboot-config/" href="/jgroups-extension-reference/4.11/springboot-config/">Configuration in SpringBoot</a></li><li><a class="nav-link" data-href="/jgroups-extension-reference/4.11/release-notes/" href="/jgroups-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-67"><summary class="nav-link nav-parent" data-href="/jobrunr-pro-extension-reference/4.11/"><a class="nav-parent-link" href="/jobrunr-pro-extension-reference/4.11/"><span>JobRunr Pro Extension Reference</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/jobrunr-pro-extension-reference/4.11/" href="/jobrunr-pro-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/jobrunr-pro-extension-reference/4.11/release-notes/" href="/jobrunr-pro-extension-reference/4.11/release-notes/">Release Notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-68"><summary class="nav-link nav-parent" data-href="/kafka-extension-reference/4.11/"><a class="nav-parent-link" href="/kafka-extension-reference/4.11/"><span>Kafka Extension Reference</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/kafka-extension-reference/4.11/" href="/kafka-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/kafka-extension-reference/4.11/publishing/" href="/kafka-extension-reference/4.11/publishing/">Publishing Events to Kafka</a></li><li><a class="nav-link" data-href="/kafka-extension-reference/4.11/consuming/" href="/kafka-extension-reference/4.11/consuming/">Consuming Events From Kafka</a></li><li><a class="nav-link" data-href="/kafka-extension-reference/4.11/message-format/" href="/kafka-extension-reference/4.11/message-format/">Customizing Event Message Format</a></li><li><a class="nav-link" data-href="/kafka-extension-reference/4.11/springboot-configuration/" href="/kafka-extension-reference/4.11/springboot-configuration/">Configuration in SpringBoot</a></li><li><a class="nav-link" data-href="/kafka-extension-reference/4.11/release-notes/" href="/kafka-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-69"><summary class="nav-link nav-parent" data-href="/kotlin-extension-reference/4.11/"><a class="nav-parent-link" href="/kotlin-extension-reference/4.11/"><span>Kotlin Extension Reference</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/kotlin-extension-reference/4.11/" href="/kotlin-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/kotlin-extension-reference/4.11/commands/" href="/kotlin-extension-reference/4.11/commands/">Commands</a></li><li><a class="nav-link" data-href="/kotlin-extension-reference/4.11/events/" href="/kotlin-extension-reference/4.11/events/">Events</a></li><li><a class="nav-link" data-href="/kotlin-extension-reference/4.11/queries/" href="/kotlin-extension-reference/4.11/queries/">Queries</a></li><li><a class="nav-link" data-href="/kotlin-extension-reference/4.11/release-notes/" href="/kotlin-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-70"><summary class="nav-link nav-parent" data-href="/mongodb-extension-reference/4.11/"><a class="nav-parent-link" href="/mongodb-extension-reference/4.11/"><span>MongoDB Extension Reference</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/mongodb-extension-reference/4.11/" href="/mongodb-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/mongodb-extension-reference/4.11/spring-config/" href="/mongodb-extension-reference/4.11/spring-config/">Configuration of the Event Store with Spring</a></li><li><a class="nav-link" data-href="/mongodb-extension-reference/4.11/springboot-config/" href="/mongodb-extension-reference/4.11/springboot-config/">Configuration in SpringBoot</a></li><li><a class="nav-link" data-href="/mongodb-extension-reference/4.11/dlq-spring-config/" href="/mongodb-extension-reference/4.11/dlq-spring-config/">Configuration of the MongoDB Dead-Letter Queue with Spring</a></li><li><a class="nav-link" data-href="/mongodb-extension-reference/4.11/release-notes/" href="/mongodb-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-71"><summary class="nav-link nav-parent" data-href="/multitenancy-extension-reference/4.11/"><a class="nav-parent-link" href="/multitenancy-extension-reference/4.11/"><span>Multitenancy Extension Reference</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/multitenancy-extension-reference/4.11/" href="/multitenancy-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/multitenancy-extension-reference/4.11/configuration/" href="/multitenancy-extension-reference/4.11/configuration/">Configuration</a></li><li><a class="nav-link" data-href="/multitenancy-extension-reference/4.11/multi-tenant-components/" href="/multitenancy-extension-reference/4.11/multi-tenant-components/">Supported Multi-Tenant Components</a></li><li><a class="nav-link" data-href="/multitenancy-extension-reference/4.11/disable/" href="/multitenancy-extension-reference/4.11/disable/">Disable Extension</a></li><li><a class="nav-link" data-href="/multitenancy-extension-reference/4.11/release-notes/" href="/multitenancy-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-72"><summary class="nav-link nav-parent" data-href="/reactor-extension-reference/4.11/"><a class="nav-parent-link" href="/reactor-extension-reference/4.11/"><span>Reactor Extension Reference</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/reactor-extension-reference/4.11/" href="/reactor-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/reactor-extension-reference/4.11/reactor-gateways/" href="/reactor-extension-reference/4.11/reactor-gateways/">Reactor Gateways</a></li><li><a class="nav-link" data-href="/reactor-extension-reference/4.11/release-notes/" href="/reactor-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-73"><summary class="nav-link nav-parent" data-href="/spring-aot-extension-reference/4.11/"><a class="nav-parent-link" href="/spring-aot-extension-reference/4.11/"><span>Spring AOT Extension Guide</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/spring-aot-extension-reference/4.11/" href="/spring-aot-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/spring-aot-extension-reference/4.11/compile-to-native/" href="/spring-aot-extension-reference/4.11/compile-to-native/">Compiling to Native</a></li><li><a class="nav-link" data-href="/spring-aot-extension-reference/4.11/performance/" href="/spring-aot-extension-reference/4.11/performance/">Performance Tips</a></li><li><a class="nav-link" data-href="/spring-aot-extension-reference/4.11/release-notes/" href="/spring-aot-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-74"><summary class="nav-link nav-parent" data-href="/spring-cloud-extension-reference/4.11/"><a class="nav-parent-link" href="/spring-cloud-extension-reference/4.11/"><span>Spring Cloud Extension Guide</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/spring-cloud-extension-reference/4.11/" href="/spring-cloud-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/spring-cloud-extension-reference/4.11/command-routes/" href="/spring-cloud-extension-reference/4.11/command-routes/">Discovering Command Routes</a></li><li><a class="nav-link" data-href="/spring-cloud-extension-reference/4.11/internode-commands/" href="/spring-cloud-extension-reference/4.11/internode-commands/">Sending Commands between Nodes</a></li><li><a class="nav-link" data-href="/spring-cloud-extension-reference/4.11/config/" href="/spring-cloud-extension-reference/4.11/config/">Configuring This Extension</a></li><li><a class="nav-link" data-href="/spring-cloud-extension-reference/4.11/release-notes/" href="/spring-cloud-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-75"><summary class="nav-link nav-parent" data-href="/tracing-extension-reference/4.11/"><a class="nav-parent-link" href="/tracing-extension-reference/4.11/"><span>Tracing Extension Guide</span></a></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/tracing-extension-reference/4.11/" href="/tracing-extension-reference/4.11/">Introduction</a></li><li><a class="nav-link" data-href="/tracing-extension-reference/4.11/config/" href="/tracing-extension-reference/4.11/config/">Configuring the Extension</a></li><li><a class="nav-link" data-href="/tracing-extension-reference/4.11/release-notes/" href="/tracing-extension-reference/4.11/release-notes/">Release notes</a></li></ul></details></li></ul></section>
+<section class="nav-section"><div class="nav-section-title" role="heading" aria-level="3">Release notes</div><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-76"><summary class="nav-link nav-parent" data-href="/axon-framework-reference/5.4/release-notes/"><a class="nav-parent-link" href="/axon-framework-reference/5.4/release-notes/"><span>Release Notes</span></a></summary><ul class="nav-tree"><li><details class="nav-group" data-nav-id="nav-77"><summary class="nav-link nav-parent"><span>Axon Framework</span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/release-notes/major-releases/" href="/axon-framework-reference/5.4/release-notes/major-releases/">Major Releases</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/release-notes/minor-releases/" href="/axon-framework-reference/5.4/release-notes/minor-releases/">Minor Releases</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-78"><summary class="nav-link nav-parent"><span><span class="advanced-framework" title="Axoniq Framework">Axoniq Framework</span></span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/advanced-release-notes/major-releases/" href="/axon-framework-reference/5.4/advanced-release-notes/major-releases/">Major Releases</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/advanced-release-notes/minor-releases/" href="/axon-framework-reference/5.4/advanced-release-notes/minor-releases/">Minor Releases</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-79"><summary class="nav-link nav-parent"><span><span class="advanced-framework" title="Axoniq Framework">Axoniq Data Protection</span></span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection-release-notes/major-releases/" href="/axon-framework-reference/5.4/data-protection-release-notes/major-releases/">Major Releases</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/data-protection-release-notes/minor-releases/" href="/axon-framework-reference/5.4/data-protection-release-notes/minor-releases/">Minor Releases</a></li></ul></details></li><li><details class="nav-group" data-nav-id="nav-80"><summary class="nav-link nav-parent"><span><span class="advanced-framework" title="Axoniq Framework">Axoniq Workflow Engine</span></span></summary><ul class="nav-tree"><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows-release-notes/major-releases/" href="/axon-framework-reference/5.4/workflows-release-notes/major-releases/">Major Releases</a></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/workflows-release-notes/minor-releases/" href="/axon-framework-reference/5.4/workflows-release-notes/minor-releases/">Minor Releases</a></li></ul></details></li></ul></details></li><li><a class="nav-link" data-href="/axon-framework-reference/5.4/known-issues-and-workarounds/" href="/axon-framework-reference/5.4/known-issues-and-workarounds/">Known Issues and Workarounds</a></li></ul></section>
+  </div>
+
+  <div class="drawer-footer">
+    <a class="drawer-footer-link" href="https://platform.axoniq.io" target="_blank" rel="noopener">
+      <span>Axoniq Platform</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><polyline points="8 7 17 7 17 16"/></svg>
+    </a>
+  </div>
+
+</nav>
+</aside>
+<main class="article">
+    <div class="page_content">
+        <aside class="toc sidebar" data-title="Page content" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+          <article class="doc">
+                <h1 class="page">Infrastructure</h1>
+            <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>When it comes to dispatching queries, as explained in the <a href="../query-dispatchers/" class="xref page">Dispatching queries</a> section, there are several implementations for actually sending query messages.
+The next sections provide an overview of the available implementations, as well as how to set up query dispatching infrastructure with Axon.</p>
+</div>
+<div class="paragraph">
+<p>All query operations are async-native, returning <code>CompletableFuture</code> or <code>Publisher</code> types. This enables efficient asynchronous processing without blocking threads.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="query_gateway"><a class="anchor" href="#query_gateway"></a>Query gateway</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The query gateway is a convenient interface towards the query dispatching mechanism.
+While you are not required to use a gateway to dispatch queries, it is generally the easiest option to do so.</p>
+</div>
+<div class="paragraph">
+<p>Axon provides a <code>QueryGateway</code> interface and the <code>DefaultQueryGateway</code> implementation.
+The query gateway provides methods for:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Point-to-point queries</strong>: <code>query()</code> for single results, <code>queryMany()</code> for multiple results (both return <code>CompletableFuture</code>)</p>
+</li>
+<li>
+<p><strong>Streaming queries</strong>: <code>streamingQuery()</code> returns a <code>Publisher</code> for streaming large result sets</p>
+</li>
+<li>
+<p><strong>Subscription queries</strong>: <code>subscriptionQuery()</code> returns a <code>Publisher</code> combining initial result and updates</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>All methods support an optional <code>ProcessingContext</code> parameter for correlation data propagation when dispatching from within a message handler.</p>
+</div>
+<div class="paragraph">
+<p>The query gateway automatically handles message construction, dispatch interceptors, and result conversion. It&#8217;s configured with access to the query bus and dispatch interceptors.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="query_bus"><a class="anchor" href="#query_bus"></a>Query bus</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The query bus is the mechanism that dispatches queries to query handlers.
+Queries are registered using the query name (based on <code>MessageType</code>).
+Each query name can have only one registered handler.</p>
+</div>
+<div class="sect2 axoniq-feature">
+<h3 id="DistributedQueryBus"><a class="anchor" href="#DistributedQueryBus"></a><code>DistributedQueryBus</code></h3>
+<div class="paragraph">
+<p>The <code>DistributedQueryBus</code>, together with the <code>AxonServerQueryBusConnector</code>, is the default query bus when Axon Server is available.
+It connects to Axon Server to send and receive queries in a distributed way, allowing queries to be handled by any node in the cluster.</p>
+</div>
+<div class="paragraph">
+<p>The <code>DistributedQueryBus</code> combined with the <code>AxonServerQueryBusConnector</code> provides:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Distributed query handling</strong>: Queries are routed to the appropriate handler across connected applications</p>
+</li>
+<li>
+<p><strong>Load balancing</strong>: When the same application is deployed across multiple instances, Axon Server can distribute queries among those instances</p>
+</li>
+<li>
+<p><strong>Subscription query support</strong>: Full support for subscription queries with update distribution across nodes</p>
+</li>
+<li>
+<p><strong>Query prioritization</strong>: Support for query priority to ensure critical queries are processed first</p>
+</li>
+<li>
+<p><strong>Local handler shortcut</strong>: Direct (point-to-point) queries for which a local handler is registered can be executed locally without going through the connector, avoiding network overhead. A <code>LocalQueryDispatchPredicate</code> decides, per query, whether to take this shortcut. Subscription queries are never shortcut</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_configuring_the_distributed_query_bus"><a class="anchor" href="#_configuring_the_distributed_query_bus"></a>Configuring the distributed query bus</h4>
+<div class="paragraph">
+<p>The <code>DistributedQueryBus</code> can be configured using the <code>DistributedQueryBusConfiguration</code> class, which provides a fluent API for customizing query processing behavior.</p>
+</div>
+<div class="paragraph">
+<p>Available configuration options:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Query threads</strong>: Number of threads used for query processing (default: 10)</p>
+</li>
+<li>
+<p><strong>Query queue capacity</strong>: Capacity of the priority queue for query processing tasks (default: 1000)</p>
+</li>
+<li>
+<p><strong>Custom executor service</strong>: Provide a custom <code>ExecutorService</code> for query processing</p>
+</li>
+</ul>
+</div>
+<div class="sect4">
+<h5 id="_local_handler_shortcut"><a class="anchor" href="#_local_handler_shortcut"></a>Local handler shortcut</h5>
+<div class="paragraph">
+<p>The local handler shortcut applies to direct (point-to-point) queries only. A <code>LocalQueryDispatchPredicate</code> lets a node prefer its own query handler for selected direct queries instead of routing them through the connector. The predicate is consulted for every outgoing direct query and receives the <code>QueryMessage</code> and the (nullable) <code>ProcessingContext</code>, so the decision can be based on the query&#8217;s payload, type, metadata, or a flag placed on the context by the dispatcher.</p>
+</div>
+<div class="paragraph">
+<p>The shortcut only takes effect when the local segment actually subscribed a handler for the query. When it did not, the query is routed through the connector as usual, regardless of the predicate. This ensures a locally preferred query that this node cannot handle is still routed to a segment that can.</p>
+</div>
+<div class="paragraph">
+<p>Short-cut queries are handled on the same bounded, priority-ordered worker pool as queries arriving from remote segments, because the shortcut reuses the same local-handling path. A burst of locally preferred queries is therefore subject to the same back-pressure and cannot flood the local segment beyond what it would already accept from remote traffic.</p>
+</div>
+<div class="paragraph">
+<p>Subscription queries are never shortcut. They are always routed through the connector, because their update registrations must be coordinated across all nodes. The <code>LocalQueryDispatchPredicate</code> is not consulted for subscription queries.</p>
+</div>
+<div class="paragraph">
+<p>To enable the shortcut, register a <code>LocalQueryDispatchPredicate</code> component:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.queryhandling.distributed.LocalQueryDispatchPredicate;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonConfig {
+    public void configureLocalQueryShortcut(MessagingConfigurer configurer) {
+        configurer.componentRegistry(registry -&gt; registry.registerComponent(
+                LocalQueryDispatchPredicate.class,
+                config -&gt; (query, context) -&gt; true   // always prefer the local handler when subscribed
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">The <code>preferLocalQueryHandler</code> setting</div>
+<div class="paragraph">
+<p><code>DistributedQueryBusConfiguration.preferLocalQueryHandler(boolean)</code> is deprecated in favor of the <code>LocalQueryDispatchPredicate</code>. It continues to work: with no predicate registered, <code>preferLocalQueryHandler(true)</code> (the default) behaves as a predicate that always prefers the local handler, and <code>preferLocalQueryHandler(false)</code> installs no shortcut. When a <code>LocalQueryDispatchPredicate</code> is registered, it is authoritative and this setting is ignored.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_configuration_examples"><a class="anchor" href="#_configuration_examples"></a>Configuration examples</h5>
+<div id="_tabs_1" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_1_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_1_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_1_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_1_configuration_api">
+<div class="paragraph">
+<p>Customize the distributed query bus configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
+import io.axoniq.framework.messaging.queryhandling.distributed.LocalQueryDispatchPredicate;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonConfig {
+    public void configureQueryBus(MessagingConfigurer configurer) {
+        // Customize the configuration
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT
+                .queryThreads(20)          // Set number of query processing threads
+                .queryQueueCapacity(2000); // Set queue capacity
+
+        // Register the custom configuration
+        configurer.componentRegistry(
+                cr -&gt; cr.registerComponent(DistributedQueryBusConfiguration.class, c -&gt; config)
+                        .registerComponent(
+                                LocalQueryDispatchPredicate.class,
+                                c -&gt; (query, context) -&gt; true
+                        )
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To control the local handler shortcut, register a <code>LocalQueryDispatchPredicate</code> as shown above rather than using the deprecated <code>preferLocalQueryHandler</code> setting.</p>
+</div>
+</div>
+<div id="_tabs_1_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_1_spring_boot">
+<div class="paragraph">
+<p>When using Spring Boot with Axon Server, configure the query bus through application properties:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># Configure query processing threads
+axon.axonserver.query-threads=20
+
+# Or configure programmatically</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
+import io.axoniq.framework.messaging.queryhandling.distributed.LocalQueryDispatchPredicate;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public DistributedQueryBusConfiguration queryBusConfiguration() {
+        return DistributedQueryBusConfiguration.DEFAULT.queryThreads(20);
+    }
+
+    @Bean
+    public LocalQueryDispatchPredicate localQueryDispatchPredicate() {
+        // Prefer the local handler for every query that this node can handle.
+        return (query, context) -&gt; true;
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_default_configuration"><a class="anchor" href="#_default_configuration"></a>Default configuration</h5>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_2_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_configuration_api">
+<div class="paragraph">
+<p>Declare dependencies:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--somewhere in the POM file--&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.axoniq.framework&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-server-connector&lt;/artifactId&gt;
+    &lt;version&gt;${axoniq.version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-messaging&lt;/artifactId&gt;
+    &lt;version&gt;${axon.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Configure your application:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+public class AxonApp {
+
+    public static void main(String[] args) {
+        // Returns a Configurer instance with default components configured.
+        // `DistributedQueryBus` with `AxonServerQueryBusConnector` is configured as Query Bus by default.
+        MessagingConfigurer configurer = MessagingConfigurer.create();
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_2_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_spring_boot">
+<div class="paragraph">
+<p>By simply declaring dependency to <code>axon-spring-boot-starter</code>, Axon will automatically configure the <code>AxonServerQueryBusConnector</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!--somewhere in the POM file--&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.axonframework&lt;/groupId&gt;
+    &lt;artifactId&gt;axon-spring-boot-starter&lt;/artifactId&gt;
+    &lt;version&gt;${axon.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Excluding the Axon Server Connector</div>
+<div class="paragraph">
+<p>If you exclude the <code>axon-server-connector</code> dependency you will fall back to the non-AxonServer query bus option, the <code>SimpleQueryBus</code> (see below).</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2 axoniq-feature">
+<h3 id="SpringCloudQueryBusConnector"><a class="anchor" href="#SpringCloudQueryBusConnector"></a><code>SpringCloudQueryBusConnector</code></h3>
+<div class="paragraph">
+<p>The <code>SpringCloudQueryBusConnector</code> distributes queries over HTTP between the nodes reported by a Spring Cloud <code>DiscoveryClient</code>, without an Axon Server in between.
+It is part of the same starter as the <a href="../../commands/infrastructure/#SpringCloudCommandBusConnector" class="xref page"><code>SpringCloudCommandBusConnector</code></a>, and shares its discovery, its capabilities endpoint, and its routing ring.</p>
+</div>
+<div class="paragraph">
+<p>Where a command carries a routing key that pins it to one node, a query asks nothing of where it is handled: any node advertising the query&#8217;s name may answer it.
+Successive queries of a name therefore rotate over the nodes advertising it, spreading the load rather than sending every query of a name to the same node.
+The <code>preferLocalQueryHandler</code> setting still applies, and is handled by the <code>DistributedQueryBus</code> before a query reaches the connector at all.</p>
+</div>
+<div class="paragraph">
+<p>A query may be answered any number of times, so a node answers with a stream rather than a single reply.
+Responses travel back as <a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events">Server-Sent Events</a>, and appear on the dispatching node&#8217;s <code>MessageStream</code> as the answering node produces them.</p>
+</div>
+<div class="sect3">
+<h4 id="_bounded_buffering"><a class="anchor" href="#_bounded_buffering"></a>Bounded buffering</h4>
+<div class="paragraph">
+<p>Responses are buffered per query while the application consumes them.
+A node answering faster than the dispatching application consumes fills that buffer, and the query then fails rather than growing the buffer until memory runs out:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># How many responses to a single query are held before an outpaced query fails.
+axon.springcloud.query-buffer-size=1024
+# How long a query's response stream may stay open before the container closes it.
+axon.springcloud.query-timeout=5m
+# How long the responses to a dispatched query are waited for before it is given up on.
+axon.springcloud.query-response-timeout=6m</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Raise the buffer size where responses legitimately arrive in bursts, and the timeout where a query legitimately takes longer to answer than the default.</p>
+</div>
+<div class="paragraph">
+<p><code>query-timeout</code> applies on the answering node and <code>query-response-timeout</code> on the dispatching one.
+Keep the latter above the former, so that a node which is merely slow ends the query itself.
+The dispatching deadline is a backstop for a node that stops answering without saying so, having been killed or partitioned away.
+Its socket reports nothing, so without a deadline the query would stay unanswered indefinitely.</p>
+</div>
+<div class="paragraph">
+<p>A query whose stream is closed releases the handler&#8217;s response stream on the answering node, whether the timeout elapsed or the node that asked stopped reading.
+A handler is not left producing responses that nothing receives.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_shutting_down"><a class="anchor" href="#_shutting_down"></a>Shutting down</h4>
+<div class="paragraph">
+<p>A node leaving the cluster stops advertising the queries it handled before it stops answering them, so the other nodes route elsewhere rather than discovering it left by timing out.
+Queries already dispatched are waited for: shutdown completes once their responses have arrived, and queries dispatched after shutdown began are rejected.</p>
+</div>
+<div class="paragraph">
+<p>In a Spring Boot application using this connector, a node stops its streaming event processors before the web server&#8217;s graceful shutdown starts, rather than after the web server has stopped.
+That is what lets the node tell its subscribers it is leaving while their streams are still open, as <a href="#_ending_a_subscription">Ending a subscription</a> describes.
+The node still answers the commands and queries that reach it while the web server drains, as it does with any other connector once its event processors have stopped.
+The events those commands publish are handled by the nodes that take over the stopped processors' segments, so a request that waits for a read model those processors maintain to reflect its command waits until another node has claimed the segment.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_the_query_client"><a class="anchor" href="#_the_query_client"></a>The query client</h4>
+<div class="paragraph">
+<p>Queries and subscription queries are sent on a client of their own, named <code>axoniqSpringCloudQueryRestClient</code>.
+It is built from the application&#8217;s <code>RestClient.Builder</code> when there is one, so interceptors such as authentication still apply, but on a transport with no read timeout and no shared connection pool.
+An application whose <code>RestClient.Builder</code> is load balanced defines this client itself, as it does the <a href="../../commands/infrastructure/#SpringCloudCommandBusConnector" class="xref page">command client</a>.</p>
+</div>
+<div class="paragraph">
+<p>Transport settings on the application&#8217;s HTTP client do not reach the query client: an SSL bundle set through <code>spring.http.client.*</code>, or a custom <code>ClientHttpRequestFactory</code> on the builder.
+Settings the JVM applies to every connection, such as the <code>javax.net.ssl.trustStore</code> system property, still do.
+Members that trust each other only through an SSL bundle, or authenticate each other with client certificates, define the query client themselves, free of a read timeout and of a bounded connection pool:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.springboot.autoconfig.SpringCloudAutoConfiguration;
+import org.springframework.boot.ssl.SslBundles;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
+
+@Configuration
+public class AxonConfig {
+
+    @Bean(SpringCloudAutoConfiguration.QUERY_REST_CLIENT_BEAN)
+    public RestClient axoniqSpringCloudQueryRestClient(RestClient.Builder builder, SslBundles sslBundles) {
+        HttpClient httpClient = HttpClient.newBuilder()
+                                          .connectTimeout(Duration.ofSeconds(2))
+                                          .sslContext(sslBundles.getBundle("cluster").createSslContext())
+                                          .build();
+        // No read timeout, and a connection per stream rather than a bounded pool:
+        // the connector bounds every query and subscription itself.
+        return builder.requestFactory(new JdkClientHttpRequestFactory(httpClient))
+                      .build();
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_subscription_queries"><a class="anchor" href="#_subscription_queries"></a>Subscription queries</h4>
+<div class="paragraph">
+<p>A subscription query is two activities.
+First, an update stream is opened on every node advertising the query&#8217;s name.
+Second, one of those nodes is asked for the initial result, which is a query like any other.
+The two are returned as a single stream: the initial result, and then the updates.</p>
+</div>
+<div class="paragraph">
+<p>The initial result is asked for only once every node has registered the subscription, not just the node answering it.
+The nodes are subscribed to in parallel, so this waits for the slowest of them to answer.</p>
+</div>
+<div class="paragraph">
+<p>Every node advertising the name is subscribed to, not just the one a plain query would route to.
+An update is emitted on whichever node&#8217;s state changed, and reaches only the subscriptions that node holds a registration for, so a subscriber reaching one node would miss every update emitted on the others.
+The updates of all of them arrive on the one stream the subscriber reads.</p>
+</div>
+<div class="paragraph">
+<p>An idle subscription is written to periodically, because a subscription may go a long time without an update and an idle connection is what a load balancer, proxy, or network address translation table reclaims:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties"># How often a node writes to a subscription it is answering while it has no update to send.
+axon.springcloud.subscription-keep-alive-interval=20s
+# How long a subscription may hear nothing at all before the subscribing node gives up on it.
+axon.springcloud.subscription-inactivity-timeout=60s</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Keep the interval comfortably below the idle timeout of whatever sits between the nodes, and the inactivity timeout a few intervals wide.
+Unlike a plain query, a subscription has no deadline of its own: it lasts as long as the subscriber wants it to, and a node with nothing to report is behaving correctly.
+What stands in for a deadline is silence, which is how a node that disappeared without its socket reporting so looks.</p>
+</div>
+<div class="paragraph">
+<p>Each open subscription holds a connection to every node advertising its query for as long as it lasts, so a node holding 50 subscriptions to a query three nodes handle holds 150 connections.
+They are opened on the client queries are sent with, which keeps them apart from the connections commands use.</p>
+</div>
+<div class="sect4">
+<h5 id="_ending_a_subscription"><a class="anchor" href="#_ending_a_subscription"></a>Ending a subscription</h5>
+<div class="paragraph">
+<p>A node that completes a subscription query says so explicitly, and that ends the subscription: there will never be another update to it, so the subscribing node stops waiting on the other nodes as well.</p>
+</div>
+<div class="paragraph">
+<p>A node that shuts down cleanly says it is leaving, and that ends only its own part: the subscription carries on with the nodes still there.
+It says so once its streaming event processors have stopped, so it emits no update after saying it, and the events it would have handled reach the nodes that take over its processors' segments.
+In a Spring Boot application, this happens before the web server&#8217;s graceful shutdown starts, so the shutdown does not wait on the subscriptions the node answers.
+Once every node answering a subscription has left, the subscription fails with a <code>SubscriptionQueryMembersChangedException</code>: nothing is left to emit its updates, and a node that starts handling the query later is not subscribed to.</p>
+</div>
+<div class="paragraph">
+<p>Any other end of a node&#8217;s part fails the whole subscription: the node reporting a failure, sending nothing for longer than <code>axon.springcloud.subscription-inactivity-timeout</code>, or ending its stream without saying it completed the subscription or is leaving, as a lost connection does.
+The subscribing node cannot tell such a node apart from one that is still emitting updates it no longer receives, so carrying on with the rest would leave the subscriber receiving some of the updates and believing it received all of them.
+Establish the subscription query again to get a fresh initial result and a complete stream of updates from the nodes still there.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Rolling restarts still fail subscriptions</div>
+<div class="paragraph">
+<p>A node that leaves cleanly ends only its own part, but a node that comes back afterwards is a node that starts handling the query, which fails the subscription as described below.
+A rolling restart of the nodes handling a query therefore fails the subscriptions to it, and subscribers establish them again.</p>
+</div>
+<div class="paragraph">
+<p>Subscribing event processors are not stopped before the node says it is leaving, as they handle the events of commands the node still accepts at that point.
+An update they emit after that does not reach subscribers on other nodes.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_a_node_that_starts_handling_the_query"><a class="anchor" href="#_a_node_that_starts_handling_the_query"></a>A node that starts handling the query</h5>
+<div class="paragraph">
+<p>A node that starts advertising the query&#8217;s name while a subscription is active fails that subscription with a <code>SubscriptionQueryMembersChangedException</code>.</p>
+</div>
+<div class="paragraph">
+<p>The updates that node emitted between advertising the name and being subscribed to are already gone, and no amount of catching up recovers them.
+Failing is therefore the honest outcome: a subscriber that establishes the subscription query again gets a fresh initial result and a complete stream of updates from that point, where one that carried on would silently be missing whatever it missed.
+A node that joins without advertising the query&#8217;s name emits no updates for it, and leaves the subscription alone.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">A servlet web application is required</div>
+<div class="paragraph">
+<p>The endpoints nodes reach each other on are Spring Model-View-Controller (MVC) endpoints, and a query&#8217;s responses are streamed with an <code>SseEmitter</code>, which a reactive stack does not serve.
+An application that enables the connector without a servlet web stack, whether it has no web stack at all, or is built on WebFlux, is rejected at start-up rather than joining the cluster advertising messages it cannot answer.
+Add <code>spring-boot-starter-web</code>, or set <code>axon.springcloud.enabled=false</code> to handle messages locally instead.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Query throughput is claimed against your Axoniq licence, on the same terms as command throughput.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="SimpleQueryBus"><a class="anchor" href="#SimpleQueryBus"></a><code>SimpleQueryBus</code></h3>
+<div class="paragraph">
+<p>The <code>SimpleQueryBus</code> is a local, non-distributed query bus implementation that processes queries in the dispatching thread by default. It&#8217;s used when Axon Server is not available or when you explicitly configure it.</p>
+</div>
+<div class="paragraph">
+<p>The <code>SimpleQueryBus</code> provides:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Local query handling</strong>: All queries are handled within the same JVM.</p>
+</li>
+<li>
+<p><strong>Simple routing</strong>: Routes queries to their registered handler based on query name.</p>
+</li>
+<li>
+<p><strong>Subscription query support</strong>: Full support for subscription queries within the same JVM.</p>
+</li>
+<li>
+<p><strong>Transaction management</strong>: Integrates with a <code>TransactionManager</code> for transactional query handling.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To configure a <code>SimpleQueryBus</code> (instead of an <code>AxonServerQueryBus</code>):</p>
+</div>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_configuration_api" class="tab">
+<p>Configuration API</p>
+</li>
+<li id="_tabs_3_spring_boot" class="tab">
+<p>Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_3_configuration_api">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.queryhandling.SimpleQueryBus;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+
+public class AxonConfig {
+    // omitting other configuration methods...
+    public void configureQueryBus(MessagingConfigurer configurer) {
+        configurer.registerQueryBus(
+                config -&gt;  new SimpleQueryBus(config.getComponent(UnitOfWorkFactory.class))
+        );
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_3_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_3_spring_boot">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.SimpleQueryBus;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+
+@Configuration
+public class AxonConfig {
+    // omitting other configuration methods...
+    @Bean
+    public QueryBus queryBus(UnitOfWorkFactory unitOfWorkFactory) {
+        return new SimpleQueryBus(unitOfWorkFactory);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_subscription_query_infrastructure"><a class="anchor" href="#_subscription_query_infrastructure"></a>Subscription query infrastructure</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Subscription queries allow clients to receive an initial result and then continue receiving updates as long as the subscription is active. The subscription query infrastructure consists of several components working together.</p>
+</div>
+<div class="sect2">
+<h3 id="_queryupdateemitter"><a class="anchor" href="#_queryupdateemitter"></a><code>QueryUpdateEmitter</code></h3>
+<div class="paragraph">
+<p>The <code>QueryUpdateEmitter</code> is responsible for emitting updates to active subscription queries. The <code>QueryUpdateEmitter</code> is context-aware and must be created from the <code>ProcessingContext</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CardSummaryProjection {
+
+    @EventHandler
+    public void on(CardRedeemedEvent event, ProcessingContext context) {
+        // Create a context-aware emitter
+        QueryUpdateEmitter emitter = QueryUpdateEmitter.forContext(context);
+
+        // Update the model
+        CardSummary summary = new CardSummary(event.cardId(), event.amount());
+
+        // Emit update to subscription queries
+        emitter.emit(
+            FetchCardSummaryQuery.class,
+            query -&gt; query.cardSummaryId().equals(event.cardId()),
+            summary
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The emitter filters subscription queries based on the provided predicate and emits the update only to matching subscriptions. This allows fine-grained control over which subscribers receive which updates.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="title">Automatic emitter creation for annotated methods</div>
+<div class="paragraph">
+<p>When using annotated message handlers (<code>@EventHandler</code>, <code>@QueryHandler</code>, etc.), Axon Framework automatically handles the <code>QueryUpdateEmitter</code> creation for you through parameter resolution. You can simply inject it as a method parameter without explicitly creating it from the <code>ProcessingContext</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@EventHandler
+public void on(CardRedeemedEvent event, QueryUpdateEmitter emitter) {
+    // Axon automatically provides the context-aware emitter
+    emitter.emit(FetchCardSummaryQuery.class,
+                 query -&gt; query.cardSummaryId().equals(event.cardId()),
+                 new CardSummary(event.cardId(), event.amount()));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Explicitly creating the emitter using <code>QueryUpdateEmitter#forContext(ProcessingContext)</code> is only necessary when manually registering query handlers or when you need direct control over the emitter creation.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_subscription_lifecycle"><a class="anchor" href="#_subscription_lifecycle"></a>Subscription lifecycle</h3>
+<div class="paragraph">
+<p>Subscription queries follow this lifecycle:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Subscription creation</strong>: Client calls <code>QueryGateway#subscriptionQuery(Object, Class&lt;R&gt;)</code>, which returns a <code>Publisher&lt;R&gt;</code>.</p>
+</li>
+<li>
+<p><strong>Initial result</strong>: The query is dispatched to a handler, and the initial result is emitted.</p>
+</li>
+<li>
+<p><strong>Update buffering</strong>: Updates are buffered until the <code>Publisher</code> is subscribed to.</p>
+</li>
+<li>
+<p><strong>Update streaming</strong>: Once subscribed, buffered and new updates are streamed to the client.</p>
+</li>
+<li>
+<p><strong>Completion</strong>: The subscription completes when:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>The client cancels the subscription (by disposing the <code>Publisher</code>).</p>
+</li>
+<li>
+<p>The server calls <code>QueryUpdateEmitter.complete()</code> to signal no more updates.</p>
+</li>
+<li>
+<p>An error occurs, completing the subscription exceptionally.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
+import org.reactivestreams.Publisher;
+import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
+
+public class QueryDispatcher {
+
+    public void dispatchFetchCard(QueryGateway queryGateway) {
+        String cardId = "...";
+        // Client-side subscription query
+        Publisher&lt;CardSummary&gt; results = queryGateway.subscriptionQuery(
+                new FetchCardSummaryQuery(cardId),
+                CardSummary.class
+        );
+
+        // Subscribe using Reactor (requires reactor-core dependency)
+        Disposable subscription = Flux.from(results)
+                                      .doOnNext(summary -&gt; System.out.println("Received: " + summary))
+                                      .doOnComplete(() -&gt; System.out.println("No more updates"))
+                                      .doOnError(error -&gt; System.err.println("Error: " + error))
+                                      .subscribe();
+
+        // Later: cancel the subscription
+        subscription.dispose();
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_update_buffer"><a class="anchor" href="#_update_buffer"></a>Update buffer</h3>
+<div class="paragraph">
+<p>The <code>QueryBus</code> maintains an update buffer for each subscription query. Updates emitted before the client subscribes to the <code>Publisher</code> are stored in this buffer. Once the client subscribes, buffered updates are delivered first, followed by new updates.</p>
+</div>
+<div class="paragraph">
+<p>The buffer size is configurable when creating a subscription query:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Default buffer size based on Reactor's Queues.SMALL_BUFFER_SIZE constant
+Publisher&lt;CardSummary&gt; results = queryGateway.subscriptionQuery(
+    new FetchCardSummaryQuery(cardId),
+    CardSummary.class
+);
+
+// Custom buffer size
+Publisher&lt;CardSummary&gt; customBufferResults = queryGateway.subscriptionQuery(
+    new FetchCardSummaryQuery(cardId),
+    CardSummary.class,
+    512  // buffer size
+);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the buffer fills up before the client subscribes, attempting to add more updates will complete the subscription exceptionally. Choose an appropriate buffer size based on your expected update rate and subscription delay.</p>
+</div>
+</div>
+</div>
+</div>
+        <nav class="pagination">
+  <span class="prev"><a href="../query-dispatchers/">Dispatching</a></span>
+  <span class="next"><a href="../configuration/">Configuration</a></span>
+</nav>
+    </article>
+  </div>
+</main>
+</div>
+<div class="drawer-scrim" id="drawer-scrim"></div>
+      <div class="cmdk-overlay" id="cmdk-overlay" role="dialog" aria-modal="true" aria-label="Search" aria-hidden="true">
+  <div class="cmdk-modal" role="document">
+    <div class="cmdk-input-row">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" class="cmdk-input" id="cmdk-input" placeholder="Search docs, guides, references…" autocomplete="off" spellcheck="false" />
+      <span class="cmdk-close-kbd">ESC</span>
+    </div>
+    <div class="cmdk-results" id="cmdk-results" role="listbox"></div>
+    <div class="cmdk-footer">
+      <span class="cmdk-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+      <span class="cmdk-hint"><kbd>↵</kbd> open</span>
+      <span class="cmdk-hint"><kbd>ESC</kbd> close</span>
+    </div>
+  </div>
+</div>
+      <footer class="footer">
+  <div class="secondary-footer">
+    <p>Copyright © 2025 Axoniq BV. All Rights Reserved</p>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e0b2b5cb-139e-4753-acab-bae43f90c5d3" />
+  </div>
+</footer>
+<script id="site-script" src="../../../../_/js/site.js" data-ui-root-path="../../../../_"></script>
+<script async src="../../../../_/js/vendor/highlight.js"></script>
+<script async src="../../../../_/js/vendor/page-actions.js"></script>
+<script async src="../../../../_/js/vendor/tabs.js" data-sync-storage-key="preferred-tab" data-sync-storage-scope="session"></script>
+<script src="../../../../_/js/vendor/lunr.js"></script>
+<script src="../../../../_/js/vendor/app.js"></script>
+<script defer src="../../../../search-index.js"></script>
+    </div>
+  </body>
+</html>
