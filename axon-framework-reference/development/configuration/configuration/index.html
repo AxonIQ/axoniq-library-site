@@ -495,13 +495,20 @@ class TypeReferenceRetrievalExample {
 <p>Every <code>Class</code>-based retrieval method below has a matching <code>TypeReference</code>-based overload that behaves the same way.</p>
 </div>
 <div class="paragraph">
+<p>A lookup by type returns the component registered under exactly that type.
+Without such a component, it returns the single component registered under a subtype of that type.
+When several components match, the lookup throws an <code>AmbiguousComponentMatchException</code>.
+With Spring, lookups by type follow Spring&#8217;s bean resolution instead, as described in <a href="../spring/#axon-components-as-spring-beans" class="xref page">Axon components as Spring beans</a>.</p>
+</div>
+<div class="paragraph">
 <p>Additional retrieval methods let you handle optional components and named components:</p>
 </div>
 <div class="dlist">
 <dl>
 <dt class="hdlist1"><code>getOptionalComponent(Class&lt;C&gt;)</code> / <code>getOptionalComponent(TypeReference&lt;C&gt;)</code></dt>
 <dd>
-<p>Returns an <code>Optional</code>, useful when a component may not have been registered.</p>
+<p>Returns an <code>Optional</code>, useful when a component may not have been registered.
+The <code>Optional</code> is only empty when no component matches; several matching components throw an <code>AmbiguousComponentMatchException</code>.</p>
 </dd>
 <dt class="hdlist1"><code>getComponent(Class&lt;C&gt;, String name)</code> / <code>getComponent(TypeReference&lt;C&gt;, String name)</code></dt>
 <dd>
@@ -525,7 +532,7 @@ When several components match, the lookup throws an <code>AmbiguousComponentMatc
 </dd>
 <dt class="hdlist1"><code>hasComponent(Class&lt;?&gt;)</code> / <code>hasComponent(TypeReference&lt;?&gt;)</code></dt>
 <dd>
-<p>Returns <code>true</code> when a component is present.
+<p>Returns <code>true</code> when a component is present, also when several components match.
 Useful in <code>ConfigurationEnhancer</code> implementations to apply decorators conditionally.</p>
 </dd>
 <dt class="hdlist1"><code>hasComponent(Class&lt;?&gt;, String name)</code> / <code>hasComponent(TypeReference&lt;?&gt;, String name)</code></dt>
