@@ -32,7 +32,9 @@ const sitemaps = [
 ]
 
 const additionalOverrides = {
-    "/axoniq-playbook-main/main/": "/playbook/"
+    "/axoniq-playbook-main/main/": "/playbook/",
+    // 5.0 used to be published without a version segment, as its version was "master"
+    "/axon-framework-5-getting-started/": "/axon-framework-5-getting-started/latest/",
 }
 /**
  * The mappings for the redirects, in which each url that starts with the key will be rewritten.
@@ -82,7 +84,7 @@ const fullReplaceMappings = {
     // Redirect any unknown release notes to extension overview
     "/release-notes/rn-extensions": "/axon-framework-extensions/",
     // The quickstart no longer exists, redirect to the demo
-    "/getting-started/quick-start": "/axon-framework-5-getting-started/",
+    "/getting-started/quick-start": "/axon-framework-5-getting-started/latest/",
     "/axon-server/migration": `/axon-server-reference/latest/axon-server/migration`,
     '/bikerental-console-demo': `/axoniq-console-reference/`,
 
@@ -126,6 +128,7 @@ const redirectFallback = "/home/"
  */
 const latestComponents = [
     "axon-framework-reference",
+    "axon-framework-5-getting-started",
     "message-handler-customization-guide",
     "meta-annotations-guide",
     "identifier-generation-guide",
