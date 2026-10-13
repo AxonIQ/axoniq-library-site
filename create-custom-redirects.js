@@ -150,20 +150,7 @@ const latestComponents = [
  * Pins the "latest" alias of a component to a specific version, overriding the automatic detection.
  * Remove an entry once the component's own versioning (e.g. the prerelease flag in antora.yml) is correct.
  */
-const pinnedLatestVersions = {
-    // 4.12 is released, but still marked as prerelease in the extensions' antora.yml
-    "amqp-extension-reference": "4.12",
-    "jgroups-extension-reference": "4.12",
-    "jobrunr-pro-extension-reference": "4.12",
-    "multitenancy-extension-reference": "4.12",
-    "kotlin-extension-reference": "4.12",
-    "kafka-extension-reference": "4.12",
-    "mongodb-extension-reference": "4.12",
-    "reactor-extension-reference": "4.12",
-    "spring-aot-extension-reference": "4.12",
-    "spring-cloud-extension-reference": "4.12",
-    "tracing-extension-reference": "4.12",
-}
+const pinnedLatestVersions = {}
 
 const releasedVersionPattern = /^v?\d+(\.\d+)+$/
 
