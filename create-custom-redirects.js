@@ -109,6 +109,7 @@ const fullReplaceMappings = {
     "/axon-framework/queries/implementations": "/axon-framework-reference/latest/queries/query-handlers",
     "/axon-framework/testing/commands-events": "/axon-framework-reference/latest/testing",
     "/axon-framework/testing/sagas-1": "/axon-framework-reference/latest/testing",
+    "/axon-framework/tuning/event-snapshots": "/axon-framework-reference/latest/tuning/snapshotting",
 }
 
 // Redirect all unknown URLs to the home page
