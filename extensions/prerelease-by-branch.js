@@ -7,6 +7,9 @@
  *   (e.g. "axon-5.4.x"), or matches the regular expression in the `release_branch_pattern` extension option.
  * - Versions from other branches (e.g. main or master) are prereleases, but only for components that also have
  *   versions from release branches. Components that are only published from main are left untouched.
+ * - Versions with a string as prerelease flag (e.g. `prerelease: -RC1`) are left as prerelease, as that is an explicit
+ *   choice. Use this to keep a release branch a prerelease. On main, use `prerelease: true` instead, as release
+ *   branches would otherwise inherit the string and remain a prerelease.
  * - Versions that don't look like a version number (e.g. "axonserver-ee-2025.2.x") are left untouched, as marking
  *   them as released would make Antora consider them the latest version.
  */
@@ -25,6 +28,10 @@ module.exports.register = function ({ config }) {
         for (const componentVersion of contentAggregate) {
             const { name, version, origins } = componentVersion
             if (!componentsWithReleases.has(name)) continue
+            if (typeof componentVersion.prerelease === 'string') {
+                logger.info(`Leaving ${name}@${version} as prerelease, as it is explicitly marked "${componentVersion.prerelease}"`)
+                continue
+            }
             const isRelease = origins.every(isReleaseOrigin)
             if (isRelease && !versionPattern.test(String(version))) {
                 logger.info(`Leaving prerelease flag of ${name}@${version} as is, as it isn't a version number`)
