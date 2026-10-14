@@ -508,6 +508,35 @@ Checkout the <a href="../sagas/" class="xref page">Saga Migration</a> for the fu
 </div>
 </div>
 <div class="sect1">
+<h2 id="stored-deadline-format"><a class="anchor" href="#stored-deadline-format"></a>Reading deadlines stored by Axon Framework 4</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A persistent deadline manager (Quartz, db-scheduler or JobRunr) stores each pending deadline in serialized form.
+Axon Framework 4 wrote it with your <code>Serializer</code>.
+Axon Framework 5 reads it back with a <code>Converter</code>, and the formats must match:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The auto-configured db-scheduler and JobRunr deadline managers use the event <code>Converter</code>, which is Jackson-based by default.</p>
+</li>
+<li>
+<p>A deadline manager you build yourself uses the <code>Converter</code> you pass to its <code>converter(..)</code> builder method.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Check which serializer your Axon Framework 4 application used for deadlines.
+If it set no <code>axon.serializer.*</code> properties and built no serializer itself, that was XStream.
+Reading XStream data with Jackson fails with <code>Unexpected character ('&lt;')</code> before the deadline handler runs, and the scheduler retries the deadline without ever delivering it.</p>
+</div>
+<div class="paragraph">
+<p>For XStream data, configure the <a href="../../../conversion/#xstream_converter" class="xref page">XStreamConverter</a> until the Axon Framework 4 deadlines have drained.
+For Jackson data, make sure your <code>Converter</code> uses the same <code>ObjectMapper</code> settings your <code>JacksonSerializer</code> had.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="aggregate-deadlines"><a class="anchor" href="#aggregate-deadlines"></a>Aggregate deadlines</h2>
 <div class="sectionbody">
 <div class="paragraph">

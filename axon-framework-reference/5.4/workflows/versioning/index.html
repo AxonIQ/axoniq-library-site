@@ -435,10 +435,9 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>In-flight workflows replay from event history when their declaring code changes. The engine already
-tolerates additive changes—new steps, re-ordering, removing a step—because step lookup is
-name-based. What it cannot detect on its own is a <strong>semantic</strong> change: a step whose body now talks to a
-different service, or a branching change in workflow logic.</p>
+<p>In-flight workflows replay from event history when their declaring code changes.
+The engine already tolerates additive changes, like new steps, re-ordering, removing a step, because step lookup is name-based.
+What it cannot detect on its own is a <strong>semantic</strong> change: a step whose body now talks to a different service, or a branching change in workflow logic.</p>
 </div>
 <div class="paragraph">
 <p>Two complementary mechanisms address this:</p>
@@ -447,21 +446,18 @@ different service, or a branching change in workflow logic.</p>
 <ul>
 <li>
 <p><strong>Definition-level versions</strong> (<code>@Workflow(workflowVersion = "&#8230;&#8203;")</code> or the programmatic
-<code>WorkflowCustomization.workflowVersion(&#8230;&#8203;)</code> setter) for whole-body rewrites. Register a new
-definition with a bumped semver string and the runtime starts new instances on the highest
-registered version while replaying in-flight instances on the version they were started under
-(read from the started event&#8217;s <code>MessageType.version()</code>).</p>
+<code>WorkflowCustomization.workflowVersion(&#8230;&#8203;)</code> setter) for whole-body rewrites.
+Register a new definition with a bumped semver string and the runtime starts new instances on the highest registered version while replaying in-flight instances on the version they were started under (read from the started event&#8217;s <code>MessageType.version()</code>).</p>
 </li>
 <li>
-<p><strong><code>ctx.migrateVersion(changeId, newVersion)</code> primitive</strong> for additive changes within a single definition.
-Bumps the workflow&#8217;s running version mid-flight; in-flight executions that have already passed the
-call&#8217;s position stay on the legacy branch via the downstream-steps guard.</p>
+<p><strong><code>context.migrateVersion(changeId, newVersion)</code> primitive</strong> for additive changes within a single definition.
+Bumps the workflow&#8217;s running version mid-flight; in-flight executions that have already passed the call&#8217;s position stay on the legacy branch via the downstream-steps guard.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Pick the mechanism by change shape: small additive change → <code>ctx.migrateVersion</code>; whole-body rewrite →
-copy-paste the class and bump <code>@Workflow(workflowVersion=&#8230;&#8203;)</code>. Both are documented below.</p>
+<p>Pick the mechanism by change shape: small additive change → <code>context.migrateVersion</code>; whole-body rewrite → copy-paste the class and bump <code>@Workflow(workflowVersion=&#8230;&#8203;)</code>.
+Both are documented below.</p>
 </div>
 </div>
 </div>
@@ -476,35 +472,33 @@ copy-paste the class and bump <code>@Workflow(workflowVersion=&#8230;&#8203;)</c
         workflowName = "OrderWorkflow",
         workflowVersion = "0.0.2"
 )
-public void execute(SimpleWorkflowContext ctx) { /* ... */ }</code></pre>
+public void execute(SimpleWorkflowContext context) { /* ... */ }</code></pre>
 </div>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>workflowVersion</code> is optional. The default is
-<code>io.axoniq.framework.workflow.runtime.api.execution.context.Version.DEFAULT_VERSION</code> (<code>"0.0.1"</code>), matching Axon Framework
-5&#8217;s native event-versioning convention.</p>
+<p><code>workflowVersion</code> is optional.
+The default is
+<code>io.axoniq.framework.workflow.runtime.api.execution.context.Version.DEFAULT_VERSION</code> (<code>"0.0.1"</code>), matching Axon Framework 5&#8217;s native event-versioning convention.</p>
 </li>
 <li>
-<p>The value must be a parseable semver string (<code>MAJOR.MINOR.PATCH</code> with an optional pre-release
-suffix). Invalid strings are rejected at configuration time via <code>Version.validate(&#8230;&#8203;)</code>.</p>
+<p>The value must be a parseable semver string (<code>MAJOR.MINOR.PATCH</code> with an optional pre-release suffix).
+Invalid strings are rejected at configuration time via <code>Version.validate(&#8230;&#8203;)</code>.</p>
 </li>
 <li>
-<p>Every event the workflow emits carries this version on its <code>MessageType.version()</code>, which is AF5&#8217;s
-built-in event-version field, <strong>not</strong> a separate metadata key.</p>
+<p>Every event the workflow emits carries this version on its <code>MessageType.version()</code>, which is AF5&#8217;s built-in event-version field, <strong>not</strong> a separate metadata key.</p>
 </li>
 <li>
-<p>The same value is reachable from inside the workflow body via <code>ctx.workflowDefinitionId().version()</code> (Java) /
-<code>ctx.workflowDefinitionId.version()</code> (Kotlin).</p>
+<p>The same value is reachable from inside the workflow body via <code>context.workflowDefinitionId().version()</code> (Java) /
+<code>context.workflowDefinitionId.version()</code> (Kotlin).</p>
 </li>
 </ul>
 </div>
 <div class="sect2">
 <h3 id="_starting_new_instances"><a class="anchor" href="#_starting_new_instances"></a>Starting new instances</h3>
 <div class="paragraph">
-<p>When multiple definitions share the same <code>(workflowName, startOnEventName, idProperty)</code> triple but
-differ by <code>version</code>, new starts route as follows:</p>
+<p>When multiple definitions share the same <code>(workflowName, startOnEventName, idProperty)</code> triple but differ by <code>version</code>, new starts route as follows:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -512,10 +506,10 @@ differ by <code>version</code>, new starts route as follows:</p>
 <p><strong>No prior instance for the derived workflow id:</strong> start at the <strong>highest</strong> registered version.</p>
 </li>
 <li>
-<p><strong>Existing instance for the derived workflow id, at any version:</strong> rejected as a duplicate; a
-warning is logged. Workflow ids MUST be unique, so the version never becomes part of the id. The
-existing instance keeps replaying on the definition matching its recorded version. For two
-parallel instances, use a different <code>idProperty</code> value.</p>
+<p><strong>Existing instance for the derived workflow id, at any version:</strong> rejected as a duplicate; a warning is logged.
+Workflow ids MUST be unique, so the version never becomes part of the id.
+The existing instance keeps replaying on the definition matching its recorded version.
+For two parallel instances, use a different <code>idProperty</code> value.</p>
 </li>
 </ul>
 </div>
@@ -523,44 +517,44 @@ parallel instances, use a different <code>idProperty</code> value.</p>
 <div class="sect2">
 <h3 id="_dispatching_the_body_of_an_existing_instance"><a class="anchor" href="#_dispatching_the_body_of_an_existing_instance"></a>Dispatching the body of an existing instance</h3>
 <div class="paragraph">
-<p><code>WorkflowConfigurationRegistry.resolveDefinitionForReplay</code> decides which workflow body to invoke on
-every run of an existing instance. The lookup runs in this order:</p>
+<p><code>WorkflowConfigurationRegistry.resolveDefinitionForReplay</code> decides which workflow body to invoke on every run of an existing instance.
+The lookup runs in this order:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong><code>exact-match-start-config</code></strong>: <code>state.workflowVersion()</code> equals the start-time
-configuration&#8217;s <code>workflowVersion()</code>. The start-time definition is used directly.</p>
+<p><strong><code>exact-match-start-config</code></strong>: <code>state.workflowVersion()</code> equals the start-time configuration&#8217;s <code>workflowVersion()</code>.
+The start-time definition is used directly.</p>
 </li>
 <li>
 <p><strong><code>exact-match-sibling</code></strong>: the registry has a sibling definition with the same workflow name
-<strong>and</strong> the same version as recorded state. The sibling&#8217;s definition is used.</p>
+<strong>and</strong> the same version as recorded state.
+The sibling&#8217;s definition is used.</p>
 </li>
 <li>
 <p><strong><code>closest-sibling</code></strong>: no exact-version sibling exists (typical after a mid-flight
-<code>ctx.migrateVersion(&#8230;&#8203;)</code> bump to a value that was not statically registered). The runtime picks the
-registered definition whose <code>workflowVersion()</code> is the <strong>highest version less than or equal to</strong>
+<code>context.migrateVersion(&#8230;&#8203;)</code> bump to a value that was not statically registered).
+The runtime picks the registered definition whose <code>workflowVersion()</code> is the <strong>highest version less than or equal to</strong>
 recorded state, and dispatches to it.</p>
 </li>
 <li>
-<p><strong><code>closest-higher-sibling</code></strong>: no registered version is <code>&#8656;</code> recorded state. The runtime picks
-the registered definition whose <code>workflowVersion()</code> is the <strong>lowest version strictly greater
-than</strong> recorded state. Covers the "annotation bumped past the in-flight version" case: a workflow
-started with <code>@Workflow(workflowVersion = "0.0.1")</code> keeps replaying after the developer bumps
-the annotation to <code>"0.0.2"</code> and the older definition is no longer registered.</p>
+<p><strong><code>closest-higher-sibling</code></strong>: no registered version is <code>&#8656;</code> recorded state.
+The runtime picks the registered definition whose <code>workflowVersion()</code> is the <strong>lowest version strictly greater than</strong> recorded state.
+Covers the "annotation bumped past the in-flight version" case: a workflow started with <code>@Workflow(workflowVersion = "0.0.1")</code> keeps replaying after the developer bumps the annotation to <code>"0.0.2"</code> and the older definition is no longer registered.</p>
 </li>
 </ol>
 </div>
 <div class="paragraph">
 <p>For example, with <code>[v1.0.0, v2.0.0]</code> registered and an instance whose state is <code>"1.0.1"</code> (after a
-<code>ctx.migrateVersion("foo", "1.0.1")</code> bump inside the v1 body), step 3 picks <code>v1.0.0</code>. It <strong>never</strong>
-jumps across the major boundary to <code>v2.0.0</code>. Symmetric for a v2 instance bumped to <code>"2.0.1"</code>: it
-stays on <code>v2.0.0</code>. With <code>[v0.0.2]</code> registered and state <code>"0.0.1"</code>, step 4 picks <code>v0.0.2</code>.</p>
+<code>context.migrateVersion("foo", "1.0.1")</code> bump inside the v1 body), step 3 picks <code>v1.0.0</code>.
+It <strong>never</strong>
+jumps across the major boundary to <code>v2.0.0</code>.
+Symmetric for a v2 instance bumped to <code>"2.0.1"</code>: it stays on <code>v2.0.0</code>.
+With <code>[v0.0.2]</code> registered and state <code>"0.0.1"</code>, step 4 picks <code>v0.0.2</code>.</p>
 </div>
 <div class="paragraph">
-<p>When no definition is registered for this workflow name at all (<code>no-match-fallback</code>), routing
-falls back to the start-time definition and logs at WARN. The drift safety net then pauses the
-workflow if step names diverge in incompatible ways.</p>
+<p>When no definition is registered for this workflow name at all (<code>no-match-fallback</code>), routing falls back to the start-time definition and logs at WARN.
+The drift safety net then pauses the workflow if step names diverge in incompatible ways.</p>
 </div>
 <div class="paragraph">
 <p>Every routing decision is logged at INFO with the full set of registered definitions:</p>
@@ -593,12 +587,11 @@ workflow if step names diverge in incompatible ways.</p>
 <p><strong>registered</strong>: all workflow definitions currently registered for this workflow name.</p>
 </li>
 <li>
-<p><strong>start</strong>: the engine&#8217;s default pick before routing thinks about it (typically the highest
-registered version for this workflow name).</p>
+<p><strong>start</strong>: the engine&#8217;s default pick before routing thinks about it (typically the highest registered version for this workflow name).</p>
 </li>
 <li>
-<p><strong>target</strong>: what routing actually chose after looking at <code>state</code>. This is the body the
-workflow will run.</p>
+<p><strong>target</strong>: what routing actually chose after looking at <code>state</code>.
+This is the body the workflow will run.</p>
 </li>
 <li>
 <p><strong>tier</strong>: the routing rule that fired, matching the decision tag in INFO/WARN logs.</p>
@@ -690,13 +683,13 @@ workflow will run.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule.defaults("OrderWorkflow", SimpleWorkflowContext.class)
-              .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
-              .definition(d -&gt; d.declarative(c -&gt; orderWorkflow::execute)
-                                .workflowName("OrderWorkflow")
-                                .on(EventConditions.fromType(OrderPlacedEvent.class))
-                                .customized((c, w) -&gt; w.workflowVersion("0.0.2")
-                                                       .workflowIdProvider(...)));</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule.defaults("OrderWorkflow", SimpleWorkflowContext.class).definition(
+        d -&gt; d.declarative(c -&gt; orderWorkflow::execute)
+              .workflowName("OrderWorkflow")
+              .on(EventConditions.fromType(OrderPlacedEvent.class))
+              .customized((c, w) -&gt; w.workflowVersion("0.0.2")
+                                     .workflowIdProvider(new PayloadPropertyWorkflowIdProvider("orderId")))
+);</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -707,14 +700,12 @@ workflow will run.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_the_ctx_migrateversionchangeid_newversion_primitive"><a class="anchor" href="#_the_ctx_migrateversionchangeid_newversion_primitive"></a>The <code>ctx.migrateVersion(changeId, newVersion)</code> primitive</h2>
+<h2 id="_the_context_migrateversionchangeid_newversion_primitive"><a class="anchor" href="#_the_context_migrateversionchangeid_newversion_primitive"></a>The <code>context.migrateVersion(changeId, newVersion)</code> primitive</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Use this for additive changes within a single definition that don&#8217;t warrant a whole-body copy-paste.
-The <code>ctx.migrateVersion(changeId, newVersion)</code> primitive lets developers explicitly fork the workflow body
-when behavior diverges. New workflows record a version marker into the event store and adopt the new
-branch; workflows that have already executed past the call&#8217;s position under old code stay on the
-legacy branch.</p>
+The <code>context.migrateVersion(changeId, newVersion)</code> primitive lets developers explicitly fork the workflow body when behavior diverges.
+New workflows record a version marker into the event store and adopt the new branch; workflows that have already executed past the call&#8217;s position under old code stay on the legacy branch.</p>
 </div>
 </div>
 </div>
@@ -722,68 +713,80 @@ legacy branch.</p>
 <h2 id="_why_versioning"><a class="anchor" href="#_why_versioning"></a>Why versioning?</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Without an explicit fork mechanism, three classes of code change can silently corrupt in-flight
-workflows:</p>
+<p>Without an explicit fork mechanism, three classes of code change can silently corrupt in-flight workflows:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Renamed step</strong>—replay can no longer match the new name against the old event and the step
-re-executes, producing duplicate side effects.</p>
+<p><strong>Renamed step</strong>: replay can no longer match the new name against the old event and the step re-executes, producing duplicate side effects.</p>
 </li>
 <li>
-<p><strong>Changed step semantics without renaming</strong>—replay returns the old cached result to new code that
-expects different output.</p>
+<p><strong>Changed step semantics without renaming</strong>: replay returns the old cached result to new code that expects different output.</p>
 </li>
 <li>
-<p><strong>Branching change in workflow logic</strong>—events replay correctly but the workflow control flow
-diverges between old and new executions.</p>
+<p><strong>Branching change in workflow logic</strong>: events replay correctly but the workflow control flow diverges between old and new executions.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p><code>ctx.migrateVersion(changeId, newVersion)</code> addresses the second and third classes. The first remains a
-forbidden migration; see <a href="#forbidden-migrations">Forbidden migrations</a>.</p>
+<p><code>context.migrateVersion(changeId, newVersion)</code> addresses the second and third classes.
+The first remains a forbidden migration; see <a href="#forbidden-migrations">Forbidden migrations</a>.</p>
 </div>
 <div class="sect2">
-<h3 id="_the_ctx_migrateversionchangeid_newversion_contract"><a class="anchor" href="#_the_ctx_migrateversionchangeid_newversion_contract"></a>The <code>ctx.migrateVersion(changeId, newVersion)</code> contract</h3>
+<h3 id="_the_context_migrateversionchangeid_newversion_contract"><a class="anchor" href="#_the_context_migrateversionchangeid_newversion_contract"></a>The <code>context.migrateVersion(changeId, newVersion)</code> contract</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEventClass = OrderPlacedEvent.class, workflowVersion = "0.0.1")
-public void execute(SimpleWorkflowContext ctx) {
-    ctx.awaitExecute("reserveStock", Boolean.class, InventoryService::reserveStock);
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(
+        idProperty = "orderId",
+        startOnEventClass = OrderPlacedEvent.class,
+        workflowVersion = "0.0.1"
+)
+public void execute(SimpleWorkflowContext context) {
+    context.awaitExecute(
+            "reserveStock",
+            Boolean.class,
+            InventoryService::reserveStock
+    );
 
-    if (ctx.migrateVersion("payment-redesign", "0.0.2")) {
-        ctx.awaitExecute("processPayment", Boolean.class, PaymentService::processV2);
+    if (context.migrateVersion("payment-redesign", "0.0.2")) {
+        context.awaitExecute(
+                "processPayment",
+                Boolean.class,
+                PaymentService::processV2
+        );
     } else {
-        ctx.awaitExecute("chargePayment", Boolean.class, PaymentService::chargeV1);
+        context.awaitExecute(
+                "chargePayment",
+                Boolean.class,
+                PaymentService::chargeV1
+        );
     }
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p><strong>Returns a boolean.</strong> <code>true</code> iff the workflow has committed to (or is past) <code>newVersion</code> for this
-<code>changeId</code>; <code>false</code> if it stays on the legacy branch. Internally, <code>WorkflowState.versionFor(changeId)</code>
+<code>changeId</code>; <code>false</code> if it stays on the legacy branch.
+Internally, <code>WorkflowState.versionFor(changeId)</code>
 returns the version recorded by the migration step when one exists, otherwise <code>state.workflowDefinitionId().version()</code>
-(driven by the started event&#8217;s <code>MessageType.version()</code>). The call returns <code>true</code> when that version is greater than or equal to <code>newVersion</code>.</p>
+(driven by the started event&#8217;s <code>MessageType.version()</code>).
+The call returns <code>true</code> when that version is greater than or equal to <code>newVersion</code>.</p>
 </div>
 <div class="paragraph">
-<p><strong>Versions are semver strings,</strong> compared by <code>Version</code>. Downgrades
-(requested <code>&lt;</code> current, no recorded step) raise <code>IllegalArgumentException</code>. Same-version requests
-return <code>true</code> without publishing.</p>
+<p><strong>Versions are semver strings,</strong> compared by <code>Version</code>.
+Downgrades (requested <code>&lt;</code> current, no recorded step) raise <code>IllegalArgumentException</code>.
+Same-version requests return <code>true</code> without publishing.</p>
 </div>
 <div class="paragraph">
-<p><strong>No event is emitted at workflow start.</strong> A migration step is recorded only when a workflow runs the
-call <strong>live</strong>, the requested version is strictly greater than the current, no step for the same
-<code>changeId</code> already exists, and the downstream-steps guard does not fire. Event history stays
-uncluttered: only workflows that actively migrated to a higher version carry migration steps.</p>
+<p><strong>No event is emitted at workflow start.</strong> A migration step is recorded only when a workflow runs the call <strong>live</strong>, the requested version is strictly greater than the current, no step for the same
+<code>changeId</code> already exists, and the downstream-steps guard does not fire.
+Event history stays uncluttered: only workflows that actively migrated to a higher version carry migration steps.</p>
 </div>
 <div class="paragraph">
-<p><strong>The wire-level event name derives from the <code>changeId</code>.</strong> For the example above the marker event is
-named <code>Payment-redesign.Versioned</code> in the event store, with <code>MessageType.version() = "0.0.2"</code> on the
-envelope itself. It is a COMPLETED step event (<code>stepName</code> is the <code>changeId</code>) with the extra metadata
-<code>versionChangeId: "payment-redesign"</code> and <code>version: "0.0.2"</code>. The <code>changeId</code> is the business-meaningful description of what changed; it
-surfaces directly in the event log.</p>
+<p><strong>The wire-level event name derives from the <code>changeId</code>.</strong> For the example above the marker event is named <code>Payment-redesign.Versioned</code> in the event store, with <code>MessageType.version() = "0.0.2"</code> on the envelope itself.
+It is a COMPLETED step event (<code>stepName</code> is the <code>changeId</code>) with the extra metadata
+<code>versionChangeId: "payment-redesign"</code> and <code>version: "0.0.2"</code>.
+The <code>changeId</code> is the business-meaningful description of what changed; it surfaces directly in the event log.</p>
 </div>
 </div>
 </div>
@@ -792,23 +795,16 @@ surfaces directly in the event log.</p>
 <h2 id="downstream-steps-guard"><a class="anchor" href="#downstream-steps-guard"></a>The downstream-steps guard</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A naive <code>migrateVersion</code> implementation would break workflows: if a workflow has already executed steps
-A, B, C under old code and a developer later inserts <code>ctx.migrateVersion("x", "0.0.2")</code> between A and B, the
-naive implementation would reach the version call with no marker in history and fork onto the v=2
-branch—even though B and C already ran.</p>
+<p>A naive <code>migrateVersion</code> implementation would break workflows: if a workflow has already executed steps A, B, C under old code and a developer later inserts <code>context.migrateVersion("x", "0.0.2")</code> between A and B, the naive implementation would reach the version call with no marker in history and fork onto the v=2 branch—even though B and C already ran.</p>
 </div>
 <div class="paragraph">
-<p>The actual implementation has a <strong>correctness invariant</strong>: <code>migrateVersion</code> returns <code>false</code> for the legacy branch (and emits nothing)
-if state contains any terminal step that the current invocation has not yet referenced. Those
-untouched-but-present steps prove old code already executed past this code point, so we must stay on
-the legacy branch.</p>
+<p>The actual implementation has a <strong>correctness invariant</strong>: <code>migrateVersion</code> returns <code>false</code> for the legacy branch (and emits nothing) if state contains any terminal step that the current invocation has not yet referenced.
+Those untouched-but-present steps prove old code already executed past this code point, so we must stay on the legacy branch.</p>
 </div>
 <div class="paragraph">
-<p>The mechanism: the workflow body runs from the top on every invocation (live or replay). The runtime
-tracks a per-invocation set of "step names the body has referenced so far." When <code>migrateVersion</code> runs,
-it compares this set against <code>state.workflowStepNames()</code>—anything in state but not yet referenced
-is "downstream" of the current code position. Steps below this point in the new code that are
-already in history can only have come from old code that ran past this point.</p>
+<p>The mechanism: the workflow body runs from the top on every invocation (live or replay).
+The runtime tracks a per-invocation set of "step names the body has referenced so far." When <code>migrateVersion</code> runs, it compares this set against <code>state.workflowStepNames()</code>—anything in state but not yet referenced is "downstream" of the current code position.
+Steps below this point in the new code that are already in history can only have come from old code that ran past this point.</p>
 </div>
 <div class="sect2">
 <h3 id="_worked_example_a_old_workflow_migrateversion_inserted_later"><a class="anchor" href="#_worked_example_a_old_workflow_migrateversion_inserted_later"></a>Worked example A: Old workflow, <code>migrateVersion</code> inserted later</h3>
@@ -819,7 +815,7 @@ New code:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">step A;                                       // line 1
-if (ctx.migrateVersion("x", "0.0.2")) {       // line 2—newly added
+if (context.migrateVersion("x", "0.0.2")) {       // line 2—newly added
     step D;                                   // line 3
 } else {
     step B; step C;                           // line 4
@@ -1013,17 +1009,15 @@ Same new code as A.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Call <code>ctx.migrateVersion(changeId, newVersion)</code> <strong>at most once per <code>changeId</code></strong> per workflow body. Multiple calls
-within one invocation could see different <code>referencedStepNames</code> snapshots and return inconsistent
-values.</p>
+<p>Call <code>context.migrateVersion(changeId, newVersion)</code> <strong>at most once per <code>changeId</code></strong> per workflow body.
+Multiple calls within one invocation could see different <code>referencedStepNames</code> snapshots and return inconsistent values.</p>
 </li>
 <li>
-<p>Never call <code>migrateVersion</code> inside a loop or combinator branch: the call must be reached
-deterministically and exactly once per body invocation.</p>
+<p>Never call <code>migrateVersion</code> inside a loop or combinator branch: the call must be reached deterministically and exactly once per body invocation.</p>
 </li>
 <li>
-<p><code>changeId</code> strings are durable identifiers. Once shipped, they should not be renamed; the event
-log keys versions by <code>changeId</code>, so renaming detaches new code from existing markers.</p>
+<p><code>changeId</code> strings are durable identifiers.
+Once shipped, they should not be renamed; the event log keys versions by <code>changeId</code>, so renaming detaches new code from existing markers.</p>
 </li>
 </ul>
 </div>
@@ -1035,23 +1029,26 @@ log keys versions by <code>changeId</code>, so renaming detaches new code from e
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Phase 1: introduce the change. Both branches live.
-if (ctx.migrateVersion("payment-redesign", "0.0.2")) { newer(); } else { old(); }
+if (context.migrateVersion("payment-redesign", "0.0.2")) {
+    newer();
+} else {
+    old();
+}
 
 // Phase 2: once all v1 workflows have drained, delete the old branch.
 //          The migrate call stays. New workflows still record the step.
-ctx.migrateVersion("payment-redesign", "0.0.2");
+context.migrateVersion("payment-redesign", "0.0.2");
 newer();
 
 // Phase 3: once no further versioning is anticipated, delete the call.
-//          Orphan migration steps in old event logs are inert—Axon's replay tolerates them.
+//          Orphan migration steps in old event logs are inert, Axon's replay tolerates them.
 newer();</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p><strong>Phase 3 is safe.</strong> The engine&#8217;s replay is <strong>tolerant</strong> of orphan events: events whose metadata refers
-to constructs the current code never reads are silently absorbed by
-<code>EventSourcedWorkflowState.evolve(&#8230;&#8203;)</code>. This is a deliberate design: history is the source of
-truth, and event metadata that no longer matches a code construct is inert, not a corruption.</p>
+<p><strong>Phase 3 is safe.</strong> The engine&#8217;s replay is <strong>tolerant</strong> of orphan events: events whose metadata refers to constructs the current code never reads are silently absorbed by
+<code>EventSourcedWorkflowState.evolve(&#8230;&#8203;)</code>.
+This is a deliberate design: history is the source of truth, and event metadata that no longer matches a code construct is inert, not a corruption.</p>
 </div>
 </div>
 </div>
@@ -1073,7 +1070,7 @@ truth, and event metadata that no longer matches a code construct is inert, not 
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Branch on <code>ctx.migrateVersion</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Branch on <code>context.migrateVersion</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">✅</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The intended primary use case</p></td>
 </tr>
@@ -1121,12 +1118,12 @@ truth, and event metadata that no longer matches a code construct is inert, not 
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Change the payload shape returned by a step under the same name</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Replay returns the old payload shape to new code that expects the new shape.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Same—new workflow type.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same, new workflow type.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Remove a step that had side effects (for example a payment charge)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">History carries the side-effecting event but new code never reads it; data drifts between state and code.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Same—new workflow type.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same, new workflow type.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1136,14 +1133,11 @@ truth, and event metadata that no longer matches a code construct is inert, not 
 <h2 id="_combinator_restructuring"><a class="anchor" href="#_combinator_restructuring"></a>Combinator restructuring</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><code>ctx.migrateVersion</code> correctly handles changes that <strong>add a branch</strong> (sequential → version-gated sequential
-or sequential → version-gated parallel) because name-based step lookup re-finds terminal steps
-regardless of combinator wrapping.</p>
+<p><code>context.migrateVersion</code> correctly handles changes that <strong>add a branch</strong> (sequential → version-gated sequential or sequential → version-gated parallel) because name-based step lookup re-finds terminal steps regardless of combinator wrapping.</p>
 </div>
 <div class="paragraph">
 <p>It does <strong>not</strong> make safe the renames, payload-shape changes, or side-effect removals listed above.
-The boundary is: the combinator structure may change <strong>around</strong> steps, but the step names and their
-result shapes must stay stable.</p>
+The boundary is: the combinator structure may change <strong>around</strong> steps, but the step names and their result shapes must stay stable.</p>
 </div>
 </div>
 </div>
@@ -1168,8 +1162,7 @@ fun Kontext.execute() {
 </div>
 </div>
 <div class="paragraph">
-<p>All rules (current-version default, single-call-per-changeId, downstream-steps guard, downgrade
-rejection) apply identically to the Kotlin DSL.</p>
+<p>All rules (current-version default, single-call-per-changeId, downstream-steps guard, downgrade rejection) apply identically to the Kotlin DSL.</p>
 </div>
 </div>
 </div>
@@ -1181,9 +1174,9 @@ rejection) apply identically to the Kotlin DSL.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">boolean payV2 = ctx.migrateVersion("payment-redesign", "0.0.2");
-boolean shipV2 = ctx.migrateVersion("shipping-redesign", "0.0.3");
-// Each changeId is its own slot in state.versions—neither call affects the other.</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">boolean payV2 = context.migrateVersion("payment-redesign", "0.0.2");
+boolean shipV2 = context.migrateVersion("shipping-redesign", "0.0.3");
+// Each changeId is its own slot in state.versions, neither call affects the other.</code></pre>
 </div>
 </div>
 </div>
@@ -1192,25 +1185,22 @@ boolean shipV2 = ctx.migrateVersion("shipping-redesign", "0.0.3");
 <h2 id="drift-detection"><a class="anchor" href="#drift-detection"></a>Drift detection (safety net for non-versioned changes)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>ctx.migrateVersion(changeId, newVersion)</code> primitive protects workflows that <strong>opt in</strong> to versioning.
-For workflows where the developer changed the code without using <code>ctx.migrateVersion()</code>, the engine has a
-<strong>replay-drift guard</strong> that fires from every event-emitting primitive and pauses the workflow
-non-terminally instead of silently corrupting it.</p>
+<p>The <code>context.migrateVersion(changeId, newVersion)</code> primitive protects workflows that <strong>opt in</strong> to versioning.
+For workflows where the developer changed the code without using <code>context.migrateVersion()</code>, the engine has a
+<strong>replay-drift guard</strong> that fires from every event-emitting primitive and pauses the workflow non-terminally instead of silently corrupting it.</p>
 </div>
 <div class="sect2">
 <h3 id="_what_the_guard_detects"><a class="anchor" href="#_what_the_guard_detects"></a>What the guard detects</h3>
 <div class="paragraph">
-<p>The same signal the version primitive uses: at the moment an event-emitting primitive is about to
-publish its first event for a new step, if state contains any terminal step that the current
-invocation has not yet referenced, the workflow has already executed past this code point under
-old code. Publishing a new event here would diverge from history.</p>
+<p>The same signal the version primitive uses: at the moment an event-emitting primitive is about to publish its first event for a new step, if state contains any terminal step that the current invocation has not yet referenced, the workflow has already executed past this code point under old code.
+Publishing a new event here would diverge from history.</p>
 </div>
 <div class="paragraph">
-<p>Example: workflow ran <code>step1; step2</code> (both terminal in history). Developer inserts a new step
-<code>step1_1</code> between them—without versioning—and ships. On replay the body references
-<code>{step1, step1_1}</code> but state holds <code>{step1, step2}</code>. step2&#8217;s side effects already landed; the new
-code now takes a different path and pretends step2 doesn&#8217;t exist. The guard catches this exact
-moment.</p>
+<p>Example: workflow ran <code>step1; step2</code> (both terminal in history).
+Developer inserts a new step <code>step1_1</code> between them, without versioning, and ships.
+On replay the body references
+<code>{step1, step1_1}</code> but state holds <code>{step1, step2}</code>. step2&#8217;s side effects already landed; the new code now takes a different path and pretends step2 doesn&#8217;t exist.
+The guard catches this exact moment.</p>
 </div>
 </div>
 <div class="sect2">
@@ -1221,37 +1211,32 @@ moment.</p>
 <div class="ulist">
 <ul>
 <li>
-<p><code>ctx.awaitExecute(&#8230;&#8203;)</code> / <code>ctx.execute(&#8230;&#8203;)</code>—before publishing <code>STARTED</code></p>
+<p><code>context.awaitExecute(&#8230;&#8203;)</code> / <code>context.execute(&#8230;&#8203;)</code>: before publishing <code>STARTED</code></p>
 </li>
 <li>
-<p><code>ctx.awaitWaitFor(&#8230;&#8203;)</code> / <code>ctx.waitFor(&#8230;&#8203;)</code>—before publishing <code>STARTED</code></p>
+<p><code>context.awaitWaitFor(&#8230;&#8203;)</code> / <code>context.waitFor(&#8230;&#8203;)</code>: before publishing <code>STARTED</code></p>
 </li>
 <li>
-<p><code>ctx.publish(&#8230;&#8203;)</code> / <code>ctx.awaitPublish(&#8230;&#8203;)</code>: before publishing the step&#8217;s <code>COMPLETED</code> event</p>
+<p><code>context.publish(&#8230;&#8203;)</code> / <code>context.awaitPublish(&#8230;&#8203;)</code>: before publishing the step&#8217;s <code>COMPLETED</code> event</p>
 </li>
 <li>
-<p><code>ctx.awaitModifyPayload(&#8230;&#8203;)</code> / <code>ctx.modifyPayload(&#8230;&#8203;)</code>—before publishing <code>COMPLETED</code></p>
+<p><code>context.awaitModifyPayload(&#8230;&#8203;)</code> / <code>context.modifyPayload(&#8230;&#8203;)</code>: before publishing <code>COMPLETED</code></p>
 </li>
 <li>
-<p><code>ctx.fail(&#8230;&#8203;)</code> / <code>ctx.cancel(&#8230;&#8203;)</code> / <code>ctx.cancelStep(&#8230;&#8203;)</code>—before publishing the terminal
-workflow / step events. <strong>This is the case most easily missed</strong>: a developer inserting an early
-termination has every reason to assume it "just stops the workflow", but for an in-flight
-workflow that already completed steps under old code, the new terminate corrupts the historical
-trajectory.</p>
+<p><code>context.fail(&#8230;&#8203;)</code> / <code>context.cancel(&#8230;&#8203;)</code> / <code>context.cancelStep(&#8230;&#8203;)</code>: before publishing the terminal workflow / step events. <strong>This is the case most easily missed</strong>: a developer inserting an early termination has every reason to assume it "just stops the workflow", but for an in-flight workflow that already completed steps under old code, the new terminate corrupts the historical trajectory.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p><code>ctx.migrateVersion(&#8230;&#8203;)</code> itself is the deliberate exception—it already runs the same check but its
-response is to return the workflow&#8217;s current version unchanged and stay on the old branch, rather
-than throw. That&#8217;s the entire purpose of the primitive.</p>
+<p><code>context.migrateVersion(&#8230;&#8203;)</code> itself is the deliberate exception, it already runs the same check but its response is to return the workflow&#8217;s current version unchanged and stay on the old branch, rather than throw.
+That&#8217;s the entire purpose of the primitive.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_pause_dont_fail"><a class="anchor" href="#_pause_dont_fail"></a>Pause, don&#8217;t fail</h3>
 <div class="paragraph">
-<p>When the guard fires, it throws <code>WorkflowReplayDriftException</code>. The exception is caught by the
-workflow execution loop with a dedicated handler that:</p>
+<p>When the guard fires, it throws <code>WorkflowReplayDriftException</code>.
+The exception is caught by the workflow execution loop with a dedicated handler that:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -1267,8 +1252,9 @@ workflow execution loop with a dedicated handler that:</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>The workflow is effectively <strong>paused</strong>, not failed. Each subsequent replay hits the same drift,
-logs the same warning, stays paused. State is preserved verbatim across every paused replay.</p>
+<p>The workflow is effectively <strong>paused</strong>, not failed.
+Each subsequent replay hits the same drift, logs the same warning, stays paused.
+State is preserved verbatim across every paused replay.</p>
 </div>
 </div>
 <div class="sect2">
@@ -1279,14 +1265,11 @@ logs the same warning, stays paused. State is preserved verbatim across every pa
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Revert the offending code change.</strong> The next replay will run cleanly and the workflow continues
-from where it was.</p>
+<p><strong>Revert the offending code change.</strong> The next replay will run cleanly and the workflow continues from where it was.</p>
 </li>
 <li>
-<p><strong>Wrap the change in <code>ctx.migrateVersion(changeId, newVersion)</code>.</strong> The next replay will hit the version
-primitive&#8217;s downstream-steps guard, which returns the workflow&#8217;s current version unchanged and
-routes the workflow back onto the old branch—same recovery, just expressed in code rather than
-reverted.</p>
+<p><strong>Wrap the change in <code>context.migrateVersion(changeId, newVersion)</code>.</strong> The next replay will hit the version primitive&#8217;s downstream-steps guard, which returns the workflow&#8217;s current version unchanged and routes the workflow back onto the old branch.
+Same recovery, just expressed in code rather than reverted.</p>
 </li>
 </ol>
 </div>
@@ -1301,8 +1284,8 @@ reverted.</p>
 <pre class="highlightjs highlight"><code class="language-none hljs">WARN  Workflow order-abc-123 paused due to replay drift: Workflow order-abc-123 cannot proceed at
       "step1_1" because history contains terminal steps the current code does not reference:
       [step2]. This means old code ran past this point with steps the new code skips. Either revert
-      the change or wrap the new code in ctx.migrateVersion("&lt;changeId&gt;", N) so old workflows stay
-      on the legacy branch. Revert the code change or wrap it in ctx.migrateVersion() and replay.</code></pre>
+      the change or wrap the new code in context.migrateVersion("&lt;changeId&gt;", N) so old workflows stay
+      on the legacy branch. Revert the code change or wrap it in contextcontext.migrateVersion() and replay.</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1313,24 +1296,23 @@ reverted.</p>
 <div class="sect2">
 <h3 id="_limitations"><a class="anchor" href="#_limitations"></a>Limitations</h3>
 <div class="paragraph">
-<p>The guard is deterministic for <strong>deterministic workflow code</strong>—the same payload + same history
-will always produce the same body path on every replay. If a workflow body is non-deterministic
-(for example branches on <code>Math.random()</code> or external mutable state), the guard can produce different
-results across replays for the same workflow—but that&#8217;s already a workflow contract violation
-the engine cannot fix.</p>
+<p>The guard is deterministic for <strong>deterministic workflow code</strong>.
+The same payload + same history will always produce the same body path on every replay.
+If a workflow body is non-deterministic (for example branches on <code>Math.random()</code> or external mutable state), the guard can produce different results across replays for the same workflow—but that&#8217;s already a workflow contract violation the engine cannot fix.</p>
 </div>
 <div class="paragraph">
-<p>The guard cannot detect every form of code drift. Specifically:</p>
+<p>The guard cannot detect every form of code drift.
+Specifically:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Step renames</strong> (<code>"ship"</code> &#8594; <code>"shipment"</code>): the new code awaits a step name that never appears
-in history. The wait will time out, not produce drift.</p>
+<p><strong>Step renames</strong> (<code>"ship"</code> &#8594; <code>"shipment"</code>): the new code awaits a step name that never appears in history.
+The wait will time out, not produce drift.</p>
 </li>
 <li>
-<p><strong>Payload-shape changes for the same step name</strong>: history returns the cached step result; new
-code reads the old shape. The guard cannot see semantic mismatches.</p>
+<p><strong>Payload-shape changes for the same step name</strong>: history returns the cached step result; new code reads the old shape.
+The guard cannot see semantic mismatches.</p>
 </li>
 </ul>
 </div>

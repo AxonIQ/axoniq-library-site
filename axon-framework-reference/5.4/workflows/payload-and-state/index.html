@@ -435,7 +435,8 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Every workflow instance carries a <em>payload</em>—a <code>Map&lt;String, Object&gt;</code> that persists durably across all steps.
+<p>Every workflow instance carries a <em>payload</em>.
+The payload is a <code>Map&lt;String, Object&gt;</code> that persists durably across all steps.
 The triggering event&#8217;s fields become the initial payload, and you can read, modify, and pass it to steps throughout the workflow.</p>
 </div>
 </div>
@@ -448,7 +449,7 @@ The triggering event&#8217;s fields become the initial payload, and you can read
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var payload = ctx.workflowPayload(); <i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var payload = context.workflowPayload(); <i class="conum" data-value="1"></i><b>(1)</b>
 var orderId = payload.get("orderId");
 var email = payload.get("email");</code></pre>
 </div>
@@ -472,13 +473,15 @@ This always reflects the latest state, including any modifications made by previ
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = ctx.awaitEvent("awaitPayment",
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = context.awaitEvent(
+        "awaitPayment",
         PaymentConfirmed.class,
         associate(payloadProperty("orderId"),
-                  equalsTo(ctx.workflowPayload().get("orderId"))),
-        step -&gt; step.timeout(Duration.ofMinutes(15)));
+                  equalsTo(context.workflowPayload().get("orderId"))),
+        step -&gt; step.timeout(Duration.ofMinutes(15))
+);
 
-ctx.setPayload("storePaymentDetails", confirmation); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+context.setPayload("storePaymentDetails", confirmation); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -504,10 +507,12 @@ The engine records it as an event, so the payload state survives crashes and rep
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitExecute("shipOrder",
-                 ctx.workflowPayload(), <i class="conum" data-value="1"></i><b>(1)</b>
-                 ShippingService::shipOrder,
-                 step -&gt; step.timeout(Duration.ofMinutes(5)));</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">context.awaitExecute(
+        "shipOrder",
+        context.workflowPayload(), <i class="conum" data-value="1"></i><b>(1)</b>
+        ShippingService::shipOrder,
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);</code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -528,9 +533,7 @@ The engine records it as an event, so the payload state survives crashes and rep
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static io.axoniq.framework.workflow.dsl.api.Payload.payload;
-
-var email = payload(ctx.workflowPayload()).get("email"); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var email = payload(context.workflowPayload()).get("email"); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">

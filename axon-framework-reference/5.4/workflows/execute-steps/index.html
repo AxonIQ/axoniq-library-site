@@ -452,7 +452,8 @@ The engine records each execution as durable events, giving you crash recovery a
 <div class="ulist">
 <ul>
 <li>
-<p><code>BaseWorkflowContext</code> is the canonical primitive DSL layer. It implements the definition-based <code>WorkflowContext</code> operations and adds named <code>execute(&#8230;&#8203;)</code> and <code>awaitExecute(&#8230;&#8203;)</code> overloads; its blocking methods return a payload map, and customization happens through <code>UnaryOperator&lt;ExecuteStepDefinition&gt;</code>.</p>
+<p><code>BaseWorkflowContext</code> is the canonical primitive DSL layer.
+It implements the definition-based <code>WorkflowContext</code> operations and adds named <code>execute(&#8230;&#8203;)</code> and <code>awaitExecute(&#8230;&#8203;)</code> overloads; its blocking methods return a payload map, and customization happens through <code>UnaryOperator&lt;ExecuteStepDefinition&gt;</code>.</p>
 </li>
 <li>
 <p><code>SimpleWorkflowContext</code> adds convenience helpers on top, such as execute overloads without extra input payload, typed <code>awaitExecute(&#8230;&#8203;)</code> for single-value actions, typed <code>awaitEvent(&#8230;&#8203;)</code>, <code>sleep(&#8230;&#8203;)</code>, and <code>setPayload(&#8230;&#8203;)</code>.</p>
@@ -469,10 +470,10 @@ The engine records each execution as durable events, giving you crash recovery a
 <div class="ulist">
 <ul>
 <li>
-<p><strong><code>awaitExecute</code></strong>—blocks until the action finishes and returns either the resulting payload map or, via the convenience overload, a single typed value</p>
+<p><strong><code>awaitExecute</code></strong>: blocks until the action finishes and returns either the resulting payload map or, via the convenience overload, a single typed value</p>
 </li>
 <li>
-<p><strong><code>execute</code></strong>—starts the action without waiting and returns a <code>WorkflowStepResult</code></p>
+<p><strong><code>execute</code></strong>: starts the action without waiting and returns a <code>WorkflowStepResult</code></p>
 </li>
 </ul>
 </div>
@@ -492,8 +493,11 @@ The engine records a STARTED and COMPLETED event for this step automatically.</p
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reserved = ctx.awaitExecute("reserveStock", Boolean.class,
-                                 InventoryService::reserveStock);</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reserved = context.awaitExecute(
+        "reserveStock",
+        Boolean.class,
+        InventoryService::reserveStock
+);</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -505,13 +509,16 @@ For <code>reserveStock</code>, that key becomes <code></em>reserveStockResult</c
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reservation = ctx.awaitExecute("reserveStock",
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reservation = context.awaitExecute(
+        "reserveStock",
         Map.of(),
-        (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()));</code></pre>
+        (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock())
+);</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>That&#8217;s it—one line of business logic, and the engine gives you event sourcing, crash recovery, and an audit trail.</p>
+<p>That&#8217;s it.
+One line of business logic, and the engine gives you event sourcing, crash recovery, and an audit trail.</p>
 </div>
 </div>
 <div class="sect2">
@@ -521,14 +528,17 @@ For <code>reserveStock</code>, that key becomes <code></em>reserveStockResult</c
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var customerId = ctx.workflowPayload().get("customerId");
-var amount = ctx.workflowPayload().get("amount");
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var customerId = context.workflowPayload().get("customerId");
+var amount = context.workflowPayload().get("amount");
 
-var reservation = ctx.awaitExecute("reserveStock",
+var reservation = context.awaitExecute(
+        "reserveStock",
         payload("customerId", customerId, "amount", amount).getValues(),
-        (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock(input))); <i class="conum" data-value="1"></i><b>(1)</b>
+        (pc, input) -&gt; Map.of("reserved",
+                              InventoryService.reserveStock(input)) <i class="conum" data-value="1"></i><b>(1)</b>
+);
 if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
-    ctx.fail(new RuntimeException("Stock unavailable")); <i class="conum" data-value="2"></i><b>(2)</b>
+    context.fail(new RuntimeException("Stock unavailable")); <i class="conum" data-value="2"></i><b>(2)</b>
     return;
 }</code></pre>
 </div>
@@ -566,11 +576,13 @@ Standard Java control flow—<code>if</code>, loops, try/catch—all work exactl
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitExecute("initiatePayment",
-                 payload("customerId", customerId, "amount", amount).getValues(),
-                 PaymentService::initiatePayment,
-                 step -&gt; step.timeout(Duration.ofSeconds(30))
-                             .eventNameCustomizer(baseName("InitiatingPaymentForCustomer"))); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">context.awaitExecute(
+        "initiatePayment",
+        payload("customerId", customerId, "amount", amount).getValues(),
+        PaymentService::initiatePayment,
+        step -&gt; step.timeout(Duration.ofSeconds(30))
+                    .eventNameCustomizer(baseName("InitiatingPaymentForCustomer")) <i class="conum" data-value="1"></i><b>(1)</b>
+);</code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -663,9 +675,12 @@ Use this when you want to run multiple steps concurrently, or when you need to c
 </table>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var shipping = context.execute(
+        "shipOrder",
+        context.workflowPayload(),
         ShippingService::shipOrder,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));</code></pre>
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -728,7 +743,8 @@ See <a href="../waiting-for-events/" class="xref page">Waiting for Events</a>.</
 <p>If you want to pass step-local data with a named Kotlin argument, use <code>inputPayload = &#8230;&#8203;</code>.</p>
 </div>
 <div class="paragraph">
-<p>The typed Kotlin convenience uses the same synthetic payload key pattern <code>"__" + stepName + "Result"</code> internally. The low-level definition API is still available when you want to construct <code>ExecuteStepDefinition</code> explicitly, but most workflows can stay on the overloads with Kotlin default parameters.</p>
+<p>The typed Kotlin convenience uses the same synthetic payload key pattern <code>"__" + stepName + "Result"</code> internally.
+The low-level definition API is still available when you want to construct <code>ExecuteStepDefinition</code> explicitly, but most workflows can stay on the overloads with Kotlin default parameters.</p>
 </div>
 </div>
 </div>
@@ -736,7 +752,7 @@ See <a href="../waiting-for-events/" class="xref page">Waiting for Events</a>.</
 <h2 id="_whats_next"><a class="anchor" href="#_whats_next"></a>What&#8217;s next</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>For cross-cutting configuration that applies to all step types—timeouts, payload reducers, error handling, event naming, and execution semantics—see <a href="../understanding-steps/" class="xref page">Understanding Steps</a>.</p>
+<p>For cross-cutting configuration that applies to all step types, like timeouts, payload reducers, error handling, event naming, and execution semantics, see <a href="../understanding-steps/" class="xref page">Understanding Steps</a>.</p>
 </div>
 <div class="paragraph">
 <p>For waiting on external events, see <a href="../waiting-for-events/" class="xref page">Waiting for Events</a>.</p>

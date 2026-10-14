@@ -478,8 +478,8 @@ Its <code>publish(stepName, eventMessage, customizer)</code> overload returns a 
 <div id="_tabs_1_java--panel" class="tabpanel" aria-labelledby="_tabs_1_java">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">workflowContext.awaitPublish("notifyApproved",                      <i class="conum" data-value="1"></i><b>(1)</b>
-                 new OrderApproved(orderId, approvedBy));                    <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">workflowContext.awaitPublish("notifyApproved",                  <i class="conum" data-value="1"></i><b>(1)</b>
+                             new OrderApproved(orderId, approvedBy)); <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -558,8 +558,8 @@ Another workflow can start on it or wait for it with <a href="../waiting-for-eve
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Approval workflow
-workflowContext.awaitPublish("notifyApproved",                      <i class="conum" data-value="1"></i><b>(1)</b>
-                 new OrderApproved(orderId, approvedBy));                    <i class="conum" data-value="2"></i><b>(2)</b>
+workflowContext.awaitPublish("notifyApproved",                  <i class="conum" data-value="1"></i><b>(1)</b>
+                             new OrderApproved(orderId, approvedBy)); <i class="conum" data-value="2"></i><b>(2)</b>
 
 // Shipment workflow, started on OrderApproved
 @Workflow(idProperty = "orderId",
@@ -569,6 +569,18 @@ public void execute(SimpleWorkflowContext workflowContext) {
     workflowContext.awaitExecute("prepareShipment", Boolean.class, () -&gt; true);
 }</code></pre>
 </div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The approval workflow publishes under the step name <code>notifyApproved</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The published <code>OrderApproved</code> event starts the shipment workflow.</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>When the publisher also waits for a reply, register the wait first with the non-blocking <code>waitForEvent</code>, then publish, then block on the handle.

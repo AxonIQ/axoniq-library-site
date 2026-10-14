@@ -439,7 +439,7 @@
 You might want to ship the order and send a confirmation email at the same time, request shipping quotes from two carriers and take the fastest, or wait for multiple approvals before proceeding.</p>
 </div>
 <div class="paragraph">
-<p>The three combinators—<code>anyMatch</code>, <code>allMatch</code>, and <code>noneMatch</code>—let you compose non-blocking steps (<code>execute</code> and <code>waitForEvent</code>) into powerful orchestration patterns.</p>
+<p>The three combinators, <code>anyMatch</code>, <code>allMatch</code>, and <code>noneMatch</code>, let you compose non-blocking steps (<code>execute</code> and <code>waitForEvent</code>) into powerful orchestration patterns.</p>
 </div>
 </div>
 </div>
@@ -448,37 +448,50 @@ You might want to ship the order and send a confirmation email at the same time,
 <div class="sectionbody">
 <div class="paragraph">
 <p>So far we&#8217;ve used <code>awaitExecute</code> and <code>awaitEvent</code>, which block until the step completes.
-The non-blocking variants—<code>execute</code> and <code>waitForEvent</code>—start steps without waiting and return a <code>WorkflowStepResult</code>:</p>
+The non-blocking variants, <code>execute</code> and <code>waitForEvent</code>, start steps without waiting and return a <code>WorkflowStepResult</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var shipping = context.execute(
+        "shipOrder",
+        context.workflowPayload(),
         ShippingService::shipOrder,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);
 
-var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
+var notification = context.execute(
+        "notifyCustomer",
+        context.workflowPayload(),
         NotificationService::sendConfirmation,
-        step -&gt; step.timeout(Duration.ofSeconds(30)));</code></pre>
+        step -&gt; step.timeout(Duration.ofSeconds(30))
+);</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Both steps run concurrently. You can also mix <code>execute</code> with <code>waitForEvent</code>:</p>
+<p>Both steps run concurrently.
+You can also mix <code>execute</code> with <code>waitForEvent</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var approval = ctx.waitForEvent("awaitApproval", ManagerApproved.class,
-        associate(payloadProperty("orderId"), equalsTo(ctx.workflowId())),
-        step -&gt; step.timeout(Duration.ofMinutes(30)));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var approval = context.waitForEvent(
+        "awaitApproval",
+        ManagerApproved.class,
+        associate(payloadProperty("orderId"), equalsTo(context.workflowId())),
+        step -&gt; step.timeout(Duration.ofMinutes(30))
+);
 
-var backgroundCheck = ctx.execute("runBackgroundCheck", ctx.workflowPayload(),
+var backgroundCheck = context.execute(
+        "runBackgroundCheck",
+        context.workflowPayload(),
         ComplianceService::check,
-        step -&gt; step.timeout(Duration.ofMinutes(10)));</code></pre>
+        step -&gt; step.timeout(Duration.ofMinutes(10))
+);</code></pre>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_anymatchfirst_match_wins"><a class="anchor" href="#_anymatchfirst_match_wins"></a><code>anyMatch</code>—first match wins</h2>
+<h2 id="_anymatch_first_match_wins"><a class="anchor" href="#_anymatch_first_match_wins"></a><code>anyMatch</code>: First match wins</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><code>anyMatch</code> resolves as soon as the <strong>first</strong> step reaches a terminal state that matches the predicate.</p>
@@ -502,33 +515,42 @@ They are <strong>not</strong> automatically cancelled—if you need cleanup, can
 <div class="sect2">
 <h3 id="_race_two_events"><a class="anchor" href="#_race_two_events"></a>Race two events</h3>
 <div class="paragraph">
-<p>Wait for the first of two possible outcomes—whichever event arrives first wins:</p>
+<p>Wait for the first of two possible outcomes.
+Whichever event arrives first wins:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var accepted = ctx.waitForEvent("paymentAccepted", CardPaymentAccepted.class,
-        associate(payloadProperty("orderId"), equalsTo(ctx.workflowId())),
-        step -&gt; step.timeout(Duration.ofMinutes(10)));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var accepted = context.waitForEvent(
+        "paymentAccepted",
+        CardPaymentAccepted.class,
+        associate(payloadProperty("orderId"), equalsTo(context.workflowId())),
+        step -&gt; step.timeout(Duration.ofMinutes(10))
+);
 
-var declined = ctx.waitForEvent("paymentDeclined", CardPaymentDeclined.class,
-        associate(payloadProperty("orderId"), equalsTo(ctx.workflowId())),
-        step -&gt; step.timeout(Duration.ofMinutes(10)));
+var declined = context.waitForEvent(
+        "paymentDeclined",
+        CardPaymentDeclined.class,
+        associate(payloadProperty("orderId"), equalsTo(context.workflowId())),
+        step -&gt; step.timeout(Duration.ofMinutes(10))
+);
 
-var result = ctx.anyMatch(WorkflowStepResult::isCompleted,     <i class="conum" data-value="1"></i><b>(1)</b>
-                          accepted, declined);
+var result = context.anyMatch(
+        WorkflowStepResult::isCompleted,    <i class="conum" data-value="1"></i><b>(1)</b>
+        accepted, declined
+);
 
-result.await();                                                 <i class="conum" data-value="2"></i><b>(2)</b>
+result.await(); <i class="conum" data-value="2"></i><b>(2)</b>
 
-var winner = result.matched().getFirst();                       <i class="conum" data-value="3"></i><b>(3)</b>
+var winner = result.matched().getFirst();   <i class="conum" data-value="3"></i><b>(3)</b>
 logger.info("Payment outcome: {}", winner.getStepName());
 
 // Cancel the wait for the other event
-for (var remaining : result.unmatched()) {                      <i class="conum" data-value="4"></i><b>(4)</b>
+for (var remaining : result.unmatched()) {  <i class="conum" data-value="4"></i><b>(4)</b>
     remaining.cancel("Outcome already determined");
 }
 
 if (winner == declined) {
-    ctx.fail(new RuntimeException("Payment was declined"));
+    context.fail(new RuntimeException("Payment was declined"));
 }</code></pre>
 </div>
 </div>
@@ -556,22 +578,33 @@ if (winner == declined) {
 <div class="sect2">
 <h3 id="_race_two_services"><a class="anchor" href="#_race_two_services"></a>Race two services</h3>
 <div class="paragraph">
-<p>Same pattern works with <code>execute</code>—request shipping quotes from two carriers, take whichever responds first:</p>
+<p>The same pattern works with <code>execute</code>.
+Request shipping quotes from two carriers, take whichever responds first:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var dhlQuote = ctx.execute("getDhlQuote", ctx.workflowPayload(),
-        DhlService::getQuote, step -&gt; step.timeout(Duration.ofSeconds(10)));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var dhlQuote = context.execute(
+        "getDhlQuote",
+        context.workflowPayload(),
+        DhlService::getQuote,
+        step -&gt; step.timeout(Duration.ofSeconds(10))
+);
 
-var fedexQuote = ctx.execute("getFedexQuote", ctx.workflowPayload(),
-        FedexService::getQuote, step -&gt; step.timeout(Duration.ofSeconds(10)));
+var fedexQuote = context.execute(
+        "getFedexQuote",
+        context.workflowPayload(),
+        FedexService::getQuote,
+        step -&gt; step.timeout(Duration.ofSeconds(10))
+);
 
-var race = ctx.anyMatch(WorkflowStepResult::isCompleted,
-                        dhlQuote, fedexQuote);
+var race = context.anyMatch(
+        WorkflowStepResult::isCompleted,
+        dhlQuote, fedexQuote
+);
 race.await();
 
 var winner = race.matched().getFirst();
-logger.info("Using {} — quoted first", winner.getStepName());
+logger.info("Using {}, quoted first", winner.getStepName());
 
 // Cancel the slower carrier
 for (var loser : race.unmatched()) {
@@ -583,7 +616,7 @@ for (var loser : race.unmatched()) {
 </div>
 </div>
 <div class="sect1">
-<h2 id="_allmatchall_must_succeed"><a class="anchor" href="#_allmatchall_must_succeed"></a><code>allMatch</code>—all must succeed</h2>
+<h2 id="_allmatch_all_must_succeed"><a class="anchor" href="#_allmatch_all_must_succeed"></a><code>allMatch</code>: All must succeed</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><code>allMatch</code> succeeds only when <em>all</em> steps match the predicate.
@@ -592,25 +625,33 @@ It short-circuits on the first non-match:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Ship and notify in parallel
-var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
+var shipping = context.execute(
+        "shipOrder",
+        context.workflowPayload(),
         ShippingService::shipOrder,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);
 
-var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
+var notification = context.execute(
+        "notifyCustomer",
+        context.workflowPayload(),
         NotificationService::sendConfirmation,
-        step -&gt; step.timeout(Duration.ofSeconds(30)));
+        step -&gt; step.timeout(Duration.ofSeconds(30))
+);
 
-var guard = ctx.allMatch(WorkflowStepResult::success,           <i class="conum" data-value="1"></i><b>(1)</b>
-                         shipping, notification);
+var guard = context.allMatch(
+        WorkflowStepResult::success,    <i class="conum" data-value="1"></i><b>(1)</b>
+        shipping, notification
+);
 
-if (guard.success()) {                                           <i class="conum" data-value="2"></i><b>(2)</b>
+if (guard.success()) {  <i class="conum" data-value="2"></i><b>(2)</b>
     logger.info("All steps completed successfully!");
 } else {
-    // Something failed — inspect what went wrong
-    for (var failed : guard.unmatched()) {                       <i class="conum" data-value="3"></i><b>(3)</b>
+    // Something failed, inspect what went wrong
+    for (var failed : guard.unmatched()) {  <i class="conum" data-value="3"></i><b>(3)</b>
         logger.warn("Step {} did not succeed", failed.getStepName());
     }
-    ctx.fail(new RuntimeException("Not all steps completed successfully"));
+    context.fail(new RuntimeException("Not all steps completed successfully"));
 }</code></pre>
 </div>
 </div>
@@ -633,7 +674,7 @@ if (guard.success()) {                                           <i class="conum
 </div>
 </div>
 <div class="sect1">
-<h2 id="_nonematchno_failures_allowed"><a class="anchor" href="#_nonematchno_failures_allowed"></a><code>noneMatch</code>—no failures allowed</h2>
+<h2 id="_nonematch_no_failures_allowed"><a class="anchor" href="#_nonematch_no_failures_allowed"></a><code>noneMatch</code>: No failures allowed</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><code>noneMatch</code> succeeds when <em>no</em> step matches the predicate.</p>
@@ -658,19 +699,31 @@ They are <strong>not</strong> automatically cancelled—cancel them explicitly v
 <h3 id="_basic_usage"><a class="anchor" href="#_basic_usage"></a>Basic usage</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var stepA = ctx.execute("processA", Map.of(), ServiceA::process,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var stepA = context.execute(
+        "processA",
+        Map.of(),
+        ServiceA::process,
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);
+var stepB = context.execute(
+        "processB",
+        Map.of(),
+        ServiceB::process,
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);
+var stepC = context.execute(
+        "processC",
+        Map.of(),
+        ServiceC::process,
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);
 
-var stepB = ctx.execute("processB", Map.of(), ServiceB::process,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
-
-var stepC = ctx.execute("processC", Map.of(), ServiceC::process,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
-
-var check = ctx.noneMatch(WorkflowStepResult::failure,          <i class="conum" data-value="1"></i><b>(1)</b>
-                          stepA, stepB, stepC);
+var check = context.noneMatch(
+        WorkflowStepResult::failure,          <i class="conum" data-value="1"></i><b>(1)</b>
+        stepA, stepB, stepC
+);
 if (check.success()) {
-    logger.info("No failures — all clear!");
+    logger.info("No failures, all clear!");
 }</code></pre>
 </div>
 </div>
@@ -678,7 +731,9 @@ if (check.success()) {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Succeeds if none of the steps fail. Short-circuits as soon as one fails. When <code>success()</code> returns <code>true</code>, all steps have reached a terminal state—no cancellation is needed.</td>
+<td>Succeeds if none of the steps fail.
+Short-circuits as soon as one fails.
+When <code>success()</code> returns <code>true</code>, all steps have reached a terminal state—no cancellation is needed.</td>
 </tr>
 </table>
 </div>
@@ -690,20 +745,22 @@ if (check.success()) {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var check = ctx.noneMatch(WorkflowStepResult::failure,
-                          stepA, stepB, stepC);
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var check = context.noneMatch(
+        WorkflowStepResult::failure,
+        stepA, stepB, stepC
+);
 check.await();
 
 if (!check.success()) {
-    var failedStep = check.matched().getFirst();                <i class="conum" data-value="1"></i><b>(1)</b>
+    var failedStep = check.matched().getFirst();    <i class="conum" data-value="1"></i><b>(1)</b>
     logger.warn("Step {} failed", failedStep.getStepName());
 
     // Cancel all steps that are still running
-    for (var remaining : check.unmatched()) {                   <i class="conum" data-value="2"></i><b>(2)</b>
+    for (var remaining : check.unmatched()) {   <i class="conum" data-value="2"></i><b>(2)</b>
         remaining.cancel("Cancelled due to failure of " + failedStep.getStepName());
     }
 
-    ctx.fail(new RuntimeException("Step " + failedStep.getStepName() + " failed"));
+    context.fail(new RuntimeException("Step " + failedStep.getStepName() + " failed"));
 }</code></pre>
 </div>
 </div>
@@ -727,20 +784,29 @@ if (!check.success()) {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reserveStock = ctx.execute("reserveStock", ctx.workflowPayload(),
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var reserveStock = context.execute(
+        "reserveStock",
+        context.workflowPayload(),
         InventoryService::reserveStock,
-        step -&gt; step.timeout(Duration.ofMinutes(1)));
-
-var reserveShipping = ctx.execute("reserveShipping", ctx.workflowPayload(),
+        step -&gt; step.timeout(Duration.ofMinutes(1))
+);
+var reserveShipping = context.execute(
+        "reserveShipping",
+        context.workflowPayload(),
         ShippingService::reserveSlot,
-        step -&gt; step.timeout(Duration.ofMinutes(1)));
-
-var chargePayment = ctx.execute("chargePayment", ctx.workflowPayload(),
+        step -&gt; step.timeout(Duration.ofMinutes(1))
+);
+var chargePayment = context.execute(
+        "chargePayment",
+        context.workflowPayload(),
         PaymentService::charge,
-        step -&gt; step.timeout(Duration.ofSeconds(30)));
+        step -&gt; step.timeout(Duration.ofSeconds(30))
+);
 
-var check = ctx.noneMatch(WorkflowStepResult::failure,
-                          reserveStock, reserveShipping, chargePayment);
+var check = context.noneMatch(
+        WorkflowStepResult::failure,
+        reserveStock, reserveShipping, chargePayment
+);
 check.await();
 
 if (!check.success()) {
@@ -756,14 +822,19 @@ if (!check.success()) {
     // 2. Compensate steps that already completed successfully
     for (var completed : check.unmatched()) {                   <i class="conum" data-value="1"></i><b>(1)</b>
         if (completed.success()) {
-            ctx.awaitExecute("rollback-" + completed.getStepName(),
-                    ctx.workflowPayload(),
-                    CompensationService::rollback);
+            context.awaitExecute(
+                    "rollback-" + completed.getStepName(),
+                    context.workflowPayload(),
+                    CompensationService::rollback
+            );
         }
     }
 
-    ctx.fail(new RuntimeException("Order failed at " + failedStep.getStepName()
-             + ": " + failedStep.error().map(Throwable::getMessage).orElse("unknown")));
+    context.fail(new RuntimeException(
+            "Order failed at " + failedStep.getStepName()
+                    + ": " + failedStep.error().map(Throwable::getMessage)
+                                       .orElse("unknown")
+    ));
 }</code></pre>
 </div>
 </div>
@@ -771,7 +842,8 @@ if (!check.success()) {
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Iterate over <code>unmatched()</code>—steps that didn&#8217;t fail. If they already completed successfully, run a compensating action to undo their work.</td>
+<td>Iterate over <code>unmatched()</code> steps that didn&#8217;t fail.
+If they already completed successfully, run a compensating action to undo their work.</td>
 </tr>
 </table>
 </div>
@@ -883,14 +955,15 @@ This ensures deterministic behavior during replay.</p>
 if (!result.success()) {
     // 1. Who caused the problem?
     var trigger = result.matched().getFirst();    // for noneMatch: the violator
-                                                   // for anyMatch: the winner
+    // for anyMatch: the winner
 
     // 2. Clean up the rest
     for (var step : result.unmatched()) {
         if (!step.isCompleted()) {
-            step.cancel("No longer needed — " + trigger.getStepName() + " already resolved");  // still running → cancel
+            step.cancel("No longer needed, " + trigger.getStepName()
+                                + " already resolved");  // still running -&gt; cancel
         } else if (step.success()) {
-            // already completed → compensate if needed
+            // already completed -&gt; compensate if needed
         }
     }
 }</code></pre>
@@ -904,45 +977,67 @@ if (!result.success()) {
 <div class="sectionbody">
 <div class="paragraph">
 <p>Multiple workflows can be triggered by the same event, each handling a different concern independently.
-When an <code>OrderPlaced</code> event is published, both workflows start in parallel—each with its own state and lifecycle.</p>
+When an <code>OrderPlaced</code> event is published, both workflows start in parallel.
+Each with its own state and lifecycle.</p>
 </div>
 <div class="paragraph">
-<p>Workflow IDs must be unique across all running workflows. If two workflow definitions derive the same ID from the triggering event, only the first one starts—the second is ignored and a warning is logged. To run genuinely parallel workflows on the same event, associate each with a different <code>idProperty</code>:</p>
+<p>Workflow IDs must be unique across all running workflows.
+If two workflow definitions derive the same ID from the triggering event, only the first one starts.
+The second is ignored and a warning is logged.
+To run genuinely parallel workflows on the same event, associate each with a different <code>idProperty</code>:</p>
 </div>
 <div class="listingblock">
-<div class="title">OrderFulfillmentWorkflow—handles stock and shipping</div>
+<div class="title">OrderFulfillmentWorkflow.java - handles stock and shipping</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEventClass = OrderPlacedEvent.class)
-public void execute(SimpleWorkflowContext ctx) {
-    ctx.awaitExecute("reserveStock",
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(
+        idProperty = "orderId",
+        startOnEventClass = OrderPlacedEvent.class
+)
+public void execute(SimpleWorkflowContext context) {
+    context.awaitExecute(
+            "reserveStock",
             Map.of(),
-            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()));
-    ctx.awaitExecute("shipOrder", ctx.workflowPayload(),
-                      ShippingService::shipOrder);
+            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock())
+    );
+    context.awaitExecute(
+            "shipOrder",
+            context.workflowPayload(),
+            ShippingService::shipOrder
+    );
 }</code></pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">CustomerNotificationWorkflow—handles all customer communication</div>
+<div class="title">CustomerNotificationWorkflow.java - handles all customer communication</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "customerId", startOnEventClass = OrderPlacedEvent.class)
-public void execute(SimpleWorkflowContext ctx) {
-    ctx.awaitExecute("sendConfirmationEmail",
-            payload("email", ctx.workflowPayload().get("email"),
-                    "orderId", ctx.workflowId()).getValues(),
-            EmailService::sendOrderConfirmation);
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(
+        idProperty = "customerId",
+        startOnEventClass = OrderPlacedEvent.class
+)
+public void execute(SimpleWorkflowContext context) {
+    context.awaitExecute(
+            "sendConfirmationEmail",
+            payload("email", context.workflowPayload().get("email"),
+                    "orderId", context.workflowId()).getValues(),
+            EmailService::sendOrderConfirmation
+    );
 
-    ctx.sleep("waitBeforeFollowUp", Duration.ofDays(3));
+    context.sleep("waitBeforeFollowUp", Duration.ofDays(3));
 
-    ctx.awaitExecute("sendFollowUpEmail",
-            payload("email", ctx.workflowPayload().get("email"),
-                    "orderId", ctx.workflowId()).getValues(),
-            EmailService::sendFollowUp);
+    context.awaitExecute(
+            "sendFollowUpEmail",
+            payload("email", context.workflowPayload().get("email"),
+                    "orderId", context.workflowId()).getValues(),
+            EmailService::sendFollowUp
+    );
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Both workflows receive the same <code>OrderPlaced</code> event payload, but they run independently—each has its own workflow instance, event stream, and lifecycle. If one fails, the other is unaffected. Because each workflow binds to a different ID property (<code>orderId</code> vs. <code>customerId</code>), both start independently even though they react to the same event.</p>
+<p>Both workflows receive the same <code>OrderPlaced</code> event payload, but they run independently.
+Each has its own workflow instance, event stream, and lifecycle.
+If one fails, the other is unaffected.
+Because each workflow binds to a different ID property (<code>orderId</code> vs. <code>customerId</code>), both start independently even though they react to the same event.</p>
 </div>
 <div class="et-player" data-autoplay>
   <div class="et-src" data-title="OrderFulfillmentWorkflow (123)">
@@ -965,7 +1060,7 @@ public void execute(SimpleWorkflowContext ctx) {
   </div>
 </div>
 <div class="paragraph">
-<p>For cross-workflow interaction patterns—parent-child workflows, event-based signalling between workflows—see <a href="../common-patterns/#_sub_workflows" class="xref page">Sub-workflows</a> in Common Patterns.</p>
+<p>For cross-workflow interaction patterns—parent-child workflows, event-based signalling between workflows, see <a href="../common-patterns/#_sub_workflows" class="xref page">Sub-workflows</a> in Common Patterns.</p>
 </div>
 <div class="paragraph">
 <p>For more orchestration patterns like fan-out/fan-in, saga compensation, scatter-gather, and human-in-the-loop, see <a href="../common-patterns/" class="xref page">Common Patterns</a>.</p>

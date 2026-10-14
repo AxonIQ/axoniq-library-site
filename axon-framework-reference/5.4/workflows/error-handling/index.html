@@ -435,9 +435,7 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>This page is the single place that explains what happens when something goes wrong in a workflow: which
-exception you see, what the engine records, when the workflow stops for good, and when it stops running
-without ending and how it resumes.</p>
+<p>This page is the single place that explains what happens when something goes wrong in a workflow: which exception you see, what the engine records, when the workflow stops for good, and when it stops running without ending and how it resumes.</p>
 </div>
 </div>
 </div>
@@ -486,10 +484,10 @@ without ending and how it resumes.</p>
 </td>
 <td class="content">
 <div class="paragraph">
-<p>There is no <code>PAUSED</code> status. A workflow whose body stopped without ending looks exactly like a running
-workflow in the event store, in <code>WorkflowManager</code> queries and in lifecycle listeners: its status is <code>STARTED</code>.
-The only signals are the <code>ERROR</code> or <code>WARN</code> log line the engine writes when the body stops, and the absence of
-further step events. Alert on those log lines.</p>
+<p>There is no <code>PAUSED</code> status.
+A workflow whose body stopped without ending looks exactly like a running workflow in the event store, in <code>WorkflowManager</code> queries and in lifecycle listeners: its status is <code>STARTED</code>.
+The only signals are the <code>ERROR</code> or <code>WARN</code> log line the engine writes when the body stops, and the absence of further step events.
+Alert on those log lines.</p>
 </div>
 </td>
 </tr>
@@ -501,8 +499,8 @@ further step events. Alert on those log lines.</p>
 <h2 id="step-failures"><a class="anchor" href="#step-failures"></a>Step failures</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Every step failure surfaces as a <code>StepFailedException</code> or one of its subtypes. Catch the parent to handle
-any abnormal step end, or a subtype to handle one case.</p>
+<p>Every step failure surfaces as a <code>StepFailedException</code> or one of its subtypes.
+Catch the parent to handle any abnormal step end, or a subtype to handle one case.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -541,13 +539,12 @@ any abnormal step end, or a subtype to handle one case.</p>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Blocking primitives (<code>awaitExecute</code>, <code>awaitEvent</code>, <code>awaitPublish</code>) throw the exception. Non-blocking primitives
-(<code>execute</code>, <code>waitForEvent</code>, <code>publish</code>) return a <code>WorkflowStepResult</code>; read <code>failure()</code>, <code>timeout()</code>,
+<p>Blocking primitives (<code>awaitExecute</code>, <code>awaitEvent</code>, <code>awaitPublish</code>) throw the exception.
+Non-blocking primitives (<code>execute</code>, <code>waitForEvent</code>, <code>publish</code>) return a <code>WorkflowStepResult</code>; read <code>failure()</code>, <code>timeout()</code>,
 <code>canceled()</code> or <code>error()</code> on it.</p>
 </div>
 <div class="paragraph">
-<p>See <a href="../understanding-steps/#crash-interrupted-steps" class="xref page">Crash-interrupted steps</a> for the at-most-once rule
-behind <code>StepIndeterminateException</code>, and <a href="../understanding-steps/#retries" class="xref page">Retries</a> for retry policies.</p>
+<p>See <a href="../understanding-steps/#crash-interrupted-steps" class="xref page">Crash-interrupted steps</a> for the at-most-once rule behind <code>StepIndeterminateException</code>, and <a href="../understanding-steps/#retries" class="xref page">Retries</a> for retry policies.</p>
 </div>
 <div class="sect2">
 <h3 id="_catching_a_step_failure"><a class="anchor" href="#_catching_a_step_failure"></a>Catching a step failure</h3>
@@ -557,14 +554,14 @@ behind <code>StepIndeterminateException</code>, and <a href="../understanding-st
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">try {
-    ctx.awaitExecute("chargePayment",
-            payload("customerId", customerId, "amount", amount).getValues(),
-            PaymentService::charge);
+    context.awaitExecute("chargePayment",
+                         payload("customerId", customerId, "amount", amount).getValues(),
+                         PaymentService::charge);
 } catch (StepFailedException e) {
-    ctx.awaitExecute("releaseStock",
-            payload("customerId", customerId).getValues(),
-            InventoryService::releaseStock);
-    ctx.fail(new RuntimeException("Payment failed: " + e.getMessage())); <i class="conum" data-value="1"></i><b>(1)</b>
+    context.awaitExecute("releaseStock",
+                         payload("customerId", customerId).getValues(),
+                         InventoryService::releaseStock);
+    context.fail(new RuntimeException("Payment failed: " + e.getMessage())); <i class="conum" data-value="1"></i><b>(1)</b>
 }</code></pre>
 </div>
 </div>
@@ -572,7 +569,8 @@ behind <code>StepIndeterminateException</code>, and <a href="../understanding-st
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Decide the outcome yourself. Without <code>fail</code>, the workflow continues to the next step.</td>
+<td>Decide the outcome yourself.
+Without <code>fail</code>, the workflow continues to the next step.</td>
 </tr>
 </table>
 </div>
@@ -581,15 +579,17 @@ behind <code>StepIndeterminateException</code>, and <a href="../understanding-st
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
-        ShippingService::shipOrder,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var shipping = context.execute("shipOrder", context.workflowPayload(),
+                               ShippingService::shipOrder,
+                               step -&gt; step.timeout(Duration.ofMinutes(5)));
 
 if (shipping.failure()) { // blocks until the step reaches a terminal status
-    ctx.awaitExecute("refundPayment",
-            payload("customerId", customerId).getValues(),
-            PaymentService::refund);
-    ctx.fail(new RuntimeException("Shipping failed: " + shipping.error().get().getMessage()));
+    context.awaitExecute("refundPayment",
+                         payload("customerId", customerId).getValues(),
+                         PaymentService::refund);
+    context.fail(new RuntimeException(
+            "Shipping failed: " + shipping.error().get().getMessage()
+    ));
 }</code></pre>
 </div>
 </div>
@@ -601,7 +601,8 @@ if (shipping.failure()) { // blocks until the step reaches a terminal status
 <h3 id="exhausted-retries"><a class="anchor" href="#exhausted-retries"></a>After retries are exhausted</h3>
 <div class="paragraph">
 <p>When the retry policy is exhausted, the step records a durable <code>FAILED</code> event and throws a <code>StepFailedException</code>.
-Catch it in the body to compensate, as shown above. If the body does not catch it, the workflow ends <code>FAILED</code>.</p>
+Catch it in the body to compensate, as shown above.
+If the body does not catch it, the workflow ends <code>FAILED</code>.</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -622,8 +623,8 @@ The engine cannot resume or retry a <code>FAILED</code> workflow. <code>Workflow
 <h2 id="durable-errors"><a class="anchor" href="#durable-errors"></a>What is stored about an error</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The engine stores every step and workflow failure in the event store, so the error survives a restart and
-is identical during live execution and after replay. Only 3 fields are kept per exception in the cause chain:</p>
+<p>The engine stores every step and workflow failure in the event store, so the error survives a restart and is identical during live execution and after replay.
+Only 3 fields are kept per exception in the cause chain:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -639,16 +640,17 @@ is identical during live execution and after replay. Only 3 fields are kept per 
 </ul>
 </div>
 <div class="paragraph">
-<p>The stack trace is not stored. It is written to the application log at the moment of failure. Keeping it
-out of the event store keeps payloads small and avoids class-compatibility problems across JVM versions.</p>
+<p>The stack trace is not stored.
+It is written to the application log at the moment of failure.
+Keeping it out of the event store keeps payloads small and avoids class-compatibility problems across JVM versions.</p>
 </div>
 <div class="paragraph">
-<p>On replay the engine rebuilds the exception as a <code>WorkflowExecutionException</code> that carries the original
-class name in <code>type()</code>. The engine&#8217;s own <code>StepIndeterminateException</code> is rebuilt as its own type.</p>
+<p>On replay the engine rebuilds the exception as a <code>WorkflowExecutionException</code> that carries the original class name in <code>type()</code>.
+The engine&#8217;s own <code>StepIndeterminateException</code> is rebuilt as its own type.</p>
 </div>
 <div class="paragraph">
-<p>Because the rebuilt cause is never the original class, <code>instanceof</code> checks against your exception types do
-not match. Branch on the type name instead:</p>
+<p>Because the rebuilt cause is never the original class, <code>instanceof</code> checks against your exception types do not match.
+Branch on the type name instead:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -666,8 +668,8 @@ not match. Branch on the type name instead:</p>
 <h2 id="terminal"><a class="anchor" href="#terminal"></a>When the workflow stops for good</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A workflow reaches a terminal status in these cases. A terminal event is stored, running steps are
-interrupted, and the instance is removed from the engine.</p>
+<p>A workflow reaches a terminal status in these cases.
+A terminal event is stored, running steps are interrupted, and the instance is removed from the engine.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -711,7 +713,8 @@ interrupted, and the instance is removed from the engine.</p>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Lifecycle listeners such as <code>@WorkflowFailedHandler</code> fire on each terminal status. See
+<p>Lifecycle listeners such as <code>@WorkflowFailedHandler</code> fire on each terminal status.
+See
 <a href="../workflow-lifecycle/" class="xref page">Workflow Lifecycle</a>.</p>
 </div>
 </div>
@@ -720,8 +723,8 @@ interrupted, and the instance is removed from the engine.</p>
 <h2 id="stopped"><a class="anchor" href="#stopped"></a>When the workflow stops without ending</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>In these cases the body stops but no terminal event is stored. The status stays <code>STARTED</code>, the instance
-stays registered on the node with its driver stopped, and events addressed to it still update its state.
+<p>In these cases the body stops but no terminal event is stored.
+The status stays <code>STARTED</code>, the instance stays registered on the node with its driver stopped, and events addressed to it still update its state.
 Nothing marks it as stopped except the log line written at that moment.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -763,8 +766,8 @@ Nothing marks it as stopped except the log line written at that moment.</p>
 <div class="sect2">
 <h3 id="_how_a_stopped_workflow_resumes"><a class="anchor" href="#_how_a_stopped_workflow_resumes"></a>How a stopped workflow resumes</h3>
 <div class="paragraph">
-<p>Nothing is needed beyond a restart. The engine rehydrates every non-terminal instance from the event store
-on 2 occasions:</p>
+<p>Nothing is needed beyond a restart.
+The engine rehydrates every non-terminal instance from the event store on 2 occasions:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -777,16 +780,17 @@ on 2 occasions:</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>The body runs again from its recorded state. Completed steps are not re-executed. A workflow stopped by a
-replay drift resumes as soon as fixed code is deployed and the node restarts.</p>
+<p>The body runs again from its recorded state.
+Completed steps are not re-executed.
+A workflow stopped by a replay drift resumes as soon as fixed code is deployed and the node restarts.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="checkpoint-safety"><a class="anchor" href="#checkpoint-safety"></a>Recovery never skips unfinished work</h3>
 <div class="paragraph">
-<p>The processor stores its position as the recovery point. The engine does not move that position past an event
-until the workflow state caused by that event is durable. For example, the position does not pass an event that
-wakes an <code>awaitEvent</code> step before the step&#8217;s <code>COMPLETED</code> event is stored.</p>
+<p>The processor stores its position as the recovery point.
+The engine does not move that position past an event until the workflow state caused by that event is durable.
+For example, the position does not pass an event that wakes an <code>awaitEvent</code> step before the step&#8217;s <code>COMPLETED</code> event is stored.</p>
 </div>
 <div class="paragraph">
 <p>When a segment is released, the release fails instead of storing a position past work that is not durable yet.
@@ -797,8 +801,8 @@ The next node to claim the segment starts from the older position, so at most so
 <h3 id="recoverable"><a class="anchor" href="#recoverable"></a>Recoverable versus unrecoverable exceptions</h3>
 <div class="paragraph">
 <p>An exception that escapes the body and is not a <code>StepFailedException</code> is classified by a
-<code>RecoverableWorkflowExceptionPolicy</code>. The default, <code>RecoverableWorkflowExceptionPolicy.DEFAULT</code>, walks the cause chain and
-treats these as recoverable:</p>
+<code>RecoverableWorkflowExceptionPolicy</code>.
+The default, <code>RecoverableWorkflowExceptionPolicy.DEFAULT</code>, walks the cause chain and treats these as recoverable:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -825,8 +829,8 @@ treats these as recoverable:</p>
 <div class="sect3">
 <h4 id="recoverable-policy"><a class="anchor" href="#recoverable-policy"></a>Configuring the policy</h4>
 <div class="paragraph">
-<p>You can extend the default policy or replace it. Extend it with <code>or(&#8230;&#8203;)</code> to keep the built-in
-classification and add your own exceptions:</p>
+<p>You can extend the default policy or replace it.
+Extend it with <code>or(&#8230;&#8203;)</code> to keep the built-in classification and add your own exceptions:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -835,8 +839,8 @@ classification and add your own exceptions:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Replace it with your own lambda to take full control. Only the exceptions your policy accepts then pause the
-workflow:</p>
+<p>Replace it with your own lambda to take full control.
+Only the exceptions your policy accepts then pause the workflow:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -866,7 +870,9 @@ workflow:</p>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.componentRegistry(registry -&gt; registry.registerComponent(
         RecoverableWorkflowExceptionPolicy.class,
-        c -&gt; RecoverableWorkflowExceptionPolicy.DEFAULT.or(e -&gt; e instanceof BackendUnavailableException)
+        c -&gt; RecoverableWorkflowExceptionPolicy.DEFAULT.or(
+                e -&gt; e instanceof BackendUnavailableException
+        )
 ));</code></pre>
 </div>
 </div>
@@ -877,7 +883,9 @@ workflow:</p>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
 public RecoverableWorkflowExceptionPolicy recoverableExceptionPolicy() {
-    return RecoverableWorkflowExceptionPolicy.DEFAULT.or(e -&gt; e instanceof BackendUnavailableException);
+    return RecoverableWorkflowExceptionPolicy.DEFAULT.or(
+            e -&gt; e instanceof BackendUnavailableException
+    );
 }</code></pre>
 </div>
 </div>
@@ -888,7 +896,9 @@ public RecoverableWorkflowExceptionPolicy recoverableExceptionPolicy() {
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.customized((c, w) -&gt; w
         .recoverableExceptionPolicy(
-                RecoverableWorkflowExceptionPolicy.DEFAULT.or(e -&gt; e instanceof BackendUnavailableException)
+                RecoverableWorkflowExceptionPolicy.DEFAULT.or(
+                        e -&gt; e instanceof BackendUnavailableException
+                )
         )
 )</code></pre>
 </div>
@@ -901,8 +911,8 @@ public RecoverableWorkflowExceptionPolicy recoverableExceptionPolicy() {
 </td>
 <td class="content">
 <div class="paragraph">
-<p>Prefer catching exceptions in the body and calling <code>ctx.fail(&#8230;&#8203;)</code> yourself. The classification is a safety
-net for exceptions you did not anticipate, not a substitute for explicit terminal paths.</p>
+<p>Prefer catching exceptions in the body and calling <code>ctx.fail(&#8230;&#8203;)</code> yourself.
+The classification is a safety net for exceptions you did not anticipate, not a substitute for explicit terminal paths.</p>
 </div>
 </td>
 </tr>
