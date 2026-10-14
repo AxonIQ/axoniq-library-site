@@ -15,6 +15,7 @@ cloneOrPullMaster () {
 
 # Axon Framework has two branches: master and 4.10.x
 cloneOrPullMaster "AxonFramework" "https://github.com/AxonIQ/AxonFramework.git" "main"
+cloneOrPullMaster "AxonFramework4LTS" "https://github.com/AxonIQ/axon-framework-4-lts.git" "axon-4.13.x"
 cloneOrPullMaster "AxoniqFramework" "https://github.com/AxonIQ/axoniq-framework.git" "main"
 cloneOrPullMaster "extension-data-protection" "https://github.com/AxonIQ/extension-data-protection.git" "main"
 cloneOrPullMaster "extension-amqp" "https://github.com/AxonFramework/extension-amqp.git" "axon-amqp-4.11.x"
