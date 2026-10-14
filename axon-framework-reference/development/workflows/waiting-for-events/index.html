@@ -436,7 +436,7 @@
             <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Many business processes need to pause and wait for something external—a payment confirmation, an approval decision, a callback from a third-party system.
+<p>Many business processes need to pause and wait for something external, like a payment confirmation, an approval decision, a callback from a third-party system.
 The <code>waitForEvent</code> / <code>awaitEvent</code> pair lets your workflow suspend until a matching event arrives.</p>
 </div>
 <div class="admonitionblock note">
@@ -464,7 +464,7 @@ Its named <code>waitForEvent(&#8230;&#8203;)</code> and <code>awaitEvent(&#8230;
 <td class="content">
 <div class="paragraph">
 <p>The events that <code>waitForEvent</code> and <code>awaitEvent</code> listen for are standard Axon Framework events.
-They can be published from anywhere—a command handler, an <code>EventGateway</code>, a REST controller, a webhook endpoint, or any other component that has access to the event bus.
+They can be published from anywhere: a command handler, an <code>EventGateway</code>, a REST controller, a webhook endpoint, or any other component that has access to the event bus.
 For example, a payment provider callback could publish a <code>PaymentConfirmed</code> event directly via <code>eventGateway.publish(&#8230;&#8203;)</code>, and that will unblock the waiting workflow.
 Another workflow can publish it too, with <a href="../publishing-events/" class="xref page"><code>awaitPublish</code></a>.</p>
 </div>
@@ -482,11 +482,13 @@ Another workflow can publish it too, with <a href="../publishing-events/" class=
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = ctx.awaitEvent("awaitPayment",
-        PaymentConfirmed.class,                                       <i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = context.awaitEvent(
+        "awaitPayment",
+        PaymentConfirmed.class, <i class="conum" data-value="1"></i><b>(1)</b>
         associate(payloadProperty("orderId"),
-                  equalsTo(ctx.workflowPayload().get("orderId"))),     <i class="conum" data-value="2"></i><b>(2)</b>
-        step -&gt; step.timeout(Duration.ofMinutes(15)));                 <i class="conum" data-value="3"></i><b>(3)</b></code></pre>
+                  equalsTo(context.workflowPayload().get("orderId"))),  <i class="conum" data-value="2"></i><b>(2)</b>
+        step -&gt; step.timeout(Duration.ofMinutes(15))    <i class="conum" data-value="3"></i><b>(3)</b>
+);</code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -521,11 +523,9 @@ After 15 minutes, the underlying wait step times out.</td>
   </div>
 </div>
 <div class="paragraph">
-<p>The STARTED event records when the wait began, which event type is expected, the association DSL, and the
-calculated timeout instant.
+<p>The STARTED event records when the wait began, which event type is expected, the association DSL, and the calculated timeout instant.
 These fields make the outstanding wait fully inspectable and replayable.
-When the external <code>PaymentConfirmed</code> event arrives, it unblocks the workflow and the matched payload is recorded in the
-COMPLETED event.</p>
+When the external <code>PaymentConfirmed</code> event arrives, it unblocks the workflow and the matched payload is recorded in the COMPLETED event.</p>
 </div>
 <div class="paragraph">
 <p>If no matching event arrives within 15 minutes:</p>
@@ -551,13 +551,15 @@ That&#8217;s clearly not what we want.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = ctx.awaitEvent("awaitPayment",
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = context.awaitEvent(
+        "awaitPayment",
         PaymentConfirmed.class,
-        associate(                                 <i class="conum" data-value="1"></i><b>(1)</b>
-            payloadProperty("orderId"),            <i class="conum" data-value="2"></i><b>(2)</b>
-            equalsTo(ctx.workflowPayload().get("orderId"))  <i class="conum" data-value="3"></i><b>(3)</b>
+        associate(  <i class="conum" data-value="1"></i><b>(1)</b>
+                payloadProperty("orderId"), <i class="conum" data-value="2"></i><b>(2)</b>
+                equalsTo(context.workflowPayload().get("orderId"))  <i class="conum" data-value="3"></i><b>(3)</b>
         ),
-        step -&gt; step.timeout(Duration.ofMinutes(15)));</code></pre>
+        step -&gt; step.timeout(Duration.ofMinutes(15))
+);</code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -605,13 +607,16 @@ metadata:tenantId=acme</code></pre>
 <div class="ulist">
 <ul>
 <li>
-<p><code>source</code> identifies where the left-hand value comes from. Supported sources are <code>payload</code> and <code>metadata</code>.</p>
+<p><code>source</code> identifies where the left-hand value comes from.
+Supported sources are <code>payload</code> and <code>metadata</code>.</p>
 </li>
 <li>
-<p><code>path</code> is source-specific lookup text, such as a payload property or metadata key. This maps to a value retriever.</p>
+<p><code>path</code> is source-specific lookup text, such as a payload property or metadata key.
+This maps to a value retriever.</p>
 </li>
 <li>
-<p><code>operator</code> is resolved through <code>ValueComparisonOperatorRegistry</code>. The built-in operator is <code>=</code>.</p>
+<p><code>operator</code> is resolved through <code>ValueComparisonOperatorRegistry</code>.
+The built-in operator is <code>=</code>.</p>
 </li>
 <li>
 <p><code>value</code> is stored in serialized text form.</p>
@@ -648,12 +653,14 @@ You can use this to implement fallback logic.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var stepResult = ctx.waitForEvent("awaitPayment",
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var stepResult = context.waitForEvent(
+        "awaitPayment",
         PaymentConfirmed.class,
         associate(payloadProperty("orderId"),
-                  equalsTo(ctx.workflowPayload().get("orderId"))),
-        step -&gt; step.timeout(Duration.ofMinutes(15)));
-if(stepResult.success()){
+                  equalsTo(context.workflowPayload().get("orderId"))),
+        step -&gt; step.timeout(Duration.ofMinutes(15))
+);
+if (stepResult.success()) {
     // handle success
 } else if (stepResult.timeout()) {
     // handle timeout
@@ -701,22 +708,28 @@ If you need to wait for multiple events concurrently, use the non-blocking <code
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var payment = ctx.waitForEvent("awaitPayment",                       <i class="conum" data-value="1"></i><b>(1)</b>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var payment = context.waitForEvent(
+        "awaitPayment", <i class="conum" data-value="1"></i><b>(1)</b>
         PaymentConfirmed.class,
         associate(payloadProperty("orderId"),
-                  equalsTo(ctx.workflowPayload().get("orderId"))),
-        step -&gt; step.timeout(Duration.ofMinutes(15)));
+                  equalsTo(context.workflowPayload().get("orderId"))),
+        step -&gt; step.timeout(Duration.ofMinutes(15))
+);
 
-var approval = ctx.waitForEvent("awaitApproval",                     <i class="conum" data-value="1"></i><b>(1)</b>
+var approval = context.waitForEvent(
+        "awaitApproval",    <i class="conum" data-value="1"></i><b>(1)</b>
         ManagerApproved.class,
         associate(payloadProperty("orderId"),
-                  equalsTo(ctx.workflowPayload().get("orderId"))),
-        step -&gt; step.timeout(Duration.ofMinutes(30)));
+                  equalsTo(context.workflowPayload().get("orderId"))),
+        step -&gt; step.timeout(Duration.ofMinutes(30))
+);
 
-ctx.allMatch(WorkflowStepResult::success, payment, approval)   <i class="conum" data-value="2"></i><b>(2)</b>
-   .await();
+context.allMatch(
+        WorkflowStepResult::success,
+        payment, approval <i class="conum" data-value="2"></i><b>(2)</b>
+).await();
 
-logger.info("Both payment and approval received — proceeding!");</code></pre>
+logger.info("Both payment and approval received, proceeding!");</code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -727,14 +740,16 @@ logger.info("Both payment and approval received — proceeding!");</code></pre>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td><code>allMatch</code> blocks until both waits have finished. With <code>success</code> as predicate, it ends early when one of them times out. See <a href="../step-orchestration/" class="xref page">Step Orchestration</a> for more on combinators.</td>
+<td><code>allMatch</code> blocks until both waits have finished.
+With <code>success</code> as predicate, it ends early when one of them times out.
+See <a href="../step-orchestration/" class="xref page">Step Orchestration</a> for more on combinators.</td>
 </tr>
 </table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_sleepa_simple_delay"><a class="anchor" href="#_sleepa_simple_delay"></a>Sleep—a simple delay</h2>
+<h2 id="_sleep"><a class="anchor" href="#_sleep"></a>Sleep</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Sometimes you just need to pause for a while.
@@ -742,7 +757,7 @@ The <code>sleep</code> method provides a durable delay:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.sleep("cooldownPeriod", Duration.ofDays(10)); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">context.sleep("cooldownPeriod", Duration.ofDays(10)); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -770,16 +785,20 @@ Under the hood, this is a <code>waitForEvent</code> with an event condition that
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var cooldown = ctx.sleep("cooldown", step -&gt; step.timeout(Duration.ofMinutes(5)));
-var approval = ctx.waitForEvent("approval",
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var cooldown = context.sleep("cooldown", step -&gt; step.timeout(Duration.ofMinutes(5)));
+var approval = context.waitForEvent(
+        "approval",
         ManagerApproved.class,
         associate(payloadProperty("orderId"),
-                  equalsTo(ctx.workflowPayload().get("orderId"))),
-        step -&gt; step.timeout(Duration.ofHours(1)));
+                  equalsTo(context.workflowPayload().get("orderId"))),
+        step -&gt; step.timeout(Duration.ofHours(1))
+);
 
 // Proceed when either the cooldown finishes OR approval arrives
-ctx.anyMatch(WorkflowStepResult::isCompleted, cooldown, approval)
-   .await();</code></pre>
+context.anyMatch(
+        WorkflowStepResult::isCompleted,
+        cooldown, approval
+).await();</code></pre>
 </div>
 </div>
 </div>
@@ -790,41 +809,52 @@ ctx.anyMatch(WorkflowStepResult::isCompleted, cooldown, approval)
 <div class="sectionbody">
 <div class="paragraph">
 <p>Here&#8217;s our workflow with the payment step added.
-Notice the order—we subscribe to the event <strong>before</strong> initiating payment, to avoid a race condition where the confirmation arrives before we&#8217;re listening:</p>
+Notice the order.
+We subscribe to the event <strong>before</strong> initiating payment, to avoid a race condition where the confirmation arrives before we&#8217;re listening:</p>
 </div>
 <div class="listingblock">
-<div class="title">src/main/java/io/axoniq/example/order/OrderFulfillmentWorkflow.java</div>
+<div class="title">OrderFulfillmentWorkflow.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId", startOnEventClass = OrderPlacedEvent.class)
-public void execute(SimpleWorkflowContext ctx) {
-
-    var reservation = ctx.awaitExecute("reserveStock",
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(
+        idProperty = "orderId",
+        startOnEventClass = OrderPlacedEvent.class
+)
+public void execute(SimpleWorkflowContext context) {
+    var reservation = context.awaitExecute(
+            "reserveStock",
             Map.of(),
-            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()));
+            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock())
+    );
     if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
-        ctx.fail(new RuntimeException("Stock unavailable"));
+        context.fail(new RuntimeException("Stock unavailable"));
         return;
     }
 
     // First: subscribe to the payment confirmation event (non-blocking)
-    var paymentConfirmation = ctx.waitForEvent("awaitPayment",       <i class="conum" data-value="1"></i><b>(1)</b>
+    var paymentConfirmation = context.waitForEvent(
+            "awaitPayment", <i class="conum" data-value="1"></i><b>(1)</b>
             PaymentConfirmed.class,
             associate(payloadProperty("orderId"),
-                      equalsTo(ctx.workflowPayload().get("orderId"))),
-            step -&gt; step.timeout(Duration.ofMinutes(15)));
+                      equalsTo(context.workflowPayload().get("orderId"))),
+            step -&gt; step.timeout(Duration.ofMinutes(15))
+    );
 
-    // Then: initiate payment (non-blocking) — this triggers the external service
-    var paymentInitiation = ctx.execute("initiatePayment",      <i class="conum" data-value="2"></i><b>(2)</b>
-            ctx.workflowPayload(),
+    // Then: initiate payment (non-blocking) - this triggers the external service
+    var paymentInitiation = context.execute(
+            "initiatePayment",  <i class="conum" data-value="2"></i><b>(2)</b>
+            context.workflowPayload(),
             PaymentService::initiatePayment,
-            step -&gt; step.timeout(Duration.ofSeconds(30)));
+            step -&gt; step.timeout(Duration.ofSeconds(30))
+    );
 
     // Wait for both to complete
-    ctx.allMatch(WorkflowStepResult::success,                       <i class="conum" data-value="3"></i><b>(3)</b>
-                 paymentConfirmation, paymentInitiation).await();
+    context.allMatch(
+            WorkflowStepResult::success,    <i class="conum" data-value="3"></i><b>(3)</b>
+            paymentConfirmation, paymentInitiation
+    ).await();
 
     logger.info("Payment initiated and confirmed for order {}",
-                ctx.workflowPayload().get("orderId"));
+                context.workflowPayload().get("orderId"));
 }</code></pre>
 </div>
 </div>
@@ -836,7 +866,8 @@ public void execute(SimpleWorkflowContext ctx) {
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td><code>execute</code> calls the payment service—this may trigger a third-party provider that eventually publishes a <code>PaymentConfirmed</code> event.</td>
+<td><code>execute</code> calls the payment service.
+This may trigger a third-party provider that eventually publishes a <code>PaymentConfirmed</code> event.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
@@ -880,7 +911,7 @@ public void execute(SimpleWorkflowContext ctx) {
 The external <code>PaymentConfirmed</code> event unblocks the workflow, and its payload is recorded in <code>AwaitPaymentCompleted</code>.</p>
 </div>
 <div class="paragraph">
-<p>Now that we can execute actions and wait for external events, let&#8217;s dive deeper into <a href="../understanding-steps/" class="xref page">all the options</a> you can configure—timeouts, error handling, event naming, payload reducers, and execution semantics.</p>
+<p>Now that we can execute actions and wait for external events, let&#8217;s dive deeper into <a href="../understanding-steps/" class="xref page">all the options</a> you can configure timeouts, error handling, event naming, payload reducers, and execution semantics.</p>
 </div>
 </div>
 </div>

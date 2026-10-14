@@ -436,7 +436,7 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>A workflow moves through a series of states during its lifetime.
-This section covers how workflows terminate—both intentionally and unexpectedly—and how to react to state changes with lifecycle listeners.</p>
+This section covers how workflows terminate, both intentionally and unexpectedly, and how to react to state changes with lifecycle listeners.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -447,7 +447,8 @@ This section covers how workflows terminate—both intentionally and unexpectedl
 <td class="content">
 <div class="paragraph">
 <p>Each workflow instance runs on a <strong>virtual thread</strong>.
-Virtual threads are lightweight—a suspended workflow (for example, waiting for an event) consumes almost no memory or OS resources, so you can run thousands of concurrent workflow instances without issue.
+Virtual threads are lightweight.
+A suspended workflow (for example, waiting for an event) consumes almost no memory or OS resources, so you can run thousands of concurrent workflow instances without issue.
 Memory use is proportional to the number of non-terminal instances on the node.
 In a future version, the engine will support offloading long-running suspended workflows to disk, freeing memory entirely until they are resumed.</p>
 </div>
@@ -481,7 +482,7 @@ In a future version, the engine will support offloading long-running suspended w
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>COMPLETED</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow method returned normally—all work is done.
+<td class="tableblock halign-left valign-top"><p class="tableblock">The workflow method returned normally since all work is done.
 Any async steps still running are interrupted (see <a href="#complete-with-running-steps">Normal completion with running steps</a>).</p></td>
 </tr>
 <tr>
@@ -499,7 +500,8 @@ Any async steps still running are interrupted (see <a href="#complete-with-runni
 </tbody>
 </table>
 <div class="paragraph">
-<p><code>COMPLETED</code>, <code>FAILED</code>, <code>CANCELLED</code>, and <code>TIMED_OUT</code> are <strong>terminal states</strong>—the workflow will not be retried or resumed.</p>
+<p><code>COMPLETED</code>, <code>FAILED</code>, <code>CANCELLED</code>, and <code>TIMED_OUT</code> are <strong>*terminal states</strong>.
+The workflow will not be retried or resumed when any of these occur.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -525,9 +527,7 @@ Any async steps still running are interrupted (see <a href="#complete-with-runni
 <div class="sectionbody">
 <div class="paragraph">
 <p>The workflow context passed to your workflow method is your single entry point to all engine capabilities.
-For Java, <code>WorkflowContext</code> is the shared author-facing workflow-body contract. <code>BaseWorkflowContext</code> is the
-canonical Java DSL layer implementing it, with Java-friendly named overloads; <code>SimpleWorkflowContext</code> adds further
-convenience methods on top.</p>
+For Java, <code>WorkflowContext</code> is the shared author-facing workflow-body contract. <code>BaseWorkflowContext</code> is the canonical Java DSL layer implementing it, with Java-friendly named overloads; <code>SimpleWorkflowContext</code> adds further convenience methods on top.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -543,42 +543,42 @@ convenience methods on top.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Workflow data</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflowId()</code>—the unique workflow instance ID<br>
-<code>workflowDefinitionId()</code>—the workflow definition identity; use <code>.version()</code> for its current definition version (see <a href="../versioning/" class="xref page">Workflow Versioning</a>)<br>
-<code>workflowPayload()</code>—the current workflow payload<br>
-<code>workflowStatus()</code>—the current status (STARTED, COMPLETED, FAILED, &#8230;&#8203;)<br>
-<code>workflowStepNames()</code>—names of steps in this workflow execution<br>
-<code>getStep(stepName)</code> / <code>containsStep(stepName)</code>—inspect whether a named step exists and retrieve it when present</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflowId()</code>: the unique workflow instance ID<br>
+<code>workflowDefinitionId()</code>: the workflow definition identity; use <code>.version()</code> for its current definition version (see <a href="../versioning/" class="xref page">Workflow Versioning</a>)<br>
+<code>workflowPayload()</code>: the current workflow payload<br>
+<code>workflowStatus()</code>: the current status (STARTED, COMPLETED, FAILED, &#8230;&#8203;)<br>
+<code>workflowStepNames()</code>: names of steps in this workflow execution<br>
+<code>getStep(stepName)</code> / <code>containsStep(stepName)</code>: inspect whether a named step exists and retrieve it when present</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Component access</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>resolveComponent(componentType)</code>—resolve a component from the processing context for this workflow invocation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>resolveComponent(componentType)</code>: resolve a component from the processing context for this workflow invocation</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Execute actions</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(&#8230;&#8203;)</code>—run an action and wait for the result<br>
-<code>execute(&#8230;&#8203;)</code>—run an action without waiting (returns <code>WorkflowStepResult</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitExecute(&#8230;&#8203;)</code>: run an action and wait for the result<br>
+<code>execute(&#8230;&#8203;)</code>: run an action without waiting (returns <code>WorkflowStepResult</code>)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Wait for events</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitEvent(&#8230;&#8203;)</code>—blocking event wait on <code>BaseWorkflowContext</code>, plus a typed convenience overload on <code>SimpleWorkflowContext</code><br>
-<code>waitForEvent(&#8230;&#8203;)</code>—non-blocking wait primitive on <code>BaseWorkflowContext</code> and <code>SimpleWorkflowContext</code><br>
-<code>sleep(&#8230;&#8203;)</code> / <code>awaitSleep(&#8230;&#8203;)</code>—durable delay primitives</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>awaitEvent(&#8230;&#8203;)</code>: blocking event wait on <code>BaseWorkflowContext</code>, plus a typed convenience overload on <code>SimpleWorkflowContext</code><br>
+<code>waitForEvent(&#8230;&#8203;)</code>: non-blocking wait primitive on <code>BaseWorkflowContext</code> and <code>SimpleWorkflowContext</code><br>
+<code>sleep(&#8230;&#8203;)</code> / <code>awaitSleep(&#8230;&#8203;)</code>: durable delay primitives</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Manage state</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>modifyPayload(&#8230;&#8203;)</code> / <code>awaitModifyPayload(&#8230;&#8203;)</code>—canonical payload mutation primitives<br>
-<code>setPayload(&#8230;&#8203;)</code>—<code>SimpleWorkflowContext</code> convenience for replacing payload fields from an object</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>modifyPayload(&#8230;&#8203;)</code> / <code>awaitModifyPayload(&#8230;&#8203;)</code>: canonical payload mutation primitives<br>
+<code>setPayload(&#8230;&#8203;)</code>: <code>SimpleWorkflowContext</code> convenience for replacing payload fields from an object</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Terminate</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fail(&#8230;&#8203;)</code>—terminate the workflow with a failure<br>
-<code>cancel(&#8230;&#8203;)</code>—cancel the workflow<br>
-<code>cancelStep(&#8230;&#8203;)</code>—cancel a single step</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fail(&#8230;&#8203;)</code>: terminate the workflow with a failure<br>
+<code>cancel(&#8230;&#8203;)</code>: cancel the workflow<br>
+<code>cancelStep(&#8230;&#8203;)</code>: cancel a single step</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Orchestrate</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>allMatch(&#8230;&#8203;)</code>, <code>anyMatch(&#8230;&#8203;)</code>, <code>noneMatch(&#8230;&#8203;)</code>—combine multiple non-blocking results</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>allMatch(&#8230;&#8203;)</code>, <code>anyMatch(&#8230;&#8203;)</code>, <code>noneMatch(&#8230;&#8203;)</code>: combine multiple non-blocking results</p></td>
 </tr>
 </tbody>
 </table>
@@ -594,7 +594,8 @@ convenience methods on top.</p>
 </td>
 <td class="content">
 <div class="paragraph">
-<p>You can also build your own custom workflow context with domain-specific methods. See <a href="../configuration/#custom-workflow-context" class="xref page">Custom Workflow Context</a>.</p>
+<p>You can also build your own custom workflow context with domain-specific methods.
+See <a href="../configuration/#custom-workflow-context" class="xref page">Custom Workflow Context</a>.</p>
 </div>
 </td>
 </tr>
@@ -639,7 +640,7 @@ convenience methods on top.</p>
 </tbody>
 </table>
 <div class="sect2">
-<h3 id="_failinternal_termination"><a class="anchor" href="#_failinternal_termination"></a><code>fail</code>—internal termination</h3>
+<h3 id="_fail_internal_termination"><a class="anchor" href="#_fail_internal_termination"></a><code>fail</code>: Internal termination</h3>
 <div class="paragraph">
 <p>Use <code>fail</code> inside your workflow code when the business logic determines the workflow should stop.</p>
 </div>
@@ -649,20 +650,28 @@ convenience methods on top.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Start two steps in parallel (non-blocking)
-var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
-                            ShippingService::shipOrder,
-                            step -&gt; step.timeout(Duration.ofMinutes(5)));
+var shipping = context.execute(
+        "shipOrder",
+        context.workflowPayload(),
+        ShippingService::shipOrder,
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);
 
-var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
-                                NotificationService::notifyCustomer,
-                                step -&gt; step.timeout(Duration.ofMinutes(1)));
+var notification = context.execute(
+        "notifyCustomer",
+        context.workflowPayload(),
+        NotificationService::notifyCustomer,
+        step -&gt; step.timeout(Duration.ofMinutes(1))
+);
 
 // Meanwhile, check stock - if unavailable, fail the workflow
-var reservation = ctx.awaitExecute("reserveStock",
+var reservation = context.awaitExecute(
+        "reserveStock",
         Map.of(),
-        (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()));
+        (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock())
+);
 if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
-    ctx.fail(new RuntimeException("Stock unavailable")); <i class="conum" data-value="1"></i><b>(1)</b>
+    context.fail(new RuntimeException("Stock unavailable")); <i class="conum" data-value="1"></i><b>(1)</b>
 }</code></pre>
 </div>
 </div>
@@ -687,14 +696,16 @@ if (!Boolean.TRUE.equals(reservation.get("reserved"))) {
 </div>
 <!-- vale on -->
 <div class="paragraph">
-<p>The last event recorded for <code>shipOrder</code> and <code>notifyCustomer</code> is their <code>Started</code>; the workflow&#8217;s <code>Failed</code> is the terminal event, and no further events are published for the workflow. The <code>Failed</code> event records the original exception&#8217;s class and message (<code>RuntimeException</code> here), not the wrapper. To record a terminal outcome and run compensation for a running step, cancel it individually with <code>ctx.cancelStep(&#8230;&#8203;)</code> before failing the workflow.</p>
+<p>The last event recorded for <code>shipOrder</code> and <code>notifyCustomer</code> is their <code>Started</code>; the workflow&#8217;s <code>Failed</code> is the terminal event, and no further events are published for the workflow.
+The <code>Failed</code> event records the original exception&#8217;s class and message (<code>RuntimeException</code> here), not the wrapper.
+To record a terminal outcome and run compensation for a running step, cancel it individually with <code>ctx.cancelStep(&#8230;&#8203;)</code> before failing the workflow.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_cancelinternal_termination"><a class="anchor" href="#_cancelinternal_termination"></a><code>cancel</code>—internal termination</h3>
+<h3 id="_cancel_internal_termination"><a class="anchor" href="#_cancel_internal_termination"></a><code>cancel</code>: Internal termination</h3>
 <div class="paragraph">
-<p>Use <code>ctx.cancel()</code> inside a workflow when its business logic determines that it should stop gracefully. Like <code>fail</code>,
-cancellation interrupts running steps and then terminates the workflow with a single workflow-level event.</p>
+<p>Use <code>ctx.cancel()</code> inside a workflow when its business logic determines that it should stop gracefully.
+Like <code>fail</code>, cancellation interrupts running steps and then terminates the workflow with a single workflow-level event.</p>
 </div>
 <div class="paragraph">
 <p>Given a workflow with parallel steps running:</p>
@@ -702,13 +713,19 @@ cancellation interrupts running steps and then terminates the workflow with a si
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Inside the workflow - two long-running steps in parallel
-var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
-                            ShippingService::shipOrder,
-                            step -&gt; step.timeout(Duration.ofMinutes(5)));
+var shipping = context.execute(
+        "shipOrder",
+        context.workflowPayload(),
+        ShippingService::shipOrder,
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);
 
-var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
-                                NotificationService::notifyCustomer,
-                                step -&gt; step.timeout(Duration.ofMinutes(1)));</code></pre>
+var notification = context.execute(
+        "notifyCustomer",
+        context.workflowPayload(),
+        NotificationService::notifyCustomer,
+        step -&gt; step.timeout(Duration.ofMinutes(1))
+);</code></pre>
 </div>
 </div>
 <div class="listingblock">
@@ -716,7 +733,7 @@ var notification = ctx.execute("notifyCustomer", ctx.workflowPayload(),
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// A business condition reached by the workflow cancels it and interrupts
 // shipOrder and notifyCustomer.
 if (orderCancelled()) {
-    ctx.cancel("Order cancelled by customer");
+    context.cancel("Order cancelled by customer");
 }</code></pre>
 </div>
 </div>
@@ -731,10 +748,12 @@ if (orderCancelled()) {
 </div>
 <!-- vale on -->
 <div class="paragraph">
-<p>As the log shows, the last event recorded for <code>shipOrder</code> and <code>notifyCustomer</code> is their <code>Started</code>; the workflow&#8217;s <code>Cancelled</code> is the terminal event. To record a terminal outcome and run compensation for a specific step, cancel it individually with <code>ctx.cancelStep(&#8230;&#8203;)</code> (see <a href="../step-orchestration/" class="xref page">Step Orchestration</a>).</p>
+<p>As the log shows, the last event recorded for <code>shipOrder</code> and <code>notifyCustomer</code> is their <code>Started</code>; the workflow&#8217;s <code>Cancelled</code> is the terminal event.
+To record a terminal outcome and run compensation for a specific step, cancel it individually with <code>ctx.cancelStep(&#8230;&#8203;)</code> (see <a href="../step-orchestration/" class="xref page">Step Orchestration</a>).</p>
 </div>
 <div class="paragraph">
-<p>If the workflow body itself is blocked on the interrupted step (for example inside <code>awaitExecute(&#8230;&#8203;)</code> or <code>.await()</code>), that call unblocks with a <code>StepInterruptedException</code>, which the body can catch (or its parent <code>StepFailedException</code>) to run compensation or cleanup. This is purely an in-body signal: it does not change what is recorded, the step&#8217;s last event-log entry still stays <code>Started</code>.</p>
+<p>If the workflow body itself is blocked on the interrupted step (for example inside <code>awaitExecute(&#8230;&#8203;)</code> or <code>.await()</code>), that call unblocks with a <code>StepInterruptedException</code>, which the body can catch (or its parent <code>StepFailedException</code>) to run compensation or cleanup.
+This is purely an in-body signal: it does not change what is recorded, the step&#8217;s last event-log entry still stays <code>Started</code>.</p>
 </div>
 </div>
 </div>
@@ -743,8 +762,8 @@ if (orderCancelled()) {
 <h2 id="_external_cancellation"><a class="anchor" href="#_external_cancellation"></a>External cancellation</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Use <code>WorkflowManager</code> when an application, operator, or support tool needs to request cancellation from outside the
-workflow. It targets a live workflow by a <code>WorkflowStateQuery</code> and returns a <code>CompletableFuture</code>:</p>
+<p>Use <code>WorkflowManager</code> when an application, operator, or support tool needs to request cancellation from outside the workflow.
+It targets a live workflow by a <code>WorkflowStateQuery</code> and returns a <code>CompletableFuture</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -753,14 +772,13 @@ workflow. It targets a live workflow by a <code>WorkflowStateQuery</code> and re
 </div>
 </div>
 <div class="paragraph">
-<p>The result has the same workflow-level effect as <code>ctx.cancel()</code>: running steps are interrupted and the workflow
-records one <code>CANCELLED</code> terminal event. The difference is where the decision originates. <code>ctx.cancel()</code> is called by
-workflow logic, while <code>WorkflowManager</code> delivers an outside-in request to an existing live execution.</p>
+<p>The result has the same workflow-level effect as <code>ctx.cancel()</code>: running steps are interrupted and the workflow records one <code>CANCELLED</code> terminal event.
+The difference is where the decision originates. <code>ctx.cancel()</code> is called by workflow logic, while <code>WorkflowManager</code> delivers an outside-in request to an existing live execution.</p>
 </div>
 <div class="paragraph">
-<p>The manager can also cancel one step or all running steps without terminating the workflow. It never sends cancellation
-requests to historic instances. See <a href="../workflow-manager/" class="xref page">Managing Workflow Instances</a> for querying, state reads,
-and all cancellation operations.</p>
+<p>The manager can also cancel one step or all running steps without terminating the workflow.
+It never sends cancellation requests to historic instances.
+See <a href="../workflow-manager/" class="xref page">Managing Workflow Instances</a> for querying, state reads, and all cancellation operations.</p>
 </div>
 <div class="sect2">
 <h3 id="complete-with-running-steps"><a class="anchor" href="#complete-with-running-steps"></a>Normal completion with running steps</h3>
@@ -771,12 +789,14 @@ When your workflow body returns, the engine interrupts any such step and publish
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void execute(SimpleWorkflowContext ctx) {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void execute(SimpleWorkflowContext context) {
     // fire-and-forget - notice there is no .await() on the returned result
-    ctx.execute("sendReceipt", ctx.workflowPayload(),
-                NotificationService::sendReceipt,
-                step -&gt; step.timeout(Duration.ofMinutes(1)));
-
+    context.execute(
+            "sendReceipt",
+            context.workflowPayload(),
+            NotificationService::sendReceipt,
+            step -&gt; step.timeout(Duration.ofMinutes(1))
+    );
     // workflow body returns while sendReceipt is still running
 }</code></pre>
 </div>
@@ -789,8 +809,10 @@ When your workflow body returns, the engine interrupts any such step and publish
   </div>
 </div>
 <div class="paragraph">
-<p>The workflow terminal is a single workflow-level event; a step left running is interrupted, not driven to a terminal state. If you need a started step to reach a terminal state (for example to trigger compensation), await it or cancel it individually before the workflow completes.
-Interrupting a step only completes its future; it does not force-interrupt a user <code>execute</code> action already running on the executor. That action runs to completion and its late result is simply discarded.</p>
+<p>The workflow terminal is a single workflow-level event; a step left running is interrupted, not driven to a terminal state.
+If you need a started step to reach a terminal state (for example to trigger compensation), await it or cancel it individually before the workflow completes.
+Interrupting a step only completes its future; it does not force-interrupt a user <code>execute</code> action already running on the executor.
+That action runs to completion and its late result is simply discarded.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -815,14 +837,12 @@ See <a href="../execute-steps/" class="xref page">Execute Steps</a> and <a href=
 <div class="sectionbody">
 <div class="paragraph">
 <p>An exception that escapes the workflow body ends the workflow with <code>FAILED</code> when it is a <code>StepFailedException</code>
-or a code defect such as a <code>NullPointerException</code>. A recoverable exception, an engine shutdown or a replay
-drift stop the body without ending the workflow: the status stays <code>STARTED</code>, there is no <code>PAUSED</code> status, and
-the engine re-drives the workflow on the next restart or segment claim.</p>
+or a code defect such as a <code>NullPointerException</code>.
+A recoverable exception, an engine shutdown or a replay drift stop the body without ending the workflow: the status stays <code>STARTED</code>, there is no <code>PAUSED</code> status, and the engine re-drives the workflow on the next restart or segment claim.</p>
 </div>
 <div class="paragraph">
-<p>Always give your workflow explicit terminal paths: call <code>fail</code> or <code>cancel</code> for every error condition you
-anticipate, or let the workflow complete normally. See <a href="../error-handling/" class="xref page">Error Handling</a> for the full
-classification and how a stopped workflow resumes.</p>
+<p>Always give your workflow explicit terminal paths: call <code>fail</code> or <code>cancel</code> for every error condition you anticipate, or let the workflow complete normally.
+See <a href="../error-handling/" class="xref page">Error Handling</a> for the full classification and how a stopped workflow resumes.</p>
 </div>
 </div>
 </div>
@@ -842,29 +862,38 @@ This is useful for cleanup, notifications, or triggering follow-up processes.</p
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class OrderFulfillmentWorkflow {
 
-    @Workflow(idProperty = "orderId", startOnEventClass = OrderPlacedEvent.class)
-    public void execute(SimpleWorkflowContext ctx) {
+    private static final Logger logger = LoggerFactory.getLogger(OrderFulfillmentWorkflow.class);
+
+    @Workflow(
+            idProperty = "orderId",
+            startOnEventClass = OrderPlacedEvent.class
+    )
+    public void execute(SimpleWorkflowContext context) {
         // ... workflow logic
     }
 
     @WorkflowCompletedHandler <i class="conum" data-value="1"></i><b>(1)</b>
-    public void onCompleted(WorkflowStatus status, SimpleWorkflowContext ctx) {
-        logger.info("Order {} fulfilled successfully!", ctx.workflowPayload().get("orderId"));
+    public void onCompleted(WorkflowStatus status,
+                            SimpleWorkflowContext context) {
+        logger.info("Order {} fulfilled successfully!", context.workflowPayload().get("orderId"));
     }
 
     @WorkflowFailedHandler <i class="conum" data-value="2"></i><b>(2)</b>
-    public void onFailed(WorkflowStatus status, SimpleWorkflowContext ctx) {
-        logger.warn("Order {} failed: {}", ctx.workflowPayload().get("orderId"), status);
+    public void onFailed(WorkflowStatus status,
+                         SimpleWorkflowContext context) {
+        logger.warn("Order {} failed: {}", context.workflowPayload().get("orderId"), status);
     }
 
     @WorkflowCancelledHandler <i class="conum" data-value="3"></i><b>(3)</b>
-    public void onCancelled(WorkflowStatus status, SimpleWorkflowContext ctx) {
-        logger.info("Order {} was cancelled", ctx.workflowPayload().get("orderId"));
+    public void onCancelled(WorkflowStatus status,
+                            SimpleWorkflowContext context) {
+        logger.info("Order {} was cancelled", context.workflowPayload().get("orderId"));
     }
 
     @WorkflowTimedOutHandler <i class="conum" data-value="4"></i><b>(4)</b>
-    public void onTimedOut(WorkflowStatus status, SimpleWorkflowContext ctx) {
-        logger.warn("Order {} timed out", ctx.workflowPayload().get("orderId"));
+    public void onTimedOut(WorkflowStatus status,
+                           SimpleWorkflowContext context) {
+        logger.warn("Order {} timed out", context.workflowPayload().get("orderId"));
     }
 }</code></pre>
 </div>
@@ -893,8 +922,7 @@ This is useful for cleanup, notifications, or triggering follow-up processes.</p
 <p>Each listener method receives the <code>WorkflowStatus</code> and the <code>WorkflowContext</code>, giving you access to the workflow payload and ID.</p>
 </div>
 <div class="paragraph">
-<p>Annotation-based listeners execute through the same handler pipeline as every other Axon Framework message
-handler: tracing, handler timeouts, <code>@MessageHandlerInterceptor</code>, replay-awareness, and any
+<p>Annotation-based listeners execute through the same handler pipeline as every other Axon Framework message handler: tracing, handler timeouts, <code>@MessageHandlerInterceptor</code>, replay-awareness, and any
 <code>HandlerEnhancerDefinition</code> registered in the configuration all apply automatically, with no extra setup.</p>
 </div>
 <div class="admonitionblock note">
@@ -907,8 +935,7 @@ handler: tracing, handler timeouts, <code>@MessageHandlerInterceptor</code>, rep
 <div class="paragraph">
 <p>Lifecycle listeners must be defined in the same class as the <code>@Workflow</code> method.
 Only methods on the workflow instance&#8217;s class (and its type hierarchy) are scanned for listener annotations.
-Use the <code>workflowName</code> attribute (for example, <code>@WorkflowCompletedHandler(workflowName = "myWorkflow")</code>) to bind
-a listener to a specific workflow when multiple workflows are defined in the same class.</p>
+Use the <code>workflowName</code> attribute (for example, <code>@WorkflowCompletedHandler(workflowName = "myWorkflow")</code>) to bind a listener to a specific workflow when multiple workflows are defined in the same class.</p>
 </div>
 </td>
 </tr>
@@ -922,16 +949,20 @@ a listener to a specific workflow when multiple workflows are defined in the sam
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.customized((c, w) -&gt; w
-        .registerWorkflowStatusChangeListener(WorkflowStatus.COMPLETED,
-                (status, context, processingContext) -&gt; {
-                    logger.info("Workflow {} completed", context.workflowId());
-                })
-        .registerWorkflowStatusChangeListener(WorkflowStatus.FAILED,
-                (status, context, processingContext) -&gt; {
-                    logger.warn("Workflow {} failed", context.workflowId());
-                })
-)</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">.customized((c, w) -&gt; w.registerWorkflowStatusChangeListener(
+                               WorkflowStatus.COMPLETED,
+                               (status, context, processingContext) -&gt; {
+                                   logger.info("Workflow {} completed",
+                                               context.workflowId());
+                               }
+                       )
+                       .registerWorkflowStatusChangeListener(
+                               WorkflowStatus.FAILED,
+                               (status, context, processingContext) -&gt; {
+                                   logger.warn("Workflow {} failed",
+                                               context.workflowId());
+                               }
+                       ))</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -944,9 +975,8 @@ a listener to a specific workflow when multiple workflows are defined in the sam
 </div>
 <div class="paragraph">
 <p><code>WorkflowStatusChangeListener</code> is a functional interface with a single method,
-<code>onWorkflowStatus(WorkflowStatus, WorkflowContext, ProcessingContext)</code>. Receiving the <code>ProcessingContext</code> lets a
-programmatic listener participate in the same handler pipeline annotation-based listeners do, for example,
-propagating correlation data or interacting with the active transaction, with no extra setup required.</p>
+<code>onWorkflowStatus(WorkflowStatus, WorkflowContext, ProcessingContext)</code>.
+Receiving the <code>ProcessingContext</code> lets a programmatic listener participate in the same handler pipeline annotation-based listeners do, for example, propagating correlation data or interacting with the active transaction, with no extra setup required.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -970,15 +1000,17 @@ They run in the context of the workflow execution and have access to the full wo
 <h2 id="_method_parameters"><a class="anchor" href="#_method_parameters"></a>Method parameters</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Both the <code>@Workflow</code> method and annotation-based lifecycle listeners can declare additional parameters beyond
-the workflow context, resolved the same way every other Axon Framework annotated handler resolves its
-parameters:</p>
+<p>Both the <code>@Workflow</code> method and annotation-based lifecycle listeners can declare additional parameters beyond the workflow context, resolved the same way every other Axon Framework annotated handler resolves its parameters:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@WorkflowCompletedHandler
-public void onCompleted(WorkflowStatus status, SimpleWorkflowContext ctx, WorkflowState state) {
-    logger.info("Order {} fulfilled successfully! (status: {})", ctx.workflowPayload().get("orderId"), state.workflowStatus());
+public void onCompleted(WorkflowStatus status,
+                        SimpleWorkflowContext context,
+                        WorkflowState state) {
+    logger.info("Order {} fulfilled successfully! (status: {})",
+                context.workflowPayload().get("orderId"),
+                state.workflowStatus());
 }</code></pre>
 </div>
 </div>
@@ -1023,16 +1055,12 @@ Declaring it on the <code>@Workflow</code> method itself has no matching value, 
 <h2 id="_event_versioning"><a class="anchor" href="#_event_versioning"></a>Event versioning</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Every event a workflow emits—started, step started/completed/failed/cancelled/retrying/retry-started/timed-out,
-completed/failed/cancelled/timed-out workflow, and version markers—carries the workflow&#8217;s current
-definition version on its <code>MessageType.version()</code>.
-This is Axon Framework 5&#8217;s native event-versioning channel, <strong>not</strong> a separate metadata key.</p>
+<p>Every event a workflow emits, like started, step started/completed/failed/cancelled/retrying/retry-started/timed-out, completed/failed/cancelled/timed-out workflow, and version markers, carry the workflow&#8217;s current definition version on its <code>MessageType.version()</code>.
+This is Axon Framework&#8217;s native event-versioning channel, <strong>not</strong> a separate metadata key.</p>
 </div>
 <div class="paragraph">
-<p>For a workflow declared with <code>@Workflow(version = "0.0.2")</code>, the runtime writes every emitted event
-as <code>new MessageType(name, "0.0.2")</code>.
-At replay time, the engine reads <code>event.type().version()</code> from the workflow&#8217;s started event and
-routes the instance to the registered workflow definition matching that version.
+<p>For a workflow declared with <code>@Workflow(version = "0.0.2")</code>, the runtime writes every emitted event as <code>new MessageType(name, "0.0.2")</code>.
+At replay time, the engine reads <code>event.type().version()</code> from the workflow&#8217;s started event and routes the instance to the registered workflow definition matching that version.
 See <a href="../versioning/" class="xref page">Workflow Versioning</a> for the full routing model.</p>
 </div>
 </div>

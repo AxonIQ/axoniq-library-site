@@ -457,10 +457,8 @@ fixture.then()
 </div>
 <div class="paragraph">
 <p>The fixture is intentionally explicit.
-When a workflow reaches an <code>execute</code> step, the step is recorded as started and the workflow is visibly waiting in that
-step.
-In stepping mode, the step does not finish on its own: the fixture intercepts completion so the test can decide whether
-to run the production action, return a fake result, or fail the step explicitly.
+When a workflow reaches an <code>execute</code> step, the step is recorded as started and the workflow is visibly waiting in that step.
+In stepping mode, the step does not finish on its own: the fixture intercepts completion so the test can decide whether to run the production action, return a fake result, or fail the step explicitly.
 This keeps side effects out of fixture tests and makes each workflow transition visible.</p>
 </div>
 <div class="paragraph">
@@ -533,8 +531,7 @@ Both phases also expose shared state-selection methods such as <code>executionEx
 </div>
 <div class="paragraph">
 <p>The fixture starts in stepping mode.
-In stepping mode, execute steps start normally but remain in progress until the test finishes them explicitly, and
-fixture-controlled time drives timeout tasks.</p>
+In stepping mode, execute steps start normally but remain in progress until the test finishes them explicitly, and fixture-controlled time drives timeout tasks.</p>
 </div>
 </div>
 </div>
@@ -547,17 +544,14 @@ This is the default setup style because it matches the runtime configuration mod
 <code>WorkflowTestDriver</code>.</p>
 </div>
 <div class="listingblock">
-<div class="title">src/test/java/io/axoniq/example/workflow/UserSignupFixtureTest.java</div>
+<div class="title">UserSignupFixtureTest.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.workflow.dsl.simple.SimpleWorkflowContext;
-import io.axoniq.framework.workflow.dsl.simple.SimpleWorkflowContextFactory;
-import io.axoniq.framework.workflow.configuration.WorkflowModule;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.axoniq.framework.workflow.configuration.WorkflowModule;
+import io.axoniq.framework.workflow.dsl.simple.SimpleWorkflowContext;
 import io.axoniq.framework.workflow.runtime.test.fixture.GivenWhen;
 import io.axoniq.framework.workflow.runtime.test.fixture.Then;
 import io.axoniq.framework.workflow.runtime.test.fixture.WorkflowTestFixture;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 class UserSignupFixtureTest {
 
@@ -567,7 +561,6 @@ class UserSignupFixtureTest {
     void setUp() {
         WorkflowModule&lt;SimpleWorkflowContext&gt; module = WorkflowModule
                 .defaults("UserSignup", SimpleWorkflowContext.class)
-                .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
                 .definition(d -&gt; d.autodetected(c -&gt; new UserSignupWorkflow()));
 
         fixture = WorkflowTestFixture.of(module);
@@ -631,7 +624,6 @@ Use the overload that matches how much control the test needs:</p>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule&lt;SimpleWorkflowContext&gt; module = WorkflowModule
         .defaults("UserSignup", SimpleWorkflowContext.class)
-        .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
         .definition(d -&gt; d.autodetected(c -&gt; new UserSignupWorkflow()));
 
 WorkflowTestFixture&lt;GivenWhen.Phase, Then.Phase&gt; fixture =
@@ -696,19 +688,15 @@ Payload events are wrapped in a <code>GenericEventMessage</code> and published t
 <div class="paragraph">
 <p>The fixture does not stop the workflow from entering an <code>execute</code> step.
 The step is started normally, and the workflow state shows that it is currently waiting in that step.
-What changes in stepping mode is how the step finishes: it will never complete by itself until the test tells the
-fixture what to do for that step name.</p>
+What changes in stepping mode is how the step finishes: it will never complete by itself until the test tells the fixture what to do for that step name.</p>
 </div>
 <div class="paragraph">
 <p>Think of it like a worker reaching a checkpoint.
-The worker has arrived and checked in, so everyone can see which station it is at, but the checkpoint gate stays closed
-until the test opens it.
-The test can open the gate in three ways: let the real workflow-defined action run, provide a fake successful result,
-or force the step to fail.</p>
+The worker has arrived and checked in, so everyone can see which station it is at, but the checkpoint gate stays closed until the test opens it.
+The test can open the gate in three ways: let the real workflow-defined action run, provide a fake successful result, or force the step to fail.</p>
 </div>
 <div class="paragraph">
-<p>This behavior lets a test inspect intermediate workflow state before any real side effect runs, while still using the
-normal runtime machinery for step events, payload reduction, and history recording.</p>
+<p>This behavior lets a test inspect intermediate workflow state before any real side effect runs, while still using the normal runtime machinery for step events, payload reduction, and history recording.</p>
 </div>
 <div class="paragraph">
 <p>To release the production action:</p>
@@ -734,10 +722,13 @@ normal runtime machinery for step events, payload reduction, and history recordi
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">fixture.when()
-       .execute("reserveCredit", (processingContext, inputPayload) -&gt; Map.of(
-               "reservationId", "res-123",
-               "amount", inputPayload.get("amount")
-       ));</code></pre>
+       .execute(
+               "reserveCredit",
+               (processingContext, inputPayload) -&gt; Map.of(
+                       "reservationId", "res-123",
+                       "amount", inputPayload.get("amount")
+               )
+       );</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1004,7 +995,6 @@ class SignupThen extends Then&lt;SignupThen, SignupGivenWhen&gt; {
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowTestFixture&lt;SignupGivenWhen, SignupThen&gt; fixture =
         WorkflowTestFixture.of(
                 WorkflowModule.defaults("UserSignup", SimpleWorkflowContext.class)
-                              .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
                               .definition(d -&gt; d.autodetected(c -&gt; new UserSignupWorkflow())),
                 UnaryOperator.identity(),
                 new SignupGivenWhen(),
@@ -1094,11 +1084,18 @@ void vip_registration_completes_after_magic_event() {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = ctx.waitForEvent("waitForConfirmation", EventConditions.never(),
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var confirmation = context.waitForEvent(
+        "waitForConfirmation",
+        EventConditions.never(),
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);
 confirmation.await();
 if (confirmation.timeout()) {
-    ctx.awaitExecute("handleTimeout", Map.of(), (pc, payload) -&gt; Map.of("handledBy", "workflow"));
+    context.awaitExecute(
+            "handleTimeout",
+            Map.of(),
+            (pc, payload) -&gt; Map.of("handledBy", "workflow")
+    );
 }</code></pre>
 </div>
 </div>
@@ -1216,12 +1213,7 @@ Use this for integration-style tests where production actions should run.</p></t
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowModule&lt;SimpleWorkflowContext&gt; module = WorkflowModule
-        .defaults("TestModule", SimpleWorkflowContext.class)
-        .contextFactory(c -&gt; new SimpleWorkflowContextFactory())
-        .definition(d -&gt; d.autodetected(c -&gt; new UserSignupWorkflow()));
-
-WorkflowTestDriver driver = WorkflowTestDriver.stepper(module, false, UnaryOperator.identity());
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowTestDriver driver = WorkflowTestDriver.stepper(module, false, UnaryOperator.identity());
 
 try {
     driver.publishEvent(new RegistrationReceivedEvent("2", "piggy@muppets.biz", "vip"));
@@ -1272,9 +1264,10 @@ Register it yourself only when you build a custom test configuration and still w
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowConfigurer configurer = WorkflowConfigurer.create()
-        .componentRegistry(registry -&gt; new WorkflowTestSteppingModeEnhancer().enhance(registry))
-        .registerWorkflowModule(module);</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowConfigurer configurer =
+        WorkflowConfigurer.create()
+                          .componentRegistry(registry -&gt; new WorkflowTestSteppingModeEnhancer().enhance(registry))
+                          .registerWorkflowModule(module);</code></pre>
 </div>
 </div>
 </div>

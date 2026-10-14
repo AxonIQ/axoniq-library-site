@@ -444,26 +444,26 @@ These aren&#8217;t special features—they&#8217;re built from <code>execute</co
 <h2 id="_fan_out_fan_in"><a class="anchor" href="#_fan_out_fan_in"></a><code>Fan-out</code> / <code>Fan-in</code></h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Fan-out launches multiple steps in parallel. Fan-in collects all results before continuing.</p>
+<p>Fan-out launches multiple steps in parallel.
+Fan-in collects all results before continuing.</p>
 </div>
 <div class="sect2">
-<h3 id="_fan_outlaunch_parallel_steps"><a class="anchor" href="#_fan_outlaunch_parallel_steps"></a><code>Fan-out</code>—launch parallel steps</h3>
+<h3 id="_fan_out_launch_parallel_steps"><a class="anchor" href="#_fan_out_launch_parallel_steps"></a><code>Fan-out</code>- launch parallel steps</h3>
 <div class="paragraph">
 <p>Reserve stock for every line item in an order concurrently:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var lineItems = (List&lt;Map&lt;String, Object&gt;&gt;) ctx.workflowPayload().get("lineItems");
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var lineItems = (List&lt;Map&lt;String, Object&gt;&gt;) context.workflowPayload().get("lineItems");
 
 // Fan-out: launch one reservation per line item
-var reservations = lineItems.stream()
-        .map(item -&gt; ctx.execute(
-                "reserve-" + item.get("sku"),                              <i class="conum" data-value="1"></i><b>(1)</b>
-                payload("sku", item.get("sku"),
-                        "quantity", item.get("quantity")).getValues(),
-                InventoryService::reserveStock,
-                step -&gt; step.timeout(Duration.ofSeconds(30))))
-        .toArray(WorkflowStepResult[]::new);</code></pre>
+var reservations = lineItems.stream().map(
+        item -&gt; context.execute("reserve-" + item.get("sku"), <i class="conum" data-value="1"></i><b>(1)</b>
+                                payload("sku", item.get("sku"),
+                                        "quantity", item.get("quantity")).getValues(),
+                                InventoryService::reserveStock,
+                                step -&gt; step.timeout(Duration.ofSeconds(30)))
+).toArray(WorkflowStepResult[]::new);</code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -476,17 +476,17 @@ var reservations = lineItems.stream()
 </div>
 </div>
 <div class="sect2">
-<h3 id="_fan_incollect_all_results"><a class="anchor" href="#_fan_incollect_all_results"></a><code>Fan-in</code>—collect all results</h3>
+<h3 id="_fan_in_collect_all_results"><a class="anchor" href="#_fan_in_collect_all_results"></a><code>Fan-in</code>- collect all results</h3>
 <div class="paragraph">
 <p>Use <code>allMatch</code> to wait for every reservation to complete:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Fan-in: wait for all reservations
-var guard = ctx.allMatch(WorkflowStepResult::success, reservations); <i class="conum" data-value="1"></i><b>(1)</b>
+var guard = context.allMatch(WorkflowStepResult::success, reservations); <i class="conum" data-value="1"></i><b>(1)</b>
 
 if (!guard.success()) {
-    // Some reservations failed — cancel the rest and compensate
+    // Some reservations failed, cancel the rest and compensate
     for (var step : guard.unmatched()) {
         if (!step.isCompleted()) {
             step.cancel("Partial reservation failure");
@@ -494,12 +494,12 @@ if (!guard.success()) {
     }
     for (var step : guard.matched()) {
         if (step.success()) {
-            ctx.awaitExecute("release-" + step.getStepName(),
-                    step.&lt;Map&lt;String, Object&gt;&gt;result().orElse(Map.of()),
-                    InventoryService::releaseStock);
+            context.awaitExecute("release-" + step.getStepName(),
+                                 step.&lt;Map&lt;String, Object&gt;&gt;result().orElse(Map.of()),
+                                 InventoryService::releaseStock);
         }
     }
-    ctx.fail(new RuntimeException("Not all items could be reserved"));
+    context.fail(new RuntimeException("Not all items could be reserved"));
 }
 
 logger.info("All {} items reserved!", reservations.length);</code></pre>
@@ -517,7 +517,8 @@ logger.info("All {} items reserved!", reservations.length);</code></pre>
 <div class="sect2">
 <h3 id="_fan_out_with_waitforevent"><a class="anchor" href="#_fan_out_with_waitforevent"></a><code>Fan-out</code> with <code>waitForEvent</code></h3>
 <div class="paragraph">
-<p>Same pattern works for events. Request approval from multiple approvers in parallel, wait for all:</p>
+<p>Same pattern works for events.
+Request approval from multiple approvers in parallel, wait for all:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -525,24 +526,25 @@ logger.info("All {} items reserved!", reservations.length);</code></pre>
 
 // Fan-out: send approval requests and wait for each response
 for (var approver : approvers) {
-    ctx.awaitExecute("requestApproval-" + approver,
-            payload("approver", approver, "requestId", ctx.workflowId()).getValues(),
-            ApprovalService::sendRequest);
+    context.awaitExecute("requestApproval-" + approver,
+                         payload("approver", approver, "requestId", context.workflowId()).getValues(),
+                         ApprovalService::sendRequest);
 }
 
-var approvals = approvers.stream()
-        .map(approver -&gt; ctx.waitForEvent(
-                "approval-" + approver,                                    <i class="conum" data-value="1"></i><b>(1)</b>
+var approvals = approvers.stream().map(
+        approver -&gt; context.waitForEvent(
+                "approval-" + approver, <i class="conum" data-value="1"></i><b>(1)</b>
                 ApprovalDecisionEvent.class,
                 associate(payloadProperty("approver"), equalsTo(approver)),
-                step -&gt; step.timeout(Duration.ofDays(5))))
-        .toArray(WorkflowStepResult[]::new);
+                step -&gt; step.timeout(Duration.ofDays(5))
+        )
+).toArray(WorkflowStepResult[]::new);
 
 // Fan-in: wait for all approvals
-var result = ctx.allMatch(WorkflowStepResult::success, approvals);
+var result = context.allMatch(WorkflowStepResult::success, approvals);
 
 if (!result.success()) {
-    ctx.fail(new RuntimeException("Not all approvals received within deadline"));
+    context.fail(new RuntimeException("Not all approvals received within deadline"));
 }
 
 logger.info("All {} approvers responded!", approvers.size());</code></pre>
@@ -560,7 +562,7 @@ logger.info("All {} approvers responded!", approvers.size());</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_sagacompensating_transactions"><a class="anchor" href="#_sagacompensating_transactions"></a>Saga—compensating transactions</h2>
+<h2 id="_saga_compensating_transactions"><a class="anchor" href="#_saga_compensating_transactions"></a>Saga - compensating transactions</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>A saga executes steps sequentially and rolls back completed steps if a later step fails.
@@ -570,35 +572,35 @@ This is standard imperative code—try each step, and on failure, compensate in 
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Step 1: reserve stock
 ctx.awaitExecute("reserveStock",
-        payload("orderId", orderId).getValues(),
-        InventoryService::reserveStock);
+                 payload("orderId", orderId).getValues(),
+                 InventoryService::reserveStock);
 
 // Step 2: charge payment
 try {
     ctx.awaitExecute("chargePayment",
-            payload("orderId", orderId, "amount", amount).getValues(),
-            PaymentService::charge);
+                     payload("orderId", orderId, "amount", amount).getValues(),
+                     PaymentService::charge);
 } catch (StepFailedException e) {
-    // Payment failed — compensate step 1
+    // Payment failed, compensate step 1
     ctx.awaitExecute("releaseStock",
-            payload("orderId", orderId).getValues(),
-            InventoryService::releaseStock);
+                     payload("orderId", orderId).getValues(),
+                     InventoryService::releaseStock);
     ctx.fail(new RuntimeException("Payment failed: " + e.getMessage()));
 }
 
 // Step 3: ship order
 try {
     ctx.awaitExecute("shipOrder",
-            payload("orderId", orderId).getValues(),
-            ShippingService::shipOrder);
+                     payload("orderId", orderId).getValues(),
+                     ShippingService::shipOrder);
 } catch (StepFailedException e) {
-    // Shipping failed — compensate steps 2 and 1 in reverse
+    // Shipping failed, compensate steps 2 and 1 in reverse
     ctx.awaitExecute("refundPayment",
-            payload("orderId", orderId, "amount", amount).getValues(),
-            PaymentService::refund);
+                     payload("orderId", orderId, "amount", amount).getValues(),
+                     PaymentService::refund);
     ctx.awaitExecute("releaseStock",
-            payload("orderId", orderId).getValues(),
-            InventoryService::releaseStock);
+                     payload("orderId", orderId).getValues(),
+                     InventoryService::releaseStock);
     ctx.fail(new RuntimeException("Shipping failed: " + e.getMessage()));
 }</code></pre>
 </div>
@@ -620,12 +622,12 @@ Use <code>anyMatch</code> in a loop to process results one at a time:</p>
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var suppliers = List.of("supplierA", "supplierB", "supplierC");
 
 // Scatter: request quotes from all suppliers
-var quotes = suppliers.stream()
-        .map(s -&gt; ctx.execute("getQuote-" + s,
-                payload("supplier", s, "itemId", itemId).getValues(),
-                QuoteService::requestQuote,
-                step -&gt; step.timeout(Duration.ofSeconds(30))))
-        .toList();
+var quotes = suppliers.stream().map(
+        s -&gt; ctx.execute("getQuote-" + s,
+                         payload("supplier", s, "itemId", itemId).getValues(),
+                         QuoteService::requestQuote,
+                         step -&gt; step.timeout(Duration.ofSeconds(30)))
+).toList();
 
 var remaining = new ArrayList&lt;&gt;(quotes);
 
@@ -659,31 +661,32 @@ while (!remaining.isEmpty()) {
 <h2 id="_human_in_the_loop"><a class="anchor" href="#_human_in_the_loop"></a>Human-in-the-loop</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Wait for a human action—an approval, a review, a manual data entry—with escalation if they don&#8217;t respond in time:</p>
+<p>Wait for a human action with escalation if they don&#8217;t respond in time.
+Thus, an approval, a review, a manual data entry:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Request approval from the team lead
 ctx.awaitExecute("requestApproval",
-        payload("approver", "team-lead", "requestId", ctx.workflowId()).getValues(),
-        ApprovalService::sendRequest);
+                 payload("approver", "team-lead", "requestId", ctx.workflowId()).getValues(),
+                 ApprovalService::sendRequest);
 
 // Wait for their response
 var decision = ctx.waitForEvent("awaitApproval",
-        ApprovalDecisionEvent.class,
-        associate(payloadProperty("requestId"), equalsTo(ctx.workflowId())),
-        step -&gt; step.timeout(Duration.ofDays(3)));
+                                ApprovalDecisionEvent.class,
+                                associate(payloadProperty("requestId"), equalsTo(ctx.workflowId())),
+                                step -&gt; step.timeout(Duration.ofDays(3)));
 
-if (decision.timeout()) {                                                <i class="conum" data-value="1"></i><b>(1)</b>
-    // Team lead didn't respond — escalate to department head
+if (decision.timeout()) {   <i class="conum" data-value="1"></i><b>(1)</b>
+    // Team lead didn't respond, escalate to department head
     ctx.awaitExecute("escalate",
-            payload("approver", "department-head", "requestId", ctx.workflowId()).getValues(),
-            ApprovalService::escalate);
+                     payload("approver", "department-head", "requestId", ctx.workflowId()).getValues(),
+                     ApprovalService::escalate);
 
     decision = ctx.waitForEvent("awaitEscalatedApproval",
-            ApprovalDecisionEvent.class,
-            associate(payloadProperty("requestId"), equalsTo(ctx.workflowId())),
-            step -&gt; step.timeout(Duration.ofDays(1)));
+                                ApprovalDecisionEvent.class,
+                                associate(payloadProperty("requestId"), equalsTo(ctx.workflowId())),
+                                step -&gt; step.timeout(Duration.ofDays(1)));
 
     if (decision.timeout()) {
         ctx.fail(new RuntimeException("No approval received after escalation"));
@@ -709,26 +712,27 @@ logger.info("Approval decision received: {}", decision.result());</code></pre>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Skip a step entirely if it has been failing consistently.
-This is implemented in your action code, not in the engine—but the engine&#8217;s durable state makes it easy:</p>
+This is implemented in your action code, not in the engine.
+However, the engine&#8217;s durable state makes it easy:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var failureCount = (int) ctx.workflowPayload().getOrDefault("emailFailures", 0);
 
-if (failureCount &lt; 3) {                                                  <i class="conum" data-value="1"></i><b>(1)</b>
+if (failureCount &lt; 3) { <i class="conum" data-value="1"></i><b>(1)</b>
     try {
         ctx.awaitExecute("sendEmail",
-                payload("to", email, "subject", subject).getValues(),
-                EmailService::send);
+                         payload("to", email, "subject", subject).getValues(),
+                         EmailService::send);
         ctx.setPayload("resetEmailFailures",
-                Map.of("emailFailures", 0));                                 <i class="conum" data-value="2"></i><b>(2)</b>
+                       Map.of("emailFailures", 0)); <i class="conum" data-value="2"></i><b>(2)</b>
     } catch (StepFailedException e) {
         ctx.setPayload("recordEmailFailure",
-                Map.of("emailFailures", failureCount + 1));            <i class="conum" data-value="3"></i><b>(3)</b>
+                       Map.of("emailFailures", failureCount + 1));  <i class="conum" data-value="3"></i><b>(3)</b>
         logger.warn("Email failed ({}/3), will skip next time", failureCount + 1);
     }
 } else {
-    logger.warn("Circuit open — skipping email, {} consecutive failures", failureCount);
+    logger.warn("Circuit open, skipping email, {} consecutive failures", failureCount);
 }</code></pre>
 </div>
 </div>
@@ -780,8 +784,8 @@ var delay = Duration.between(LocalDateTime.now(), targetTime);
 ctx.sleep("waitUntilAprilFirst", delay);
 
 ctx.awaitExecute("sendReminder",
-        payload("to", email).getValues(),
-        ReminderService::send);</code></pre>
+                 payload("to", email).getValues(),
+                 ReminderService::send);</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -802,7 +806,7 @@ The child publishes its completion event the same way; the parent matches it wit
 Other workflows, entities and projections receive the event you published.</p>
 </div>
 <div class="listingblock">
-<div class="title">Parent workflow—launches a child and waits for it to finish</div>
+<div class="title">Parent workflow launches a child and waits for it to finish</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId",
         startOnEventClass = OrderPlacedEvent.class,
@@ -857,7 +861,7 @@ The published <code>PaymentProcessStarted</code> event is the step&#8217;s recor
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Child workflow—started by the published event, signals completion the same way</div>
+<div class="title">Child workflow started by the published event, signals completion the same way</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "childWorkflowId",
           startOnEventClass = PaymentProcessStarted.class,                 <i class="conum" data-value="1"></i><b>(1)</b>

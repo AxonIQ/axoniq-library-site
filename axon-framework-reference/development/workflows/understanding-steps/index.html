@@ -447,7 +447,7 @@ This section covers the full configuration available across all step types: time
 </td>
 <td class="content">
 <div class="paragraph">
-<p>Everything in this section applies to all step primitives—unless noted otherwise.</p>
+<p>Everything in this section applies to all step primitives, unless noted otherwise.</p>
 </div>
 </td>
 </tr>
@@ -488,34 +488,34 @@ ctx.awaitExecute("stepB", Map.of(), ServiceB::doWork);</code></pre>
 <div class="ulist">
 <ul>
 <li>
-<p><a href="#step-primitives">Step primitives at a glance</a>—all primitives at a glance</p>
+<p><a href="#step-primitives">Step primitives at a glance</a>: all primitives at a glance</p>
 </li>
 <li>
-<p><a href="#workflow-step-result"><code>WorkflowStepResult</code></a>—inspecting, waiting for, and cancelling async results</p>
+<p><a href="#workflow-step-result"><code>WorkflowStepResult</code></a>: inspecting, waiting for, and cancelling async results</p>
 </li>
 <li>
-<p><a href="#timeouts">Timeouts</a>—defaults, per-step overrides, crash recovery</p>
+<p><a href="#timeouts">Timeouts</a>: defaults, per-step overrides, crash recovery</p>
 </li>
 <li>
-<p><a href="#payload-reducers">Payload reducers</a>—controlling data flow in and out of steps</p>
+<p><a href="#payload-reducers">Payload reducers</a>: controlling data flow in and out of steps</p>
 </li>
 <li>
-<p><a href="#error-handling">Error handling</a>—try/catch, checking results, compensating actions</p>
+<p><a href="#error-handling">Error handling</a>: try/catch, checking results, compensating actions</p>
 </li>
 <li>
-<p><a href="#cancelling-a-step">Cancelling a step</a>—cancelling individual steps</p>
+<p><a href="#cancelling-a-step">Cancelling a step</a>: cancelling individual steps</p>
 </li>
 <li>
-<p><a href="#execution-semantics">Execution semantics</a>—at most once, crash-interrupted steps, how to handle and retry</p>
+<p><a href="#execution-semantics">Execution semantics</a>: at most once, crash-interrupted steps, how to handle and retry</p>
 </li>
 <li>
-<p><a href="#retries">Retries</a>—retry policies, backoff, crash recovery</p>
+<p><a href="#retries">Retries</a>: retry policies, backoff, crash recovery</p>
 </li>
 <li>
-<p><a href="#event-name-customization">Event name customization</a>—namespaces, suffixes, inheritance, builders</p>
+<p><a href="#event-name-customization">Event name customization</a>: namespaces, suffixes, inheritance, builders</p>
 </li>
 <li>
-<p><a href="#kotlin-dsl-equivalents">Kotlin DSL equivalents</a>—Kotlin syntax for all of the above</p>
+<p><a href="#kotlin-dsl-equivalents">Kotlin DSL equivalents</a>: Kotlin syntax for all of the above</p>
 </li>
 </ul>
 </div>
@@ -604,7 +604,7 @@ ctx.awaitExecute("stepB", Map.of(), ServiceB::doWork);</code></pre>
 <p>The <code>WorkflowStepResult</code> returned by <code>execute</code> and <code>waitForEvent</code> lets you inspect, wait for, or cancel a running step.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
-<caption class="title">Table 1. Blocking methods—wait until the step reaches a terminal state</caption>
+<caption class="title">Table 1. Blocking methods wait until the step reaches a terminal state</caption>
 <colgroup>
 <col style="width: 40%;">
 <col style="width: 60%;">
@@ -639,7 +639,7 @@ ctx.awaitExecute("stepB", Map.of(), ServiceB::doWork);</code></pre>
 </tbody>
 </table>
 <table class="tableblock frame-all grid-all stretch">
-<caption class="title">Table 2. Non-blocking methods—return immediately</caption>
+<caption class="title">Table 2. Non-blocking methods return immediately</caption>
 <colgroup>
 <col style="width: 40%;">
 <col style="width: 60%;">
@@ -679,15 +679,21 @@ ctx.awaitExecute("stepB", Map.of(), ServiceB::doWork);</code></pre>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// non-blocking execute
-var shipping = ctx.execute("shipOrder", ctx.workflowPayload(),
+var shipping = context.execute(
+        "shipOrder",
+        context.workflowPayload(),
         ShippingService::shipOrder,
-        step -&gt; step.timeout(Duration.ofMinutes(5)));
+        step -&gt; step.timeout(Duration.ofMinutes(5))
+);
 
 // non-blocking wait for event
-var approval = ctx.waitForEvent("awaitApproval",
+var approval = context.waitForEvent(
+        "awaitApproval",
         ManagerApproved.class,
-        associate(payloadProperty("orderId"), equalsTo(ctx.workflowPayload().get("orderId"))),
-        step -&gt; step.timeout(Duration.ofMinutes(30)));
+        associate(payloadProperty("orderId"),
+                  equalsTo(context.workflowPayload().get("orderId"))),
+        step -&gt; step.timeout(Duration.ofMinutes(30))
+);
 
 // check and wait on either
 if (shipping.isCompleted()) {
@@ -707,7 +713,8 @@ if (approval.timeout()) {
 <h2 id="timeouts"><a class="anchor" href="#timeouts"></a>Timeouts</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Every step has a timeout. If the action doesn&#8217;t complete in time, the engine records a TIMED_OUT event and the step is considered failed.
+<p>Every step has a timeout.
+If the action doesn&#8217;t complete in time, the engine records a TIMED_OUT event and the step is considered failed.
 This applies to <code>awaitExecute</code>, <code>execute</code>, and <code>awaitEvent</code> alike.</p>
 </div>
 <div class="hdlist">
@@ -717,7 +724,7 @@ This applies to <code>awaitExecute</code>, <code>execute</code>, and <code>await
 Default
 </td>
 <td class="hdlist2">
-<p><strong>5 seconds</strong>—used when you don&#8217;t pass an explicit <code>Duration</code>.</p>
+<p><strong>5 seconds</strong>, used when you don&#8217;t pass an explicit <code>Duration</code>.</p>
 </td>
 </tr>
 <tr>
@@ -733,20 +740,28 @@ Override per step
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Uses the default 5-second timeout
-ctx.awaitExecute("quickCheck",
+context.awaitExecute(
+        "quickCheck",
         Map.of(),
-        (pc, input) -&gt; Map.of("passed", QuickService.check()));
+        (pc, input) -&gt; Map.of("passed", QuickService.check())
+);
 
 // Explicit 30-second timeout for an action
-ctx.awaitExecute("slowOperation", ctx.workflowPayload(),
-                 SlowService::process,
-                 step -&gt; step.timeout(Duration.ofSeconds(30)));
+context.awaitExecute(
+        "slowOperation",
+        context.workflowPayload(),
+        SlowService::process,
+        step -&gt; step.timeout(Duration.ofSeconds(30))
+);
 
 // Explicit 15-minute timeout for waiting on an external event
-ctx.awaitEvent("awaitPayment", PaymentConfirmed.class,
-               associate(payloadProperty("orderId"),
-                         equalsTo(ctx.workflowPayload().get("orderId"))),
-               step -&gt; step.timeout(Duration.ofMinutes(15)));</code></pre>
+context.awaitEvent(
+        "awaitPayment",
+        PaymentConfirmed.class,
+        associate(payloadProperty("orderId"),
+                  equalsTo(context.workflowPayload().get("orderId"))),
+        step -&gt; step.timeout(Duration.ofMinutes(15))
+);</code></pre>
 </div>
 </div>
 <div class="admonitionblock important">
@@ -757,7 +772,8 @@ ctx.awaitEvent("awaitPayment", PaymentConfirmed.class,
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The timeout is measured from the timestamp of the STARTED event—that is the step&#8217;s start time.
+<p>The timeout is measured from the timestamp of the STARTED event.
+That is the step&#8217;s start time.
 On replay after a crash, the remaining timeout is recalculated: <code>startTime + timeout - now</code>.
 If the remaining time is already negative, the step times out immediately.</p>
 </div>
@@ -771,8 +787,10 @@ If the remaining time is already negative, the step times out immediately.</p>
 <h2 id="payload-reducers"><a class="anchor" href="#payload-reducers"></a>Payload reducers</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Every workflow has a <strong>global payload</strong>—the shared state that lives for the entire workflow.
-When you call a step, you can also pass a <strong>local payload</strong>—data specific to that step.</p>
+<p>Every workflow has a <strong>global payload</strong>.
+This is the shared state that lives for the entire workflow.
+When you call a step, you can also pass a <strong>local payload</strong>.
+This data is specific to that step.</p>
 </div>
 <div class="paragraph">
 <p>The question is: what does the step&#8217;s action actually receive as input, and what happens to the step&#8217;s result?
@@ -790,7 +808,7 @@ That&#8217;s what payload reducers control.</p>
 <code>parameterPayloadReducer</code>
 </td>
 <td class="hdlist2">
-<p>Controls the <strong>input</strong>—what payload the step&#8217;s action receives.</p>
+<p>Controls the <strong>input</strong>, so what payload the step&#8217;s action receives.</p>
 </td>
 </tr>
 <tr>
@@ -798,7 +816,7 @@ That&#8217;s what payload reducers control.</p>
 <code>resultPayloadReducer</code>
 </td>
 <td class="hdlist2">
-<p>Controls the <strong>output</strong>—what happens to the step&#8217;s result after it completes.</p>
+<p>Controls the <strong>output</strong>, so what happens to the step&#8217;s result after it completes.</p>
 </td>
 </tr>
 </table>
@@ -832,7 +850,7 @@ That&#8217;s what payload reducers control.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>CombineGlobalAndLocalPayloadReducer.INSTANCE</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The action receives both merged—local values overwrite global values with the same key.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The action receives both merged. Local values overwrite global values with the same key.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The step&#8217;s result is merged back into the global payload.</p></td>
 </tr>
 </tbody>
@@ -841,10 +859,13 @@ That&#8217;s what payload reducers control.</p>
 <div class="sect2">
 <h3 id="_why_does_this_matter"><a class="anchor" href="#_why_does_this_matter"></a>Why does this matter?</h3>
 <div class="paragraph">
-<p>With the defaults (<code>LocalOnlyPayloadReducer.INSTANCE</code> for input and <code>GlobalOnlyPayloadReducer.INSTANCE</code> for output), steps are isolated—they only see what you explicitly pass them, and their results don&#8217;t leak into the global state. This keeps things predictable.</p>
+<p>With the defaults (<code>LocalOnlyPayloadReducer.INSTANCE</code> for input and <code>GlobalOnlyPayloadReducer.INSTANCE</code> for output), steps are isolated.
+They only see what you explicitly pass them, and their results don&#8217;t leak into the global state.
+This keeps things predictable.</p>
 </div>
 <div class="paragraph">
-<p>Sometimes you want a step to see the full workflow context, or you want the result to update the global payload for subsequent steps. That&#8217;s when you change the reducer.</p>
+<p>Sometimes you want a step to see the full workflow context, or you want the result to update the global payload for subsequent steps.
+That&#8217;s when you change the reducer.</p>
 </div>
 </div>
 <div class="sect2">
@@ -855,22 +876,25 @@ That&#8217;s what payload reducers control.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Default behavior: step only sees the local payload
-ctx.awaitExecute("reserveStock",
+context.awaitExecute(
+        "reserveStock",
         payload("customerId", customerId).getValues(), <i class="conum" data-value="1"></i><b>(1)</b>
-        InventoryService::reserveStock);</code></pre>
+        InventoryService::reserveStock
+);</code></pre>
 </div>
 </div>
 <div class="colist arabic">
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The action receives <code>{customerId=456}</code> only—it can&#8217;t see <code>orderId</code> or <code>email</code>.</td>
+<td>The action receives <code>{customerId=456}</code> only.
+It can&#8217;t see <code>orderId</code> or <code>email</code>.</td>
 </tr>
 </table>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitExecute(
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">context.awaitExecute(
         "processOrder",
         payload("priority", "high").getValues(),
         OrderService::process,
@@ -892,9 +916,9 @@ ctx.awaitExecute("reserveStock",
 <h2 id="error-handling"><a class="anchor" href="#error-handling"></a>Error handling</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Every step failure surfaces as a <code>StepFailedException</code> or one of its subtypes. Catch it to compensate, or
-let it propagate to fail the workflow. What the engine stores about an error, when a workflow stops for good
-and when it pauses and resumes are covered in one place: <a href="../error-handling/" class="xref page">Error Handling</a>.</p>
+<p>Every step failure surfaces as a <code>StepFailedException</code> or one of its subtypes.
+Catch it to compensate, or let it propagate to fail the workflow.
+What the engine stores about an error, when a workflow stops for good and when it pauses and resumes are covered in one place: <a href="../error-handling/" class="xref page">Error Handling</a>.</p>
 </div>
 </div>
 </div>
@@ -909,12 +933,15 @@ and when it pauses and resumes are covered in one place: <a href="../error-handl
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var approval = ctx.waitForEvent("awaitApproval",
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">var approval = context.waitForEvent(
+        "awaitApproval",
         ManagerApproved.class,
-        associate(payloadProperty("orderId"), equalsTo(ctx.workflowPayload().get("orderId"))),
-        step -&gt; step.timeout(Duration.ofMinutes(30)));
+        associate(payloadProperty("orderId"),
+                  equalsTo(context.workflowPayload().get("orderId"))),
+        step -&gt; step.timeout(Duration.ofMinutes(30))
+);
 
-// later — manager rejected, no longer need approval
+// later, manager rejected, no longer need approval
 approval.cancel("Manager rejected the request"); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
 </div>
@@ -922,7 +949,8 @@ approval.cancel("Manager rejected the request"); <i class="conum" data-value="1"
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Cancels the wait. The workflow continues executing—only this step is affected.</td>
+<td>Cancels the wait.
+The workflow continues executing—only this step is affected.</td>
 </tr>
 </table>
 </div>
@@ -931,11 +959,11 @@ approval.cancel("Manager rejected the request"); <i class="conum" data-value="1"
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.cancelStep("awaitApproval");                            // default message: "Step cancelled"
-ctx.cancelStep("awaitApproval",
-        step -&gt; step.cause(new StepCancellationException("Manager rejected"))); // custom reason
-ctx.cancelStep("awaitApproval",
-        step -&gt; step.cause(someException));                  // wrap an existing exception</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">context.cancelStep("awaitApproval");    // default message: "Step cancelled"
+context.cancelStep("awaitApproval",     // custom reason
+                   step -&gt; step.cause(new StepCancellationException("Manager rejected")));
+context.cancelStep("awaitApproval",     // wrap an existing exception
+                   step -&gt; step.cause(someException));</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -961,7 +989,8 @@ ctx.cancelStep("awaitApproval",
 </div>
 </div>
 <div class="paragraph">
-<p>The returned <code>CompletableFuture&lt;Boolean&gt;</code> is <code>true</code> when the terminal cancellation was recorded. See
+<p>The returned <code>CompletableFuture&lt;Boolean&gt;</code> is <code>true</code> when the terminal cancellation was recorded.
+See
 <a href="../workflow-manager/" class="xref page">Managing Workflow Instances</a> for outside-in cancellation and instance lookup.</p>
 </div>
 <div class="admonitionblock important">
@@ -973,7 +1002,7 @@ ctx.cancelStep("awaitApproval",
 <td class="content">
 <div class="paragraph">
 <p>Step cancellation only affects the individual step.
-The workflow keeps running—other steps are not touched.
+The workflow keeps running, thus the other steps are not touched.
 This is different from <code>ctx.cancel()</code> or <code>ctx.fail()</code>, which terminate the entire workflow and cancel <em>all</em> running steps.</p>
 </div>
 </td>
@@ -1020,34 +1049,27 @@ See <a href="#step-level-customizer">Step-level customizer</a> for how to contro
 <div class="sect1">
 <h2 id="execution-semantics"><a class="anchor" href="#execution-semantics"></a>Execution semantics</h2>
 <div class="sectionbody">
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
 <div class="paragraph">
 <p>Steps execute with <strong>at most once</strong> semantics.
 Each attempt of a step&#8217;s action runs <strong>at most once</strong>, including across crashes and replays.
-An attempt is never re-run after a crash. Only a configured <code>RetryPolicy</code> starts a new attempt.</p>
+An attempt is never re-run after a crash.
+Only a configured <code>RetryPolicy</code> starts a new attempt.</p>
 </div>
 <div class="paragraph">
-<p>The action runs <strong>before</strong> its COMPLETED event is persisted. If the application crashes in that window (action ran, COMPLETED not yet committed), the engine <strong>does not</strong> re-run the action on recovery: the durable STARTED record means an attempt was already opened and may have run, and re-running it would break the at-most-once guarantee.
+<p>The action runs <strong>before</strong> its COMPLETED event is persisted.
+If the application crashes in that window (action ran, COMPLETED not yet committed), the engine <strong>does not</strong> re-run the action on recovery: the durable STARTED record means an attempt was already opened and may have run, and re-running it would break the at-most-once guarantee.
 Because the outcome of the interrupted attempt is unknown, the engine resolves it through the <strong>regular error flow</strong> instead of re-executing it (see below).</p>
 </div>
 <div class="paragraph">
-<p>The trade-off of at-most-once is that an interrupted action may run <strong>zero or one</strong> times — it may not run at all. If a step&#8217;s effect <strong>must</strong> eventually happen, make it <strong>idempotent</strong> and configure a <code>RetryPolicy</code> (a retry is a fresh attempt) and/or compensate when the step fails.</p>
+<p>The trade-off of at-most-once is that an interrupted action may run <strong>zero or one</strong> times.
+Hence, it may not run at all.
+If a step&#8217;s effect <strong>must</strong> eventually happen, make it <strong>idempotent</strong> and configure a <code>RetryPolicy</code> (a retry is a fresh attempt) and/or compensate when the step fails.</p>
 </div>
 <div class="paragraph">
 <p>Events can reach the workflow more than once, for example after a restart or a rebalance.
 A step that already reached a terminal status ignores a later matching event.
 For external side effects, use the workflow id and the step name as the idempotency key.
 Both are stable across restarts.</p>
-</div>
-</td>
-</tr>
-</table>
 </div>
 <div class="sect2">
 <h3 id="crash-interrupted-steps"><a class="anchor" href="#crash-interrupted-steps"></a>Crash-interrupted steps: which error, and how to retry</h3>
@@ -1057,10 +1079,14 @@ Both are stable across restarts.</p>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>No retry policy</strong>: the step records a terminal <strong>FAILED</strong> status. The failure is surfaced to your workflow body as a <code>StepIndeterminateException</code>, a subtype of <code>StepFailedException</code> (the dedicated "in-flight at a crash, not re-run, outcome indeterminate" marker). <code>awaitExecute(&#8230;&#8203;)</code> throws it; a non-blocking <code>execute(&#8230;&#8203;)</code> handle reports it via <code>result.failure()</code> / <code>result.error()</code>.</p>
+<p><strong>No retry policy</strong>: the step records a terminal <strong>FAILED</strong> status.
+The failure is surfaced to your workflow body as a <code>StepIndeterminateException</code>, a subtype of <code>StepFailedException</code> (the dedicated "in-flight at a crash, not re-run, outcome indeterminate" marker). <code>awaitExecute(&#8230;&#8203;)</code> throws it; a non-blocking <code>execute(&#8230;&#8203;)</code> handle reports it via <code>result.failure()</code> / <code>result.error()</code>.</p>
 </li>
 <li>
-<p><strong>With a retry policy</strong>: the interrupted attempt is treated as a failed attempt and the step goes to <strong>RETRYING</strong>; the engine schedules the next attempt per the policy (backoff included). This is identical to the normal retry-on-failure flow, so a step you <strong>want</strong> re-attempted after a crash should carry a <code>RetryPolicy</code> (and an idempotent action, since a retry runs the effect again). Each retry attempt records <strong>RETRY_STARTED</strong> before it runs, and runs only if the event store accepted that record. A node that lost the workflow instance during the backoff is rejected there and never runs the action.</p>
+<p><strong>With a retry policy</strong>: the interrupted attempt is treated as a failed attempt and the step goes to <strong>RETRYING</strong>; the engine schedules the next attempt per the policy (backoff included).
+This is identical to the normal retry-on-failure flow, so a step you <strong>want</strong> re-attempted after a crash should carry a <code>RetryPolicy</code> (and an idempotent action, since a retry runs the effect again).
+Each retry attempt records <strong>RETRY_STARTED</strong> before it runs, and runs only if the event store accepted that record.
+A node that lost the workflow instance during the backoff is rejected there and never runs the action.</p>
 </li>
 </ul>
 </div>
@@ -1072,20 +1098,22 @@ Both are stable across restarts.</p>
 </td>
 <td class="content">
 <div class="paragraph">
-<p>A step reaching FAILED does not by itself terminate the workflow while the body handles it. Catch the <code>StepFailedException</code> to compensate, branch, or retry with a fresh step:</p>
+<p>A step reaching FAILED does not by itself terminate the workflow while the body handles it.
+Catch the <code>StepFailedException</code> to compensate, branch, or retry with a fresh step:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">try {
-    ctx.awaitExecute("chargePayment", payload, (pc, p) -&gt; charge(p));
+    context.awaitExecute("chargePayment", payload, (pc, p) -&gt; charge(p));
 } catch (StepFailedException e) {
     // crash-interrupted (StepIndeterminateException) or a genuine failure: compensate, then fail the workflow
-    ctx.fail(e);
+    context.fail(e);
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>A <code>StepFailedException</code> the body does not catch fails the workflow. See <a href="../error-handling/" class="xref page">Error Handling</a>.</p>
+<p>A <code>StepFailedException</code> the body does not catch fails the workflow.
+See <a href="../error-handling/" class="xref page">Error Handling</a>.</p>
 </div>
 </td>
 </tr>
@@ -1098,59 +1126,83 @@ Both are stable across restarts.</p>
 <h2 id="retries"><a class="anchor" href="#retries"></a>Retries</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>RetryPolicy</code> API lets you configure retries per step—max attempts, backoff strategy, and programmatic control:</p>
+<p>The <code>RetryPolicy</code> API lets you configure retries per step, like the maximum number of attempts, the backoff strategy, and programmatic control:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Simple: retry up to 3 times (uses the default timeout and event names)
-ctx.awaitExecute("reserveInventory",
+context.awaitExecute(
+        "reserveInventory",
         payload("orderId", orderId).getValues(),
         InventoryService::reserve,
-        step -&gt; step.retryPolicy(RetryPolicy.maxRetries(3)));             <i class="conum" data-value="1"></i><b>(1)</b>
+        step -&gt; step.retryPolicy(RetryPolicy.maxRetries(3)) <i class="conum" data-value="1"></i><b>(1)</b>
+);
 
 // With fixed backoff: wait 500ms between retries
-ctx.awaitExecute("chargePayment",
+context.awaitExecute(
+        "chargePayment",
         payload("orderId", orderId, "amount", amount).getValues(),
         PaymentGateway::charge,
-        step -&gt; step.retryPolicy(RetryPolicy.maxRetries(3)
-                .withBackoff(BackoffStrategy.fixed(Duration.ofMillis(500)))));
+        step -&gt; step.retryPolicy(
+                RetryPolicy.maxRetries(3)
+                           .withBackoff(BackoffStrategy.fixed(Duration.ofMillis(500)))
+        )
+);
 
 // With exponential backoff (base 200ms, capped at 5s)
-ctx.awaitExecute("notifyCarrier",
+context.awaitExecute(
+        "notifyCarrier",
         payload("shipmentId", shipmentId).getValues(),
         CarrierService::notify,
-        step -&gt; step.retryPolicy(RetryPolicy.maxRetries(5)
-                .withBackoff(BackoffStrategy.exponential(Duration.ofMillis(200), Duration.ofSeconds(5)))));
+        step -&gt; step.retryPolicy(
+                RetryPolicy.maxRetries(5)
+                           .withBackoff(BackoffStrategy.exponential(
+                                   Duration.ofMillis(200),
+                                   Duration.ofSeconds(5)
+                           ))
+        )
+);
 
 // With retry handler and conditional stop
-ctx.awaitExecute("validateAddress",
+context.awaitExecute(
+        "validateAddress",
         payload("address", address).getValues(),
         AddressService::validate,
-        step -&gt; step.retryPolicy(RetryPolicy.maxRetries(5)
-                .onRetry(retryCtx -&gt; logger.warn("Retry {}/{} for {}: {}",       <i class="conum" data-value="2"></i><b>(2)</b>
-                        retryCtx.attempt(), retryCtx.maxRetries(),
-                        retryCtx.stepName(), retryCtx.error().getMessage()))
-                .retryWhile(retryCtx -&gt; isTransient(retryCtx.error()))));         <i class="conum" data-value="3"></i><b>(3)</b></code></pre>
+        step -&gt; step.retryPolicy(
+                RetryPolicy.maxRetries(5)
+                           .onRetry(retryCtx -&gt; logger.warn(
+                                   "Retry {}/{} for {}: {}",       <i class="conum" data-value="2"></i><b>(2)</b>
+                                   retryCtx.attempt(),
+                                   retryCtx.maxRetries(),
+                                   retryCtx.stepName(),
+                                   retryCtx.error().getMessage()
+                           ))
+                           .retryWhile(retryCtx -&gt; isTransient(retryCtx.error())) <i class="conum" data-value="3"></i><b>(3)</b>
+        )
+);</code></pre>
 </div>
 </div>
 <div class="colist arabic">
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>If the step fails or times out, the engine retries up to 3 times before marking it as FAILED (or TIMED_OUT if the last attempt timed out). Each attempt gets its own full timeout. <code>maxRetries=3</code> means up to 4 total executions (1 initial + 3 retries).</td>
+<td>If the step fails or times out, the engine retries up to 3 times before marking it as FAILED (or TIMED_OUT if the last attempt timed out).
+Each attempt gets its own full timeout. <code>maxRetries=3</code> means up to 4 total executions (1 initial + 3 retries).</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td><code>onRetry</code> is called before each retry—use it for logging, metrics, or alerts.</td>
+<td><code>onRetry</code> is called before each retry.
+Use it for logging, metrics, or alerts.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td><code>retryWhile</code> continues retrying as long as the predicate returns true—here, only transient errors are retried (for example, a 404 is not retried).</td>
+<td><code>retryWhile</code> continues retrying as long as the predicate returns <code>true</code>.
+Here, only transient errors are retried (for example, a 404 is not retried).</td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>The <code>reserveInventory</code> step with <code>RetryPolicy.maxRetries(3)</code>—fails twice, succeeds on the third attempt.
+<p>The <code>reserveInventory</code> step with <code>RetryPolicy.maxRetries(3)</code> fails twice, succeeds on the third attempt.
 Every retry attempt records <code>RetryStarted</code> before its action runs; <code>attempt</code> on that event is the attempt being started:</p>
 </div>
 <div class="et-player" data-autoplay>
@@ -1206,7 +1258,8 @@ Every retry attempt records <code>RetryStarted</code> before its action runs; <c
 </td>
 <td class="content">
 <div class="paragraph">
-<p>If a step throws <code>StepCancellationException</code> during any retry attempt, the step immediately transitions to <code>CANCELLED</code>—remaining retries are skipped.
+<p>If a step throws <code>StepCancellationException</code> during any retry attempt, the step immediately transitions to <code>CANCELLED</code>.
+Any remaining retries are skipped.
 Cancellation always takes precedence over the retry policy.
 This also applies when the workflow cancels a step through <code>ctx.cancelStep()</code> or when the workflow itself is cancelled: any in-flight backoff delay is interrupted and the step moves to a terminal state.</p>
 </div>
@@ -1218,9 +1271,11 @@ This also applies when the workflow cancels a step through <code>ctx.cancelStep(
 <div class="sect2">
 <h3 id="_crash_recovery"><a class="anchor" href="#_crash_recovery"></a>Crash recovery</h3>
 <div class="paragraph">
-<p>Retries are event-sourced—on crash recovery, the engine replays retry events and recalculates backoff from persisted timestamps.
+<p>Retries are maintained too.
+On crash recovery, the engine replays retry events and recalculates backoff from persisted timestamps.
 If the process restarts while a step is in <code>RETRYING</code> state, the engine resumes from the correct attempt number with the remaining backoff delay.
-If it restarts while a step is in <code>RETRY_STARTED</code> state, that attempt was running at the crash. It is treated as a failed attempt with the recorded attempt number, so the step goes to <code>RETRYING</code> and the retry count is not reset.</p>
+If it restarts while a step is in <code>RETRY_STARTED</code> state, that attempt was running at the crash.
+It is treated as a failed attempt with the recorded attempt number, so the step goes to <code>RETRYING</code> and the retry count is not reset.</p>
 </div>
 </div>
 </div>
@@ -1240,13 +1295,17 @@ You can set it at the <strong>workflow level</strong> (applies to all steps) or 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(idProperty = "orderId",
-          startOnEventClass = OrderPlacedEvent.class,
-          workflowNamespace = "io.myapp.orders")  <i class="conum" data-value="1"></i><b>(1)</b>
-public void execute(SimpleWorkflowContext ctx) {
-    ctx.awaitExecute("reserveStock",
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Workflow(
+        idProperty = "orderId",
+        startOnEventClass = OrderPlacedEvent.class,
+        workflowNamespace = "io.myapp.orders"   <i class="conum" data-value="1"></i><b>(1)</b>
+)
+public void execute(SimpleWorkflowContext context) {
+    context.awaitExecute(
+            "reserveStock",
             Map.of(),
-            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock())); <i class="conum" data-value="2"></i><b>(2)</b>
+            (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()) <i class="conum" data-value="2"></i><b>(2)</b>
+    );
 }</code></pre>
 </div>
 </div>
@@ -1258,7 +1317,8 @@ public void execute(SimpleWorkflowContext ctx) {
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>This step&#8217;s events will be <code>io.myapp.orders.ReserveStockStarted</code> and <code>io.myapp.orders.ReserveStockCompleted</code>—no per-step configuration needed.</td>
+<td>This step&#8217;s events will be <code>io.myapp.orders.ReserveStockStarted</code> and <code>io.myapp.orders.ReserveStockCompleted</code>.
+No per-step configuration needed.</td>
 </tr>
 </table>
 </div>
@@ -1267,24 +1327,23 @@ public void execute(SimpleWorkflowContext ctx) {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">return d -&gt; d
-        .declarative(c -&gt; workflow::execute)
-        .workflowName("OrderFulfillment")
-        .on(EventConditions.fromType(OrderPlacedEvent.class))
-        .customized((c, w) -&gt; w
-                .eventNameCustomizer(
-                        namespace("io.myapp.orders")
-                                .stepCompleted("Done")
-                                .workflowBaseName("OrderFulfillment"))
-                .workflowIdProvider(new PayloadPropertyWorkflowIdProvider("orderId"))
-        );</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">return d -&gt; d.declarative(c -&gt; workflow::execute)
+             .workflowName("OrderFulfillment")
+             .on(EventConditions.fromType(OrderPlacedEvent.class))
+             .customized((c, w) -&gt; w
+                     .eventNameCustomizer(
+                             namespace("io.myapp.orders")
+                                     .stepCompleted("Done")
+                                     .workflowBaseName("OrderFulfillment"))
+                     .workflowIdProvider(new PayloadPropertyWorkflowIdProvider("orderId"))
+             );</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>With this configuration, all steps produce events like <code>io.myapp.orders.ReserveStockDone</code>—without having to specify the namespace or suffix on every step.</p>
+<p>With this configuration, all steps produce events like <code>io.myapp.orders.ReserveStockDone</code> without having to specify the namespace or suffix on every step.</p>
 </div>
 <div class="paragraph">
-<p>For the full declarative configuration API—workflow modules, start conditions, ID providers, and more—see <a href="../configuration/" class="xref page">Configuration</a>.</p>
+<p>For the full declarative configuration, check out the <a href="../configuration/" class="xref page">Configuration chapter</a>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -1294,11 +1353,13 @@ public void execute(SimpleWorkflowContext ctx) {
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.awaitExecute("initiatePayment",
-                 payload("amount", amount).getValues(),
-                 PaymentService::initiatePayment,
-                 step -&gt; step.timeout(Duration.ofSeconds(30))
-                             .eventNameCustomizer(namespace("io.myapp.payments"))); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">context.awaitExecute(
+        "initiatePayment",
+        payload("amount", amount).getValues(),
+        PaymentService::initiatePayment,
+        step -&gt; step.timeout(Duration.ofSeconds(30))
+                    .eventNameCustomizer(namespace("io.myapp.payments")) <i class="conum" data-value="1"></i><b>(1)</b>
+);</code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -1315,10 +1376,13 @@ If a step uses a custom namespace, its cancellation event uses the same namespac
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ctx.execute("shipOrder", ctx.workflowPayload(),
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">context.execute(
+        "shipOrder",
+        context.workflowPayload(),
         ShippingService::shipOrder,
         step -&gt; step.timeout(Duration.ofMinutes(5))
-                    .eventNameCustomizer(namespace("io.shipping")));
+                    .eventNameCustomizer(namespace("io.shipping"))
+);
 
 // If cancelled, the event will be: io.shipping.ShipOrderCancelled</code></pre>
 </div>
@@ -1339,13 +1403,16 @@ If a step uses a custom namespace, its cancellation event uses the same namespac
 <div class="sect2">
 <h3 id="_defaults_and_inheritance"><a class="anchor" href="#_defaults_and_inheritance"></a>Defaults and Inheritance</h3>
 <div class="paragraph">
-<p>Axon Workflows defines sensible defaults for naming workflow events. The workflow-level customizer propagates selected properties to steps via <code>forStepInheritance()</code>.
-When a step also has its own customizer, the two are merged—<strong>step-level wins</strong> when it differs from defaults, otherwise the workflow-level value is used.
+<p>Axon Workflows defines sensible defaults for naming workflow events.
+The workflow-level customizer propagates selected properties to steps via <code>forStepInheritance()</code>.
+When a step also has its own customizer, the two are merged.
+The <strong>step-level wins</strong> when it differs from defaults, otherwise the workflow-level value is used.
 The table below explains the naming settings defaults and inheritance in detail.</p>
 </div>
 <div class="paragraph">
 <p>The workflow-level customizer propagates selected properties to steps via <code>forStepInheritance()</code>.
-When a step also has its own customizer, the two are merged—<strong>step-level wins</strong> when it differs from defaults, otherwise the workflow-level value is used.</p>
+When a step also has its own customizer, the two are merged.
+The <strong>step-level wins</strong> when it differs from defaults, otherwise the workflow-level value is used.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <caption class="title">Table 3. What steps inherit from the workflow customizer</caption>
@@ -1368,7 +1435,7 @@ When a step also has its own customizer, the two are merged—<strong>step-level
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>namespace</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The prefix for all event names (for example, <code>io.myapp.orders</code>)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>io.axoniq.framework.workflow</code> (for <code>@Workflow</code> classes without <code>workflowNamespace</code>: the package of the workflow class)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Yes—set it once, all steps use it</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes, set it once, all steps use it</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>capitalizeSimpleName</code></p></td>
@@ -1392,25 +1459,25 @@ When a step also has its own customizer, the two are merged—<strong>step-level
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflowBaseName</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Base name for workflow-level events (for example, <code>OrderFulfillmentWorkflow#ExecuteStarted</code>, <code>OrderFulfillmentWorkflow#ExecuteCompleted</code>)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The workflow name</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">No—workflow-specific</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No, workflow-specific</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>appendToBaseName</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Whether to include the step name before the suffix</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">No—resets to default per step</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No, resets to default per step</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Workflow status suffixes</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Suffixes for workflow-level events (<code>workflowStarted</code>, <code>workflowCompleted</code>, etc.)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Started</code>, <code>Completed</code>, <code>Failed</code>, <code>TimedOut</code>, <code>Cancelled</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">No—workflow-specific</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No, workflow-specific</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>payloadCustomization</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Dynamic event naming based on payload content</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">None</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">No—workflow-specific</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No, workflow-specific</p></td>
 </tr>
 </tbody>
 </table>
@@ -1427,17 +1494,21 @@ When a step also has its own customizer, the two are merged—<strong>step-level
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Step 1: inherits workflow customizer — no override needed
-ctx.awaitExecute("reserveStock",
-                 Map.of(),
-                 (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock()));
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Step 1: inherits workflow customizer, no override needed
+context.awaitExecute(
+        "reserveStock",
+        Map.of(),
+        (pc, input) -&gt; Map.of("reserved", InventoryService.reserveStock())
+);
 
 // Step 2: overrides namespace for this step only
-ctx.awaitExecute("initiatePayment",
-                 payload("amount", amount).getValues(),
-                 PaymentService::initiatePayment,
-                 step -&gt; step.timeout(Duration.ofSeconds(30))
-                             .eventNameCustomizer(namespace("io.payments")));</code></pre>
+context.awaitExecute(
+        "initiatePayment",
+        payload("amount", amount).getValues(),
+        PaymentService::initiatePayment,
+        step -&gt; step.timeout(Duration.ofSeconds(30))
+                    .eventNameCustomizer(namespace("io.payments"))
+);</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1463,7 +1534,7 @@ io.payments.InitiatePaymentDone    <i class="conum" data-value="3"></i><b>(3)</b
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>The <code>Done</code> suffix is still inherited—only the namespace was overridden.</td>
+<td>The <code>Done</code> suffix is still inherited, only the namespace was overridden.</td>
 </tr>
 </table>
 </div>
@@ -1519,7 +1590,8 @@ io.payments.InitiatePaymentDone    <i class="conum" data-value="3"></i><b>(3)</b
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">namespace("io.myapp").stepCompleted("Done").stepFailed("Errored")</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">namespace("io.myapp").stepCompleted("Done")
+                     .stepFailed("Errored")</code></pre>
 </div>
 </div>
 </div>
@@ -1530,12 +1602,11 @@ io.payments.InitiatePaymentDone    <i class="conum" data-value="3"></i><b>(3)</b
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">defaults()
-    .stepStarted("Initiated")
-    .stepCompleted("Done")
-    .stepFailed("Errored")
-    .stepTimedOut("Expired")
-    .stepCancelled("Aborted")</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">defaults().stepStarted("Initiated")
+          .stepCompleted("Done")
+          .stepFailed("Errored")
+          .stepTimedOut("Expired")
+          .stepCancelled("Aborted")</code></pre>
 </div>
 </div>
 <div class="paragraph">
