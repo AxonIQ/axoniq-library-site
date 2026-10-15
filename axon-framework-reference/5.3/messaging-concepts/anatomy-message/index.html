@@ -524,7 +524,9 @@ public class OrderPlacedEvent {
 </ul>
 </div>
 <div class="paragraph">
-<p>If you don&#8217;t specify these annotations, Axon will use the fully qualified class name as the <code>QualifiedName</code> and <code>0.0.1</code> as the version, maintaining backward compatibility.</p>
+<p>If you don&#8217;t specify these annotations, Axon derives the <code>QualifiedName</code> from the class&#8217;s package name and simple name, and uses <code>0.0.1</code> as the version.
+For nested classes, the simple name does not include the enclosing class(es).
+See <a href="#nested_message_classes">nested message classes</a> for the consequences of this.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -751,6 +753,47 @@ The fallback for when that is not present too is the package name of the class.<
 </li>
 <li>
 <p>The fully qualified name is always: <code>namespace + "." + name</code>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="nested_message_classes"><a class="anchor" href="#nested_message_classes"></a>Nested message classes</h4>
+<div class="paragraph">
+<p>The default <code>MessageTypeResolver</code> derives the qualified name of a message class as the package name, a dot, and the class&#8217;s simple name.
+It does so for annotated and non-annotated classes alike.
+However, it is important to note that for a nested class, the simple name does <strong>not</strong> include the enclosing class:</p>
+</div>
+<div class="listingblock pseudocode">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package example;
+
+public sealed interface DocumentCommand {
+
+    // Resolves to the qualified name "example.CreateDocument", not "example.DocumentCommand$CreateDocument"
+    record CreateDocument(String id) implements DocumentCommand {
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This particular style is common in Kotlin, where commands and events are often grouped in a sealed interface.
+Be aware of the following:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Name collisions</strong>: two enclosing types in the same package that each contain a nested class with the same simple name (for example, two nested <code>Started</code> events) resolve to the same qualified name.
+Disambiguate them by setting the <code>name</code> or <code>namespace</code> attribute on <code>@Command</code>, <code>@Event</code>, or <code>@Query</code>, or by placing a <code>@Namespace</code> annotation on the enclosing class.</p>
+</li>
+<li>
+<p><strong>String-based names are used verbatim</strong>: <code>new MessageType("example.DocumentCommand$CreateDocument", version)</code> and <code>new QualifiedName(String)</code> are never altered.
+When you dispatch a message with a hand-built <code>MessageType</code>, make sure it matches the name the handler is registered under.
+Preferably, obtain the type from the configured <code>MessageTypeResolver</code> or <code>new MessageType(DocumentCommand.CreateDocument.class)</code>.
+In Kotlin, pass <code>CreateDocument::class.java</code>, as <code>KClass.qualifiedName</code> renders nested classes with yet another (dotted) spelling.</p>
+</li>
+<li>
+<p><strong>Classes without a simple name</strong>, such as anonymous classes, fall back to <code>Class#getName()</code>.</p>
 </li>
 </ul>
 </div>
