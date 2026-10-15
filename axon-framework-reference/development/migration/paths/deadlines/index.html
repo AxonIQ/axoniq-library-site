@@ -549,8 +549,13 @@ Going forward, what used to be "a deadline firing on an aggregate" becomes "a sc
 <div class="paragraph">
 <p><code>axoniq-legacy</code> helps you make that transition: it automatically drains every deadline Axon Framework 4 already scheduled against an aggregate, by translating it into a command and dispatching it through the <code>CommandGateway</code>, so you do not need to re-schedule anything yourself.
 This changes what the migrated entity needs: replace the aggregate&#8217;s <code>@DeadlineHandler</code> method with a
-<code>@CommandHandler</code> method, as shown below, first for a deadline scheduled with a payload, then for one scheduled
-without.</p>
+<code>@CommandHandler</code> method named <code>&lt;aggregateType&gt;.&lt;deadlineName&gt;</code>, as shown below for an <code>Order</code> aggregate, first for a
+deadline scheduled with a payload, then for one scheduled without.
+This name keeps deadlines apart that share a payload type, and deadlines of different aggregate types that share a
+name.
+The aggregate type is the one Axon Framework 4 stored with the deadline: the aggregate&#8217;s simple class name, unless
+<code>@Aggregate(type = &#8230;&#8203;)</code> set another one.
+Keep that name in the command name, even when the migration renames the class.</p>
 </div>
 <div id="_tabs_1" class="openblock tabs is-loading">
 <div class="content">
@@ -577,7 +582,7 @@ public void onPaymentDue(PaymentDueReminder payload) {
 <div id="_tabs_1_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_1_axon_framework_5">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler(commandName = "Order.paymentDue")
 void handle(PaymentDueReminder command) {
     // ...
 }</code></pre>
@@ -587,7 +592,7 @@ void handle(PaymentDueReminder command) {
 </div>
 </div>
 <div class="paragraph">
-<p>A payload-less deadline keeps its name, but becomes a command without a payload:</p>
+<p>A payload-less deadline is named the same way, but becomes a command without a payload:</p>
 </div>
 <div id="_tabs_2" class="openblock tabs is-loading">
 <div class="content">
@@ -614,7 +619,7 @@ public void onAccountExpired() {
 <div id="_tabs_2_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_2_axon_framework_5">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler(commandName = "accountExpired")
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler(commandName = "Order.accountExpired")
 void handle(Void command) {
     // ...
 }</code></pre>
@@ -622,6 +627,24 @@ void handle(Void command) {
 </div>
 </div>
 </div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>A handler migrated with <code>axoniq-legacy</code> 5.4.0 is named after the deadline&#8217;s payload type, such as
+<code>@CommandHandler void handle(PaymentDueReminder command)</code>, or after the deadline name alone for a deadline without a
+payload, such as <code>@CommandHandler(commandName = "accountExpired")</code>.
+When no handler exists for <code>&lt;aggregateType&gt;.&lt;deadlineName&gt;</code>, <code>axoniq-legacy</code> dispatches the deadline again under that
+earlier name, so such a handler keeps receiving its deadlines, and logs a warning asking to rename it.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock important">
 <table>
