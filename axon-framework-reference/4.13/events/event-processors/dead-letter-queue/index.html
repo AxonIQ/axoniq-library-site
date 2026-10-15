@@ -365,7 +365,7 @@
           <li><a role="menuitem" class="product-version" data-version="5.2" href="../../../../5.2/"><span class="pv-num">5.2</span></a></li>
           <li><a role="menuitem" class="product-version" data-version="5.1" href="../../../../5.1/"><span class="pv-num">5.1</span></a></li>
           <li><a role="menuitem" class="product-version" data-version="5.0" href="../../../../5.0/"><span class="pv-num">5.0</span></a></li>
-          <li><a role="menuitem" class="product-version" data-version="4.13" href="../../../"><span class="pv-num">4.13</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="4.13" href="../../../"><span class="pv-num">4.13 (LTS)</span></a></li>
           <li><a role="menuitem" class="product-version" data-version="4.12" href="../../../../4.12/"><span class="pv-num">4.12</span></a></li>
           <li><a role="menuitem" class="product-version" data-version="4.11" href="../../../../4.11/"><span class="pv-num">4.11</span></a></li>
           <li><a role="menuitem" class="product-version" data-version="4.10" href="../../../../4.10/"><span class="pv-num">4.10</span></a></li>
@@ -865,6 +865,57 @@ class MyProcessingGroup {
     }
 }</code></pre>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_resetting_and_replaying"><a class="anchor" href="#_resetting_and_replaying"></a>Resetting and replaying</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When you reset the tracking tokens of a processor, the dead-letter queue is kept by default (<code>allowReset</code> on the <code>DeadLetteringEventHandlerInvoker</code> defaults to <code>false</code>).
+Set <code>allowReset</code> to <code>true</code> to clear the queue on a reset.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Clearing the queue drops dead letters without handling them.
+A side effect that a dead-lettered event should have caused is not executed, unless the replay handles that event again.
+Resolve all dead letters before resetting, either by <a href="#_processing_sequences">processing</a> them or by evicting them deliberately.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>If you keep the dead letters, a replay treats each sequence that holds dead letters as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Replayed events positioned before the first dead letter of the sequence are handled normally.
+They may rebuild the state that the dead letter depends on.</p>
+</li>
+<li>
+<p>Replayed events that are already dead-lettered in the sequence are skipped, to prevent duplicates.
+They are matched on their identifier, as their position may differ from the one stored with the dead letter.</p>
+</li>
+<li>
+<p>Replayed events positioned after the first dead letter that are not yet in the sequence are enqueued without being handled, at the position matching their place in the event stream.</p>
+</li>
+<li>
+<p>A replayed event that fails while being handled is enqueued at the position matching its place in the event stream, rather than at the end of the sequence.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Placing a dead letter at its position in the stream requires evicting and enqueuing every later dead letter of that sequence again.
+This is costly for long sequences, so we strongly recommend resolving all dead letters before you replay, either by processing or by evicting them.
+Treat the behavior described above as a safety net, not as the intended way to replay.</p>
 </div>
 </div>
 </div>
