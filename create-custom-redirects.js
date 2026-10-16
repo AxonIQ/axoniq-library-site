@@ -132,7 +132,6 @@ const latestComponents = [
     "message-handler-customization-guide",
     "meta-annotations-guide",
     "identifier-generation-guide",
-    "deadlines-guide",
     "dead-letter-queue-guide",
     "axon-server-reference",
     "amqp-extension-reference",
