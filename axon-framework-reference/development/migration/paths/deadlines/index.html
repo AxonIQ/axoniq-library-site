@@ -365,7 +365,7 @@
           <li><a role="menuitem" class="product-version" data-version="4.12" href="../../../../4.12/"><span class="pv-num">4.12</span></a></li>
           <li><a role="menuitem" class="product-version" data-version="4.11" href="../../../../4.11/"><span class="pv-num">4.11</span></a></li>
           <li><a role="menuitem" class="product-version" data-version="4.10" href="../../../../4.10/"><span class="pv-num">4.10</span></a></li>
-          <li><a role="menuitem" class="product-version" data-version="0" href="../../../../0/"><span class="pv-num">older releases</span><span class="pv-tag pv-tag--dev">Dev</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="0" href="../../../../0/"><span class="pv-num">older releases</span></a></li>
         </ul>
       </section>
 
@@ -382,7 +382,7 @@
           <li><a role="menuitem" class="product-version" data-version="v2025.0" href="../../../../../axon-server-reference/v2025.0/"><span class="pv-num">v2025.0</span></a></li>
           <li><a role="menuitem" class="product-version" data-version="v2024.2" href="../../../../../axon-server-reference/v2024.2/"><span class="pv-num">v2024.2</span></a></li>
           <li><a role="menuitem" class="product-version" data-version="v2024.1" href="../../../../../axon-server-reference/v2024.1/"><span class="pv-num">v2024.1</span></a></li>
-          <li><a role="menuitem" class="product-version" data-version="0" href="../../../../../axon-server-reference/0/"><span class="pv-num">older releases</span><span class="pv-tag pv-tag--dev">Dev</span></a></li>
+          <li><a role="menuitem" class="product-version" data-version="0" href="../../../../../axon-server-reference/0/"><span class="pv-num">older releases</span></a></li>
         </ul>
       </section>
 
@@ -448,12 +448,13 @@ Please check the respective sections for details on either.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Add draining support</strong>.
-To allow you to drain your Axon Framework 4 deadlines into For Axon Framework 5, add the <code>axoniq-legacy</code> dependency.
-This will give you all of the <code>DeadlineManager</code> implementations, hooks, and configuration options.</p>
+<p><strong>Add draining support.</strong>
+To drain your Axon Framework 4 deadlines in Axon Framework 5, add the <code>axoniq-legacy</code> dependency.
+This gives you all the <code>DeadlineManager</code> implementations, hooks, and configuration options.
+Configure the deadline manager so it reads what Axon Framework 4 stored, as described in <a href="#deadline-manager">Configuring the deadline manager</a>.</p>
 </li>
 <li>
-<p><strong>Migrate saga deadline handlers.</strong> Depending on <code>axoniq-legacy</code> was sufficient, so you&#8217;re all set!
+<p><strong>Migrate saga deadline handlers.</strong> Depending on <code>axoniq-legacy</code> is sufficient, so you&#8217;re all set!
 Be sure to <a href="../sagas/" class="xref page">migrate your sagas</a> though.</p>
 </li>
 <li>
@@ -470,8 +471,8 @@ Instead, schedule commands with your preferred scheduling tool yourself, as expl
 <p><strong>Wait for scheduled deadlines to drain.</strong> Monitor the deadline manager&#8217;s store for outstanding deadlines against the migrated entity type, and watch the count fall to zero.</p>
 </li>
 <li>
-<p><strong>Retire the deadline manager</strong> once there are no more outstanding deadlines for the migrated entity, you can remove all remaining use of the
-<code>DeadlineManager</code>.</p>
+<p><strong>Retire the deadline manager</strong> once there are no more outstanding deadlines for the migrated entity.
+You can then remove all remaining usage of the <code>DeadlineManager</code>.</p>
 </li>
 </ol>
 </div>
@@ -494,16 +495,78 @@ to run them.</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="deadline-manager"><a class="anchor" href="#deadline-manager"></a>Configuring the deadline manager</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>axoniq-legacy</code> ports the Quartz, JobRunr and db-scheduler deadline managers of Axon Framework 4.
+They read the deadlines Axon Framework 4 stored, and fire them in Axon Framework 5.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Match the Axon Framework 4 serializer.</strong> A deadline manager converts the stored payload, metadata and scope with its
+<code>Converter</code>, which has to match the serializer the Axon Framework 4 deadline manager used, including its configuration
+(such as a customized <code>ObjectMapper</code>).
+Axon Framework 4&#8217;s JobRunr and db-scheduler auto-configurations stored deadlines with the <em>event</em> serializer, not the
+general serializer.
+The Spring Boot auto-configurations of <code>axoniq-legacy</code> therefore build these managers with the <code>EventConverter</code>.
+Configure the event converter to match the Axon Framework 4 event serializer, or define your own <code>DeadlineManager</code>
+bean with another converter.</p>
+</li>
+<li>
+<p><strong>Quartz has no auto-configuration.</strong> Define a <code>QuartzDeadlineManager</code> yourself, with the <code>ScopeAwareProvider</code> and
+<code>UnitOfWorkFactory</code> of the configuration:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public DeadlineManager deadlineManager(Scheduler scheduler,
+                                       ScopeAwareProvider scopeAwareProvider,
+                                       Configuration configuration) {
+    return QuartzDeadlineManager.builder()
+                                .scheduler(scheduler)
+                                .scopeAwareProvider(scopeAwareProvider)
+                                .unitOfWorkFactory(configuration.getComponent(UnitOfWorkFactory.class))
+                                // the counterpart of the serializer your Axon Framework 4 deadline manager used
+                                .converter(new JacksonConverter())
+                                .build();
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In Spring Boot, the Quartz <code>Scheduler</code> starts after the application has created its beans, so the deadline manager
+is ready before the first deadline fires.
+Without Spring, create the <code>QuartzDeadlineManager</code> before calling <code>scheduler.start()</code>.
+A deadline that fires before the manager exists fails without a retry, and Quartz deletes it, as in Axon Framework 4.</p>
+</div>
+</li>
+<li>
+<p><strong>JobRunr cannot cancel all deadlines within a scope.</strong> <code>JobRunrDeadlineManager.cancelAllWithinScope</code> throws an
+<code>UnsupportedOperationException</code>, as it did in Axon Framework 4. Cancel JobRunr deadlines by their schedule identifier instead.</p>
+</li>
+<li>
+<p><strong>db-scheduler drops the scheduled events of Axon Framework 4.</strong> Axon Framework 4&#8217;s db-scheduler auto-configuration
+also registered the event scheduler&#8217;s <code>AxonScheduledEvent</code> task, which <code>axoniq-legacy</code> does not provide yet.
+On a db-scheduler table shared with Axon Framework 4 nodes, db-scheduler deletes all executions of a task no node
+knows, once the first one has been unresolved for <code>deleteUnresolvedAfter</code> (14 days by default).
+To keep your scheduled events, either let them fire before the last Axon Framework 4 node stops, or set a large
+finite <code>deleteUnresolvedAfter</code> on the scheduler, such as <code>Duration.ofDays(36500)</code>.
+They then wait, unfired, until <code>axoniq-legacy</code> supports them.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="saga-deadlines"><a class="anchor" href="#saga-deadlines"></a>Saga deadlines</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>A deadline scheduled from, and handled by, a saga needs no migration action apart from depending on <code>axoniq-legacy</code>.
-The <code>axoniq-legacy</code> modules registers all required deadline-specific components for you, and ensures your Saga deadlines keep working as they are.
-This makes it so that existing <code>@DeadlineHandler</code> annotated methods in a saga keeps firing unchanged.</p>
+The <code>axoniq-legacy</code> module registers all required deadline-specific components for you, and ensures your saga deadlines keep working as they are.
+This makes it so that existing <code>@DeadlineHandler</code> annotated methods in a saga keep firing unchanged.</p>
 </div>
 <div class="paragraph">
 <p>However, as Sagas are deprecated, just as Deadlines, you are expected to migrate those as well.
-Checkout the <a href="../sagas/" class="xref page">Saga Migration</a> for the full story, including what to do once every saga instance has drained and the legacy module is no longer needed.</p>
+Check out the <a href="../sagas/" class="xref page">Saga Migration</a> for the full story, including what to do once every saga instance has drained and the legacy module is no longer needed.</p>
 </div>
 </div>
 </div>
@@ -592,7 +655,8 @@ void handle(PaymentDueReminder command) {
 </div>
 </div>
 <div class="paragraph">
-<p>A payload-less deadline is named the same way, but becomes a command without a payload:</p>
+<p>A payload-less deadline is named the same way, carrying the deadline name as its <code>String</code>
+payload:</p>
 </div>
 <div id="_tabs_2" class="openblock tabs is-loading">
 <div class="content">
@@ -620,7 +684,7 @@ public void onAccountExpired() {
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler(commandName = "Order.accountExpired")
-void handle(Void command) {
+void handle(String deadlineName) {
     // ...
 }</code></pre>
 </div>
@@ -659,9 +723,11 @@ earlier name, so such a handler keeps receiving its deadlines, and logs a warnin
 <p>A deadline&#8217;s payload typically carries no usable entity identifier, since Axon Framework 4 resolved an aggregate&#8217;s
 identifier independently of its payload.
 <code>axoniq-legacy</code> resolves it instead, from the aggregate identifier it writes into the dispatched command&#8217;s metadata,
-but only for an <code>@EventSourcedEntity</code>/<code>@EventSourced</code> entity.
-A migrated state-stored aggregate or a declaratively configured entity module does not consult this fallback, so its
-command handler payload needs a usable identifier of its own.</p>
+but only for a command handler declared on an <code>@EventSourcedEntity</code>/<code>@EventSourced</code> entity.
+A handler in a separate component that loads the entity through <code>@InjectEntity</code> fails with an
+<code>EntityIdResolutionException</code>.
+A migrated state-stored aggregate or a declaratively configured entity module does not consult this fallback either,
+so its command handler payload needs a usable identifier of its own.</p>
 </li>
 <li>
 <p>Resolving a non-<code>String</code> identifier through this fallback depends on the application&#8217;s registered <code>Converter</code>.
@@ -674,6 +740,43 @@ able to parse an unquoted <code>String</code> into one.</p>
 </td>
 </tr>
 </table>
+</div>
+<div class="sect2">
+<h3 id="_cancelling_axon_framework_4_deadlines_from_an_entity"><a class="anchor" href="#_cancelling_axon_framework_4_deadlines_from_an_entity"></a>Cancelling Axon Framework 4 deadlines from an entity</h3>
+<div class="paragraph">
+<p>While Axon Framework 4 deadlines drain, an entity&#8217;s command handler may still need to cancel them.
+Declare a <code>DeadlineManager</code> parameter on the handler for that.
+It is bound to the handler&#8217;s processing context, so its calls take effect when the command&#8217;s processing commits, as
+they did in Axon Framework 4.
+A <code>DeadlineManager</code> held in a field, or a parameter declared as an implementation type such as
+<code>QuartzDeadlineManager</code>, acts immediately instead.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 entities have no current scope, so the <code>DeadlineManager</code> methods that take no <code>ScopeDescriptor</code>
+throw an <code>IllegalStateException</code> in an entity&#8217;s handler.
+Pass the aggregate&#8217;s scope explicitly, with the aggregate type and identifier the deadline was scheduled with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@CommandHandler
+void handle(PayOrder command, DeadlineManager deadlineManager) {
+    deadlineManager.cancelAllWithinScope("paymentDue", new AggregateScopeDescriptor("Order", orderId));
+    // ...
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_delivery_of_a_slow_command"><a class="anchor" href="#_delivery_of_a_slow_command"></a>Delivery of a slow command</h3>
+<div class="paragraph">
+<p>A fired aggregate deadline waits for its command&#8217;s result for 30 seconds at most.
+When that wait times out, the delivery fails, and the deadline manager retries the deadline as it retries any failed
+delivery.
+With a distributed command bus, the command may still be running on another node at that moment.
+The retry then sends the command again, while the first one may still commit, so the entity handles the deadline
+twice.
+Keep the command handlers of migrated deadlines well within this time, or make them idempotent.</p>
+</div>
 </div>
 </div>
 </div>
