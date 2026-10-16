@@ -10,6 +10,8 @@
  * - Versions with a string as prerelease flag (e.g. `prerelease: -RC1`) are left as prerelease, as that is an explicit
  *   choice. Use this to keep a release branch a prerelease. On main, use `prerelease: true` instead, as release
  *   branches would otherwise inherit the string and remain a prerelease.
+ * - Versions from other branches with an explicit `prerelease: false` are left as released (e.g. the legacy docs
+ *   in this repo, which are always served from main). Leaving the flag out still marks them as prerelease.
  * - Versions that don't look like a version number (e.g. "axonserver-ee-2025.2.x") are left untouched, as marking
  *   them as released would make Antora consider them the latest version.
  */
@@ -33,7 +35,11 @@ module.exports.register = function ({ config }) {
                 continue
             }
             const isRelease = origins.every(isReleaseOrigin)
-            if (isRelease && !versionPattern.test(String(version))) {
+            if (!isRelease && componentVersion.prerelease === false) {
+                logger.info(`Leaving ${name}@${version} as released, as it is explicitly marked as not a prerelease`)
+                continue
+            }
+            if (isRelease &&!versionPattern.test(String(version))) {
                 logger.info(`Leaving prerelease flag of ${name}@${version} as is, as it isn't a version number`)
                 continue
             }
