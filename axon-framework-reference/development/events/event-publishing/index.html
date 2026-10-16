@@ -990,6 +990,40 @@ By default, the tag key matches the field name, but you can override it by speci
 <div class="paragraph">
 <p>When an <code>OrderPlacedEvent</code> is appended, the <code>TagResolver</code> automatically extracts <code>orderId</code> and <code>region</code> as tags from the annotated fields.</p>
 </div>
+<div class="paragraph">
+<p>The <code>@EventTag</code> annotation can also be placed on methods, and it can be repeated to derive several tags from the same member.</p>
+</div>
+<div class="paragraph">
+<p>When the same tag occurs in many events, you can define your own annotation and meta-annotate it with <code>@EventTag</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventTag;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.METHOD})
+@EventTag(key = "orderId")
+@interface OrderIdTag {
+}
+
+record OrderShippedEvent(
+    @OrderIdTag String id,
+    @EventTag String carrier
+) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Every member annotated with <code>@OrderIdTag</code> results in a tag with key <code>orderId</code>, regardless of the member&#8217;s name.
+For the <code>OrderShippedEvent</code>, this yields the tags <code>orderId</code> and <code>carrier</code>.
+Custom annotations can be combined with direct <code>@EventTag</code> annotations on the same member, and can themselves be used as meta-annotations.
+If your custom annotation declares a <code>key</code> attribute, its value overrides the key of every <code>@EventTag</code> meta-annotation on that custom annotation.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_custom_tag_resolution"><a class="anchor" href="#_custom_tag_resolution"></a>Custom tag resolution</h3>
