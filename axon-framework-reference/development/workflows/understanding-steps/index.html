@@ -465,15 +465,19 @@ This section covers the full configuration available across all step types: time
 Do not call <code>execute</code>, <code>awaitExecute</code>, <code>awaitEvent</code>, <code>sleep</code>, <code>fail</code>, or <code>cancel</code> from <strong>inside</strong> an action passed to another primitive.
 Each primitive must be called directly from the workflow method—the engine tracks execution through the top-level call sequence, and nesting would break event ordering and replay.</p>
 </div>
-<div class="listingblock">
+<div class="listingblock pseudocode">
+<div class="title">Invalid nesting (pseudocode)</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// WRONG — do not nest primitives
 ctx.awaitExecute("outer", Map.of(), (pc, payload) -&gt; {
     ctx.awaitExecute("inner", ...);  // this will not work correctly
     return Map.of();
-});
-
-// CORRECT — call primitives sequentially from the workflow method
+});</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// CORRECT - call primitives sequentially from the workflow method
 ctx.awaitExecute("stepA", Map.of(), ServiceA::doWork);
 ctx.awaitExecute("stepB", Map.of(), ServiceB::doWork);</code></pre>
 </div>

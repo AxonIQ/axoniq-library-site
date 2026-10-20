@@ -931,8 +931,10 @@ Because of this, exception handlers <strong>do not</strong> work for static crea
 An interceptor registered on a parent entity runs before an interceptor registered on a child entity added through <code>@EntityMember</code> or <code>EntityMetamodelBuilder.addChild(&#8230;&#8203;)</code>, and before the parent&#8217;s own command handlers.</p>
 </div>
 <div class="paragraph">
-<p>For a <a href="../../commands/entities/entity-polymorphism/" class="xref page">polymorphic entity</a>, a concrete type&#8217;s own interceptor runs before an interceptor declared on the super type, for every command reaching that concrete type&#8217;s instance, whether the command is declared on the concrete type or on the super type itself.
-This is the opposite order from the <code>@EntityMember</code>/<code>addChild(&#8230;&#8203;)</code> parent-before-child rule above; the two are unrelated mechanisms.</p>
+<p>For a <a href="../../commands/entities/entity-polymorphism/" class="xref page">polymorphic entity</a>, an interceptor declared on the super type wraps every command of the entity, whether the command is declared on a concrete type or on the super type itself.
+It runs before the concrete type&#8217;s own interceptors, exactly once per command.
+This holds for both the annotated and the declarative configuration.
+For the declarative configuration, that means an interceptor registered on the <code>PolymorphicEntityMetamodelBuilder</code> also covers commands handled by the concrete types added through <code>addConcreteType(&#8230;&#8203;)</code>.</p>
 </div>
 <div class="paragraph">
 <p>Only command handling is covered: there is no interceptor support for <code>@EventSourcingHandler</code> methods.</p>
