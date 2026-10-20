@@ -154,6 +154,18 @@ const latestComponents = [
  */
 const pinnedLatestVersions = {}
 
+/**
+ * Components that have been removed from the site. Every page of every version they used to be published under
+ * (including the unversioned and "latest" URLs) is redirected to the given target.
+ */
+const removedComponents = {
+    "deadlines-guide": {
+        versions: ["", "latest", "development", "4.10", "4.11", "4.12", "4.13", "5.0", "5.1", "5.2", "5.3"],
+        pages: ["", "advanced/", "deciding/", "implementing/", "testing/"],
+        target: "/axon-framework-reference/latest/migration/paths/deadlines/",
+    },
+}
+
 const releasedVersionPattern = /^v?\d+(\.\d+)+$/
 
 function determineLatestVersion(manifest, componentName) {
@@ -312,6 +324,19 @@ async function run() {
     Object.keys(additionalOverrides).forEach(oldUrl => {
         createRedirect(oldUrl, additionalOverrides[oldUrl])
     })
+
+    for (const [componentName, {versions, pages, target}] of Object.entries(removedComponents)) {
+        const status = await checkUrlStatus(target)
+        if (status !== 200) {
+            console.error(`Invalid redirect target for removed component ${componentName}: ${target} => ${status}`)
+            process.exitCode = 1
+            process.exit()
+        }
+        versions.forEach(version => pages.forEach(page => {
+            const oldUrl = [`/${componentName}`, version, page].filter(Boolean).join("/").replace(/\/+$/, "") + "/"
+            createRedirect(oldUrl, target)
+        }))
+    }
 
     server.close()
 
