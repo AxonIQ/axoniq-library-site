@@ -686,6 +686,34 @@ initialToken = eventSource -&gt; eventSource.firstToken(null)
                                          .thenApply(ReplayToken::createReplayToken);</code></pre>
 </div>
 </div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="title">Head/tail versus latest/first: a naming inversion</div>
+<div class="paragraph">
+<p>Beyond the default changing, the method names used to resolve a stream position were renamed, and the names inverted in the process. This applies wherever you build a <code>TrackingToken</code> from a stream position, not just the initial token default shown above:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Axon Framework 4&#8217;s <code>StreamableMessageSource.createHeadToken()</code>, the most recent position, is Axon Framework 5&#8217;s <code>StreamableEventSource.latestToken(ProcessingContext)</code>.</p>
+</li>
+<li>
+<p>Axon Framework 4&#8217;s <code>StreamableMessageSource.createTailToken()</code>, the beginning of the stream, is Axon Framework 5&#8217;s <code>StreamableEventSource.firstToken(ProcessingContext)</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Nothing prevents you from calling the wrong one: both methods compile and return a <code>CompletableFuture&lt;TrackingToken&gt;</code>. Calling <code>latestToken()</code> where you meant <code>firstToken()</code> (or vice versa) silently starts a processor at the wrong position, for example replaying the entire event store instead of starting at the tip. Double check which method you call when migrating custom initial token configuration.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 33.3333%;">

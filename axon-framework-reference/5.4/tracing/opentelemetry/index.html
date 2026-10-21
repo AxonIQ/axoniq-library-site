@@ -655,11 +655,12 @@ MDC-based trace and span identifiers also remain associated with that scoped wor
 </div>
 </div>
 <div class="sect1">
-<h2 id="_reactor_context_propagation"><a class="anchor" href="#_reactor_context_propagation"></a>Reactor context propagation</h2>
+<h2 id="_reactor_context_propagation_for_webflux"><a class="anchor" href="#_reactor_context_propagation_for_webflux"></a>Reactor context propagation for WebFlux</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The binding registers a <code>ProcessingContext</code> accessor with Micrometer&#8217;s <code>ContextRegistry</code>.
-Reactor automatic context propagation must also be enabled so captured context survives scheduler changes.</p>
+<p>WebFlux applications can move request processing between Reactor threads.
+Enable Reactor automatic context propagation so the active Axon trace follows those thread changes.
+This keeps reactive database calls and other instrumented work connected to the handler trace.</p>
 </div>
 <div id="_tabs_3" class="openblock tabs is-loading">
 <div class="content">
@@ -695,6 +696,10 @@ Reactor automatic context propagation must also be enabled so captured context s
 </div>
 </div>
 </div>
+</div>
+<div class="paragraph">
+<p>This setting only affects reactive WebFlux processing.
+Non-reactive handlers do not require it, and their tracing behavior is unchanged.</p>
 </div>
 <div class="paragraph">
 <p>The worker-thread bridge can be disabled independently:</p>

@@ -971,6 +971,109 @@ The token type column can keep the old class name, because Axon Framework 5 maps
 After this, upgrade and apply the mask migration above.</p>
 </div>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="axon-server-token-positions"><a class="anchor" href="#axon-server-token-positions"></a>Axon Server token positions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>GlobalSequenceTrackingToken</code> originating from the <code>AxonServerEventStorageEngine</code> (not the <code>AggregateBasedAxonServerEventStorageEngine</code>!) used in a processor that reads from Axon Server means something different in each version:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Axon Framework 4 stores the index of the <strong>last event it handled</strong>, and asks Axon Server for the next one.</p>
+</li>
+<li>
+<p>Axon Framework 5 stores the index of the <strong>next event to read</strong>, and asks Axon Server for exactly that index.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 reads the stored index as it is.
+So every processor handles the last event Axon Framework 4 handled once more.
+If that event has a side effect, such as sending a command or scheduling a deadline, the side effect happens twice.</p>
+</div>
+<div class="paragraph">
+<p>To avoid this, add 1 to the index of each of these tokens before the first Axon Framework 5 start.
+For a PostgreSQL token store with a <code>bytea</code> token column and JSON tokens, that is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">UPDATE token_entry
+SET token = convert_to(
+        json_build_object('globalIndex',
+                          (convert_from(token, 'UTF8')::json -&gt;&gt; 'globalIndex')::bigint + 1)::text,
+        'UTF8')
+WHERE token_type = 'org.axonframework.eventhandling.GlobalSequenceTrackingToken';</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run it once, while no Axon Framework 4 or 5 node is running. Adapt it to your database and column types, for example <code>lo_get</code> and <code>lo_from_bytea</code> for a PostgreSQL <code>oid</code> column. Furthermore, make sure you&#8217;re not dealing with a <code>MergedTrackingToken</code> when executing this, as the script does not adjust the position inside the tokens within the <code>MergedTrackingToken</code>. Lastly, be sure to run this script once, as it&#8217;s not idempotent.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Do not run the script above when you use the <code>AggregateBasedAxonServerEventStorageEngine</code>, it is only applicable to the <code>AxonServerEventStorageEngine</code>.
+Otherwise, it would make every processor skip one event without any error.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="java-api-changes"><a class="anchor" href="#java-api-changes"></a>Java API changes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The sections above cover the data stored in your token store table. If you have a custom <code>TokenStore</code> implementation, or call its methods directly (rather than only relying on Axon Framework&#8217;s event processors to do so), the interface itself also changed for Axon Framework 5.</p>
+</div>
+<div class="sect2">
+<h3 id="_package_move"><a class="anchor" href="#_package_move"></a>Package move</h3>
+<div class="paragraph">
+<p>The <code>TokenStore</code> interface, and its implementations, moved package:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Axon Framework 4: <code>org.axonframework.eventhandling.tokenstore.TokenStore</code></p>
+</li>
+<li>
+<p>Axon Framework 5: <code>org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The <code>InMemoryTokenStore</code> implementation moved to the <code>.inmemory</code> subpackage: <code>org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_retrievestorageidentifier_became_asynchronous"><a class="anchor" href="#_retrievestorageidentifier_became_asynchronous"></a><code>retrieveStorageIdentifier</code> became asynchronous</h3>
+<div class="paragraph">
+<p><code>TokenStore.retrieveStorageIdentifier()</code> changed from a synchronous method returning <code>Optional&lt;String&gt;</code> to an asynchronous method returning <code>CompletableFuture&lt;String&gt;</code>, and now takes a <code>@Nullable ProcessingContext</code> parameter:</p>
+</div>
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF4
+Optional&lt;String&gt; retrieveStorageIdentifier();</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// AF5
+CompletableFuture&lt;String&gt; retrieveStorageIdentifier(@Nullable ProcessingContext context);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Pass the current <code>ProcessingContext</code> when calling this method from within a message handler, or <code>null</code> when calling it outside of message handling, for example during application startup.</p>
+</div>
+</div>
 <div class="sect2">
 <h3 id="replay-tokens"><a class="anchor" href="#replay-tokens"></a>Replay tokens</h3>
 <div class="paragraph">

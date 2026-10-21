@@ -602,6 +602,65 @@ public class CustomerIdSequencingPolicy implements SequencingPolicy&lt;EventMess
 </div>
 </div>
 </div>
+<div class="paragraph">
+<p>Axon Framework 4 registered a sequencing policy per processing group on the <code>EventProcessingConfigurer</code>, whereas Axon Framework 5 sets it on the <code>PooledStreamingEventProcessorConfiguration</code>:</p>
+</div>
+<div id="_tabs_3" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_3_axon_framework_4" class="tab">
+<p>Axon Framework 4</p>
+</li>
+<li id="_tabs_3_axon_framework_5" class="tab">
+<p>Axon Framework 5</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_3_axon_framework_4--panel" class="tabpanel" aria-labelledby="_tabs_3_axon_framework_4">
+<div class="listingblock axon4">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">configurer.eventProcessing()
+          .registerSequencingPolicy(
+              "order-processor",
+              config -&gt; new CustomerIdSequencingPolicy()
+          )
+          .registerDefaultSequencingPolicy(
+                  config -&gt; new CustomerIdSequencingPolicy()
+          );</code></pre>
+</div>
+</div>
+</div>
+<div id="_tabs_3_axon_framework_5--panel" class="tabpanel" aria-labelledby="_tabs_3_axon_framework_5">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import migration.paths.sequencingpolicies.CustomerIdSequencingPolicy;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+
+public class AxonConfig {
+
+    public void configureSequencingPolicy(MessagingConfigurer configurer) {
+        configurer.eventProcessing(eventConfigurer -&gt; eventConfigurer.pooledStreaming(
+                pooledStreamingConfigurer -&gt; pooledStreamingConfigurer
+                        .defaults(config -&gt; config.sequencingPolicy(new CustomerIdSequencingPolicy()))
+                        .processor("order-processor", processor -&gt; processor
+                                .eventHandlingComponents(components -&gt; components.declarative(
+                                        "orders",
+                                        configuration -&gt; SimpleEventHandlingComponent.create("orders")
+                                ))
+                                .customized((configuration, config) -&gt; config.sequencingPolicy(
+                                        new CustomerIdSequencingPolicy()
+                                ))
+                        )
+        ));
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -642,6 +701,28 @@ This is the safe default, but limits parallelism: see the section below on defin
 <div class="paragraph">
 <p>Because the default policy adapts automatically to your event store type, it can introduce unexpected performance implications when migrating to a DCB-based event store.
 We therefore strongly recommend always defining a sequencing policy that explicitly matches your application&#8217;s ordering requirements.</p>
+</div>
+<div class="paragraph">
+<p>The following options configure a sequencing policy, from the highest to the lowest precedence:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>@SequencingPolicy</code> on an event handler method.</p>
+</li>
+<li>
+<p><code>@SequencingPolicy</code> on the event handler class.</p>
+</li>
+<li>
+<p>A <code>SequencingPolicy</code> given when you create the event handling component manually.</p>
+</li>
+<li>
+<p>A <a href="../../../events/event-processors/streaming/#sequencing_policies" class="xref page">processor-wide <code>SequencingPolicy</code></a> on a pooled streaming event processor.</p>
+</li>
+<li>
+<p>The default <code>HierarchicalSequencingPolicy</code>, used when none of the above is set.</p>
+</li>
+</ol>
 </div>
 <div class="paragraph">
 <p>For the available built-in policies and configuration options, see <a href="../../../events/event-processors/streaming/#sequencing_policies" class="xref page">Sequencing Policies</a>.
