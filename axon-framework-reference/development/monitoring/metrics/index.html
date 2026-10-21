@@ -694,8 +694,16 @@ class MetricsConfiguration {
 </div>
 </div>
 <div class="paragraph">
-<p>With the dependency in place the <a href="#monitor-defaults">default</a> <code>MessageMonitors</code> will be set for all <code>CommandBus</code>, <code>EventSink</code>, <code>EventProcessor</code>, and <code>QueryBus</code> implementations present in the application.
-If you are using an automated configuration flow, as with Spring, be sure to set the following properties:</p>
+<p>With the dependency in place the <a href="#monitor-defaults">default</a> <code>MessageMonitors</code> will be set for all <code>CommandBus</code>, <code>EventSink</code>, <code>EventProcessor</code>, and <code>QueryBus</code> implementations present in the application.</p>
+</div>
+<div class="paragraph">
+<p>The <code>MetricsConfigurationEnhancer</code> is configured through the <code>MicrometerMetricsConfiguration</code>.
+This component holds the Micrometer <code>MeterRegistry</code> to record the metrics with, and whether dimensions (tags) are added to the measurements.
+When you do not register a <code>MicrometerMetricsConfiguration</code> yourself, a default is used that has a <code>SimpleMeterRegistry</code> and dimensions enabled.
+When using Spring Boot, the <code>MicrometerMetricsConfiguration</code> is constructed from the <code>MeterRegistry</code> bean in the application context and the <code>axon.metrics.micrometer.dimensional</code> property.</p>
+</div>
+<div class="paragraph">
+<p>If you are using an automated configuration flow, as with Spring, be sure to set the following properties:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -711,7 +719,7 @@ management.endpoint.prometheus.enabled=true</code></pre>
 <p>Furthermore, Micrometer offers to option to enable/disable dimensions to your measurements.
 This allows you to filter the measurements on, for example, the payload type of messages.
 By default, dimensions are enabled.
-If you want to adjust this, please check the following examples:</p>
+You can adjust this through the <code>useDimensions</code> setting of the <code>MicrometerMetricsConfiguration</code>, as the following examples show:</p>
 </div>
 <div id="_tabs_4" class="openblock tabs is-loading">
 <div class="content">
@@ -729,16 +737,17 @@ If you want to adjust this, please check the following examples:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.micrometer.core.instrument.MeterRegistry;
-import org.axonframework.extension.metrics.micrometer.MetricsConfigurationEnhancer;
+import org.axonframework.extension.metrics.micrometer.MicrometerMetricsConfiguration;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
 class MetricsConfiguration {
 
     public void configureDefaultMetrics(MessagingConfigurer configurer,
                                         MeterRegistry meterRegistry) {
-        boolean disableDimensions = false;
-        configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerEnhancer(
-                new MetricsConfigurationEnhancer(meterRegistry, disableDimensions)
+        boolean useDimensions = false;
+        configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerComponent(
+                MicrometerMetricsConfiguration.class,
+                c -&gt; new MicrometerMetricsConfiguration(meterRegistry, useDimensions)
         ));
     }
 }</code></pre>
@@ -759,7 +768,8 @@ axon.metrics.micrometer.dimensional=false</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Lastly, if you need to specify the <code>MetricRegistry</code> used, please check the following examples:</p>
+<p>Lastly, if you need to specify the <code>MeterRegistry</code> used, you can set it on the <code>MicrometerMetricsConfiguration</code> as well.
+The following examples show how:</p>
 </div>
 <div id="_tabs_5" class="openblock tabs is-loading">
 <div class="content">
@@ -777,15 +787,16 @@ axon.metrics.micrometer.dimensional=false</code></pre>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import io.micrometer.core.instrument.MeterRegistry;
-import org.axonframework.extension.metrics.micrometer.MetricsConfigurationEnhancer;
+import org.axonframework.extension.metrics.micrometer.MicrometerMetricsConfiguration;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
 class MetricsConfiguration {
 
     public void configureDefaultMetrics(MessagingConfigurer configurer,
                                         MeterRegistry meterRegistry) {
-        configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerEnhancer(
-                new MetricsConfigurationEnhancer(meterRegistry)
+        configurer.componentRegistry(componentRegistry -&gt; componentRegistry.registerComponent(
+                MicrometerMetricsConfiguration.class,
+                c -&gt; new MicrometerMetricsConfiguration(meterRegistry, true)
         ));
     }
 }</code></pre>
