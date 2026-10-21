@@ -484,7 +484,8 @@ On the Configuration API you register a <code>MultiTenantPersistentStreamEventSo
 <div class="paragraph">
 <p><strong>Your existing event processor tokens need replacing.</strong>
 Under pooled streaming a token holds one position per tenant, which is a different type from what the extension stored, so plan the switch as a replay rather than as a resume.
-Persistent streams keep no token store at all, so there is no position to carry into them either and they start with a full replay.</p>
+Persistent streams keep no token store at all, since Axon Server holds their position.
+A persistent stream you already consumed through the extension keeps that position as long as you open it under the same stream id (covered by <a href="#step-persistent-stream-ids">Step 7: Keep the stream ids of your persistent streams</a>), while a stream opened under a new id starts with a full replay.</p>
 </div>
 <div class="paragraph">
 <p><strong><a href="#resetting-a-projection">Resetting a projection</a> covers every tenant at once.</strong>
@@ -1329,6 +1330,82 @@ Where a projection has to survive a restart, use a streaming processor, or a sub
 </div>
 </div>
 <div class="sect1">
+<h2 id="step-persistent-stream-ids"><a class="anchor" href="#step-persistent-stream-ids"></a>Step 7: Keep the stream ids of your persistent streams</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Skip this step if you did not consume persistent streams through the extension.</p>
+</div>
+<div class="paragraph">
+<p>The extension opened each tenant&#8217;s persistent stream under the configured stream name followed by <code>@</code> and the tenant identifier, so a stream configured as <code>course-statistics</code> was opened as <code>course-statistics@tenant-a</code> in the context of <code>tenant-a</code>.
+Axon Framework 5 opens each tenant&#8217;s stream under the configured name as-is, as <a href="../../../multi-tenancy/tenant-event-processing/#naming-tenant-streams" class="xref page">customizing stream identifiers per tenant</a> describes.
+Axon Server identifies a persistent stream by that id, so without further configuration every tenant gets a new stream that replays its events from the stream&#8217;s initial position, while the stream holding the position you already reached is left unused.</p>
+</div>
+<div class="paragraph">
+<p>To continue from where the extension left off, register a <code>MultiTenantPersistentStreamIdResolver</code> that reproduces the extension&#8217;s ids:</p>
+</div>
+<div id="_tabs_10" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_10_axon_framework_5_configuration_api" class="tab">
+<p>Axon Framework 5 - Configuration API</p>
+</li>
+<li id="_tabs_10_axon_framework_5_spring_boot" class="tab">
+<p>Axon Framework 5 - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_10_axon_framework_5_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_10_axon_framework_5_configuration_api">
+<div class="paragraph">
+<p>Provide the resolver via the configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void keepExtensionStreamIds(MessagingConfigurer configurer) {
+    configurer.componentRegistry(registry -&gt; registry.registerComponent(
+            MultiTenantPersistentStreamIdResolver.class,
+            config -&gt; (name, tenant) -&gt; name + "@" + tenant.tenantId()));      <i class="conum" data-value="1"></i><b>(1)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Opens the stream configured as <code>course-statistics</code> as <code>course-statistics@tenant-a</code> in the context of <code>tenant-a</code>, the id the extension used.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_10_axon_framework_5_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_10_axon_framework_5_spring_boot">
+<div class="paragraph">
+<p>Expose the resolver as a bean, and keep the persistent stream configuration under <code>axon.axonserver.persistent-streams</code> as it is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public MultiTenantPersistentStreamIdResolver extensionStreamIds() {
+    return (name, tenant) -&gt; name + "@" + tenant.tenantId();                     <i class="conum" data-value="1"></i><b>(1)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Opens the stream configured as <code>course-statistics</code> as <code>course-statistics@tenant-a</code> in the context of <code>tenant-a</code>, the id the extension used.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Register the resolver before the application first starts on Axon Framework 5.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="property-reference"><a class="anchor" href="#property-reference"></a>Property reference</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -1439,7 +1516,7 @@ Types missing from it, such as <code>TenantDescriptor</code>, <code>TenantProvid
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>TenantPersistentStreamMessageSourceFactory</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Replaced by supplying a <code>PersistentStreamEventSourceFactory</code> bean of your own.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">To keep the extension&#8217;s <code>{stream-name}@{tenant-id}</code> stream ids, register a <code>MultiTenantPersistentStreamIdResolver</code>, see <a href="#step-persistent-stream-ids">Step 7: Keep the stream ids of your persistent streams</a>. To control how streams are built altogether, supply a <code>PersistentStreamEventSourceFactory</code> bean of your own.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>MultiTenantDispatchInterceptorSupport</code>, <code>MultiTenantHandlerInterceptorSupport</code></p></td>
