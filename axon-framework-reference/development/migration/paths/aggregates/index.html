@@ -893,6 +893,25 @@ public class GiftCard {
 }</code></pre>
 </div>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In Axon Framework 4, <code>@CreationPolicy</code> was set per command handler and defaulted to <code>NEVER</code>, so only handlers marked <code>CREATE_IF_MISSING</code> ran without an existing aggregate.
+<code>@ForcedEntityCreator</code> sits on the entity and affects every handler that receives it.
+When the entity has no events yet, instance command handlers run on the default entity instead of failing with an <code>EntityNotFoundException</code>, and <code>@InjectEntity</code> parameters receive the default entity, so they are never <code>null</code> or an empty <code>Optional</code>.
+Only static creational command handlers still see the entity as absent.
+Check the entity&#8217;s state in every handler that receives a forced entity, for example with <code>if (!issued) throw &#8230;&#8203;</code>.
+Forced creation also requires the forced creator to be selected: a plain identifier-based <code>@EntityCreator</code> takes precedence over a forced no-argument one.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 </li>
 <li>
 <p><strong><code>CreationPolicy.NEVER</code></strong></p>
