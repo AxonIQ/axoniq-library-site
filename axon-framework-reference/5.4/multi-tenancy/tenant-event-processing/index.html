@@ -649,7 +649,9 @@ With multi-tenancy enabled, a configured persistent stream is consumed from ever
 <h3 id="_one_stream_per_tenant"><a class="anchor" href="#_one_stream_per_tenant"></a>One stream per tenant</h3>
 <div class="paragraph">
 <p>Each tenant is an Axon Server context, and a persistent stream lives in one context.
-A configured stream therefore becomes one stream per tenant, all carrying the name you configured, each consumed independently and all feeding the same event processor.</p>
+A configured stream therefore becomes one stream per tenant, each consumed independently and all feeding the same event processor.
+By default, every tenant&#8217;s stream is identified by the name you configured.
+The section on <a href="#naming-tenant-streams">customizing stream identifiers per tenant</a> shows how to customize the stream identifiers, for example to follow a certain tenant stream naming scheme already present.</p>
 </div>
 <div class="paragraph">
 <p>Every event arrives with the tenant of the stream it came from available on the processing context, so a handler writes to the projection of the tenant the event belongs to.
@@ -671,6 +673,103 @@ axon.axonserver.persistent-streams.my-stream.batch-size=10
 axon.eventhandling.processors.MyProjection.mode=subscribing
 axon.eventhandling.processors.MyProjection.source=my-stream</code></pre>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="naming-tenant-streams"><a class="anchor" href="#naming-tenant-streams"></a>Customizing stream identifiers per tenant</h3>
+<div class="paragraph">
+<p>Axon Server identifies a persistent stream by its stream identifier.
+By default, each tenant&#8217;s stream uses the configured name as its stream identifier.
+This works because every tenant has its own context on Axon Server.</p>
+</div>
+<div class="paragraph">
+<p>In some scenarios you might want to customize the stream identifier per tenant, for example to follow a given naming scheme for tenant streams that include the tenant identifier.
+To customize the stream identifier per tenant, you can register a <code>MultiTenantPersistentStreamIdResolver</code>.
+It receives the configured stream name and the <code>TenantDescriptor</code> of the tenant whose stream is opened, and returns the stream identifier to use:</p>
+</div>
+<div id="_tabs_2" class="openblock tabs is-loading">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li id="_tabs_2_declarative_configuration_api" class="tab">
+<p>Declarative - Configuration API</p>
+</li>
+<li id="_tabs_2_autodetected_spring_boot" class="tab">
+<p>Autodetected - Spring Boot</p>
+</li>
+</ul>
+</div>
+<div id="_tabs_2_declarative_configuration_api--panel" class="tabpanel" aria-labelledby="_tabs_2_declarative_configuration_api">
+<div class="paragraph">
+<p>Register the resolver as a component.
+The <code>MultiTenantPersistentStreamEventSourceFactory</code> that builds each multi-tenant source picks it up from the configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void resolveStreamIdPerTenant(MessagingConfigurer configurer) {
+    configurer.componentRegistry(registry -&gt;
+        registry.registerComponent(
+                MultiTenantPersistentStreamIdResolver.class,
+                config -&gt; (name, tenant) -&gt; name + "-" + tenant.tenantId()      <i class="conum" data-value="1"></i><b>(1)</b>
+        )
+    );
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Opens the stream configured as <code>my-stream</code> as <code>my-stream-tenant-a</code> in the context of <code>tenant-a</code>.</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="_tabs_2_autodetected_spring_boot--panel" class="tabpanel" aria-labelledby="_tabs_2_autodetected_spring_boot">
+<div class="paragraph">
+<p>Expose the resolver as a bean.
+The streams configured under <code>axon.axonserver.persistent-streams</code> stay as they are:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public MultiTenantPersistentStreamIdResolver streamIdResolver() {
+    return (name, tenant) -&gt; name + "-" + tenant.tenantId();                       <i class="conum" data-value="1"></i><b>(1)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Opens the stream configured as <code>my-stream</code> as <code>my-stream-tenant-a</code> in the context of <code>tenant-a</code>.</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that only the stream identifier is resolved by this mechanism.
+The logical name Axon Server shows for the stream keeps using the configured name.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The stream identifier is the stream&#8217;s identity on Axon Server, so the resolver <strong>MUST</strong> return the same id for a tenant every time, including across restarts.
+Returning a different id opens a new stream, which replays that tenant&#8217;s events from the stream&#8217;s initial position.</p>
+</div>
+<div class="paragraph">
+<p>Ids must also stay distinct per configured stream within one tenant, since two streams resolving to the same id in one context join the same server-side stream.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
