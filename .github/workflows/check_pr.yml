@@ -12,18 +12,26 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v7
+
     - name: Install Node.js
       uses: actions/setup-node@v7
       with:
         node-version: '20'
+
     - name: Install vale
       run: |
         wget https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz
         sudo tar -xvzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz -C /usr/local/bin vale
+
     - name: Install Dependencies
       run: npm install
+
+    - name: Smoke test helper script dependencies
+      run: node .github/scripts/smoke-test-tooling.js
+
     - name: Start Kroki
       uses: hoverkraft-tech/compose-action@v3.2.0
+
     - name: Generate Site
       run: |
         export GIT_CREDENTIALS='https://axoniq-devops:${{ secrets.LIBRARY_DEVBOT_TOKEN }}@github.com'
