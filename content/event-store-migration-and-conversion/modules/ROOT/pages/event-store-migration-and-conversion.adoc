@@ -1,0 +1,136 @@
+= Event Store Migration And Conversion
+
+pass:[<!-- vale AxonIQ.Headings = NO -->]
+pass:[<!-- vale Google.Spacing = NO -->]
+pass:[<!-- vale Google.FirstPerson = NO -->]
+
+:author: Bert Laverman
+:docdate: 2020-12-21
+
+
+This document describes how you can move events between event stores.
+The covered scenarios are between Axon Server clusters, out of Axon Server and into Axon Server.
+
+== Moving events between Axon Server clusters
+This section describes how to move all events in a context in one Axon Server to another one.
+You may want to do this if you migrate your installation or have an acceptance environment, that is replaced with data from prod on a regular basis.
+
+Another important application of this process is during recovery, when you move data from a backup cluster to a re-built but empty prod environment.
+
+=== Background: The Axon Server Event Store
+Events and snapshots in Axon Server are stored in files on disk.
+These files are managed by axonserver and must not be manually modified in any way.
+
+For this document, we assume AxonServer runs in `/axonserver/`, as is the case for the docker containers we provide.
+Axon Server, by default, creates its Event Store in the `events` subdirectory of where it is living, using one subdirectory per context.
+So the events of a `payroll` context will be located in `/axonserver/events/payroll`.
+
+The events themselves are located in numbered `.events` files, while index data is located in auxilliary files next to them.
+
+In the following, we will shut down the running Axon Server to copy over the data to a new location.
+If you instead prefer to create a backup on a regular basis, without a shutdown,please refer to the link:https://docs.axoniq.io/axon-server-reference/development/axon-server/administration/backups/[backups page].
+In this page, we will also completely disregard replication logs, as these complicate things quite a bit and tie yo to the replication-group and context structure of the source installation.
+Refer to  the link:https://docs.axoniq.io/axon-server-reference/development/axon-server/administration/backups/[backups page] for more involved solutions.
+
+
+== Migrate all events of a context between two Axon Server clusters
+
+For example's sake, we migrate a context named `payroll` from a cluster `source` to a cluster `target`.
+
+=== Prepare the `target` clsuter
+* If the `target` cluster is existing and has the `payroll`, for example from a previous migration, delete the context there via the UI, API or CLI.
+* Shut down the `target` cluster.
+* If you have multiple nodes, ensure all of them have stopped.
+
+=== Prepare the `source` cluster
+* Shut down one node of the cluster gracefully.
+
+If you have active writes, the most recent events may not be visible yet. If you want to migrate them too, first take away the load, give Axon Server a few seconds to apply the events and check whether `/internal/raft/status` has the same values for `lastAppliedIndex` and `commitIndex` for the replication group your `payroll` context resides in. Then shut down the nodes.
+
+At this point, `source` and `target` node are stopped.
+
+=== Copy over data
+* Copy the `events/<context>` directory, in our case `/axonserver/events/payroll`, from the `source` cluster to the same location in the `target` cluster.
+* If you have multiple nodes in the `target` cluster, ensure you copy the data to all of them.
+
+=== Restart and configuration
+* Restart the `source` node if you intend to continue using it
+* Restart the `target` node(s)
+
+We now need to make the `target` cluster aware of the context.
+Axon Server will never assume it has to handle a context, just because the files have been created.
+To make the `target` cluster aware of the context, follow these steps:
+* Create the context **with the same name** in the desired replication group via the UI, CLI or API. In the example case, that would be a context named `payroll` in the `default` replication group.
+
+
+== Cloning the whole cluster
+Can't we just clone the whole clsuter?
+While this is an option, for example when you want to try out things on prod data without messing with your actual production.
+However, there are severe rammifications with that:
+* You absolutely need to change 
+  * the node name in the `axonserver.properties` file
+  * the host name in the `axonserver.properties` file
+* Use the link:https://docs.axoniq.io/axon-server-reference/development/axon-server/administration/recovery/[recovery mechanism] to update the above values in the runtime confguration
+* Ensure your new cluster has no way of connecting to the original cluster, otherwise both may break.
+* Be aware that production credentials now work in the new cluster. This may be very much undesirable.
+
+A way better approach is to either clone only individual contexts or use a cluster template:
+
+=== Properly cloning a cluster
+* Extract a cluster-template from the original cluster via the UI or by calling `v1/cluster/download-template`
+* Clone the whole axonserver base directory of a shut-down server to a new location.
+* Remove **in the fresh cluster** the config-db. This will make that node forget all it's runtime configuration like users, other nodes and contexts.
+* Adapt the cluster-template to reflect the new environment. Make sure to change the `first` parameter and the `replicationGroups` configuration to reflect the new hostnames or node-names.
+* Start the new cluster following the documentation for link:https://docs.axoniq.io/axon-server-reference/development/axon-server/clustering/cluster-basics/#cluster-templates[cluster-templates].
+
+== Programmatically Transferring Events
+
+If you intend to move only a portion of the event store to another location, for example because you want to update the acceptance environment at the end of each day with exactly the events published in one day, you can do that as described below.
+
+To copy over a stream of events, use the link:https://github.com/AxonIQ/axonserver-connector-java[axonserver connector].
+This is the library used by the framework to communicate with axonServer.
+
+The steps to achieve this, are as follows.
+
+=== Connect to AxonServer
+Use the `AxonServerConnectionFactory` to get an `EventChannel` for the source.
+[source,java]
+----
+var sourceServerAddress = new ServerAddress("source.example.com", 8124);
+var connectionFactory = AxonServerConnectionFactory.forClient("event-store-mover")
+                                                    .routingServers(sourceServerAddress)
+                                                    .build();
+var connection = connectionFactory.connect("payroll");
+var eventChannel =  connection.eventChannel();
+----
+
+Repeat the same for the target too.
+You can then `openStream` on the `source` channel, read a batch of events and write them to the `target` channel with `appendEvent()`.
+
+A few notes:
+* Ensure you don't mix up `target` and `source` channels, otherwise your prod system may have some problems.
+* Be sure that nothing else is currently writing to the context in the `target` clusters.
+* You may want to store the progress somewhere to ensure you can pick up from the right position in the case of failure.
+* Make sure to refrain from modifying the events. This may lead to catastrophic outcomes if done incorrectly.
+
+
+
+== Moving to Axon Server
+If you are currently noy using AxonServer, you may have an event store in an RDBMS using the Framework's *JpaEventStorageEngine* or *JdbcEventStorageEngine*, or one in MongoDB using the *MongoEventStorageEngine*. 
+As is discussed in a blog post, these storage engines work reasonably well link:https://www.axoniq.io/blog/why-would-i-need-a-specialized-event-store#:~:text=Optimize%20for%20recent%20events%20%2D%20We,to%20retrieve%20these%20events%20quicker.[but are far from ideal given the specific requirements for an “append-only” event store]. 
+Migration to an Axon Server cluster would solve that, and a link:https://github.com/AxonIQ/axonserver-migration-tool[handy migration tool] is available for the job. 
+If you decide not to use the migration tool the method outlined above can also be used to move your events into Axon Server.
+This is a more involved process, as your previous store might have gaps in the sequence numbers, but provides you with a greater degree of freedom.
+Further, this allows you to flip a switch in your application during a zero-downtime migration, to publish to Axon Server once the migration is done.
+
+== Moving from Axon Server
+Moving data from Axon Server to another event store will require the programmatic approach outlined above.
+You can stream events using a regular handler in the AxonFramework or else use the Axon Server Connector to read events more efficiently. 
+You can then dump the events in an intermediary format or straight into your other solution.
+
+This may also be a valid approach if you want to dump the events in some data lake to analyze them.
+
+== Closing remarks
+If you require a more powerful approach with no downtime, please refer to the link:https://docs.axoniq.io/axon-server-reference/development/axon-server/clustering/node-roles/#backup-nodes[Passive Backup Axon Server nodes].
+
+
