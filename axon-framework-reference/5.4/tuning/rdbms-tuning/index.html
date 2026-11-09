@@ -829,10 +829,14 @@ All tables and sequences use the fixed names shown above.</p>
 <div class="ulist">
 <ul>
 <li>
-<p><code>CREATE_IF_MISSING</code> (the default)—creates or repairs any missing tables, indices, or migrations.</p>
+<p><code>CREATE_IF_MISSING</code> (the default)—creates any missing tables, indices, or migrations.
+It does not replace existing objects: if an existing object has an incompatible definition, startup fails with an exception naming it, and it must be corrected manually.</p>
 </li>
 <li>
-<p><code>VALIDATE</code>—checks that the schema is complete and fails startup with an exception if it is not, without creating or changing anything.</p>
+<p><code>VALIDATE</code>—checks that the schema is complete and fails startup with an exception naming the missing or incompatible objects, without creating or changing anything.
+The check reads only the system catalogs, so it needs no privileges on the event store&#8217;s tables.
+Besides existence, it verifies the definitions of the type tag triggers (row-level, correct timing, enabled for ordinary writes, calling the expected function) and of the <code>tags_type_unique</code> index (unique, valid, on the expected column and predicate).
+It does not compare the bodies of the trigger functions.</p>
 </li>
 <li>
 <p><code>SKIP</code>—skips the check entirely, trusting that the schema is already complete and correct. This option is not recommended: see the warning below.</p>
