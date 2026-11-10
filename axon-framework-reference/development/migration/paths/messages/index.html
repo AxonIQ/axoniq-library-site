@@ -690,6 +690,37 @@ For more details on migrating to event tagging, see <a href="../aggregates/event
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="metadata_values"><a class="anchor" href="#metadata_values"></a>Metadata values</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In Axon Framework 4, message metadata was a <code>Map&lt;String, ?&gt;</code>, so a metadata value could be any object.
+Axon Framework 5 metadata is a <code>Map&lt;String, String&gt;</code>.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 4 persisted and transported metadata values it could not represent natively as serialized bytes, using the configured serializer.
+Natively represented values were text, numbers, and booleans.
+Everything else, such as nested maps, lists, <code>UUID</code>, <code>Instant</code>, enums, and custom objects, was serialized.</p>
+</div>
+<div class="paragraph">
+<p>Axon Framework 5 deliberately does not deserialize these metadata values back into objects.
+That requires knowing the serializer that wrote them and the class of every stored value, which does not fit the <code>String</code>-only metadata model.
+Instead, where the stored form is text, such as JSON or XML, the value is made available as that text.
+Where it cannot be rendered as text, for example with a binary serializer, the value is not available.
+This applies to any message whose metadata was serialized, regardless of how it is stored or transported.</p>
+</div>
+<div class="paragraph">
+<p>To avoid losing metadata, make sure values are text, numbers, or booleans before migrating.
+In practice, put such metadata values on your Axon Framework 4 messages as `String`s.
+Metadata that is already stored as serialized bytes can only be read as text from Axon Framework 5 at this moment in time.
+For what happens per event store, see <a href="../event-store/#af4-metadata" class="xref page">Axon Framework 4 metadata</a> in the event store migration path.</p>
+</div>
+<div class="paragraph">
+<p>If this decision leaves you stuck, please open an issue on the <a href="https://github.com/AxonFramework/AxonFramework/issues">Axon Framework repository</a>.
+Providing a custom conversion function to make the switch inline is doable, but we aim to collect metrics on this before putting effort into it.</p>
+</div>
+</div>
+</div>
         <nav class="pagination">
   <span class="prev"><a href="../">Upgrade Paths</a></span>
   <span class="next"><a href="../aggregates/">Aggregates</a></span>

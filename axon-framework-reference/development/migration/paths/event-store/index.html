@@ -802,6 +802,95 @@ Stored events are never modified; the missing version is resolved in memory when
 </div>
 </div>
 <div class="sect1">
+<h2 id="af4-metadata"><a class="anchor" href="#af4-metadata"></a>Axon Framework 4 metadata</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Axon Framework 4 metadata values could be any object, while Axon Framework 5 metadata is a <code>Map&lt;String, String&gt;</code>.
+Events that Axon Framework 4 stored with non-<code>String</code> metadata values therefore behave differently per event store.
+Make sure you know what happens to such values before migrating.
+See the <a href="../messages/#metadata_values" class="xref page">message migration path</a> for the reasoning behind the <code>String</code>-only metadata.</p>
+</div>
+<div class="paragraph">
+<p>The following table shows what each kind of stored value turns into:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Stored by Axon Framework 4</th>
+<th class="tableblock halign-left valign-top">Axon Server</th>
+<th class="tableblock halign-left valign-top">JPA with a <code>JacksonConverter</code></th>
+<th class="tableblock halign-left valign-top">JPA with the legacy <code>XStreamConverter</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Text</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The text as is.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The text as is.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The text as is.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Number or boolean</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Converted to a <code>String</code>, for example <code>"3"</code> or <code>"true"</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Converted to a <code>String</code>, for example <code>"3"</code> or <code>"true"</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String.valueOf(value)</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nested map, list, or other object (<code>UUID</code>, <code>Instant</code>, enum, custom object)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rendered as a <code>String</code> by the configured event converter, for example as JSON with a <code>JacksonConverter</code>. When the converter cannot render it, the text the Axon Framework 4 serializer wrote is used, such as XML. When it is not text, for example with a binary serializer, the key remains with a <code>null</code> value and a warning is logged.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rendered as a JSON <code>String</code>, for example <code>{"key":"v"}</code> for a map or <code>[1,2]</code> for a list.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String.valueOf(value)</code>, for example <code>{a=b}</code> for a map or the <code>toString()</code> of a custom object, provided its class is allowed.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remains <code>null</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remains <code>null</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remains <code>null</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event serialized with XStream (XML)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not applicable.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not readable by a Jackson-based converter.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Readable.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Note that Axon Server only supports text, number, and boolean values natively.
+Other values are stored as serialized bytes, which Axon Framework 5 deliberately does not deserialize into objects.
+Axon Framework 5 renders these bytes as text through the configured event converter instead.
+For JPA, Axon Framework 4 serialized the whole metadata map into the <code>metaData</code> column using the event serializer.
+Hence, the Axon Framework 5 event converter needs to match the serializer that wrote the rows.</p>
+</div>
+<div class="paragraph">
+<p>Before migrating, take these steps:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Find the handlers that rely on non-<code>String</code> metadata, for example through <code>@MetadataValue</code>, and the interceptors or dispatchers that set such metadata.</p>
+</li>
+<li>
+<p>On Axon Framework 4, write those metadata values as `String`s for events that are still to be stored.</p>
+</li>
+<li>
+<p>For events that are already stored, check the above table for your event store and decide whether the outcome is acceptable.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>If you are stuck on stored events with non-<code>String</code> metadata, please open an issue on the <a href="https://github.com/AxonFramework/AxonFramework/issues">Axon Framework repository</a>.
+Providing a custom conversion function to read such metadata leniently can be built, but we want to gather user feedback to ensure we are not building functionality that is not going to be used.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="jpa-migration"><a class="anchor" href="#jpa-migration"></a>JPA event storage migration</h2>
 <div class="sectionbody">
 <div class="paragraph">
