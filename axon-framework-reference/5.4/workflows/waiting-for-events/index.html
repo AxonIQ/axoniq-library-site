@@ -753,11 +753,11 @@ See <a href="../step-orchestration/" class="xref page">Step Orchestration</a> fo
 <div class="sectionbody">
 <div class="paragraph">
 <p>Sometimes you just need to pause for a while.
-The <code>sleep</code> method provides a durable delay:</p>
+The <code>awaitSleep</code> method provides a durable delay that blocks the workflow until the duration has elapsed:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">context.sleep("cooldownPeriod", Duration.ofDays(10)); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">context.awaitSleep("cooldownPeriod", Duration.ofDays(10)); <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -776,12 +776,15 @@ Under the hood, this is a <code>waitForEvent</code> with an event condition that
   </div>
 </div>
 <div class="paragraph">
-<p><code>sleep</code> always produces a STARTED followed by a TIMED_OUT—that&#8217;s by design, since the "event" it waits for never arrives.</p>
+<p>A sleep step always produces a STARTED followed by a TIMED_OUT.
+That&#8217;s by design, since the "event" it waits for never arrives.</p>
 </div>
 <div class="sect2">
 <h3 id="_non_blocking_sleep"><a class="anchor" href="#_non_blocking_sleep"></a>Non-blocking sleep</h3>
 <div class="paragraph">
-<p><code>sleep(stepName, customizer)</code> returns a <code>WorkflowStepResult</code> immediately, allowing you to compose delays with other steps using combinators:</p>
+<p>The <code>sleep</code> method does not block.
+It starts the sleep step and returns immediately, so the workflow continues with the next statement.
+<code>sleep(stepName, customizer)</code> returns a <code>WorkflowStepResult</code>, so you can combine the delay with other steps using combinators, for example as a timeout over several steps:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -800,6 +803,10 @@ context.anyMatch(
         cooldown, approval
 ).await();</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Use <code>awaitSleep</code> whenever the workflow itself must wait for the delay.
+The Kotlin DSL offers the same blocking <code>awaitSleep(stepName, timeout)</code>.</p>
 </div>
 </div>
 </div>
