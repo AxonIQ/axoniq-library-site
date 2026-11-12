@@ -33,6 +33,7 @@ const sitemaps = [
 
 const additionalOverrides = {
     "/axoniq-playbook-main/main/": "/playbook/",
+    "/axon-workflow-getting-started/": "/axon-workflow-getting-started/latest/",
     // 5.0 used to be published without a version segment, as its version was "master"
     "/axon-framework-5-getting-started/": "/axon-framework-5-getting-started/latest/",
 }
@@ -129,6 +130,7 @@ const redirectFallback = "/home/"
 const latestComponents = [
     "axon-framework-reference",
     "axon-framework-5-getting-started",
+    "axon-workflow-getting-started",
     "message-handler-customization-guide",
     "meta-annotations-guide",
     "identifier-generation-guide",
