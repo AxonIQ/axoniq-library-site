@@ -1,0 +1,40 @@
+= It’s Not Just About Events!
+
+pass:[<!-- vale Google.EmDash = NO -->]
+pass:[<!-- vale Google.FirstPerson = NO -->]
+
+:author: Frans van Buul
+:docdate: 2017-11-28
+
+We hear a lot about event-driven architecture these days, especially in the context of microservices. For instance, Gartner has identified this as one of the top 10 technology trends for 2018. There are some very good reasons for this. “Events” occur very naturally in many business domains, which by itself is a good reason to make them an explicit part of software systems. They can be processed asynchronously. I’ve also seen people very successfully using event-driven approaches to integrate systems in rapidly changing environments, where you don’t want to place too much architectural commitment to the exact way systems happen to be integrated today. And link:https://www.axoniq.io/concepts/event-driven-microservices[event-driven architectures] may also use event sourcing which by itself has a great set of benefits for things like compliance and analytics.
+
+At the same time, I’m also seeing some stuff happening in this area which I believe to represent an anti-pattern. This occurs when event-driven architecture is interpreted as meaning: all communication takes place through events. “Event” then becomes a synonym for “message”. Why is this a bad thing?
+
+First, it’s conceptually weird. An “event” in this context is a representation of something which happened in the past. Messages between systems are not just that: they may also be things like instructions to do something. To represent a command (“post a new blog entry”) like an event (“there has been a request to post this new blog entry”) is unnatural. Events shouldn't be commands in disguise.
+
+Conceptual problems aside, there are also some clear technical reasons why system integration should not just be about events.
+
+== Messaging patterns
+When considering the integration between two (microservice) systems, routing of messages is trivial: the message must get to “the other side”. When we’re considering larger deployments with many services, more interesting patterns occur.
+
+An event, representing something that has happened to which other components may react, should generally be distributed widely. The service raising the event doesn’t know its consumers – it simply makes the event available. It doesn’t expect a confirmation from anyone that the event has been “handled”.
+
+Now, contrast this with the expected results of sending a command. This represents a desire by the sender to change or do something. It should be handled exactly once, and the sender often expects a confirmation, since a command may fail. This is a totally different case from sending an event. And queries (which are read-only) are again a different beast: in simple cases, you would want one instance of a system to execute a query, but in general there may be more distributed, map/reduce type patterns required for query execution.
+
+Therefore, to implement effective messaging patterns for complex microservices systems, it's essential to recognize that messaging is not just about events. Events just represent one possible messaging pattern.
+
+== Coupling
+The second technical argument against event-only architectures has to do with avoiding tight coupling. Event-driven architecture is widely associated with loose coupling, so this warrants some explanation.
+
+As an example, suppose some system A produces events, and another system B consumes these events. Given the nature of events, system A doesn’t need to be aware of system B at all. System B will have to conform to the API defined by system A to publish events. Therefore, this situation creates a programmatic dependency of system B on system A.
+
+Now in many cases information flows between systems are bi-directional, for instance because a systems sometimes wants to change state in another system, and sometimes wants to retrieve information. Suppose that this is also through between A and B, but we've restricted ourselves to exclusively communicate via events. Then, the dependency relation that arises from consuming events occurs both ways. The systems have become programmatically interdependent, and you may end up in situations where you are forced to deploy updates simultaneously. And then, it’s not microservices anymore – it’s the start of a distributed monolith.
+
+This situation can be easily fixed: if A sends commands (or queries) to B, and B sends events (or query results) to A, then you only have a dependency from A to B and not the other way around. That starts by recognizing that it’s not just about events.
+
+The example we sketched is just one form of tight coupling which may arise from focusing on events too much. Another example is this: suppose system A maintains some state, and publishes state changes as events. System B consumes these events. Suppose system B effectively needs access to (part of) the state that A maintains, but it is not allowed to query system A (since we only allow events). The result will be that the developers of system B will need to create a shadow version of the business logic from system A. When changes in that business logic occur, both systems will need to be updated simultaneously - again, a form of tight coupling. 
+
+== Conclusion
+Event-driven architecture is great and has a lot to offer for link:https://www.axoniq.io/concepts/event-driven-microservices[microservices systems]. And, let’s not step into the trap of thinking that all communication should take place via events – there are some very clear reasons why this is an anti-pattern.
+
+Frans van Buul
