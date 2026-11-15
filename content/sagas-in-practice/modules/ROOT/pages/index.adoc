@@ -1,0 +1,250 @@
+= Sagas in Practice
+:author: Yvonne Ceelie
+:docdate: 2021-18-06
+
+This blog is a how-to implement a Saga with Axon and Spring Boot. Saga’s are a powerful concept but, you need to think about other options before implementing a Saga. You’ll have to keep in mind that the Saga should only orchestrate the process. The business logic should be kept in the Aggregates. The usage of a Saga implies more database traffic and CPU power for serializing and deserializing the instances. A Saga uses several tables in the database to store and retrieve its state. If you don’t need it, I recommend using a stateless event handler instead. 
+
+If you conclude a Saga is the best option, this blog provides some good practices to help you get started.
+
+== Webshop Saga example use case
+
+Let’s start by introducing the use case:
+
+_A webshop has different bounded contexts, for instance, a checkout (the customer can add items to the card), an order, a shipment, a payment context. The checkout context will produce events based on actions that the customer does in the checkout. Some of these events are the so-called domain events. These events could trigger actions within other contexts. An example could be the OrderConfirmedEvent. When an order is confirmed, the order processing starts: the customer should pay, and the ordered articles need shipping. Management of this process is crucial. Compensating actions like canceling the shipment should be taken after the customer canceled the payment._
+
+A Saga can manage this process, and I’ll use this example in the blog. You can find a complete implementation on our link:https://github.com/AxonIQ/code-samples/tree/master/saga[code-sample repository.]
+
+== Webshop Saga example implementation
+
+Our Saga is responsible for the process between multiple bounded contexts. There are three bounded contexts:
+
+* Order
+* Payment
+* Shipment
+
+The Saga will begin on an _OrderConfirmedEvent_. This event marks the start of our order process and contains the _order-id._  You can create a Saga by using the _@Saga_ annotation (Spring stereotype) on the class level. 
+
+Most likely, you need to send commands in the Saga and need a _CommandGateway_ to do so. Just like a typical Spring implementation, you can define a _CommandGateway_ in the class. Saga’s are serialized and stored into the database, but you don’t want to serialize the _CommandGateway _because of the large dependency tree. You can prevent the _CommandGateway_ from being serialized by adding the transient keyword to the definition. 
+
+The next step is to add event-handling methods (annotated with @SagaEventHandler) to this Saga: 
+
+[source,java]
+----
+@StartSaga
+@SagaEventHandler(associationProperty = ORDER_ID_ASSOCIATION)
+public void on(OrderConfirmedEvent event, DeadlineManager deadlineManager, UUIDProvider uuidProvider) {
+    this.orderId = event.getOrderId();
+
+    /* ... */
+ }
+----
+
+The _@StartSaga_ annotation will instantiate a new Saga on every _OrderConfirmedEvent_ with a unique _orderId_. Therefore, the association property on the_ SagaEventHandler_ annotation is mandatory and associates the Saga with the _orderId_ on the _OrderConfirmedEvent._
+
+In an event handler method signature, you can have any Spring component. In this case, I added a UUID Provider (to generate ids) and an (Axon) Deadline Manager. An essential aspect of a Saga is that it needs to have an end. Therefore, an everyday use case is to end a Saga after a certain amount of time. This concept will prevent Sagas from living forever. That is why I added the deadline manager in the signature of the Saga event handler method. You can use this deadline manager to set the time for how long you want your Saga to be active. 
+
+[source,java]
+----
+//This order should be completed in 5 days
+this.orderDeadlineId = deadlineManager.schedule(Duration.of(5, ChronoUnit.DAYS), ORDER_COMPLETE_DEADLINE);
+----
+
+Using a deadline implies that you need to handle the deadline too. You can do that by using a method annotated with a _@DeadlineHandler_ annotation. You can annotate this method with a _@EndSaga_ annotation or use the static SagaLifeCylce.end() function in the method implementation to end the Saga.
+
+[source,java]
+----
+@DeadlineHandler(deadlineName = ORDER_COMPLETE_DEADLINE)
+@EndSaga
+public void on() {
+    commandGateway.send(new CompleteOrderProcessCommand(this.orderId, this.orderIsPaid, this.orderIsDelivered));
+}
+----
+
+You can find more information about the DeadlineManager in link:https://docs.axoniq.io/axon-framework-reference/4.10/deadlines/deadline-managers/[the reference guide].
+
+In addition to setting a deadline, the OrderConfirmedEvent event handler is responsible for informing payment and shipment that the order should be paid and shipped. For the payment context, you need to generate a payment-id and send the command. Associate the Saga with the payment context by using the _static_ method _Sagalifecycle.associatedWith();_
+
+[source,java]
+----
+//Send a command to paid to get the order paid. Associate this Saga with the payment Id used.
+PaymentId paymentId = uuidProvider.generatePaymentId();
+SagaLifecycle.associateWith(PAYMENT_ID_ASSOCIATION, paymentId.toString());
+commandGateway.send(new PayOrderCommand(paymentId));
+----
+
+Now that the Saga is associated with the payment-id, it will respond to events from the payment bounded context. Therefore, you can add an event handler for this OrderPaidEvent:
+
+[source,java]
+----
+public class OrderPaidEvent {
+    PaymentId paymentId;
+    public OrderPaidEvent(PaymentId paymentId) {
+        this.paymentId = paymentId;
+    }
+
+    public PaymentId getPaymentId() {
+        return paymentId;
+    }
+}
+----
+
+And you can associate the event handler with the _paymentId _property:
+
+[source,java]
+----
+@SagaEventHandler(associationProperty = "paymentId")
+public void on(OrderPaidEvent event, DeadlineManager deadlineManager) {
+    this.orderIsPaid = true;
+    if (orderIsDelivered) {
+        completeOrderProcess(deadlineManager);
+    }
+}
+----
+
+This event handler updates the state of the Saga by setting the _orderIsPaid _flag to true. An important note is that the Saga manages the process and does not make decisions based on the events. It waits for delivery before completing the order process. The Order context is responsible for the actual completion. The _completeOrderProcess_ method sends a command, cancels the scheduled deadline, and ends the Saga:
+
+[source,java]
+----
+private void completeOrderProcess(DeadlineManager deadlineManager) {
+    commandGateway.send(new CompleteOrderProcessCommand(this.orderId, this.orderIsPaid, this.orderIsDelivered));
+    deadlineManager.cancelSchedule(ORDER_COMPLETE_DEADLINE, orderDeadlineId);
+    SagaLifecycle.end();
+}
+----
+
+As you may have noticed, in the _OrderPaidEvent _handling method, there is a check if the order is already delivered. The _orderIsDelivered_ boolean is part of the Saga state stored in the Saga store. Whenever a _ShipmentStatusUpdatedEvent_ comes in, this boolean is updated.
+
+[source,java]
+----
+@SagaEventHandler(associationProperty = "shipmentId")
+    public void on(ShipmentStatusUpdatedEvent event, DeadlineManager deadlineManager) {
+        this.orderIsDelivered = ShipmentStatus.DELIVERED.equals(event.getShipmentStatus());
+        if (orderIsPaid && orderIsDelivered) {
+            completeOrderProcess(deadlineManager);
+        }
+    }
+----
+
+When designing the Saga, it’s crucial to handle exceptional cases. For example, when the payment fails for whatever reason, you don’t want to ship the order. In that case, you can cancel the shipment.
+
+[source,java]
+----
+@SagaEventHandler(associationProperty = "paymentId")
+public void on(OrderPaymentCancelledEvent event, DeadlineManager deadlineManager) {
+    // Cancel the shipment and update the Order
+    commandGateway.send(new CancelShipmentCommand(this.shipmentId));
+    completeOrderProcess(deadlineManager);
+}
+----
+
+The order (context) gets informed and needs to decide on the next steps. Probably the order status will get updated, but that is not the responsibility of the Saga.
+
+Saga’s are event processors. Therefore, a Saga event processor will (by default) start its token at the head of the stream. However, it is possible to change this behavior and let the processor take all historical events into account:
+
+[source,java]
+----
+@Configuration
+public class ProcessOrderSagaConfig {
+
+    @Autowired
+    public void configure(EventProcessingConfigurer configurer) {
+        configurer.registerPooledStreamingEventProcessor
+                ("ProcessOrderSagaProcessor",
+                 org.axonframework.config.Configuration::eventStore,
+                 (configuration, builder) -> builder.initialToken(
+                         StreamableMessageSource::createTailToken));
+    }
+}
+----
+
+It’s possible to customize this configuration based on your needs.
+
+== Saga test scenarios
+
+Axon provides test fixtures that make testing Sagas convenient. For example, you can just set up a test class and create a test fixture for the Saga:
+
+[source,java]
+----
+@BeforeEach
+void setUp() {
+    testFixture = new SagaTestFixture<>(ProcessOrderSaga.class);
+    testFixture.registerResource(uuidProviderMock);
+    when(uuidProviderMock.generateOrderId()).thenReturn(orderId);
+    when(uuidProviderMock.generatePaymentId()).thenReturn(paymentId);
+    when(uuidProviderMock.generateShipmentId()).thenReturn(shipmentId);
+}
+----
+
+You can add the necessary Spring components to the fixture like the UUIDProvider here.
+The fixture already has all the Axon components set up for you, and you should not add a Command gateway or Deadline manager (your tests will fail if you do so).
+First, you can test if the Saga is registered correctly:
+
+[source,java]
+----
+@Test
+void onOrderConfirmedTest() {
+    testFixture.givenNoPriorActivity()
+               .whenPublishingA(new OrderConfirmedEvent(orderId))
+               .expectDispatchedCommands(new PayOrderCommand(paymentId), new ShipOrderCommand(shipmentId))
+               .expectScheduledDeadlineWithName(Duration.of(5, ChronoUnit.DAYS), ORDER_COMPLETE_DEADLINE)
+               .expectActiveSagas(1);
+}
+----
+
+As you can see, this test explains the intention of the OrderConfirmedEvent handler.
+We can also test if the Saga ends correctly if the order is paid and delivered:
+
+[source,java]
+----
+@Test
+void onOrderPaidAndDeliveredTest() {
+    testFixture.givenAPublished(new OrderConfirmedEvent(orderId))
+               .andThenAPublished(new ShipmentStatusUpdatedEvent(shipmentId, ShipmentStatus.DELIVERED))
+               .whenPublishingA(new OrderPaidEvent(paymentId))
+               .expectDispatchedCommands(new CompleteOrderProcessCommand(orderId, true, true))
+               .expectNoScheduledDeadlineWithName(Duration.of(5, ChronoUnit.DAYS), ORDER_COMPLETE_DEADLINE)
+               .expectActiveSagas(0);
+}
+----
+
+Or if the Saga ends on a deadline:
+
+[source,java]
+----
+@Test
+void onOrderCompleteDeadlineTest() {
+    testFixture.givenAPublished(new OrderConfirmedEvent(orderId))
+               .whenTimeElapses(Duration.of(5, ChronoUnit.DAYS))
+               .expectNoScheduledDeadlines()
+               .expectDeadlinesMetMatching(orderCompleteDeadline())
+               .expectDispatchedCommands(new CompleteOrderProcessCommand(orderId, false, false))
+               .expectActiveSagas(0);
+}
+
+protected static Matcher<list> orderCompleteDeadline() {
+    return new OrderCompleteDeadline();
+}
+
+static class OrderCompleteDeadline extends TypeSafeMatcher<list> {
+
+    @Override
+    protected boolean matchesSafely(List deadlineMessages) {
+        return deadlineMessages.stream().allMatch(deadlineMessage -> deadlineMessage.getDeadlineName()
+                                                                                    .equals(ORDER_COMPLETE_DEADLINE)
+                && deadlineMessage.getPayload() == null);
+    }
+
+    @Override
+    public void describeTo(Description description) {
+        description.appendText("no matching deadline found");
+    }
+}
+----
+
+== Conclusion
+
+Sagas are great for orchestrating processes between different bounded contexts. You can view them as an anti-corruption layer between them. Sagas help not to leak any business logic to other contexts. This power also has a downside because a Saga may seem to be the answer to all problems, and that, of course, is not true. So keep in mind that you need to investigate all possible solutions thoroughly.
+
+For questions or remarks, please visit our link:https://discuss.axoniq.io/[Discuss platform]. 
+
+Yvonne Ceelie
