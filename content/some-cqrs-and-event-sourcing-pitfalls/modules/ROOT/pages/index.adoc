@@ -1,0 +1,75 @@
+= Some CQRS And Event Sourcing Pitfalls
+
+pass:[<!-- vale proselint.Skunked = NO -->]
+
+:author: Frans van Buul
+:docdate: 2018-12-10
+
+In link:https://www.axoniq.io/blog/how-to-write-an-axon-application[one of our recent blogs], we talked about constructing a real-life Axon application. Which areas should you distinguish on a high level, and what code should go where? This is a question often asked by beginning Axon teams.
+
+Another question that often pops up is: what pitfalls are there that we should avoid? That’s a smart question to ask when embarking on new technology. I’ll cover some of these in this blog. It’s based on stuff I’ve seen happening for real when working with many Axon clients.
+
+So why isn’t this blog titled “Axon pitfalls to avoid”? That’s because there aren’t true Axon pitfalls. Axon is founded on link:https://www.axoniq.io/concepts[DDD, CQRS, and Event Sourcing (ES) principles], and there are definitely some things that frequently go wrong when implementing those. But these things aren’t specific to Axon at all.
+
+With all that said, let’s go and look at five common pitfalls.
+
+== Paying insufficient attention to event modeling
+Event Sourcing has tremendous potential benefits. It will ensure you have a perfect record of events in the business to be used for auditing, analytics, machine learning, and many other purposes. However, all of this only works properly if your events accurately represent things that have happened in your domain.
+
+A common pitfall is that they don’t. When stepping into event sourcing from a more traditional way of building systems, it’s tempting to start modeling in terms of 'XCreatedEvent,' 'YUpdatedEvent,' 'ZDeletedEvent.' You’d have Create/Update/Delete (CUD) events.
+
+Technically, this will, in fact, work. link:https://vvvvalvalval.github.io/posts/2018-11-12-datomic-event-sourcing-without-the-hassle.html[Here]’s a blog even advocating it. However, in reality, you will lose most of the event sourcing benefits. For example, suppose you have a CRM system and a customer address change. Does a change represent a correction to an inaccurate entry, or did the customer actually move to a new address? Are street names and house numbers changing in a single event, or are these two separate things? And who registered the change? True event sourcing provides the answers to all of that, whereas CUD events don’t.
+
+This pitfall comes in other shapes than just these CUD events. For example, another common variation is that the basic event modeling is done properly, but integration with other systems triggers certain variations of events. Like `XEnrichedEvent` (we obtained some more data about X in the process) or `YIntegrationEvent` (like a regular Y event, but now in a specific form for integration to some other system).
+
+Don’t do this. You again end up with events that are highly system-specific and don’t have business meaning. They won’t help you reap the benefits of event sourcing. If you feel tempted to create those, consider alternatives like an anti-corruption layer, an adapter, a separate bounded context, or subdomain… but whatever you do, make sure that your events represent true, real-life events in your domain only.
+
+== Ignoring event serialization
+This pitfall continues on the key topic of the first one - the fact that events are all-important in the Axon style of development. With event sourcing, events get stored and are the primary source of truth. To achieve this, their in-memory form in your application must get translated to something that can be actually stored, which is called serialization.
+
+When a developer is writing his first Axon application, he’s probably focusing on correctly modeling the events as Java classes. Axon, out-of-the-box, configures an link:https://x-stream.github.io/[XStream]-based serializer that will serialize and deserialize everything, so it’s a worry-free way to get started.
+
+However, in the long run, code comes and goes, but the stored events stay in their serialized form. So, you really should be thinking about the serialized forms of your events! That’s the thing you're committing to long-term. Ignoring it is a pitfall.
+
+One of the first things to do is to replace the default XStreamSerializer for events. Have a look at the link:https://docs.axoniq.io/[reference guide] to see how to do this. The default XStreamSerializer introduces very heavy coupling with Java implementation details - it’s not a way to store events long-term.
+
+The JacksonSerializer provides a much better alternative, but even then, you should inspect the serialized form manually. Consider tuning the serializer's configuration of even implementing a serializer yourself, which could be based on XML (for example, JAXB) or even Protobuf or Avro. There are many valid options, but whatever you do, be very aware of the serialized form of events since that’s what you’re committing to.
+
+== Relying on synchronicity in CQRS
+In a CQRS/ES programming style, you would have (event-sourced) aggregates on your command side and event-based projections on your query side. In Axon, the transmission of messages between those components takes place using buses. Of course, you’re totally free to configure a bus implementation you see fit.
+
+These buses can implement asynchronous behavior, or when they’re in the same JVM, synchronous behavior. For example, back in the Axon Framework 3 days, event handlers were configured as synchronous, “subscribing” event handlers. So the processing of events in event handlers takes place synchronously and in the same database transaction, as processing the command that triggered the event in the first place.
+
+Such synchronicity paves the way to many pitfalls. For instance, you could do command validation in your read models. However, in the synchronous case, if the projection of an event causes an exception (for example, because of hitting a database unique constraint), this would roll back the entire transaction, including the storage of the event, and cause the command to fail.
+
+Technically, your program “works.” From a more strategic perspective, this is extremely undesirable. Your command model is no longer autonomous, and once you split this system into distributed components, it will immediately be broken because of the induced asynchronicity. You’ll lose a lot of flexibility. Don’t do this.
+
+Axon 4 helps you to avoid this pitfall by defaulting to Axon Server buses (which are asynchronous) and to tracking event processors (which are always asynchronous, even when processing events produced on the same node). Of course, you can override these defaults - but be very aware of the stuff mentioned above.
+
+
+== Normalizing projections in CQRS
+In a CQRS application, you’re going to have projections. One of the great benefits of CQRS is that you’re totally free to choose technology for each projection individually, and you should consider choosing something that’s most fitting for the job at hand.
+
+Probably Elastic for a projection that supports full-text search, and probably Neo4J for a projection that focuses on graph-based queries. Having said that, a good old relational database can also be a perfect way to implement a projection.
+
+That’s where the pitfall lurks. Many of us are drilled in several things considered good practice in the relational database world. Ensure your data model is normalized. (“A non-key column depends on the key, the whole key, and nothing but the key, so help me, Codd.”)
+
+Enforce integrity, in particular through foreign key constraints. Avoid redundancy. Write clever SQL queries to give users the data they need, JOINing as many tables as needed.
+
+When designing an RDBMS-carried projection, it’s tempting to follow this same advice, but actually, these things are bad practices in that case - that’s the pitfall. Having a single data model with complex queries to retrieve the data is exactly what we’re trying to avoid when applying CQRS!
+
+The good practice is to design each of your projections individually, with their own data storage. Accept the redundancy that’s inherent to this concept. The design of the individual projections should be driven by the concerns about how to answer queries as efficiently as possible, ideally just by returning a single record. Accept any denormalization that’s required for that.
+
+== Paying insufficient attention to aggregate boundaries
+When writing an Axon application, “Aggregates” are a core notion. These are bundles of one or more entities, treated as one unit from a persistence perspective, with the ability to enforce their own constraints and integrity. In other words, anything that happens within a single aggregate instance can be done as an ACID transaction, whereas you cannot have ACID transaction semantics across aggregate instances.
+
+When trying to get your first Axon application to work, it might be tempting to choose your aggregates without thinking about it too much. After all, you’re just trying to get Axon to work. The pitfall is to continue from this position without really thinking aggregate design through.
+
+The wrong aggregate design has huge consequences, and it’s hard to refactor later. If your aggregates are too small, you will struggle with enforcing the required consistency across aggregate instances. Such Axon applications tend to have excessive numbers of Sagas.
+
+If your aggregates are too large, performance will suffer. Loading the aggregate will become a heavy operation, and concurrent commands targeting the same aggregate instance become challenging. There’s a sweet spot in the middle - make sure you hit it!
+
+== Finally, regarding Event Sourcing
+Hopefully, the previous “How to write an Axon application?” blog, and this blog, gave you some useful pointers to write a maintainable, scalable Axon application. As always, we welcome you to reach out with any questions or concerns.
+
+Frans van Buul
