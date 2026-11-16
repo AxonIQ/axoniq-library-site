@@ -800,6 +800,48 @@ Every event an instance appends carries an append condition on its workflow id.
 A node that lost its claim without noticing has its append rejected, logs a warning, and stops that instance.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="snapshots"><a class="anchor" href="#snapshots"></a>Snapshots</h3>
+<div class="paragraph">
+<p>The engine sources two event-sourced entities: the list of running workflows and the state of each workflow instance.
+Without snapshots, a node that takes over replays the full event history of both.
+Snapshots are off by default.
+Enable them on the <code>WorkflowConfigurer</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WorkflowConfigurer.create()
+                  .snapshots(snapshots -&gt; snapshots
+                          .enabled(true)
+                          .runningWorkflows(SnapshotPolicy.afterEvents(500))   <i class="conum" data-value="1"></i><b>(1)</b>
+                          .workflowState(SnapshotPolicy.afterEvents(200)));    <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The policy for the list of running workflows. There is one list, so there is one snapshot of it.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The policy for the workflow state. Each workflow instance has a snapshot of its own, stored under its workflow id.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Both policies default to a snapshot after 50 sourced events.
+The setting applies to every <code>WorkflowModule</code> of the application, because all modules share both entities.
+The history projector does not source these entities, so snapshots do not affect it.</p>
+</div>
+<div class="paragraph">
+<p>Snapshots need a <code>SnapshotStore</code> component.
+Axon Server and PostgreSQL each register one.
+An application that enables snapshots without a <code>SnapshotStore</code> fails to start.
+A snapshot is taken while an entity is sourced, so the first restore after enabling snapshots still replays the full history.
+See <a href="../../snapshotting/" class="xref page">Snapshotting</a> for snapshot policies and snapshot stores.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -869,7 +911,41 @@ The history processor uses the same properties under <code>axon.workflow.history
 </tbody>
 </table>
 <div class="paragraph">
-<p>See <a href="#running-on-several-nodes">Running on several nodes</a> for the token store and failover, and <a href="#performance-tuning">Performance tuning</a> for choosing these values.</p>
+<p><a href="#snapshots">Snapshots</a> are configured with <code>axon.workflow.snapshots.*</code> properties.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 16.6666%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">Default</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>enabled</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>false</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Whether snapshots are taken.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>running-workflows.after-events</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>50</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Number of sourced events after which the list of running workflows is snapshotted.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>workflow-state.after-events</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>50</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Number of sourced events after which the state of a workflow instance is snapshotted.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>See <a href="#running-on-several-nodes">Running on several nodes</a> for the token store, failover and snapshots, and <a href="#performance-tuning">Performance tuning</a> for choosing the processor values.</p>
 </div>
 </div>
 </div>
