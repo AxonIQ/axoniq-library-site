@@ -1,0 +1,90 @@
+= MongoDB Transactions with Axon Framework
+
+pass:[<!-- vale AxonIQ.Headings = NO -->]
+
+:author: Gerard Klijs
+:docdate: 2023-02-01
+
+Since version 4.7.0 of Axon Framework, it’s possible to leverage the link:https://www.mongodb.com/docs/manual/core/transactions/#transactions-api[transactions API] provided by MongoDB. The main advantage this will provide is to keep projections consistent in case of errors. Transactions were added to MongoDB at a later stage. It’s easy to make mistakes by only using the transaction API for part of the writes. This blog post will focus on using the link:https://github.com/AxonFramework/extension-mongo[Mongo extension] in combination with Spring Boot.
+
+When the transactions API is properly used, it can prevent certain problems. For example, an event could trigger an update to a MongoDB document using an link:https://docs.axoniq.io/axon-framework-reference/4.10/events/event-processors/[event processor]. By the time the token is updated in the link:https://docs.axoniq.io/axon-framework-reference/4.10/events/event-processors/streaming/[token store], the database might have become unavailable. This means if the processor is restarted, the same event might be processed again. By using transactions, either both updates succeed or fail. However, there are some caveats, hence this blog.
+
+== Make use of transactions in the framework components
+
+We have to change two things to use transactions properly. First, we need to replace the link:https://github.com/AxonFramework/extension-mongo/blob/master/mongo/src/main/java/org/axonframework/extensions/mongo/MongoTemplate.java[_MongoTemplate_] with one that takes into account transactions for the calls to the collections. Secondly, we need to have transaction managers on the components so they can properly manage the transactions.
+
+For each of the framework components, enabling transactions works in a similar way. These components are the token store, saga store, dead-letter queue, and event store*. Depending on the application, you might not use MongoDB for all these components. The specific classes needed for Spring are available from a new module, the _axon-mongo-spring_ module.
+
+Please note that from Axon Framework 4 we no longer recommend using MongoDB as an event store. There are several problems, most of them because MongoDB lacks a sequence generator. The lack of this means instead of a global sequence, we need to use a timestamp field instead. The timestamp field is populated by the applications running Axon Framework, if they are not properly synced events will be processed out of order. This might in turn cause exceptions or data corruption. Relying on timestamps also makes the tracking tokens large and complicated. In some cases they might even become too big. After many events, the index will become too large to fit in memory. Above all, the link:https://www.digitalfrontiers.de/wp-content/uploads/2022/04/Digital-Frontiers_Axon-Server-Benchmarks-1.pdf[performance] will be a lot worse compared to Axon Server. In the near future, we will publish a blog that goes into more detail about this.
+ 
+=== Setting the Mongo template
+
+All the components need a Mongo template. Until the 4.7.0 release, the only implementation provided by the extension was the link:https://github.com/AxonFramework/extension-mongo/blob/master/mongo/src/main/java/org/axonframework/extensions/mongo/DefaultMongoTemplate.java[_DefaultMongoTemplate_]. We introduced a link:https://github.com/AxonFramework/extension-mongo/blob/master/axon-mongo-spring/src/main/java/org/axonframework/extensions/mongo/spring/SpringMongoTemplate.java[_SpringMongoTemplate_] to support MongoDB transactions with Spring. This was necessary to leverage the Spring _MongoDatabaseUtils_ class to get the collections, which makes sure the transactions API is used.
+
+The _SpringMongoTemplate_ can be created using the _MongoDatabaseFactory_. This will happen with Spring auto-configuration like:
+
+[source,java]
+----
+@Bean
+@ConditionalOnMissingBean
+public MongoTemplate axonMongoTemplate(MongoDatabaseFactory factory) {
+    String databaseName = axonMongoProperties.getDatabaseName();
+    if (isNull(databaseName)) {
+        return SpringMongoTemplate.builder()
+                                  .factory(factory)
+                                  .build();
+    } else {
+        return SpringMongoTemplate.builder()
+                                  .factory(factory)
+                                  .databaseName(databaseName)
+                                  .build();
+    }
+}
+----
+
+Copy
+Note that when a _MongoTemplate_ is configured in the application, it will use that bean instead. The resulting template can then be configured on the components.
+
+
+=== Setting the transaction manager
+
+A setter function was added to all components to set a transaction manager. This is an example of setting the transaction manager in the token store:
+
+[source,java]
+----
+@Bean("tokenStore")
+public TokenStore tokenStore(
+        MongoTemplate mongoTemplate,
+        TransactionManager transactionManager,
+        Serializer serializer
+) {
+    return MongoTokenStore.builder()
+                          .mongoTemplate(mongoTemplate)
+                          .transactionManager(transactionManager)
+                          .serializer(serializer)
+                          .build();
+}
+----
+
+Copy
+If you are using Spring, you can use the link:https://github.com/AxonFramework/extension-mongo/blob/master/axon-mongo-spring/src/main/java/org/axonframework/extensions/mongo/spring/SpringMongoTransactionManager.java[_SpringMongoTransactionManager_]. If you don’t use Spring, you need to implement the _TransactionManager_ yourself.
+
+=== Auto-configuration
+
+Since 4.7.0, we also added auto-configuration, where we set the transaction manager for you. Note this is not used when you define the bean yourself. Hence, removing your bean might be the easiest way to enable transactions.
+
+
+With the exception of the dead-letter queue, all the components will be auto-configured when you use the link:https://mvnrepository.com/artifact/org.axonframework.extensions.mongo/axon-mongo-spring-boot-starter[starter]. There are some exceptions to this. If you also use a relational database, it's likely you get either the JPA or JDBC implementations instead. To get the event store, you need to set the _axon.mongo.event-store.enabled_ property to true.
+
+== Make use of transactions in application code
+
+When using the Mongo extension, it's likely an event processor’s event handlers updating a MongoDB collection. With the information above, the token store used by the processor can properly use the transactions API. To get all the benefits, it’s also important the code called by the event processor will also use the transactions API.
+
+
+The easiest way to make sure the transactions API is used is by using a link:https://docs.spring.io/spring-data/mongodb/docs/current/api/org/springframework/data/mongodb/repository/MongoRepository.html[_MongoRepository_]. An example can be found link:https://spring.io/guides/gs/accessing-data-mongodb/[here]. Another way is to use the link:https://docs.spring.io/spring-data/mongodb/docs/current/api/org/springframework/data/mongodb/MongoDatabaseUtils.html[_MongoDatabaseUtils_] like is done in the _SpringMongoTemplate_ mentioned above. Please note that not doing so might mean the transactions initiated from Axon Framework might not contain all the operations. As the framework will already take care of starting a transaction, you don’t need to add a transactional annotation in the application code. To enable this, you need to configure the aforementioned MongoTransactionManager with your event processor.
+
+== Further actions
+
+See the link:http://docs.spring.io/spring-data/mongodb/docs/current/api/org/springframework/data/mongodb/MongoTransactionManager.html[java documentation] for more details on the Spring Mongo Transaction Manager. I also created a small link:https://github.com/gklijs/mongo-transaction-concurrent[demo app] to prepare for adding transaction support to the Mongo Extension. The non-main branches use transactions, while the main branch does not, resulting in data missing in the projection. A link:https://www.baeldung.com/spring-data-mongodb-transactions[Baeldung article] explaining how to use MongoDB transactions in Spring might be helpful too. Lastly, for an example using the 4.7 auto-configuration, Spring Boot 3 and records in link:https://github.com/gklijs/jug-sticker-demo/tree/dev/axon[this example]. Although it's never explicit there, because of the auto configuration and the transactions being started from the event processor, it does use them. For other questions related to Axon Framework, please reach out on link:https://discuss.axoniq.io/[Discuss].
+
+Gerard Klijs
