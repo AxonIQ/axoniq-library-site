@@ -437,13 +437,27 @@
 <div class="sectionbody">
 <div class="paragraph">
 <p>This chapter covers the specifics of working with an Event Store in Axon Framework.
-Most users do not need to interact with these components directly, but understanding them provides valuable insight into how Axon manages event storage and consistency.
-Furthermore, if you do need to customize these parts, it&#8217;s good to know that they&#8217;re there.</p>
+Most of these components work without user interaction.
+The exception is <a href="#command_append_criteria">append criteria per command</a>, which are declared next to command handlers.</p>
 </div>
 <div class="paragraph">
-<p>It explains Dynamic Consistency Boundaries (DCB), a flexible approach to organizing events beyond traditional aggregate-based storage.
-You will learn about event tags and the <code>TagResolver</code> for attaching metadata to events, as well as <code>EventCriteria</code> and the <code>CriteriaResolver</code> for querying events based on those tags.
-Finally, the chapter covers consistency markers, which ensure write conflict detection when working with tag-based event groupings.</p>
+<p>The page covers:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Dynamic Consistency Boundaries (DCB), a flexible approach to organizing events beyond traditional aggregate-based storage.</p>
+</li>
+<li>
+<p>Event tags and the <code>TagResolver</code> for attaching metadata to events, and <code>EventCriteria</code> and the <code>CriteriaResolver</code> for querying events based on those tags.</p>
+</li>
+<li>
+<p>Append criteria per command, which check a different consistency boundary for a command than the one it sourced, including for entity command handlers.</p>
+</li>
+<li>
+<p>Append, source, and stream conditions, and the consistency markers that detect conflicting writes.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -683,6 +697,437 @@ public class CustomCriteriaResolver implements CriteriaResolver&lt;SubscriptionI
 </div>
 </div>
 <div class="sect1">
+<h2 id="command_append_criteria"><a class="anchor" href="#command_append_criteria"></a>Append criteria per command</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Sourcing criteria select the events that rebuild state.
+Append criteria select the concurrent events that conflict with a command&#8217;s decision.
+By default, the append criteria of a command are its complete sourcing criteria: the OR-union of everything it sourced.</p>
+</div>
+<div class="paragraph">
+<p>A command can narrow or replace that boundary when possible and/or necessary.
+A narrower boundary avoids conflicts, and retries, on concurrent events the decision does not depend on.</p>
+</div>
+<div class="sect2">
+<h3 id="_declaring_append_criteria"><a class="anchor" href="#_declaring_append_criteria"></a>Declaring append criteria</h3>
+<div class="paragraph">
+<p>Declare an <code>@AppendCriteriaBuilder</code> on the command-handling class, for the commands whose boundary differs:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.commandhandling.annotation.AppendCriteriaBuilder;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.modelling.annotation.InjectEntity;
+
+public class CreditCommandHandler {
+
+    @CommandHandler
+    void handle(UseCredits command,
+                @InjectEntity(idProperty = "accountId") CreditBalance balance,
+                EventAppender eventAppender) {
+        if (balance.amount() &lt; command.amount()) {
+            throw new IllegalStateException("Insufficient credits");
+        }
+        eventAppender.append(new CreditsUsed(command.accountId(), command.amount()));
+    }
+
+    @CommandHandler
+    void handle(TopUpCredits command,
+                @InjectEntity(idProperty = "accountId") CreditBalance balance,
+                EventAppender eventAppender) {
+        eventAppender.append(new CreditsToppedUp(command.accountId(), command.amount()));
+    }
+
+    // a concurrent top-up only raises the balance, so only a concurrent CreditsUsed can invalidate this decision;
+    // TopUpCredits has no builder and keeps its sourcing criteria
+    @AppendCriteriaBuilder
+    static EventCriteria appendCriteria(UseCredits command, EventCriteria sourcingCriteria) {
+        return sourcingCriteria.withEventTypes(new QualifiedName(CreditsUsed.class));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The builder receives the command and the accumulated sourcing criteria, and returns the complete append criteria for that command.
+When the command loads several entities, the supplied criteria are the union of all of them.
+<code>withEventTypes</code> keeps the tags of every OR branch and replaces its event types, so a builder narrows the boundary without repeating the sourcing tags.
+Event types are <code>QualifiedName</code> or <code>String</code> names, and <code>new QualifiedName(SomeEvent.class)</code> gives the default name of an event class.
+For events named with <code>@Event</code>, or with a custom <code>MessageTypeResolver</code>, use <code>withEventTypes(MessageTypeResolver, Class&lt;?&gt;&#8230;&#8203;)</code>.</p>
+</div>
+<div class="paragraph">
+<p>An event-sourced entity that handles commands declares append criteria the same way, next to its <code>@EventCriteriaBuilder</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.commandhandling.annotation.AppendCriteriaBuilder;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.modelling.entity.annotation.EntityMember;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@EventSourcedEntity(tagKey = "accountId")
+public class Account {
+
+    private int balance = 0;
+
+    @EntityMember(routingKey = "cardId")
+    private final List&lt;Card&gt; cards = new ArrayList&lt;&gt;();
+
+    // Sourcing: every event type needed to rebuild the state a decision reads.
+    @EventCriteriaBuilder
+    static EventCriteria sourcingCriteria(String accountId) {
+        return EventCriteria.havingTags(Tag.of("accountId", accountId))
+                            .andBeingOneOfTypes(new QualifiedName(MoneyDeposited.class),
+                                                new QualifiedName(MoneyWithdrawn.class),
+                                                new QualifiedName(CardIssued.class),
+                                                new QualifiedName(CardReplaced.class));
+    }
+
+    @EventSourcingHandler
+    void evolve(MoneyDeposited event) {
+        balance += event.amount();
+    }
+
+    @EventSourcingHandler
+    void evolve(MoneyWithdrawn event) {
+        balance -= event.amount();
+    }
+
+    @EventSourcingHandler
+    void evolve(CardIssued event) {
+        cards.add(new Card(event.cardId()));
+    }
+
+    @CommandHandler
+    void handle(WithdrawMoney command, EventAppender eventAppender) {
+        if (balance &lt; command.amount()) {
+            throw new IllegalStateException("Insufficient balance");
+        }
+        eventAppender.append(new MoneyWithdrawn(command.accountId(), command.amount()));
+    }
+
+    // Appending: only the events that can invalidate the decision above. A concurrent withdrawal can
+    // overdraw the account, a concurrent deposit only ever raises the balance, so deposits are left out.
+    @AppendCriteriaBuilder
+    static EventCriteria appendCriteria(WithdrawMoney command, EventCriteria sourcingCriteria) {
+        return sourcingCriteria.withEventTypes(new QualifiedName(MoneyWithdrawn.class));
+    }
+
+    static class Card {
+
+        private final String cardId;
+        private int replacements = 0;
+
+        Card(String cardId) {
+            this.cardId = cardId;
+        }
+
+        @EventSourcingHandler
+        void evolve(CardReplaced event) {
+            replacements++;
+        }
+
+        @CommandHandler
+        void handle(ReplaceCard command, EventAppender eventAppender) {
+            eventAppender.append(new CardReplaced(command.accountId(), command.cardId()));
+        }
+
+        @AppendCriteriaBuilder
+        static EventCriteria appendCriteria(ReplaceCard command, EventCriteria sourcingCriteria) {
+            return sourcingCriteria.withEventTypes(new QualifiedName(CardReplaced.class));
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>@EventCriteriaBuilder</code> selects the events the entity reads, and <code>@AppendCriteriaBuilder</code> selects the events a command handled by the entity conflicts with.
+Above, a withdrawal reads deposits, but a concurrent deposit cannot overdraw the account, so deposits are not part of the boundary.
+Builders on an entity apply to the commands that entity handles, including commands creating it, not to every use of the entity.
+Both builders are optional: without an <code>@EventCriteriaBuilder</code> the entity is sourced by its tag, and without an <code>@AppendCriteriaBuilder</code> a command keeps its sourcing criteria.</p>
+</div>
+<div class="paragraph">
+<p>The <code>@AppendCriteriaBuilder</code> is internally structured as a <code>@CommandHandlerInterceptor</code>, so it is found and matched like any command handler interceptor.</p>
+</div>
+<div class="paragraph">
+<p>There are a couple of rules when it comes to the append criteria builder:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A builder applies to the commands handled on its class whose payload is assignable to its first parameter.
+A first parameter of type <code>CommandMessage</code> applies to every command.
+The payload is converted to the handler&#8217;s type first, so a builder also matches serialized commands and commands named with <code>@Command(name = &#8230;&#8203;)</code>.</p>
+</li>
+<li>
+<p>Commands without a matching builder keep their sourcing criteria.</p>
+</li>
+<li>
+<p>At most one builder applies to a command.
+When two builders, or a builder and an <code>AppendCriteriaInterceptor</code>, match the same command, the application still starts, but handling that command fails.</p>
+</li>
+<li>
+<p>A nested entity declares builders for its own handlers, as <code>Card</code> does above.
+Builders of the parent entity also see the commands forwarded to its children, so keep them to the parent&#8217;s own command types.</p>
+</li>
+<li>
+<p>A builder is <code>static</code> and returns <code>EventCriteria</code>, or startup fails with an <code>AxonConfigurationException</code>.</p>
+</li>
+<li>
+<p>An <code>EventCriteria</code> parameter receives the sourcing criteria.
+Other parameters are resolved when the events are appended, so they must resolve without waiting.
+Only an allow-list is accepted, checked at startup: <code>CommandMessage</code> or <code>Message</code>, <code>Metadata</code>, a <code>@MetadataValue</code>, <code>ProcessingContext</code>, the <code>MessageTypeResolver</code>, and a configured component through <code>@InjectComponent</code>.
+Any other parameter, such as an unannotated component, an entity or an <code>EventAppender</code>, fails at startup.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_declarative_configuration"><a class="anchor" href="#_declarative_configuration"></a>Declarative configuration</h3>
+<div class="paragraph">
+<p>Without annotations, register an <code>AppendCriteriaInterceptor</code> on the command-handling module:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.commandhandling.AppendCriteriaInterceptor;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.commandhandling.SimpleCommandHandlingComponent;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+
+public class CreditCommandConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        return configurer.registerCommandHandlingModule(
+                CommandHandlingModule.named("credit-commands")
+                                     .commandHandlers()
+                                     .commandHandlingComponent(
+                                             configuration -&gt; SimpleCommandHandlingComponent
+                                                     .create("credit-command-handler")
+                                                     .subscribe(new QualifiedName("credits.UseCredits"),
+                                                                (command, context) -&gt; MessageStream.empty())
+                                                     .subscribe(new QualifiedName("credits.TopUpCredits"),
+                                                                (command, context) -&gt; MessageStream.empty())
+                                     )
+                                     .intercepted(configuration -&gt; AppendCriteriaInterceptor
+                                             .forCommand(new QualifiedName("credits.UseCredits"),
+                                                         sourcingCriteria -&gt; sourcingCriteria.withEventTypes(
+                                                                 new QualifiedName(CreditsUsed.class)
+                                                         ))
+                                     )
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>forCommand</code> and <code>andForCommand</code> register criteria per command name, the way <code>SimpleCommandHandlingComponent</code> subscribes handlers.
+Commands are matched by name, so the payload is not converted, and commands without registered criteria keep their sourcing criteria, here <code>credits.TopUpCredits</code>.
+Registering the same name twice fails right away with an <code>AxonConfigurationException</code>.
+The interceptor is immutable: <code>andForCommand</code> returns a new interceptor, so register everything before handing it to the module.
+Pass an <code>AppendCriteriaResolver</code> instead of a function when the criteria depend on the command or the context.</p>
+</div>
+<div class="paragraph">
+<p>To decide for every command of every component in the module, use <code>AppendCriteriaInterceptor.forAllCommands(fallback)</code> with one <code>AppendCriteriaResolver</code>.
+That resolver receives the command as dispatched, so read a serialized payload with <code>payloadAs</code>.
+Criteria added with <code>andForCommand</code> take precedence over it for their command.
+A command whose criteria more than one resolver decides, for example a builder and an interceptor, fails when it is handled; startup does not detect this.</p>
+</div>
+<div class="paragraph">
+<p>For a declaratively built entity, register the interceptor on the metamodel builder through <code>EntityCommandHandlerInterceptor.of</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.common.configuration.Configuration;
+import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.commandhandling.AppendCriteriaInterceptor;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.modelling.entity.EntityCommandHandlerInterceptor;
+import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.entity.EntityMetamodelBuilder;
+
+public class DeclarativeEntityAppendCriteria {
+
+    // Used as EventSourcedEntityModule.declarative(String.class, CreditBalance.class)
+    //                                 .messagingModel(DeclarativeEntityAppendCriteria::messagingModel)
+    public static EntityMetamodel&lt;CreditBalance&gt; messagingModel(Configuration configuration,
+                                                                EntityMetamodelBuilder&lt;CreditBalance&gt; builder) {
+        AppendCriteriaInterceptor appendCriteria = AppendCriteriaInterceptor
+                .forCommand(new QualifiedName("credits.UseCredits"),
+                            sourcingCriteria -&gt; sourcingCriteria.withEventTypes(new QualifiedName(CreditsUsed.class)));
+        return builder
+                .instanceCommandHandler(new QualifiedName("credits.UseCredits"),
+                                        (command, balance, context) -&gt; MessageStream.empty().cast())
+                .instanceCommandHandler(new QualifiedName("credits.TopUpCredits"),
+                                        (command, balance, context) -&gt; MessageStream.empty().cast())
+                .commandHandlerInterceptor(EntityCommandHandlerInterceptor.of(appendCriteria))
+                .build();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The interceptor covers the creational and instance commands of the entity, and the commands forwarded to its child entities.
+On a polymorphic entity, register it once on the polymorphic metamodel, which also covers the commands of its concrete types.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_commands_without_sourcing"><a class="anchor" href="#_commands_without_sourcing"></a>Commands without sourcing</h3>
+<div class="paragraph">
+<p>A command that sources nothing and declares no append criteria appends unconditionally.
+A builder for such a command can return criteria built from the command or its metadata.
+The event store checks them against the complete history, which reserves a unique key without loading anything:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.commandhandling.annotation.AppendCriteriaBuilder;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.core.annotation.MetadataValue;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+
+public class UsernameCommandHandler {
+
+    @CommandHandler
+    void handle(RegisterUsername command,
+                @MetadataValue(value = "tenantId", required = true) String tenantId,
+                EventAppender eventAppender) {
+        eventAppender.append(new UsernameRegistered(tenantId, command.username()));
+    }
+
+    @AppendCriteriaBuilder
+    static EventCriteria appendCriteria(
+            RegisterUsername command,
+            @MetadataValue(value = "tenantId", required = true) String tenantId
+    ) {
+        return EventCriteria.havingTags(
+                "tenantId", tenantId,
+                "username", command.username()
+        );
+    }
+}</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The append fails if a matching event already exists or is appended concurrently.</p>
+</li>
+<li>
+<p>Tag the appended events with the values the criteria use, as the example does with <code>tenantId</code>.</p>
+</li>
+<li>
+<p>Returning the supplied criteria keeps the command unconditional.</p>
+</li>
+<li>
+<p>An entity created without loading is the exception.
+Its builder receives criteria that select all tags of the appended events, and the event store checks them from the start of the history.
+An event matches only if it has all of those tags, so this check rejects only an exact repeat.</p>
+</li>
+<li>
+<p>Setting event types with <code>withEventTypes</code> on the supplied criteria defines a boundary where there was none, so every event of those types in the history is checked.
+A <code>CommandMessage</code> builder that does this applies it to every command that sources nothing.</p>
+</li>
+<li>
+<p>A command that sourced something checks its append criteria only after the position it read, whatever the criteria select.
+To check a key from the beginning of the history, use a command that sources nothing.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To keep an entity unique by its identifier and by another value, return criteria for each tag and join them with <code>or</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.EventTag;
+import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.eventsourcing.commandhandling.annotation.AppendCriteriaBuilder;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+
+@EventSourcedEntity(tagKey = "userId")
+public class User {
+
+    @EntityCreator
+    User() {
+    }
+
+    @CommandHandler
+    static void handle(RegisterUser command, EventAppender eventAppender) {
+        eventAppender.append(new UserRegistered(command.userId(), command.username()));
+    }
+
+    // Fails the command if any event in the history has this user id or this username.
+    @AppendCriteriaBuilder
+    static EventCriteria appendCriteria(RegisterUser command) {
+        return EventCriteria.havingTags("userId", command.userId())
+                            .or(EventCriteria.havingTags("username", command.username()));
+    }
+}
+
+// Without @TargetEntityId the framework creates the entity without loading it,
+// so the event store checks the append criteria from the start of the history.
+record RegisterUser(String userId, String username) {
+}
+
+record UserRegistered(@EventTag(key = "userId") String userId, @EventTag(key = "username") String username) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>RegisterUser</code> has no <code>@TargetEntityId</code>, so the framework creates the <code>User</code> without loading it.
+The event store checks the criteria from the start of the history and rejects a second user with the same identifier or the same username.
+Without the builder, a second <code>RegisterUser</code> with the same identifier and another username succeeds, because its event has different tags.</p>
+</div>
+<div class="paragraph">
+<p>With <code>@TargetEntityId</code> on <code>RegisterUser</code>, the framework loads the <code>User</code> first.
+The framework then rejects a second registration with the same identifier.
+The event store checks the username only against events appended after that read, so it does not detect an earlier user with the same username.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_choosing_a_narrower_boundary"><a class="anchor" href="#_choosing_a_narrower_boundary"></a>Choosing a narrower boundary</h3>
+<div class="paragraph">
+<p>A narrower boundary can change how stored events explain a decision: a rejection may describe the state before a concurrent event that the boundary excluded.
+Keep the default boundary when that order matters more than avoiding retries, for example for audit records.</p>
+</div>
+<div class="paragraph">
+<p>A builder is a static method, so its result can be tested without running a command.
+Assert with <code>criteria.matches(eventType, tags)</code> that it selects the events the decision depends on, as an event type name that matches nothing silently selects nothing.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_aggregate_based_storage"><a class="anchor" href="#_aggregate_based_storage"></a>Aggregate-based storage</h3>
+<div class="paragraph">
+<p>Aggregate-based storage detects conflicts only through the sequence numbers of the aggregates it appends to.
+It does not check append criteria, so an append criteria builder has no effect there.
+A command that sourced an aggregate still conflicts with any concurrent event of that aggregate, whatever its builder returns.
+A command that sourced nothing only conflicts when it creates an aggregate that already exists.
+Reserving a unique key, as in the <code>UsernameCommandHandler</code> example, requires a criteria-aware event store.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="conditions"><a class="anchor" href="#conditions"></a>Append, source, and stream conditions</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -695,7 +1140,8 @@ Axon provides three condition types, each tailored for a different operation:</p
 <dd>
 <p>Used when appending events to the event store.
 It combines an <code>EventCriteria</code> with a <code>ConsistencyMarker</code> to enforce write conflict detection.
-The <a href="#consistency_marker">consistency marker</a> tracks the position until which the criteria should be validated—if events matching the criteria were appended after this position, the append operation fails.
+The <a href="#consistency_marker">consistency marker</a> tracks the position until which the criteria should be validated.
+If events matching the criteria were appended after this position, the append operation fails.
 This ensures that concurrent writes to the same logical boundary are detected.</p>
 <div class="paragraph">
 <p>For events that don&#8217;t participate in any consistency boundary (such as standalone events), use <code>AppendCondition.none()</code>.</p>
